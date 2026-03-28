@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
@@ -9,8 +8,6 @@ const { locale, dir } = useI18n.getState()
 document.documentElement.setAttribute('dir', dir)
 document.documentElement.setAttribute('lang', locale)
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// StrictMode removed: framer-motion v12 animate-from-opacity-0 sticks in
+// React 19 double-invoke mode — re-enable after framer-motion releases a patch.
+createRoot(document.getElementById('root')!).render(<App />)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence, type Variants, type Transition } from 'framer-motion'
+import { motion, AnimatePresence, type Transition } from 'framer-motion'
 import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
@@ -9,34 +9,21 @@ import type { Locale } from '../lib/i18n'
 
 type AuthMode = 'signin' | 'signup' | 'magic' | 'forgot'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── CSS animation helpers ─────────────────────────────────────────────────────
+// Using CSS animations (not framer-motion initial/animate) for entrance effects
+// so content is ALWAYS visible on first render regardless of React version.
 
-const CARD_VARIANTS = {
-  hidden: { opacity: 0, y: 24, scale: 0.98 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.45, ease: 'easeOut' as const },
-  },
-  exit: {
-    opacity: 0,
-    y: -16,
-    scale: 0.97,
-    transition: { duration: 0.2, ease: 'easeIn' as const },
-  },
-}
-
-const FIELD_TRANSITION = (i: number): Transition => ({
-  delay: i * 0.07,
-  duration: 0.3,
-  ease: 'easeOut',
+const fadeUp = (delay = 0, duration = 0.45): React.CSSProperties => ({
+  animation: `ds-fade-up ${duration}s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s both`,
 })
 
-const FIELD_VARIANTS: Variants = {
-  hidden: { opacity: 0, x: -8 },
-  visible: { opacity: 1, x: 0 },
-}
+const fadeIn = (delay = 0): React.CSSProperties => ({
+  animation: `ds-fade-in 0.4s ease-out ${delay}s both`,
+})
+
+// Mode-switch transitions (between signin/signup/magic/forgot) — safe to use
+// framer-motion here because these don't run on first render.
+const MODE_TRANSITION: Transition = { duration: 0.22, ease: 'easeOut' }
 
 // ─── Aurora Background ────────────────────────────────────────────────────────
 
@@ -45,47 +32,81 @@ function AuroraBackground() {
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {/* Deep base */}
       <div className="absolute inset-0 bg-[#040608]" />
-      {/* Aurora orbs */}
-      <motion.div
+      {/* Aurora orbs — pure CSS animations */}
+      <div
         className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full"
         style={{
-          background:
-            'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)',
           filter: 'blur(40px)',
+          animation: 'ds-float-a 18s ease-in-out infinite',
         }}
-        animate={{ x: [0, 60, 0], y: [0, 40, 0] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.div
+      <div
         className="absolute -bottom-32 -right-32 h-[700px] w-[700px] rounded-full"
         style={{
-          background:
-            'radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)',
           filter: 'blur(60px)',
+          animation: 'ds-float-b 22s ease-in-out infinite',
         }}
-        animate={{ x: [0, -50, 0], y: [0, -60, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.div
+      <div
         className="absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
-          background:
-            'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 65%)',
           filter: 'blur(50px)',
+          animation: 'ds-pulse-scale 12s ease-in-out infinite',
         }}
-        animate={{ scale: [1, 1.15, 1] }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
       />
       {/* Grid overlay */}
       <div
-        className="absolute inset-0 opacity-[0.025]"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+            'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
           backgroundSize: '60px 60px',
         }}
       />
     </div>
+  )
+}
+
+// ─── CSS Keyframes (injected once) ───────────────────────────────────────────
+
+function GlobalStyles() {
+  return (
+    <style>{`
+      @keyframes ds-fade-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes ds-fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      @keyframes ds-float-a {
+        0%, 100% { transform: translate(0, 0); }
+        50%      { transform: translate(60px, 40px); }
+      }
+      @keyframes ds-float-b {
+        0%, 100% { transform: translate(0, 0); }
+        50%      { transform: translate(-50px, -60px); }
+      }
+      @keyframes ds-pulse-scale {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50%      { transform: translate(-50%, -50%) scale(1.15); }
+      }
+      @keyframes ds-shimmer {
+        0%   { transform: translateX(-100%) skewX(12deg); }
+        100% { transform: translateX(200%) skewX(12deg); }
+      }
+      @keyframes ds-spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes ds-tab-bounce {
+        0%, 100% { transform: scaleX(1); }
+        50%      { transform: scaleX(0.96); }
+      }
+    `}</style>
   )
 }
 
@@ -94,23 +115,24 @@ function AuroraBackground() {
 function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`relative ${className}`}>
-      {/* Animated glow border */}
+      {/* Glow border */}
       <div
-        className="pointer-events-none absolute -inset-[1px] rounded-2xl opacity-60"
+        className="pointer-events-none absolute -inset-[1px] rounded-2xl"
         style={{
           background:
-            'linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(212,175,55,0.3) 50%, rgba(168,85,247,0.4) 100%)',
+            'linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(212,175,55,0.3) 50%, rgba(168,85,247,0.45) 100%)',
+          opacity: 0.7,
         }}
         aria-hidden
       />
-      {/* Glass card body */}
+      {/* Glass body */}
       <div
         className="relative rounded-2xl p-8"
         style={{
           background:
-            'linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.025) 100%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
+          backdropFilter: 'blur(32px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
         }}
       >
         {children}
@@ -143,7 +165,7 @@ function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
           className={[
             'w-full rounded-xl border bg-white/5 py-3 pe-10 ps-10 text-sm text-white placeholder-white/20',
             'outline-none transition-all duration-200',
-            'focus:border-indigo-400/60 focus:bg-white/8 focus:ring-2 focus:ring-indigo-500/20',
+            'focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/20',
             error ? 'border-red-400/50' : 'border-white/10',
           ].join(' ')}
           {...props}
@@ -156,9 +178,10 @@ function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
         {error && (
           <motion.p
             className="text-xs text-red-400"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={MODE_TRANSITION}
           >
             {error}
           </motion.p>
@@ -171,48 +194,42 @@ function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
 // ─── Primary Button ───────────────────────────────────────────────────────────
 
 function PrimaryButton({
-  children,
-  loading,
-  onClick,
-  type = 'submit',
-  disabled,
+  children, loading, onClick, type = 'submit', disabled,
 }: {
-  children: React.ReactNode
-  loading?: boolean
-  onClick?: () => void
-  type?: 'submit' | 'button'
-  disabled?: boolean
+  children: React.ReactNode; loading?: boolean; onClick?: () => void
+  type?: 'submit' | 'button'; disabled?: boolean
 }) {
   return (
-    <motion.button
+    <button
       type={type}
       onClick={onClick}
       disabled={loading || disabled}
-      className="group relative w-full overflow-hidden rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+      className="group relative w-full overflow-hidden rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       style={{
         background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
         boxShadow: '0 0 30px rgba(99,102,241,0.35)',
       }}
-      whileHover={{ scale: 1.01, boxShadow: '0 0 40px rgba(99,102,241,0.5)' }}
-      whileTap={{ scale: 0.98 }}
     >
-      {/* Shimmer sweep on hover */}
+      {/* Shimmer sweep */}
       <span
-        className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-white/10 transition-transform duration-700 group-hover:translate-x-full"
+        className="pointer-events-none absolute inset-y-0 w-1/3 bg-white/15"
+        style={{ animation: 'none' }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget
+          el.style.animation = 'ds-shimmer 0.7s ease-out forwards'
+          el.addEventListener('animationend', () => { el.style.animation = 'none' }, { once: true })
+        }}
         aria-hidden
       />
       <span className="relative flex items-center justify-center gap-2">
         {loading ? (
-          <motion.span
-            className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+          <span
+            className="h-4 w-4 rounded-full border-2 border-white/30"
+            style={{ borderTopColor: 'white', animation: 'ds-spin 0.8s linear infinite' }}
           />
-        ) : (
-          children
-        )}
+        ) : children}
       </span>
-    </motion.button>
+    </button>
   )
 }
 
@@ -220,25 +237,20 @@ function PrimaryButton({
 
 function GoogleButton({ onClick, loading, label }: { onClick: () => void; loading?: boolean; label: string }) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/20 hover:bg-white/8 disabled:opacity-50"
-      whileHover={{ scale: 1.005 }}
-      whileTap={{ scale: 0.98 }}
+      className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/20 hover:bg-white/8 active:scale-[0.98] disabled:opacity-50"
     >
       {loading ? (
-        <motion.span
-          className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+        <span
+          className="h-4 w-4 rounded-full border-2 border-white/30"
+          style={{ borderTopColor: 'white', animation: 'ds-spin 0.8s linear infinite' }}
         />
-      ) : (
-        <GoogleIcon />
-      )}
+      ) : <GoogleIcon />}
       {label}
-    </motion.button>
+    </button>
   )
 }
 
@@ -265,14 +277,10 @@ function OrDivider({ label }: { label: string }) {
   )
 }
 
-// ─── Toast Notification ───────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 5000)
-    return () => clearTimeout(t)
-  }, [onClose])
-
+  useEffect(() => { const t = setTimeout(onClose, 5000); return () => clearTimeout(t) }, [onClose])
   return (
     <motion.div
       className={[
@@ -281,9 +289,12 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
           ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
           : 'border-red-500/30 bg-red-500/10 text-red-300',
       ].join(' ')}
-      initial={{ opacity: 0, y: -12, x: 12 }}
-      animate={{ opacity: 1, y: 0, x: 0 }}
-      exit={{ opacity: 0, x: 12 }}
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={MODE_TRANSITION}
+      role="alert"
+      aria-live="polite"
     >
       {message}
     </motion.div>
@@ -295,427 +306,22 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 function LangToggle() {
   const { locale, setLocale } = useI18n()
   const other: Locale = locale === 'he' ? 'en' : 'he'
-  const label = other === 'he' ? 'עברית' : 'English'
-
   return (
-    <motion.button
+    <button
       type="button"
       onClick={() => setLocale(other)}
       className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/50 transition hover:border-white/20 hover:text-white/80"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      aria-label={`Switch to ${label}`}
+      aria-label={`Switch to ${other === 'he' ? 'עברית' : 'English'}`}
     >
       <Globe size={12} aria-hidden />
-      {label}
-    </motion.button>
-  )
-}
-
-// ─── Sign In Form ─────────────────────────────────────────────────────────────
-
-function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () => void }) {
-  const { t } = useI18n()
-  const { signInWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
-
-  const loading = status === 'loading'
-
-  const validate = () => {
-    const errs: typeof fieldErrors = {}
-    if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
-    if (!password || password.length < 6) errs.password = t('auth.error.passwordTooShort')
-    setFieldErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-    if (!validate()) return
-    await signInWithEmail(email, password)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
-        <AuthInput
-          id="signin-email"
-          label={t('auth.field.email')}
-          type="email"
-          autoComplete="email"
-          placeholder={t('auth.field.email.placeholder')}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          icon={<Mail size={15} />}
-          error={fieldErrors.email}
-        />
-      </motion.div>
-
-      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(1)}>
-        <AuthInput
-          id="signin-password"
-          label={t('auth.field.password')}
-          type={showPw ? 'text' : 'password'}
-          autoComplete="current-password"
-          placeholder={t('auth.field.password.placeholder')}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          icon={<Lock size={15} />}
-          error={fieldErrors.password}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="text-white/30 transition hover:text-white/60"
-              aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}
-            >
-              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          }
-        />
-      </motion.div>
-
-      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(2)}
-        className="flex justify-end">
-        <button
-          type="button"
-          onClick={onForgot}
-          className="text-xs text-indigo-400/80 transition hover:text-indigo-300"
-        >
-          {t('auth.action.forgotPassword')}
-        </button>
-      </motion.div>
-
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            role="alert"
-          >
-            {t(error) || error}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(3)}>
-        <PrimaryButton loading={loading}>
-          {loading ? t('auth.action.signIn.loading') : (
-            <>{t('auth.action.signIn')} <ArrowRight size={15} /></>
-          )}
-        </PrimaryButton>
-      </motion.div>
-
-      <OrDivider label={t('auth.divider.or')} />
-
-      <GoogleButton
-        onClick={signInWithGoogle}
-        loading={loading}
-        label={t('auth.action.google')}
-      />
-
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={onMagic}
-          className="text-xs text-white/40 transition hover:text-white/70 underline-offset-2 hover:underline"
-        >
-          {t('auth.action.switchToMagicLink')}
-        </button>
-      </div>
-    </form>
-  )
-}
-
-// ─── Sign Up Form ─────────────────────────────────────────────────────────────
-
-function SignUpForm() {
-  const { t } = useI18n()
-  const { signUpWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
-  const [toast, setToast] = useState<string | null>(null)
-
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({})
-
-  const loading = status === 'loading'
-
-  const validate = () => {
-    const errs: typeof fieldErrors = {}
-    if (!name.trim()) errs.name = 'Required'
-    if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
-    if (!password || password.length < 8) errs.password = t('auth.error.passwordTooShort')
-    setFieldErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-    if (!validate()) return
-    await signUpWithEmail(email, password, name)
-    if (!error) setToast(t('auth.success.signUp'))
-  }
-
-  return (
-    <>
-      <AnimatePresence>
-        {toast && <Toast message={toast} type="success" onClose={() => setToast(null)} />}
-      </AnimatePresence>
-
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
-          <AuthInput
-            id="signup-name"
-            label={t('auth.field.fullName')}
-            type="text"
-            autoComplete="name"
-            placeholder={t('auth.field.fullName.placeholder')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            icon={<User size={15} />}
-            error={fieldErrors.name}
-          />
-        </motion.div>
-        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(1)}>
-          <AuthInput
-            id="signup-email"
-            label={t('auth.field.email')}
-            type="email"
-            autoComplete="email"
-            placeholder={t('auth.field.email.placeholder')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            icon={<Mail size={15} />}
-            error={fieldErrors.email}
-          />
-        </motion.div>
-        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(2)}>
-          <AuthInput
-            id="signup-password"
-            label={t('auth.field.password')}
-            type={showPw ? 'text' : 'password'}
-            autoComplete="new-password"
-            placeholder={t('auth.field.password.placeholder')}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            icon={<Lock size={15} />}
-            error={fieldErrors.password}
-            suffix={
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="text-white/30 transition hover:text-white/60"
-                aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}
-              >
-                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            }
-          />
-        </motion.div>
-
-        <AnimatePresence>
-          {error && (
-            <motion.p
-              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              role="alert"
-            >
-              {t(error) || error}
-            </motion.p>
-          )}
-        </AnimatePresence>
-
-        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(3)}>
-          <PrimaryButton loading={loading}>
-            {loading ? t('auth.action.signUp.loading') : (
-              <>{t('auth.action.signUp')} <ArrowRight size={15} /></>
-            )}
-          </PrimaryButton>
-        </motion.div>
-
-        <OrDivider label={t('auth.divider.or')} />
-
-        <GoogleButton
-          onClick={signInWithGoogle}
-          loading={loading}
-          label={t('auth.action.google')}
-        />
-
-        <p className="text-center text-[10px] text-white/25 leading-relaxed">
-          {t('auth.legal.agree')}{' '}
-          <a href="/terms" className="underline hover:text-white/50">
-            {t('auth.legal.terms')}
-          </a>
-          {' '}{t('auth.legal.and')}{' '}
-          <a href="/privacy" className="underline hover:text-white/50">
-            {t('auth.legal.privacy')}
-          </a>
-        </p>
-      </form>
-    </>
-  )
-}
-
-// ─── Magic Link Form ──────────────────────────────────────────────────────────
-
-function MagicLinkForm({ onBack }: { onBack: () => void }) {
-  const { t } = useI18n()
-  const { sendMagicLink, status, error, clearError } = useAuthStore()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const loading = status === 'loading'
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-    await sendMagicLink(email)
-    if (!error) setSent(true)
-  }
-
-  if (sent) {
-    return (
-      <motion.div
-        className="space-y-5 text-center"
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-      >
-        <motion.div
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/20 ring-1 ring-indigo-500/30"
-          initial={{ scale: 0.5 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-        >
-          <Zap size={24} className="text-indigo-400" />
-        </motion.div>
-        <div>
-          <p className="font-semibold text-white">{t('auth.action.magicLink.sent')}</p>
-          <p className="mt-1 text-sm text-white/40">{t('auth.success.magicLink')}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-indigo-400/80 transition hover:text-indigo-300"
-        >
-          {t('auth.action.backToSignIn')}
-        </button>
-      </motion.div>
-    )
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <p className="text-sm text-white/50">{t('auth.page.subtitle')}</p>
-
-      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
-        <AuthInput
-          id="magic-email"
-          label={t('auth.field.email')}
-          type="email"
-          autoComplete="email"
-          placeholder={t('auth.field.email.placeholder')}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          icon={<Mail size={15} />}
-        />
-      </motion.div>
-
-      <PrimaryButton loading={loading}>
-        {loading ? t('auth.action.magicLink.loading') : (
-          <><Zap size={15} /> {t('auth.action.magicLink')}</>
-        )}
-      </PrimaryButton>
-
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-xs text-white/40 transition hover:text-white/70"
-        >
-          {t('auth.action.switchToPassword')}
-        </button>
-      </div>
-    </form>
-  )
-}
-
-// ─── Forgot Password Form ─────────────────────────────────────────────────────
-
-function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
-  const { t } = useI18n()
-  const { sendPasswordResetEmail, error, clearError } = useAuthStore()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-    setLoading(true)
-    await sendPasswordResetEmail(email)
-    setLoading(false)
-    if (!error) setSent(true)
-  }
-
-  if (sent) {
-    return (
-      <motion.div
-        className="space-y-4 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <p className="text-sm text-white/70">{t('auth.action.resetPassword.sent')}</p>
-        <button type="button" onClick={onBack} className="text-sm text-indigo-400/80 hover:text-indigo-300">
-          {t('auth.action.backToSignIn')}
-        </button>
-      </motion.div>
-    )
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <AuthInput
-        id="forgot-email"
-        label={t('auth.field.email')}
-        type="email"
-        autoComplete="email"
-        placeholder={t('auth.field.email.placeholder')}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        icon={<Mail size={15} />}
-      />
-      <PrimaryButton loading={loading}>
-        {loading ? t('auth.action.resetPassword.loading') : t('auth.action.resetPassword')}
-      </PrimaryButton>
-      <div className="text-center">
-        <button type="button" onClick={onBack} className="text-xs text-white/40 hover:text-white/70">
-          {t('auth.action.backToSignIn')}
-        </button>
-      </div>
-    </form>
+      {other === 'he' ? 'עברית' : 'English'}
+    </button>
   )
 }
 
 // ─── Auth Tabs ────────────────────────────────────────────────────────────────
 
-function AuthTabs({
-  active,
-  onChange,
-}: {
-  active: 'signin' | 'signup'
-  onChange: (v: 'signin' | 'signup') => void
-}) {
+function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange: (v: 'signin' | 'signup') => void }) {
   const { t } = useI18n()
   return (
     <div className="relative flex rounded-xl border border-white/10 bg-white/5 p-1" role="tablist">
@@ -744,73 +350,319 @@ function AuthTabs({
   )
 }
 
-// ─── Left Panel — Brand Hero ───────────────────────────────────────────────────
+// ─── Sign In Form ─────────────────────────────────────────────────────────────
+
+function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () => void }) {
+  const { t } = useI18n()
+  const { signInWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
+  const loading = status === 'loading'
+
+  const validate = () => {
+    const errs: typeof fieldErrors = {}
+    if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
+    if (!password || password.length < 6) errs.password = t('auth.error.passwordTooShort')
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); clearError()
+    if (!validate()) return
+    await signInWithEmail(email, password)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <div style={fadeUp(0.05)}>
+        <AuthInput id="signin-email" label={t('auth.field.email')} type="email"
+          autoComplete="email" placeholder={t('auth.field.email.placeholder')}
+          value={email} onChange={(e) => setEmail(e.target.value)}
+          icon={<Mail size={15} />} error={fieldErrors.email} />
+      </div>
+      <div style={fadeUp(0.12)}>
+        <AuthInput id="signin-password" label={t('auth.field.password')}
+          type={showPw ? 'text' : 'password'} autoComplete="current-password"
+          placeholder={t('auth.field.password.placeholder')}
+          value={password} onChange={(e) => setPassword(e.target.value)}
+          icon={<Lock size={15} />} error={fieldErrors.password}
+          suffix={
+            <button type="button" onClick={() => setShowPw(!showPw)}
+              className="text-white/30 transition hover:text-white/60"
+              aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
+              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          } />
+      </div>
+      <div style={fadeUp(0.18)} className="flex justify-end">
+        <button type="button" onClick={onForgot}
+          className="text-xs text-indigo-400/80 transition hover:text-indigo-300">
+          {t('auth.action.forgotPassword')}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
+            {t(error) || error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <div style={fadeUp(0.22)}>
+        <PrimaryButton loading={loading}>
+          {loading ? t('auth.action.signIn.loading') : <>{t('auth.action.signIn')} <ArrowRight size={15} /></>}
+        </PrimaryButton>
+      </div>
+
+      <div style={fadeUp(0.28)}><OrDivider label={t('auth.divider.or')} /></div>
+      <div style={fadeUp(0.32)}>
+        <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
+      </div>
+      <div style={fadeUp(0.36)} className="text-center">
+        <button type="button" onClick={onMagic}
+          className="text-xs text-white/40 transition hover:text-white/70 underline-offset-2 hover:underline">
+          {t('auth.action.switchToMagicLink')}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ─── Sign Up Form ─────────────────────────────────────────────────────────────
+
+function SignUpForm() {
+  const { t } = useI18n()
+  const { signUpWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
+  const [toast, setToast] = useState<string | null>(null)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({})
+  const loading = status === 'loading'
+
+  const validate = () => {
+    const errs: typeof fieldErrors = {}
+    if (!name.trim()) errs.name = 'Required'
+    if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
+    if (!password || password.length < 8) errs.password = t('auth.error.passwordTooShort')
+    setFieldErrors(errs); return Object.keys(errs).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); clearError()
+    if (!validate()) return
+    await signUpWithEmail(email, password, name)
+    if (!error) setToast(t('auth.success.signUp'))
+  }
+
+  return (
+    <>
+      <AnimatePresence>
+        {toast && <Toast message={toast} type="success" onClose={() => setToast(null)} />}
+      </AnimatePresence>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div style={fadeUp(0.05)}>
+          <AuthInput id="signup-name" label={t('auth.field.fullName')} type="text"
+            autoComplete="name" placeholder={t('auth.field.fullName.placeholder')}
+            value={name} onChange={(e) => setName(e.target.value)}
+            icon={<User size={15} />} error={fieldErrors.name} />
+        </div>
+        <div style={fadeUp(0.10)}>
+          <AuthInput id="signup-email" label={t('auth.field.email')} type="email"
+            autoComplete="email" placeholder={t('auth.field.email.placeholder')}
+            value={email} onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail size={15} />} error={fieldErrors.email} />
+        </div>
+        <div style={fadeUp(0.15)}>
+          <AuthInput id="signup-password" label={t('auth.field.password')}
+            type={showPw ? 'text' : 'password'} autoComplete="new-password"
+            placeholder={t('auth.field.password.placeholder')}
+            value={password} onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock size={15} />} error={fieldErrors.password}
+            suffix={
+              <button type="button" onClick={() => setShowPw(!showPw)}
+                className="text-white/30 transition hover:text-white/60"
+                aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
+                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            } />
+        </div>
+
+        <AnimatePresence>
+          {error && (
+            <motion.p
+              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
+              {t(error) || error}
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        <div style={fadeUp(0.20)}>
+          <PrimaryButton loading={loading}>
+            {loading ? t('auth.action.signUp.loading') : <>{t('auth.action.signUp')} <ArrowRight size={15} /></>}
+          </PrimaryButton>
+        </div>
+        <div style={fadeUp(0.25)}><OrDivider label={t('auth.divider.or')} /></div>
+        <div style={fadeUp(0.28)}>
+          <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
+        </div>
+        <p style={fadeUp(0.32)} className="text-center text-[10px] text-white/25 leading-relaxed">
+          {t('auth.legal.agree')}{' '}
+          <a href="/terms" className="underline hover:text-white/50">{t('auth.legal.terms')}</a>
+          {' '}{t('auth.legal.and')}{' '}
+          <a href="/privacy" className="underline hover:text-white/50">{t('auth.legal.privacy')}</a>
+        </p>
+      </form>
+    </>
+  )
+}
+
+// ─── Magic Link Form ──────────────────────────────────────────────────────────
+
+function MagicLinkForm({ onBack }: { onBack: () => void }) {
+  const { t } = useI18n()
+  const { sendMagicLink, status, error, clearError } = useAuthStore()
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+  const loading = status === 'loading'
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); clearError()
+    await sendMagicLink(email)
+    if (!error) setSent(true)
+  }
+
+  if (sent) {
+    return (
+      <div className="space-y-5 text-center" style={fadeUp(0)}>
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/20 ring-1 ring-indigo-500/30">
+          <Zap size={24} className="text-indigo-400" />
+        </div>
+        <div>
+          <p className="font-semibold text-white">{t('auth.action.magicLink.sent')}</p>
+          <p className="mt-1 text-sm text-white/40">{t('auth.success.magicLink')}</p>
+        </div>
+        <button type="button" onClick={onBack} className="text-sm text-indigo-400/80 hover:text-indigo-300">
+          {t('auth.action.backToSignIn')}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <p className="text-sm text-white/50" style={fadeIn(0.05)}>{t('auth.page.subtitle')}</p>
+      <div style={fadeUp(0.10)}>
+        <AuthInput id="magic-email" label={t('auth.field.email')} type="email"
+          autoComplete="email" placeholder={t('auth.field.email.placeholder')}
+          value={email} onChange={(e) => setEmail(e.target.value)} icon={<Mail size={15} />} />
+      </div>
+      <div style={fadeUp(0.15)}>
+        <PrimaryButton loading={loading}>
+          {loading ? t('auth.action.magicLink.loading') : <><Zap size={15} /> {t('auth.action.magicLink')}</>}
+        </PrimaryButton>
+      </div>
+      <div style={fadeUp(0.20)} className="text-center">
+        <button type="button" onClick={onBack} className="text-xs text-white/40 hover:text-white/70">
+          {t('auth.action.switchToPassword')}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ─── Forgot Password Form ─────────────────────────────────────────────────────
+
+function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+  const { t } = useI18n()
+  const { sendPasswordResetEmail, error, clearError } = useAuthStore()
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); clearError(); setLoading(true)
+    await sendPasswordResetEmail(email)
+    setLoading(false)
+    if (!error) setSent(true)
+  }
+
+  if (sent) {
+    return (
+      <div className="space-y-4 text-center" style={fadeUp(0)}>
+        <p className="text-sm text-white/70">{t('auth.action.resetPassword.sent')}</p>
+        <button type="button" onClick={onBack} className="text-sm text-indigo-400/80 hover:text-indigo-300">
+          {t('auth.action.backToSignIn')}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <div style={fadeUp(0.05)}>
+        <AuthInput id="forgot-email" label={t('auth.field.email')} type="email"
+          autoComplete="email" placeholder={t('auth.field.email.placeholder')}
+          value={email} onChange={(e) => setEmail(e.target.value)} icon={<Mail size={15} />} />
+      </div>
+      <div style={fadeUp(0.10)}>
+        <PrimaryButton loading={loading}>
+          {loading ? t('auth.action.resetPassword.loading') : t('auth.action.resetPassword')}
+        </PrimaryButton>
+      </div>
+      <div style={fadeUp(0.14)} className="text-center">
+        <button type="button" onClick={onBack} className="text-xs text-white/40 hover:text-white/70">
+          {t('auth.action.backToSignIn')}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ─── Brand Panel ──────────────────────────────────────────────────────────────
 
 function BrandPanel() {
   const { t } = useI18n()
-
   return (
     <div className="hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
       {/* Logo */}
-      <motion.div
-        className="flex items-center gap-2"
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-      >
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            boxShadow: '0 0 20px rgba(99,102,241,0.4)',
-          }}
-        >
+      <div className="flex items-center gap-2" style={fadeUp(0.05)}>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
           <Zap size={18} className="text-white" />
         </div>
-        <span className="text-lg font-bold tracking-tight text-white">
-          {t('brand.name')}
-        </span>
-      </motion.div>
+        <span className="text-lg font-bold tracking-tight text-white">{t('brand.name')}</span>
+      </div>
 
       {/* Hero copy */}
-      <motion.div
-        className="space-y-6"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      >
+      <div className="space-y-6" style={fadeUp(0.15)}>
         <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
           {t('auth.page.title')}
         </h1>
-        <p className="text-base leading-relaxed text-white/40">
-          {t('auth.page.subtitle')}
-        </p>
-
-        {/* Feature pills */}
+        <p className="text-base leading-relaxed text-white/40">{t('auth.page.subtitle')}</p>
         <div className="flex flex-wrap gap-2">
           {['Interactive Proposals', 'Real-Time Analytics', 'Deal Rooms', 'Auto-Upsell'].map((f, i) => (
-            <motion.span
-              key={f}
+            <span key={f}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/50"
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.08 }}
-            >
+              style={fadeIn(0.3 + i * 0.08)}>
               {f}
-            </motion.span>
+            </span>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* Social proof */}
-      <motion.p
-        className="text-xs text-white/25"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-      >
-        {t('auth.social.trusted')}
-      </motion.p>
+      <p className="text-xs text-white/25" style={fadeIn(0.5)}>{t('auth.social.trusted')}</p>
     </div>
   )
 }
@@ -822,9 +674,9 @@ export default function AuthPage() {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin')
   const [mode, setMode] = useState<AuthMode>('signin')
 
-  const handleTabChange = (t: 'signin' | 'signup') => {
-    setTab(t)
-    setMode(t)
+  const handleTabChange = (newTab: 'signin' | 'signup') => {
+    setTab(newTab)
+    setMode(newTab)
   }
 
   const showTabs = mode === 'signin' || mode === 'signup'
@@ -837,90 +689,66 @@ export default function AuthPage() {
   }
 
   return (
-    <div
-      className="relative flex min-h-dvh flex-col overflow-hidden"
-      dir={dir}
-      lang={useI18n.getState().locale}
-    >
+    <div className="relative flex min-h-dvh flex-col overflow-hidden" dir={dir} lang={dir === 'rtl' ? 'he' : 'en'}>
+      <GlobalStyles />
       <AuroraBackground />
 
       {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6">
+      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6" style={fadeIn(0)}>
         <div className="flex items-center gap-2 lg:hidden">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
-          >
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
             <Zap size={14} className="text-white" />
           </div>
           <span className="text-sm font-bold text-white">{t('brand.name')}</span>
         </div>
-        <div className="ms-auto">
-          <LangToggle />
-        </div>
+        <div className="ms-auto"><LangToggle /></div>
       </header>
 
       {/* Main layout */}
       <main className="relative z-10 flex flex-1 items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-5xl">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            {/* Left — brand panel */}
             <BrandPanel />
 
-            {/* Right — auth card */}
-            <motion.div
-              variants={CARD_VARIANTS}
-              initial="hidden"
-              animate="visible"
-              className="w-full"
-            >
+            {/* Auth card — visible immediately, no opacity-0 initial */}
+            <div className="w-full" style={fadeUp(0.08)}>
               <GlassCard>
                 {showTabs && (
                   <div className="mb-6">
                     <AuthTabs active={tab} onChange={handleTabChange} />
                   </div>
                 )}
-
                 {!showTabs && (
                   <div className="mb-6">
                     <p className="text-lg font-semibold text-white">{formTitle[mode]}</p>
                   </div>
                 )}
 
+                {/* Mode transitions — safe to use framer-motion here (not first render) */}
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={mode}
-                    variants={CARD_VARIANTS}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={MODE_TRANSITION}
                   >
-                    {mode === 'signin' && (
-                      <SignInForm
-                        onForgot={() => setMode('forgot')}
-                        onMagic={() => setMode('magic')}
-                      />
-                    )}
+                    {mode === 'signin' && <SignInForm onForgot={() => setMode('forgot')} onMagic={() => setMode('magic')} />}
                     {mode === 'signup' && <SignUpForm />}
-                    {mode === 'magic' && (
-                      <MagicLinkForm onBack={() => setMode('signin')} />
-                    )}
-                    {mode === 'forgot' && (
-                      <ForgotPasswordForm onBack={() => setMode('signin')} />
-                    )}
+                    {mode === 'magic' && <MagicLinkForm onBack={() => setMode('signin')} />}
+                    {mode === 'forgot' && <ForgotPasswordForm onBack={() => setMode('signin')} />}
                   </motion.div>
                 </AnimatePresence>
               </GlassCard>
-            </motion.div>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Legal footer — Israeli compliance */}
-      <footer className="relative z-10 border-t border-white/5 px-6 py-4 text-center">
-        <p className="text-[11px] leading-relaxed text-white/20">
-          {t('footer.legal')}
-        </p>
+      {/* Legal footer */}
+      <footer className="relative z-10 border-t border-white/5 px-6 py-4 text-center" style={fadeIn(0.4)}>
+        <p className="text-[11px] leading-relaxed text-white/20">{t('footer.legal')}</p>
         <p className="mt-1 text-[10px] text-white/15">{t('footer.rights')}</p>
       </footer>
     </div>

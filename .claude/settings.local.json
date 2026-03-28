@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm create:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(''''version:'''', p[''''version'''']\\); exps=p.get\\(''''exports'''',{}\\); [print\\(k,'''':'''',str\\(v\\)[:80]\\) for k,v in list\\(exps.items\\(\\)\\)[:10]]\")"
     ]
   }
 }
