@@ -33,9 +33,9 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.page.subtitle':
       'Sign in to DealSpace and unlock a smarter way to present, negotiate, and close.',
 
-    // Auth — Tabs
-    'auth.tab.signIn': 'Sign In',
-    'auth.tab.signUp': 'Create Account',
+    // Auth — Tabs (keys match component tab values: 'signin' / 'signup')
+    'auth.tab.signin': 'Sign In',
+    'auth.tab.signup': 'Create Account',
 
     // Auth — Fields
     'auth.field.fullName': 'Full Name',
@@ -76,6 +76,11 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.error.emailNotConfirmed': 'Please verify your email before signing in.',
     'auth.error.userExists': 'An account with this email already exists.',
     'auth.error.passwordTooShort': 'Password must be at least 8 characters.',
+    'auth.error.passwordNeedsUppercase': 'Add at least one uppercase letter (A–Z).',
+    'auth.error.passwordNeedsNumber': 'Add at least one number (0–9).',
+    'auth.error.passwordNeedsSpecial': 'Add at least one special character (!@#$…).',
+    'auth.error.passwordTooCommon': 'This password is too common. Choose something unique.',
+    'auth.error.passwordSequential': 'Avoid sequential characters like "123" or "abc".',
     'auth.error.generic': 'Something went wrong. Please try again.',
 
     // Auth — Success
@@ -116,9 +121,9 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.page.subtitle':
       'התחבר ל-DealSpace ופתח דרך חכמה יותר להציג, לנהל משא ומתן ולסגור.',
 
-    // Auth — Tabs
-    'auth.tab.signIn': 'כניסה',
-    'auth.tab.signUp': 'יצירת חשבון',
+    // Auth — Tabs (keys match component tab values)
+    'auth.tab.signin': 'כניסה',
+    'auth.tab.signup': 'יצירת חשבון',
 
     // Auth — Fields
     'auth.field.fullName': 'שם מלא',
@@ -155,10 +160,15 @@ const translations: Record<Locale, Record<string, string>> = {
     'auth.social.trusted': 'מעל 3,000 יוצרים בישראל ומעבר לה כבר סומכים עלינו',
 
     // Auth — Errors
-    'auth.error.invalidCredentials': 'אימייל או סיסמה שגויים. נסה שוב.',
+    'auth.error.invalidCredentials': 'האימייל או הסיסמה שגויים. אנא נסה שנית.',
     'auth.error.emailNotConfirmed': 'אנא אמת את האימייל שלך לפני הכניסה.',
     'auth.error.userExists': 'חשבון עם אימייל זה כבר קיים.',
     'auth.error.passwordTooShort': 'הסיסמה חייבת להכיל לפחות 8 תווים.',
+    'auth.error.passwordNeedsUppercase': 'יש להוסיף לפחות אות גדולה אחת (A–Z).',
+    'auth.error.passwordNeedsNumber': 'יש להוסיף לפחות ספרה אחת (0–9).',
+    'auth.error.passwordNeedsSpecial': 'יש להוסיף לפחות תו מיוחד אחד (!@#$…).',
+    'auth.error.passwordTooCommon': 'סיסמה זו נפוצה מדי. בחר סיסמה ייחודית.',
+    'auth.error.passwordSequential': 'יש להימנע מרצפי תווים כמו "123" או "abc".',
     'auth.error.generic': 'משהו השתבש. נסה שוב.',
 
     // Auth — Success

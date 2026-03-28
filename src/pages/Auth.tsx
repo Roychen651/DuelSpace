@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, type Transition } from 'framer-motion'
-import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe } from 'lucide-react'
+import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe, CheckCircle2, XCircle } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
 import type { Locale } from '../lib/i18n'
+import { evaluatePassword, validatePassword } from '../lib/passwordValidation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -435,10 +436,59 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
   )
 }
 
+// ─── Password Strength Meter ──────────────────────────────────────────────────
+
+function PasswordStrengthMeter({ password, locale }: { password: string; locale: string }) {
+  if (!password) return null
+  const { score, color, label_en, rules } = evaluatePassword(password)
+  const bars = [0, 1, 2, 3]
+
+  return (
+    <motion.div
+      className="mt-2 space-y-2"
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Strength bar */}
+      <div className="flex items-center gap-2">
+        <div className="flex flex-1 gap-1">
+          {bars.map(i => (
+            <div
+              key={i}
+              className="h-1 flex-1 rounded-full transition-all duration-300"
+              style={{ background: i <= score - 1 ? color : 'rgba(255,255,255,0.1)' }}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] font-medium" style={{ color }}>
+          {locale === 'he' ? evaluatePassword(password).label_he : label_en}
+        </span>
+      </div>
+
+      {/* Rules checklist */}
+      <div className="grid grid-cols-2 gap-1">
+        {rules.map(rule => (
+          <div key={rule.key} className="flex items-center gap-1">
+            {rule.met
+              ? <CheckCircle2 size={10} className="shrink-0" style={{ color: '#22c55e' }} />
+              : <XCircle size={10} className="shrink-0" style={{ color: 'rgba(255,255,255,0.2)' }} />
+            }
+            <span className="text-[10px]" style={{ color: rule.met ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)' }}>
+              {locale === 'he' ? rule.label_he : rule.label_en}
+            </span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Sign Up Form ─────────────────────────────────────────────────────────────
 
 function SignUpForm() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { signUpWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
   const [toast, setToast] = useState<string | null>(null)
   const [name, setName] = useState('')
@@ -450,9 +500,10 @@ function SignUpForm() {
 
   const validate = () => {
     const errs: typeof fieldErrors = {}
-    if (!name.trim()) errs.name = 'Required'
+    if (!name.trim()) errs.name = locale === 'he' ? 'שדה חובה' : 'Required'
     if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
-    if (!password || password.length < 8) errs.password = t('auth.error.passwordTooShort')
+    const pwError = validatePassword(password)
+    if (pwError) errs.password = t(pwError)
     setFieldErrors(errs); return Object.keys(errs).length === 0
   }
 
@@ -494,6 +545,9 @@ function SignUpForm() {
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             } />
+          <AnimatePresence>
+            {password && <PasswordStrengthMeter password={password} locale={locale} />}
+          </AnimatePresence>
         </div>
 
         <AnimatePresence>
@@ -682,8 +736,8 @@ export default function AuthPage() {
   const showTabs = mode === 'signin' || mode === 'signup'
 
   const formTitle: Record<AuthMode, string> = {
-    signin: t('auth.tab.signIn'),
-    signup: t('auth.tab.signUp'),
+    signin: t('auth.tab.signin'),
+    signup: t('auth.tab.signup'),
     magic: t('auth.action.magicLink'),
     forgot: t('auth.action.forgotPassword'),
   }

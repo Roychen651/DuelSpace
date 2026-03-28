@@ -15,10 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -30,7 +30,6 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Provide dummy values so Supabase client init doesn't throw on CI
           VITE_SUPABASE_URL: https://placeholder.supabase.co
-          VITE_SUPABASE_ANON_KEY: placeholder-anon-key
-          VITE_APP_URL: https://dealspace.app
+          VITE_SUPABASE_ANON_KEY: placeholder-anon-key-for-ci-build-only
+          VITE_APP_URL: https://dealspace.vercel.app
