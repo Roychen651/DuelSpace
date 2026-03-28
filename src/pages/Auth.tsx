@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence, type Variants, type Transition } from 'framer-motion'
 import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
@@ -17,23 +17,25 @@ const CARD_VARIANTS = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.45, ease: 'easeOut' as const },
   },
   exit: {
     opacity: 0,
     y: -16,
     scale: 0.97,
-    transition: { duration: 0.2, ease: 'easeIn' },
+    transition: { duration: 0.2, ease: 'easeIn' as const },
   },
 }
 
-const FIELD_VARIANTS = {
+const FIELD_TRANSITION = (i: number): Transition => ({
+  delay: i * 0.07,
+  duration: 0.3,
+  ease: 'easeOut',
+})
+
+const FIELD_VARIANTS: Variants = {
   hidden: { opacity: 0, x: -8 },
-  visible: (i: number) => ({
-    opacity: 1,
-    x: 0,
-    transition: { delay: i * 0.07, duration: 0.3, ease: 'easeOut' },
-  }),
+  visible: { opacity: 1, x: 0 },
 }
 
 // ─── Aurora Background ────────────────────────────────────────────────────────
@@ -340,7 +342,7 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <motion.div custom={0} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
         <AuthInput
           id="signin-email"
           label={t('auth.field.email')}
@@ -354,7 +356,7 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
         />
       </motion.div>
 
-      <motion.div custom={1} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(1)}>
         <AuthInput
           id="signin-password"
           label={t('auth.field.password')}
@@ -378,7 +380,7 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
         />
       </motion.div>
 
-      <motion.div custom={2} variants={FIELD_VARIANTS} initial="hidden" animate="visible"
+      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(2)}
         className="flex justify-end">
         <button
           type="button"
@@ -403,7 +405,7 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
         )}
       </AnimatePresence>
 
-      <motion.div custom={3} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(3)}>
         <PrimaryButton loading={loading}>
           {loading ? t('auth.action.signIn.loading') : (
             <>{t('auth.action.signIn')} <ArrowRight size={15} /></>
@@ -471,7 +473,7 @@ function SignUpForm() {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <motion.div custom={0} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
           <AuthInput
             id="signup-name"
             label={t('auth.field.fullName')}
@@ -484,7 +486,7 @@ function SignUpForm() {
             error={fieldErrors.name}
           />
         </motion.div>
-        <motion.div custom={1} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(1)}>
           <AuthInput
             id="signup-email"
             label={t('auth.field.email')}
@@ -497,7 +499,7 @@ function SignUpForm() {
             error={fieldErrors.email}
           />
         </motion.div>
-        <motion.div custom={2} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(2)}>
           <AuthInput
             id="signup-password"
             label={t('auth.field.password')}
@@ -535,7 +537,7 @@ function SignUpForm() {
           )}
         </AnimatePresence>
 
-        <motion.div custom={3} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+        <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(3)}>
           <PrimaryButton loading={loading}>
             {loading ? t('auth.action.signUp.loading') : (
               <>{t('auth.action.signUp')} <ArrowRight size={15} /></>
@@ -616,7 +618,7 @@ function MagicLinkForm({ onBack }: { onBack: () => void }) {
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <p className="text-sm text-white/50">{t('auth.page.subtitle')}</p>
 
-      <motion.div custom={0} variants={FIELD_VARIANTS} initial="hidden" animate="visible">
+      <motion.div variants={FIELD_VARIANTS} initial="hidden" animate="visible" transition={FIELD_TRANSITION(0)}>
         <AuthInput
           id="magic-email"
           label={t('auth.field.email')}
