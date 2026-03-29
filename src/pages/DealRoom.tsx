@@ -713,6 +713,12 @@ export default function DealRoom() {
     setAccepting(false)
   }, [token, accepting, accepted, clientDetails, locale])
 
+  // ── Handle revision request ────────────────────────────────────────────────
+  const handleRequestRevision = useCallback(async (notes: string) => {
+    if (!token) return
+    await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
+  }, [token])
+
   // ── Handle decline ─────────────────────────────────────────────────────────
   const handleDecline = useCallback(async () => {
     if (!token || declining || declined) return
@@ -1329,6 +1335,7 @@ export default function DealRoom() {
                 vatRate={vatRate}
                 legalConsent={legalConsent}
                 onLegalConsentChange={setLegalConsent}
+                onRequestRevision={handleRequestRevision}
               />
             </div>
             {/* Accept error */}

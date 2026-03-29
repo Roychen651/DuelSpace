@@ -218,8 +218,6 @@ const BLANK_DRAFT: ProposalInsert = {
   expires_at: null,
   last_viewed_at: null,
   include_vat: false,
-  video_url: null,
-  testimonials: [],
 }
 
 // ─── ProposalBuilder ──────────────────────────────────────────────────────────
@@ -363,12 +361,28 @@ export default function ProposalBuilder() {
   // Derive the current real status (prefer live proposal over draft state)
   const currentStatus = currentProposal?.status ?? draft.status ?? 'draft'
   const isAccepted = currentStatus === 'accepted'
+  const isNeedsRevision = currentStatus === 'needs_revision'
   const isAlreadySent = currentStatus === 'sent' || currentStatus === 'viewed'
 
   const handleSend = useCallback(async () => {
     // If already accepted → navigate to deal room (read-only view)
     if (isAccepted && shareUrl) {
       window.open(shareUrl, '_blank')
+      return
+    }
+
+    // If needs revision → flush, clear notes, set status back to sent, open modal
+    if (isNeedsRevision && proposalIdRef.current) {
+      if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null }
+      await updateProposal(proposalIdRef.current, {
+        ...draftRef.current,
+        status: 'sent',
+        revision_notes: null,
+      })
+      setDraft(prev => ({ ...prev, status: 'sent' }))
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      setSendOpen(true)
       return
     }
 
@@ -404,9 +418,9 @@ export default function ProposalBuilder() {
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
     setSendOpen(true)
-  }, [createProposal, updateProposal, isAccepted, isAlreadySent, shareUrl])
+  }, [createProposal, updateProposal, isAccepted, isNeedsRevision, isAlreadySent, shareUrl])
 
-  const canSend = Boolean(draft.project_title?.trim())
+  const canSend = Boolean(draft.project_title?.trim()) || isNeedsRevision
 
   // ── Download signed PDF (builder, accepted state) ────────────────────────────
   const handleDownloadSignedPdf = useCallback(async () => {
@@ -598,37 +612,45 @@ export default function ProposalBuilder() {
             style={{
               background: isAccepted
                 ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                : isAlreadySent
-                  ? 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))'
-                  : canSend
-                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                    : 'rgba(255,255,255,0.06)',
+                : isNeedsRevision
+                  ? 'linear-gradient(135deg, #d97706, #f59e0b)'
+                  : isAlreadySent
+                    ? 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))'
+                    : canSend
+                      ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                      : 'rgba(255,255,255,0.06)',
               boxShadow: isAccepted
                 ? '0 0 18px rgba(34,197,94,0.4)'
-                : isAlreadySent
-                  ? '0 0 12px rgba(99,102,241,0.25)'
-                  : canSend
-                    ? '0 0 18px rgba(99,102,241,0.4)'
-                    : 'none',
-              border: isAlreadySent && !isAccepted ? '1px solid rgba(99,102,241,0.4)' : 'none',
+                : isNeedsRevision
+                  ? '0 0 18px rgba(245,158,11,0.4)'
+                  : isAlreadySent
+                    ? '0 0 12px rgba(99,102,241,0.25)'
+                    : canSend
+                      ? '0 0 18px rgba(99,102,241,0.4)'
+                      : 'none',
+              border: isAlreadySent && !isAccepted && !isNeedsRevision ? '1px solid rgba(99,102,241,0.4)' : 'none',
             }}
-            whileHover={canSend || isAccepted || isAlreadySent ? { scale: 1.03 } : {}}
-            whileTap={canSend || isAccepted || isAlreadySent ? { scale: 0.96 } : {}}
+            whileHover={canSend || isAccepted || isAlreadySent || isNeedsRevision ? { scale: 1.03 } : {}}
+            whileTap={canSend || isAccepted || isAlreadySent || isNeedsRevision ? { scale: 0.96 } : {}}
           >
             {isAccepted
               ? <ShieldCheck size={12} />
-              : isAlreadySent
+              : isNeedsRevision
                 ? <RefreshCw size={12} />
-                : <Send size={12} />}
+                : isAlreadySent
+                  ? <RefreshCw size={12} />
+                  : <Send size={12} />}
             <span className="hidden sm:inline">
               {isAccepted
                 ? (locale === 'he' ? '✓ חתום ואושר' : '✓ Signed & Accepted')
-                : isAlreadySent
-                  ? (locale === 'he' ? 'שלח שוב' : 'Resend Link')
-                  : (locale === 'he' ? 'שלח ללקוח' : 'Send to Client')}
+                : isNeedsRevision
+                  ? (locale === 'he' ? '↑ עדכן ושלח חזרה' : '↑ Update & Resend')
+                  : isAlreadySent
+                    ? (locale === 'he' ? 'שלח שוב' : 'Resend Link')
+                    : (locale === 'he' ? 'שלח ללקוח' : 'Send to Client')}
             </span>
             <span className="sm:hidden">
-              {isAccepted ? '✓' : isAlreadySent ? (locale === 'he' ? 'שלח' : 'Resend') : (locale === 'he' ? 'שלח' : 'Send')}
+              {isAccepted ? '✓' : isNeedsRevision ? '↑' : isAlreadySent ? (locale === 'he' ? 'שלח' : 'Resend') : (locale === 'he' ? 'שלח' : 'Send')}
             </span>
           </motion.button>
         </div>
@@ -646,6 +668,8 @@ export default function ProposalBuilder() {
             onChange={handleChange}
             locale={locale}
             isLocked={isAccepted}
+            needsRevision={isNeedsRevision}
+            revisionNotes={currentProposal?.revision_notes}
           />
         </div>
 

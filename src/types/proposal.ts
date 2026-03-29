@@ -1,6 +1,6 @@
 // ─── DealSpace Proposal Types ─────────────────────────────────────────────────
 
-export type ProposalStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected'
+export type ProposalStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'needs_revision'
 
 export interface AddOn {
   id: string
@@ -69,6 +69,8 @@ export interface Proposal {
   success_template?: string | null
   /** Per-section read time (seconds) accumulated by DealRoom IntersectionObserver */
   section_time?: Record<string, number> | null
+  /** Client's revision request — set by request_proposal_revision RPC */
+  revision_notes?: string | null
   /** Optional video pitch URL (YouTube, Vimeo, or Loom) */
   video_url?: string | null
   /** Social proof testimonials shown in the Deal Room before pricing */
@@ -121,9 +123,10 @@ export function milestonesValid(milestones: PaymentMilestone[]): boolean {
 }
 
 export const STATUS_META: Record<ProposalStatus, { label_en: string; label_he: string; color: string; glow: string }> = {
-  draft:    { label_en: 'Draft',    label_he: 'טיוטה',    color: '#6b7280', glow: 'rgba(107,114,128,0.3)' },
-  sent:     { label_en: 'Sent',     label_he: 'נשלח',     color: '#d4af37', glow: 'rgba(212,175,55,0.4)'  },
-  viewed:   { label_en: 'Viewed',   label_he: 'נצפה',     color: '#6366f1', glow: 'rgba(99,102,241,0.4)'  },
-  accepted: { label_en: 'Accepted', label_he: 'אושר',     color: '#22c55e', glow: 'rgba(34,197,94,0.4)'   },
-  rejected: { label_en: 'Rejected', label_he: 'נדחה',     color: '#ef4444', glow: 'rgba(239,68,68,0.3)'   },
+  draft:          { label_en: 'Draft',        label_he: 'טיוטה',    color: '#6b7280', glow: 'rgba(107,114,128,0.3)' },
+  sent:           { label_en: 'Sent',         label_he: 'נשלח',     color: '#d4af37', glow: 'rgba(212,175,55,0.4)'  },
+  viewed:         { label_en: 'Viewed',       label_he: 'נצפה',     color: '#6366f1', glow: 'rgba(99,102,241,0.4)'  },
+  accepted:       { label_en: 'Accepted',     label_he: 'אושר',     color: '#22c55e', glow: 'rgba(34,197,94,0.4)'   },
+  rejected:       { label_en: 'Rejected',     label_he: 'נדחה',     color: '#ef4444', glow: 'rgba(239,68,68,0.3)'   },
+  needs_revision: { label_en: 'Needs Revision', label_he: 'בעריכה', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)' },
 }

@@ -358,7 +358,7 @@ export default function Dashboard() {
   const sentProposals = proposals.filter(p => p.status !== 'draft')
   const accepted = proposals.filter(p => p.status === 'accepted')
   const winRate = sentProposals.length > 0 ? Math.round((accepted.length / sentProposals.length) * 100) : 0
-  const pendingProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed')
+  const pendingProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
   const revenuePending = pendingProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
   const kpiCurrencyPrefix = (() => {
     const cur = pendingProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
@@ -376,7 +376,11 @@ export default function Dashboard() {
         p.client_name.toLowerCase().includes(q)
       )
     }
+    // Pin needs_revision to the top regardless of sort order
     list.sort((a, b) => {
+      const aNR = a.status === 'needs_revision' ? 0 : 1
+      const bNR = b.status === 'needs_revision' ? 0 : 1
+      if (aNR !== bNR) return aNR - bNR
       let cmp = 0
       if (sortField === 'date') {
         cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -499,7 +503,7 @@ export default function Dashboard() {
 
             {/* Status filter pills */}
             <div className="flex items-center gap-1 flex-wrap">
-              {(['all', 'draft', 'sent', 'viewed', 'accepted', 'rejected'] as const).map(s => (
+              {(['all', 'needs_revision', 'draft', 'sent', 'viewed', 'accepted', 'rejected'] as const).map(s => (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}

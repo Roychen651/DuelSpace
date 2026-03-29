@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ShieldCheck, Loader2, CheckCircle2, Lock } from 'lucide-react'
+import { ShieldCheck, Loader2, CheckCircle2, Lock, MessageSquarePlus, X, Send as SendIcon, CheckCheck } from 'lucide-react'
+import * as Dialog from '@radix-ui/react-dialog'
 import { formatCurrency } from '../../types/proposal'
 import { SignaturePad } from './SignaturePad'
 
@@ -23,6 +24,8 @@ interface CheckoutClimaxProps {
   vatRate?: number
   legalConsent: boolean
   onLegalConsentChange: (v: boolean) => void
+  /** When provided, shows "Request Changes" button and calls this on submit */
+  onRequestRevision?: (notes: string) => Promise<void>
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -47,10 +50,25 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
+  onRequestRevision,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
   const canSign = signatureConfirmed && legalConsent
+
+  // Revision request state
+  const [revisionOpen, setRevisionOpen] = useState(false)
+  const [revisionText, setRevisionText] = useState('')
+  const [requesting, setRequesting] = useState(false)
+  const [revisionDone, setRevisionDone] = useState(false)
+
+  const handleRevisionSubmit = async () => {
+    if (!revisionText.trim() || requesting || !onRequestRevision) return
+    setRequesting(true)
+    await onRequestRevision(revisionText.trim())
+    setRequesting(false)
+    setRevisionDone(true)
+  }
   const vatAmt = Math.round(total * vatRate)
   const totalWithVat = total + vatAmt
   const displayTotal = includeVat ? totalWithVat : total
@@ -65,6 +83,10 @@ export function CheckoutClimax({
         @keyframes checkout-shimmer {
           0%   { transform: translateX(-100%) skewX(-12deg); }
           100% { transform: translateX(220%) skewX(-12deg); }
+        }
+        @keyframes checkout-dialog-in {
+          from { opacity: 0; transform: scale(0.94) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
 
@@ -326,6 +348,169 @@ export function CheckoutClimax({
                   : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
               </p>
             </div>
+
+            {/* ── Request Changes button (only when not accepted + handler provided) ── */}
+            {onRequestRevision && !accepted && (
+              <div className="mt-3">
+                {revisionDone ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5"
+                    style={{
+                      background: 'rgba(245,158,11,0.06)',
+                      border: '1px solid rgba(245,158,11,0.2)',
+                    }}
+                  >
+                    <CheckCheck size={13} style={{ color: '#f59e0b' }} />
+                    <span className="text-[11px] font-semibold" style={{ color: '#fbbf24' }}>
+                      {isHe
+                        ? 'בקשתך נשלחה! נעדכן אותך כשההצעה תתוקן.'
+                        : 'Request sent! We\'ll update you when the proposal is revised.'}
+                    </span>
+                  </motion.div>
+                ) : (
+                  <Dialog.Root open={revisionOpen} onOpenChange={setRevisionOpen}>
+                    <Dialog.Trigger asChild>
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[11px] font-semibold transition-all"
+                        style={{
+                          color: 'rgba(255,255,255,0.35)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: 'rgba(255,255,255,0.025)',
+                        }}
+                        onMouseEnter={e => {
+                          const el = e.currentTarget
+                          el.style.color = '#fbbf24'
+                          el.style.borderColor = 'rgba(245,158,11,0.3)'
+                          el.style.background = 'rgba(245,158,11,0.06)'
+                        }}
+                        onMouseLeave={e => {
+                          const el = e.currentTarget
+                          el.style.color = 'rgba(255,255,255,0.35)'
+                          el.style.borderColor = 'rgba(255,255,255,0.08)'
+                          el.style.background = 'rgba(255,255,255,0.025)'
+                        }}
+                      >
+                        <MessageSquarePlus size={12} />
+                        {isHe ? 'בקשת שינוי בהצעה' : 'Request Changes'}
+                      </button>
+                    </Dialog.Trigger>
+
+                    <Dialog.Portal>
+                      <Dialog.Overlay
+                        className="fixed inset-0 z-[9999]"
+                        style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+                      />
+                      <Dialog.Content
+                        className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4"
+                        style={{ outline: 'none' }}
+                      >
+                        <div
+                          className="w-full max-w-md rounded-3xl p-6"
+                          style={{
+                            background: 'linear-gradient(160deg, rgba(12,12,24,0.98) 0%, rgba(6,6,14,0.99) 100%)',
+                            border: '1px solid rgba(245,158,11,0.2)',
+                            backdropFilter: 'blur(40px)',
+                            WebkitBackdropFilter: 'blur(40px)',
+                            boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 40px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.06)',
+                            animation: 'checkout-dialog-in 0.28s cubic-bezier(0.22,1,0.36,1) both',
+                          }}
+                        >
+                          {/* Header */}
+                          <div className="flex items-start justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                                style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
+                              >
+                                <MessageSquarePlus size={16} style={{ color: '#f59e0b' }} />
+                              </div>
+                              <div>
+                                <Dialog.Title className="text-sm font-black text-white">
+                                  {isHe ? 'בקשת שינוי' : 'Request Changes'}
+                                </Dialog.Title>
+                                <Dialog.Description className="text-[10px] text-white/35 mt-0.5">
+                                  {isHe
+                                    ? 'פרט מה תרצה לשנות — נחזור אליך עם הצעה מעודכנת'
+                                    : 'Describe what you\'d like changed — we\'ll send you a revised offer'}
+                                </Dialog.Description>
+                              </div>
+                            </div>
+                            <Dialog.Close asChild>
+                              <button
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/10 hover:text-white/70"
+                              >
+                                <X size={14} />
+                              </button>
+                            </Dialog.Close>
+                          </div>
+
+                          {/* Textarea */}
+                          <textarea
+                            className="w-full resize-none rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all"
+                            rows={4}
+                            dir={isHe ? 'rtl' : 'ltr'}
+                            placeholder={
+                              isHe
+                                ? 'למשל: "האם ניתן להוריד את תוספת עריכת הוידאו ולקבל הנחה בהתאם?"'
+                                : 'e.g. "Can we remove the video editing add-on for a proportional discount?"'
+                            }
+                            value={revisionText}
+                            onChange={e => setRevisionText(e.target.value)}
+                            style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                            }}
+                            onFocus={e => {
+                              e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.06)'
+                            }}
+                            onBlur={e => {
+                              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                              e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)'
+                            }}
+                          />
+
+                          {/* Actions */}
+                          <div className="mt-4 flex gap-2">
+                            <Dialog.Close asChild>
+                              <button
+                                className="flex-1 rounded-xl py-2.5 text-xs font-semibold text-white/40 transition hover:text-white/70"
+                                style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'transparent' }}
+                              >
+                                {isHe ? 'ביטול' : 'Cancel'}
+                              </button>
+                            </Dialog.Close>
+                            <button
+                              type="button"
+                              onClick={handleRevisionSubmit}
+                              disabled={!revisionText.trim() || requesting}
+                              className="flex flex-[2] items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              style={{
+                                background: 'linear-gradient(135deg, #d97706, #f59e0b)',
+                                boxShadow: '0 0 20px rgba(245,158,11,0.3)',
+                              }}
+                            >
+                              {requesting ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <>
+                                  <SendIcon size={12} />
+                                  {isHe ? 'שלח בקשה' : 'Send Request'}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </Dialog.Content>
+                    </Dialog.Portal>
+                  </Dialog.Root>
+                )}
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

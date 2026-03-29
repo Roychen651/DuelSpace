@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, Clock, GripVertical, CheckCircle2, Send, FileText, AlertCircle } from 'lucide-react'
+import { Eye, Clock, GripVertical, CheckCircle2, Send, FileText, AlertCircle, RotateCcw } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import type { Proposal, ProposalStatus } from '../../types/proposal'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
@@ -16,11 +16,12 @@ interface ColumnDef {
 }
 
 const COLUMNS: ColumnDef[] = [
-  { status: 'draft',    labelEn: 'Drafts',   labelHe: 'טיוטות',  icon: <FileText   size={13} />, accent: '#6b7280' },
-  { status: 'sent',     labelEn: 'Sent',     labelHe: 'נשלחו',   icon: <Send       size={13} />, accent: '#d4af37' },
-  { status: 'viewed',   labelEn: 'Viewed',   labelHe: 'נצפו',    icon: <Eye        size={13} />, accent: '#6366f1' },
-  { status: 'accepted', labelEn: 'Signed',   labelHe: 'חתומים',  icon: <CheckCircle2 size={13} />, accent: '#22c55e' },
-  { status: 'rejected', labelEn: 'Rejected', labelHe: 'נדחו',    icon: <AlertCircle size={13} />, accent: '#ef4444' },
+  { status: 'draft',          labelEn: 'Drafts',        labelHe: 'טיוטות',  icon: <FileText    size={13} />, accent: '#6b7280' },
+  { status: 'sent',           labelEn: 'Sent',          labelHe: 'נשלחו',   icon: <Send        size={13} />, accent: '#d4af37' },
+  { status: 'viewed',         labelEn: 'Viewed',        labelHe: 'נצפו',    icon: <Eye         size={13} />, accent: '#6366f1' },
+  { status: 'needs_revision', labelEn: 'Needs Revision',labelHe: 'בעריכה', icon: <RotateCcw   size={13} />, accent: '#f59e0b' },
+  { status: 'accepted',       labelEn: 'Signed',        labelHe: 'חתומים',  icon: <CheckCircle2 size={13} />, accent: '#22c55e' },
+  { status: 'rejected',       labelEn: 'Rejected',      labelHe: 'נדחו',    icon: <AlertCircle size={13} />, accent: '#ef4444' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

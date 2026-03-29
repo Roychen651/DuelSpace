@@ -4,7 +4,7 @@ import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
-  Film, Quote,
+  Film, Quote, MessageSquarePlus,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
@@ -28,6 +28,10 @@ interface EditorPanelProps {
   locale: string
   /** When true (status === 'accepted'), the editor is read-only */
   isLocked?: boolean
+  /** When true (status === 'needs_revision'), show the negotiation thread panel */
+  needsRevision?: boolean
+  /** The client's revision request text */
+  revisionNotes?: string | null
 }
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
@@ -447,7 +451,7 @@ function ContractTemplatePicker({
 
 // ─── Main EditorPanel ─────────────────────────────────────────────────────────
 
-export function EditorPanel({ draft, onChange, locale, isLocked = false }: EditorPanelProps) {
+export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRevision = false, revisionNotes }: EditorPanelProps) {
   const isHe = locale === 'he'
   const vatRate = getVatRate()
   const showVat = draft.include_vat
@@ -564,6 +568,54 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
               {isHe
                 ? 'לא ניתן לערוך הצעה חתומה. לשינויים, יש לשכפל ולצור טיוטה חדשה.'
                 : 'Signed proposals are immutable. To make changes, duplicate and create a new draft.'}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Negotiation Thread Panel ────────────────────────────────────── */}
+      {needsRevision && revisionNotes && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' as const }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(217,119,6,0.06) 100%)',
+            border: '1px solid rgba(245,158,11,0.3)',
+            boxShadow: '0 0 32px rgba(245,158,11,0.08), inset 0 1px 0 rgba(245,158,11,0.15)',
+          }}
+        >
+          {/* Header bar */}
+          <div
+            className="flex items-center gap-2.5 px-4 py-3"
+            style={{ borderBottom: '1px solid rgba(245,158,11,0.15)' }}
+          >
+            <div
+              className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
+              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}
+            >
+              <MessageSquarePlus size={13} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
+                {isHe ? '🔔 הלקוח ביקש שינויים' : '🔔 Client Requested Changes'}
+              </p>
+              <p className="text-[10px] text-amber-400/50 mt-0.5">
+                {isHe
+                  ? 'ערוך את ההצעה לפי הבקשה ולחץ "עדכן ושלח חזרה"'
+                  : 'Edit the proposal based on the request, then click "Update & Resend"'}
+              </p>
+            </div>
+          </div>
+
+          {/* Notes body */}
+          <div className="px-4 py-3.5">
+            <p
+              className="text-[13px] leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap' }}
+            >
+              {revisionNotes}
             </p>
           </div>
         </motion.div>
