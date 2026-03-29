@@ -6,7 +6,6 @@ import { formatCurrency, DEFAULT_VAT_RATE } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
 
 // ─── Font registration ─────────────────────────────────────────────────────────
-// Full Heebo TTF (Hebrew + Latin) from Google Fonts CDN v28 (CORS-enabled)
 
 Font.register({
   family: 'Heebo',
@@ -16,10 +15,9 @@ Font.register({
     { src: 'https://fonts.gstatic.com/s/heebo/v28/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EICuccg.ttf', fontWeight: 900 },
   ],
 })
-
 Font.registerHyphenationCallback(word => [word])
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Public types ──────────────────────────────────────────────────────────────
 
 export interface PdfOptions {
   proposal: Proposal
@@ -27,351 +25,707 @@ export interface PdfOptions {
   enabledAddOnIds: string[]
   signatureDataUrl: string
   locale: 'he' | 'en'
+  /** Exact moment the signature was captured; defaults to now() */
+  signatureTimestamp?: Date
 }
 
-// ─── Color helper ──────────────────────────────────────────────────────────────
+// ─── Utilities ─────────────────────────────────────────────────────────────────
 
-function getBrandColor(proposal: Proposal): string {
-  const c = proposal.brand_color
+function getBrandColor(p: Proposal): string {
+  const c = p.brand_color
   return c && /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#6366f1'
 }
 
-// ─── Styles factory ────────────────────────────────────────────────────────────
-
-const C = {
-  bg:      '#05050A',
-  surface: '#111118',
-  border:  '#1e1e2e',
-  text:    '#e5e7eb',
-  muted:   '#6b7280',
-  white:   '#ffffff',
-  lavender:'#c4b5fd',
-  success: '#22c55e',
+/** Append a 2-hex-digit alpha to a 6-digit hex color, e.g. '#6366f1' + 0.15 → '#6366f126' */
+function alpha(hex: string, a: number): string {
+  return `${hex}${Math.round(a * 255).toString(16).padStart(2, '0')}`
 }
 
+function getInitials(name?: string | null): string {
+  if (!name) return 'DS'
+  return name.split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
+}
+
+function fmtDate(d: Date | string, locale: 'he' | 'en'): string {
+  return new Date(d).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
+}
+
+function fmtDateTime(d: Date, locale: 'he' | 'en'): string {
+  return d.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+// ─── TipTap HTML → PDF block parser ───────────────────────────────────────────
+
+interface InlineFrag { text: string; bold: boolean; italic: boolean }
+interface HtmlBlock  { type: 'h1' | 'h2' | 'h3' | 'p' | 'li'; frags: InlineFrag[] }
+
+function parseHtml(html: string): HtmlBlock[] {
+  if (!html) return []
+
+  const decode = (s: string) =>
+    s.replace(/&amp;/g,  '&')
+     .replace(/&lt;/g,   '<')
+     .replace(/&gt;/g,   '>')
+     .replace(/&quot;/g, '"')
+     .replace(/&nbsp;/g, ' ')
+     .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(parseInt(n, 10)))
+
+  function inline(src: string): InlineFrag[] {
+    const frags: InlineFrag[] = []
+    const re = /<(strong|b|em|i)(?:[^>]*)>([\s\S]*?)<\/\1>|([^<]+)/gi
+    let m: RegExpExecArray | null
+    while ((m = re.exec(decode(src))) !== null) {
+      if (m[1]) {
+        const tag = m[1].toLowerCase()
+        const t   = m[2].replace(/<[^>]+>/g, '').trim()
+        if (t) frags.push({ text: t, bold: tag === 'strong' || tag === 'b', italic: tag === 'em' || tag === 'i' })
+      } else if (m[3] && m[3].trim()) {
+        frags.push({ text: m[3], bold: false, italic: false })
+      }
+    }
+    if (frags.length === 0) {
+      const plain = decode(src.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
+      if (plain) frags.push({ text: plain, bold: false, italic: false })
+    }
+    return frags
+  }
+
+  const blocks: HtmlBlock[] = []
+  const blockRe = /<(h[1-3]|p|li)(?:[^>]*)>([\s\S]*?)<\/\1>/gi
+  let bm: RegExpExecArray | null
+  let found = false
+  while ((bm = blockRe.exec(html)) !== null) {
+    found = true
+    const tag   = bm[1].toLowerCase()
+    const type: HtmlBlock['type'] = tag === 'h1' ? 'h1' : tag === 'h2' ? 'h2' : tag === 'h3' ? 'h3' : tag === 'li' ? 'li' : 'p'
+    const frags = inline(bm[2])
+    if (frags.length) blocks.push({ type, frags })
+  }
+  if (!found) {
+    const plain = decode(html.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
+    if (plain) blocks.push({ type: 'p', frags: [{ text: plain, bold: false, italic: false }] })
+  }
+  return blocks
+}
+
+// ─── Color palette ─────────────────────────────────────────────────────────────
+
+const C = {
+  bg:      '#070710',
+  surface: '#0E0E1C',
+  card:    '#111120',
+  border:  '#1C1C30',
+  text:    '#E8EAF0',
+  muted:   '#64748B',
+  dim:     '#374151',
+  white:   '#FFFFFF',
+  lavender:'#C4B5FD',
+  success: '#22C55E',
+}
+
+// ─── Style factory (called once per render with resolved brand color) ──────────
+
 function makeStyles(brand: string) {
+  const bDim    = alpha(brand, 0.10)
+  const bBorder = alpha(brand, 0.25)
+
   return StyleSheet.create({
-    page: {
+
+    // ── Page containers ───────────────────────────────────────────────────────
+    coverPage: {
       fontFamily: 'Heebo',
       backgroundColor: C.bg,
-      paddingBottom: 44,
     },
-    // ── Header
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 28,
-      paddingVertical: 14,
+    contentPage: {
+      fontFamily: 'Heebo',
+      backgroundColor: C.bg,
+      paddingTop: 48,      // clears fixed header (38px + 10px gap)
+      paddingBottom: 40,   // clears fixed footer (28px + 12px gap)
+    },
+    certPage: {
+      fontFamily: 'Heebo',
+      backgroundColor: C.bg,
+    },
+
+    // ── Cover ─────────────────────────────────────────────────────────────────
+    coverHero: {
       backgroundColor: brand,
+      paddingHorizontal: 36,
+      paddingTop: 42,
+      paddingBottom: 38,
     },
-    headerBrand: { fontSize: 11, fontWeight: 700, color: C.white },
-    headerBadge: { fontSize: 9,  fontWeight: 400, color: 'rgba(255,255,255,0.8)' },
-    // ── Section
-    section: {
-      paddingHorizontal: 28,
-      paddingTop: 16,
-      paddingBottom: 14,
-      borderBottom: `1px solid ${C.border}`,
+    coverInitialCircle: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
     },
-    sectionTitle: {
-      fontSize: 8,
+    coverInitialText: { fontSize: 15, fontWeight: 900, color: C.white },
+    coverCompany: {
+      fontSize: 12,
       fontWeight: 700,
-      color: brand,
+      color: 'rgba(255,255,255,0.92)',
+      letterSpacing: 0.6,
+      textAlign: 'right',
+      marginBottom: 4,
+    },
+    coverDocLabel: {
+      fontSize: 8,
+      fontWeight: 400,
+      color: 'rgba(255,255,255,0.52)',
+      letterSpacing: 2.2,
       textTransform: 'uppercase',
-      letterSpacing: 1.2,
-      marginBottom: 8,
       textAlign: 'right',
     },
-    // ── Cover
-    projectTitle: { fontSize: 22, fontWeight: 900, color: C.text, marginBottom: 6, textAlign: 'right' },
-    coverMeta: { fontSize: 9, color: C.muted, textAlign: 'right', marginBottom: 2 },
-    // ── Two-column party row
-    partyRow: {
-      flexDirection: 'row',
-      gap: 10,
-      marginTop: 4,
-    },
-    partyBox: {
+    coverAccentBar: { height: 3, backgroundColor: alpha(brand, 0.45) },
+    coverBody: {
+      paddingHorizontal: 36,
+      paddingTop: 38,
       flex: 1,
-      borderRadius: 5,
-      padding: 10,
-      backgroundColor: C.surface,
-      border: `1px solid ${C.border}`,
     },
-    partyLabel: {
+    coverTitle: {
+      fontSize: 26,
+      fontWeight: 900,
+      color: C.white,
+      textAlign: 'right',
+      marginBottom: 28,
+      lineHeight: 1.3,
+    },
+    coverPreparedLabel: {
       fontSize: 7,
       fontWeight: 700,
       color: brand,
+      letterSpacing: 2,
       textTransform: 'uppercase',
-      letterSpacing: 0.9,
-      marginBottom: 5,
-      textAlign: 'right',
-    },
-    partyName: { fontSize: 10, fontWeight: 700, color: C.text, textAlign: 'right', marginBottom: 2 },
-    partyMeta: { fontSize: 8, color: C.muted, textAlign: 'right', marginBottom: 2 },
-    // ── Description
-    descText: { fontSize: 9.5, color: 'rgba(229,231,235,0.65)', lineHeight: 1.65, textAlign: 'right' },
-    // ── Table
-    tableHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      backgroundColor: C.surface,
-      borderRadius: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      marginBottom: 2,
-    },
-    tableHeaderText: {
-      fontSize: 7.5, fontWeight: 700, color: C.muted,
-      textTransform: 'uppercase', letterSpacing: 0.8,
-    },
-    tableRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      borderBottom: `1px solid ${C.border}`,
-    },
-    tableRowLabel: { fontSize: 9.5, color: C.text, flex: 1, textAlign: 'right' },
-    tableRowPrice: { fontSize: 9.5, color: C.lavender, fontWeight: 700, textAlign: 'left' },
-    // ── VAT
-    vatBox: {
-      marginHorizontal: 28,
-      marginTop: 8,
-      borderRadius: 6,
-      padding: 10,
-      backgroundColor: `${brand}10`,
-      border: `1px solid ${brand}25`,
-    },
-    vatRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    vatLabel: { fontSize: 9, color: 'rgba(229,231,235,0.5)', textAlign: 'right' },
-    vatValue: { fontSize: 9, color: 'rgba(229,231,235,0.5)', textAlign: 'left', fontWeight: 700 },
-    vatDivider: { height: 1, backgroundColor: C.border, marginVertical: 5 },
-    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text, textAlign: 'right' },
-    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.lavender, textAlign: 'left' },
-    // ── Grand total
-    totalBox: {
-      marginHorizontal: 28,
-      marginTop: 10,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      backgroundColor: 'rgba(30,30,60,0.9)',
-      border: `1px solid ${brand}50`,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    totalLabel: { fontSize: 11, fontWeight: 700, color: C.text, textAlign: 'right' },
-    totalValue: { fontSize: 16, fontWeight: 900, color: C.lavender, textAlign: 'left' },
-    // ── Milestones
-    milestoneRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 4,
-      backgroundColor: C.surface,
-      marginBottom: 3,
-    },
-    milestoneLeft: { flex: 1 },
-    milestoneName: { fontSize: 9.5, color: C.text, textAlign: 'right' },
-    milestonePct: { fontSize: 8, color: C.muted, textAlign: 'right' },
-    milestoneAmt: { fontSize: 10, fontWeight: 700, color: C.lavender },
-    // ── Terms
-    termsParagraph: {
-      fontSize: 8,
-      color: 'rgba(107,114,128,0.9)',
-      lineHeight: 1.6,
       textAlign: 'right',
       marginBottom: 6,
     },
-    // ── Signature
-    sigRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-    sigBox: {
-      width: 130, height: 60, borderRadius: 6,
-      border: `1px solid ${C.success}`,
-      backgroundColor: C.surface,
-      overflow: 'hidden',
+    coverClientName: {
+      fontSize: 15,
+      fontWeight: 700,
+      color: C.text,
+      textAlign: 'right',
+      marginBottom: 3,
     },
-    sigImage: { width: '100%', height: '100%', objectFit: 'contain' },
-    sigMeta: { flex: 1 },
-    sigBadge: { fontSize: 9, fontWeight: 700, color: C.success, marginBottom: 5, textAlign: 'right' },
-    sigDetail: { fontSize: 8, color: C.muted, marginBottom: 3, textAlign: 'right' },
-    sigHash: { fontSize: 7, color: 'rgba(107,114,128,0.5)', marginTop: 4, textAlign: 'right' },
-    // ── Footer
-    footer: {
+    coverClientCompany: {
+      fontSize: 9.5,
+      color: C.muted,
+      textAlign: 'right',
+    },
+    coverMetaRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 20,
+      marginTop: 36,
+      paddingTop: 16,
+      borderTop: `1px solid ${C.border}`,
+    },
+    coverMetaText: { fontSize: 8, color: C.muted },
+
+    // ── Fixed page header (content pages) ─────────────────────────────────────
+    pageHeader: {
       position: 'absolute',
-      bottom: 14,
-      left: 28,
-      right: 28,
+      top: 0, left: 0, right: 0,
+      height: 38,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 28,
+      backgroundColor: C.bg,
+      borderBottom: `1px solid ${C.border}`,
+    },
+    pageHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    pageHeaderBar:  { width: 3, height: 13, backgroundColor: brand, borderRadius: 2 },
+    pageHeaderCompany: { fontSize: 8, fontWeight: 700, color: C.text },
+    pageHeaderDoc:     { fontSize: 7.5, color: C.muted },
+    pageHeaderPage:    { fontSize: 7.5, color: C.muted },
+
+    // ── Fixed page footer (content pages) ─────────────────────────────────────
+    pageFooter: {
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      height: 28,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 28,
+      borderTop: `1px solid ${C.border}`,
+    },
+    pageFooterBrand: { fontSize: 7, fontWeight: 700, color: brand },
+    pageFooterText:  { fontSize: 7, color: C.dim },
+
+    // ── Section chrome ─────────────────────────────────────────────────────────
+    section: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 12 },
+    sectionTitle: {
+      fontSize: 7.5,
+      fontWeight: 700,
+      color: brand,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      textAlign: 'right',
+      marginBottom: 10,
+      paddingBottom: 6,
+      borderBottom: `1.5px solid ${bBorder}`,
+    },
+    sectionDivider: { height: 1, backgroundColor: C.border, marginHorizontal: 28 },
+
+    // ── Parties ────────────────────────────────────────────────────────────────
+    partyRow: { flexDirection: 'row', gap: 12 },
+    partyBox: {
+      flex: 1,
+      borderRadius: 6,
+      padding: 12,
+      backgroundColor: C.card,
+      border: `1px solid ${C.border}`,
+    },
+    partyLabel: {
+      fontSize: 6.5,
+      fontWeight: 700,
+      color: brand,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      textAlign: 'right',
+      marginBottom: 6,
+      paddingBottom: 4,
+      borderBottom: `1px solid ${bBorder}`,
+    },
+    partyName:  { fontSize: 10.5, fontWeight: 700, color: C.text,  textAlign: 'right', marginBottom: 3 },
+    partyMeta:  { fontSize: 8,    fontWeight: 400, color: C.muted, textAlign: 'right', marginBottom: 2, lineHeight: 1.45 },
+
+    // ── Description / HTML blocks ──────────────────────────────────────────────
+    descText:   { fontSize: 9, color: 'rgba(232,234,240,0.65)', lineHeight: 1.7, textAlign: 'right' },
+    htmlH1:     { fontSize: 13, fontWeight: 900, color: C.text,  textAlign: 'right', marginBottom: 5, marginTop: 10 },
+    htmlH2:     { fontSize: 11, fontWeight: 700, color: C.text,  textAlign: 'right', marginBottom: 4, marginTop: 8 },
+    htmlH3:     { fontSize: 10, fontWeight: 700, color: brand,   textAlign: 'right', marginBottom: 3, marginTop: 7 },
+    htmlP:      { fontSize: 8.5, color: 'rgba(232,234,240,0.70)', lineHeight: 1.65, textAlign: 'right', marginBottom: 5 },
+    htmlLi:     { fontSize: 8.5, color: 'rgba(232,234,240,0.70)', lineHeight: 1.65, textAlign: 'right', marginBottom: 3, paddingRight: 10 },
+    htmlBold:   { fontWeight: 700, color: C.text },
+
+    // ── Pricing table ──────────────────────────────────────────────────────────
+    tableHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      borderTop: `1px solid ${C.border}`,
-      paddingTop: 6,
+      alignItems: 'center',
+      backgroundColor: C.surface,
+      borderRadius: 4,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      marginBottom: 2,
     },
-    footerText: { fontSize: 7, color: 'rgba(107,114,128,0.6)' },
+    tableHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
+    tableRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottom: `1px solid ${C.border}`,
+    },
+    tableRowHighlight: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottom: `1px solid ${C.border}`,
+      backgroundColor: bDim,
+    },
+    tableLabel:    { fontSize: 9.5, color: C.text,  flex: 1, textAlign: 'right' },
+    tableLabelSub: { fontSize: 7.5, color: C.muted, flex: 1, textAlign: 'right', marginTop: 1 },
+    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, minWidth: 80, textAlign: 'left' },
+
+    // ── VAT box ────────────────────────────────────────────────────────────────
+    vatBox: {
+      marginHorizontal: 28,
+      marginTop: 10,
+      borderRadius: 6,
+      padding: 12,
+      backgroundColor: bDim,
+      border: `1px solid ${bBorder}`,
+    },
+    vatRow:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    vatLabel:      { fontSize: 8.5, color: 'rgba(232,234,240,0.50)', textAlign: 'right' },
+    vatValue:      { fontSize: 8.5, fontWeight: 700, color: 'rgba(232,234,240,0.50)' },
+    vatDivider:    { height: 1, backgroundColor: C.border, marginVertical: 6 },
+    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text,     textAlign: 'right' },
+    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.lavender },
+
+    // ── Grand total ────────────────────────────────────────────────────────────
+    totalBox: {
+      marginHorizontal: 28,
+      marginTop: 12,
+      borderRadius: 8,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      backgroundColor: C.card,
+      border: `1.5px solid ${brand}`,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    totalLabel: { fontSize: 11, fontWeight: 700, color: C.text,     textAlign: 'right' },
+    totalValue: { fontSize: 20, fontWeight: 900, color: C.lavender },
+
+    // ── Milestones ─────────────────────────────────────────────────────────────
+    milestoneHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.surface,
+      borderRadius: 4,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      marginBottom: 2,
+    },
+    milestoneHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
+    milestoneRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottom: `1px solid ${C.border}`,
+    },
+    milestoneNumBadge: {
+      width: 20, height: 20, borderRadius: 10,
+      backgroundColor: bDim,
+      border: `1px solid ${bBorder}`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+      flexShrink: 0,
+    },
+    milestoneNumText: { fontSize: 7.5, fontWeight: 700, color: brand },
+    milestoneName:    { fontSize: 9.5, color: C.text,    textAlign: 'right', flex: 1 },
+    milestonePct:     { fontSize: 8.5, color: C.muted,   fontWeight: 700, width: 50, textAlign: 'center' },
+    milestoneAmt:     { fontSize: 10,  color: C.lavender, fontWeight: 700, width: 80, textAlign: 'left' },
+    milestoneBarBg:   { height: 2, backgroundColor: C.border, borderRadius: 1, marginTop: 3 },
+    milestoneBarFill: { height: 2, backgroundColor: brand,    borderRadius: 1 },
+
+    // ── Terms ──────────────────────────────────────────────────────────────────
+    termsPara: { fontSize: 8, color: 'rgba(100,116,139,0.9)', lineHeight: 1.65, textAlign: 'right', marginBottom: 6 },
+
+    // ── Signature Certificate page ─────────────────────────────────────────────
+    certHero: {
+      backgroundColor: brand,
+      paddingHorizontal: 36,
+      paddingVertical: 26,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    certHeroTitle: { fontSize: 16, fontWeight: 900, color: C.white, textAlign: 'right' },
+    certHeroSub:   { fontSize: 8.5, color: 'rgba(255,255,255,0.60)', textAlign: 'right', marginTop: 4 },
+    certCheckCircle: {
+      width: 42, height: 42, borderRadius: 21,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    certCheckText: { fontSize: 18, fontWeight: 900, color: C.white },
+    certBody: { paddingHorizontal: 36, paddingTop: 26, paddingBottom: 36 },
+
+    certSigRow: { flexDirection: 'row', gap: 20, marginBottom: 22 },
+    certSigBox: {
+      width: 160, height: 80,
+      borderRadius: 8,
+      border: `1.5px solid ${C.success}`,
+      backgroundColor: C.card,
+      overflow: 'hidden',
+      flexShrink: 0,
+    },
+    certSigImage:  { width: '100%', height: '100%', objectFit: 'contain' },
+    certSigMeta:   { flex: 1 },
+    certSigBadge:  { fontSize: 10, fontWeight: 700, color: C.success, marginBottom: 8, textAlign: 'right' },
+    certSigLine:   { fontSize: 8.5, color: C.muted,  textAlign: 'right', marginBottom: 3, lineHeight: 1.5 },
+    certSigValue:  { fontWeight: 700, color: C.text },
+
+    certTokenBox: {
+      borderRadius: 6,
+      border: `1px dashed ${bBorder}`,
+      backgroundColor: bDim,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 14,
+    },
+    certTokenLabel: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1.5, textTransform: 'uppercase', textAlign: 'right', marginBottom: 5 },
+    certTokenValue: { fontSize: 8, color: C.text, textAlign: 'right', letterSpacing: 0.5 },
+
+    certAuditBox: {
+      borderRadius: 8,
+      border: `1px solid ${C.border}`,
+      backgroundColor: C.card,
+      padding: 14,
+      marginBottom: 14,
+    },
+    certAuditTitle: {
+      fontSize: 7.5, fontWeight: 700, color: brand,
+      letterSpacing: 1.5, textTransform: 'uppercase',
+      textAlign: 'right', marginBottom: 10,
+      paddingBottom: 6, borderBottom: `1px solid ${C.border}`,
+    },
+    certAuditRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 4,
+      borderBottom: `1px solid rgba(28,28,48,0.6)`,
+    },
+    certAuditRowLast: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 4,
+    },
+    certAuditLabel: { fontSize: 7.5, color: C.muted, textAlign: 'right' },
+    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, maxWidth: 260, textAlign: 'left' },
+
+    certLegalNote: {
+      fontSize: 7,
+      color: C.dim,
+      lineHeight: 1.6,
+      textAlign: 'right',
+      borderTop: `1px solid ${C.border}`,
+      paddingTop: 10,
+    },
+    certFooter: {
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      height: 30,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 36,
+      borderTop: `1px solid ${C.border}`,
+    },
+    certFooterBrand: { fontSize: 7, fontWeight: 700, color: brand },
+    certFooterText:  { fontSize: 7, color: C.dim },
   })
 }
 
-// ─── PDF Document component ───────────────────────────────────────────────────
+// ─── Inline HTML renderer helper ───────────────────────────────────────────────
 
-function ProposalDocument({ proposal, totalAmount, enabledAddOnIds, signatureDataUrl, locale }: PdfOptions) {
-  const isHe = locale === 'he'
-  const brand = getBrandColor(proposal)
-  const s = makeStyles(brand)
+function HtmlBlocks({ blocks, s }: { blocks: HtmlBlock[]; s: ReturnType<typeof makeStyles> }) {
+  return (
+    <>
+      {blocks.map((block, i) => {
+        const base = block.type === 'h1' ? s.htmlH1 : block.type === 'h2' ? s.htmlH2 : block.type === 'h3' ? s.htmlH3 : block.type === 'li' ? s.htmlLi : s.htmlP
+        return (
+          <Text key={i} style={base}>
+            {block.type === 'li' ? '• ' : ''}
+            {block.frags.map((f, j) => (
+              <Text key={j} style={f.bold ? s.htmlBold : {}}>
+                {f.text}
+              </Text>
+            ))}
+          </Text>
+        )
+      })}
+    </>
+  )
+}
+
+// ─── PDF Document ──────────────────────────────────────────────────────────────
+
+function ProposalDocument(opts: PdfOptions) {
+  const { proposal, totalAmount, enabledAddOnIds, signatureDataUrl, locale } = opts
+  const sigTs     = opts.signatureTimestamp ?? new Date()
+  const isHe      = locale === 'he'
+  const brand     = getBrandColor(proposal)
+  const s         = makeStyles(brand)
 
   const enabledAddOns = proposal.add_ons.filter(a => enabledAddOnIds.includes(a.id))
-  const milestones = proposal.payment_milestones ?? []
+  const milestones    = proposal.payment_milestones ?? []
 
   const vatRate = (() => {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('dealspace:vat-rate') : null
-    const v = stored ? parseFloat(stored) : DEFAULT_VAT_RATE
-    return isNaN(v) ? DEFAULT_VAT_RATE : v
+    try {
+      const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? '')
+      return isNaN(v) ? DEFAULT_VAT_RATE : v
+    } catch { return DEFAULT_VAT_RATE }
   })()
-  const vatAmt = proposal.include_vat ? Math.round(totalAmount * vatRate) : 0
+
+  const vatAmt       = proposal.include_vat ? Math.round(totalAmount * vatRate) : 0
   const totalWithVat = totalAmount + vatAmt
   const displayTotal = proposal.include_vat ? totalWithVat : totalAmount
 
-  const dateStr = new Date().toLocaleDateString(isHe ? 'he-IL' : 'en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+  const creator       = proposal.creator_info
+  const companyName   = creator?.company_name ?? 'DealSpace'
+  const initials      = getInitials(creator?.company_name)
+  const projectTitle  = proposal.project_title || (isHe ? 'הצעת מחיר' : 'Proposal')
+  const dateStr       = fmtDate(sigTs, locale)
+  const dateTimeStr   = fmtDateTime(sigTs, locale)
+  const createdStr    = fmtDate(proposal.created_at, locale)
 
-  const creator = proposal.creator_info
+  const descBlocks = proposal.description ? parseHtml(proposal.description) : []
 
   return (
-    <Document title={proposal.project_title || 'DealSpace Proposal'} author="DealSpace" creator="DealSpace">
-      <Page size="A4" style={s.page}>
+    <Document
+      title={projectTitle}
+      author={companyName}
+      creator="DealSpace"
+      producer="DealSpace"
+      subject={isHe ? 'הסכם התקשרות והצעת מחיר' : 'Proposal & Service Agreement'}
+    >
 
-        {/* ── Header bar ──────────────────────────────────────────────────── */}
-        <View style={s.header}>
-          <Text style={s.headerBrand}>
-            {creator?.company_name ? creator.company_name : 'DealSpace'}
-          </Text>
-          <Text style={s.headerBadge}>
-            {isHe ? 'הצעת מחיר חתומה' : 'Signed Proposal'}
-          </Text>
-        </View>
+      {/* ════════════════════════════════════════════════════════════════════
+          PAGE 1 — COVER
+      ════════════════════════════════════════════════════════════════════ */}
+      <Page size="A4" style={s.coverPage}>
 
-        {/* ── Project title ────────────────────────────────────────────────── */}
-        <View style={s.section}>
-          <Text style={s.projectTitle}>
-            {proposal.project_title || (isHe ? 'הצעת מחיר' : 'Proposal')}
-          </Text>
-          <Text style={s.coverMeta}>
-            {isHe ? `תאריך: ${dateStr}` : `Date: ${dateStr}`}
-          </Text>
-          {proposal.expires_at && (
-            <Text style={s.coverMeta}>
-              {isHe
-                ? `בתוקף עד: ${new Date(proposal.expires_at).toLocaleDateString('he-IL')}`
-                : `Valid until: ${new Date(proposal.expires_at).toLocaleDateString('en-US')}`}
+        {/* Brand hero strip */}
+        <View style={s.coverHero}>
+          {/* Decorative circle top-right */}
+          <View style={{ position: 'absolute', top: -24, right: -24, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(255,255,255,0.07)' }} />
+          {/* Decorative circle bottom-left */}
+          <View style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.10)' }} />
+
+          <View>
+            <View style={s.coverInitialCircle}>
+              <Text style={s.coverInitialText}>{initials}</Text>
+            </View>
+            <Text style={s.coverCompany}>{companyName}</Text>
+            <Text style={s.coverDocLabel}>
+              {isHe ? 'הסכם התקשרות והצעת מחיר' : 'PROPOSAL & SERVICE AGREEMENT'}
             </Text>
-          )}
+          </View>
         </View>
 
-        {/* ── Creator + Client side-by-side ────────────────────────────────── */}
-        <View style={[s.section, { paddingTop: 14 }]}>
+        {/* Thin accent divider */}
+        <View style={s.coverAccentBar} />
+
+        {/* Body */}
+        <View style={s.coverBody}>
+          <Text style={s.coverTitle}>{projectTitle}</Text>
+
+          <View style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, marginBottom: 0 }}>
+            <Text style={s.coverPreparedLabel}>{isHe ? 'הוכן עבור' : 'PREPARED FOR'}</Text>
+            <Text style={s.coverClientName}>
+              {proposal.client_name || (isHe ? 'לקוח' : 'Client')}
+            </Text>
+            {proposal.client_company_name
+              ? <Text style={s.coverClientCompany}>{proposal.client_company_name}</Text>
+              : null}
+          </View>
+
+          <View style={s.coverMetaRow}>
+            <Text style={s.coverMetaText}>{dateStr}</Text>
+            <Text style={s.coverMetaText}>·</Text>
+            <Text style={s.coverMetaText}>
+              {isHe ? 'מזהה: ' : 'ID: '}{proposal.public_token.slice(0, 14)}…
+            </Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          PAGE 2+ — MAIN CONTENT  (auto-paginates; fixed header + footer)
+      ════════════════════════════════════════════════════════════════════ */}
+      <Page size="A4" style={s.contentPage}>
+
+        {/* Fixed header — repeated on every content page */}
+        <View style={s.pageHeader} fixed>
+          <View style={s.pageHeaderLeft}>
+            <View style={s.pageHeaderBar} />
+            <Text style={s.pageHeaderCompany}>{companyName}</Text>
+            <Text style={s.pageHeaderDoc}>  ·  {projectTitle}</Text>
+          </View>
+          <Text style={s.pageHeaderPage} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+        </View>
+
+        {/* ── Parties ─────────────────────────────────────────────────────── */}
+        <View style={s.section} wrap={false}>
+          <Text style={s.sectionTitle}>
+            {isHe ? 'צדדים להסכם' : 'PARTIES TO THE AGREEMENT'}
+          </Text>
           <View style={s.partyRow}>
-            {/* Creator (service provider) */}
+
+            {/* Creator — Side A */}
             <View style={s.partyBox}>
-              <Text style={s.partyLabel}>{isHe ? 'נותן השירות' : 'Service Provider'}</Text>
-              {creator?.company_name ? (
-                <Text style={s.partyName}>{creator.company_name}</Text>
-              ) : null}
-              {creator?.full_name ? (
-                <Text style={s.partyMeta}>{creator.full_name}</Text>
-              ) : null}
-              {creator?.tax_id ? (
-                <Text style={s.partyMeta}>
-                  {isHe ? `ח.פ.: ${creator.tax_id}` : `Tax ID: ${creator.tax_id}`}
-                </Text>
-              ) : null}
-              {creator?.address ? (
-                <Text style={s.partyMeta}>{creator.address}</Text>
-              ) : null}
-              {creator?.phone ? (
-                <Text style={s.partyMeta}>{creator.phone}</Text>
-              ) : null}
-              {creator?.signatory_name ? (
-                <Text style={s.partyMeta}>
-                  {isHe ? `מורשה חתימה: ${creator.signatory_name}` : `Signatory: ${creator.signatory_name}`}
-                </Text>
-              ) : null}
+              <Text style={s.partyLabel}>{isHe ? "צד א' — נותן השירות" : "SIDE A — SERVICE PROVIDER"}</Text>
+              {creator?.company_name   ? <Text style={s.partyName}>{creator.company_name}</Text> : null}
+              {creator?.full_name      ? <Text style={s.partyMeta}>{creator.full_name}</Text> : null}
+              {creator?.tax_id         ? <Text style={s.partyMeta}>{isHe ? `ח.פ / עוסק: ${creator.tax_id}` : `Tax ID: ${creator.tax_id}`}</Text> : null}
+              {creator?.address        ? <Text style={s.partyMeta}>{creator.address}</Text> : null}
+              {creator?.phone          ? <Text style={s.partyMeta}>{creator.phone}</Text> : null}
+              {creator?.signatory_name ? <Text style={s.partyMeta}>{isHe ? `מורשה חתימה: ${creator.signatory_name}` : `Authorized Signatory: ${creator.signatory_name}`}</Text> : null}
             </View>
 
-            {/* Client */}
+            {/* Client — Side B */}
             <View style={s.partyBox}>
-              <Text style={s.partyLabel}>{isHe ? 'הלקוח' : 'Client'}</Text>
-              {proposal.client_name ? (
-                <Text style={s.partyName}>{proposal.client_name}</Text>
-              ) : null}
-              {proposal.client_company_name ? (
-                <Text style={s.partyMeta}>{proposal.client_company_name}</Text>
-              ) : null}
-              {proposal.client_tax_id ? (
-                <Text style={s.partyMeta}>
-                  {isHe ? `ח.פ./ת.ז.: ${proposal.client_tax_id}` : `Tax ID: ${proposal.client_tax_id}`}
-                </Text>
-              ) : null}
-              {proposal.client_address ? (
-                <Text style={s.partyMeta}>{proposal.client_address}</Text>
-              ) : null}
-              {proposal.client_email ? (
-                <Text style={s.partyMeta}>{proposal.client_email}</Text>
-              ) : null}
-              {proposal.client_signer_role ? (
-                <Text style={s.partyMeta}>
-                  {isHe ? `תפקיד: ${proposal.client_signer_role}` : `Role: ${proposal.client_signer_role}`}
-                </Text>
-              ) : null}
+              <Text style={s.partyLabel}>{isHe ? "צד ב' — הלקוח" : "SIDE B — CLIENT"}</Text>
+              {proposal.client_name         ? <Text style={s.partyName}>{proposal.client_name}</Text> : null}
+              {proposal.client_company_name ? <Text style={s.partyMeta}>{proposal.client_company_name}</Text> : null}
+              {proposal.client_tax_id       ? <Text style={s.partyMeta}>{isHe ? `ח.פ / ת.ז.: ${proposal.client_tax_id}` : `Tax ID: ${proposal.client_tax_id}`}</Text> : null}
+              {proposal.client_address      ? <Text style={s.partyMeta}>{proposal.client_address}</Text> : null}
+              {proposal.client_email        ? <Text style={s.partyMeta}>{proposal.client_email}</Text> : null}
+              {proposal.client_signer_role  ? <Text style={s.partyMeta}>{isHe ? `תפקיד: ${proposal.client_signer_role}` : `Role: ${proposal.client_signer_role}`}</Text> : null}
             </View>
+
           </View>
         </View>
 
-        {/* ── Description ─────────────────────────────────────────────────── */}
+        <View style={s.sectionDivider} />
+
+        {/* ── Project description ─────────────────────────────────────────── */}
         {proposal.description ? (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>{isHe ? 'תיאור הפרויקט' : 'Project Description'}</Text>
-            <Text style={s.descText}>{proposal.description}</Text>
-          </View>
+          <>
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>{isHe ? 'תיאור הפרויקט' : 'PROJECT DESCRIPTION'}</Text>
+              {descBlocks.length > 0
+                ? <HtmlBlocks blocks={descBlocks} s={s} />
+                : <Text style={s.descText}>{proposal.description}</Text>}
+            </View>
+            <View style={s.sectionDivider} />
+          </>
         ) : null}
 
-        {/* ── Price breakdown ─────────────────────────────────────────────── */}
-        <View style={[s.section, { borderBottom: 'none' }]}>
-          <Text style={s.sectionTitle}>{isHe ? 'פירוט מחירים' : 'Price Breakdown'}</Text>
+        {/* ── Pricing breakdown ───────────────────────────────────────────── */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>{isHe ? 'פירוט מחירים ושירותים' : 'SERVICES & PRICING'}</Text>
+
+          {/* Table header */}
           <View style={s.tableHeader}>
-            <Text style={[s.tableHeaderText, { textAlign: 'right', flex: 1 }]}>
-              {isHe ? 'פריט' : 'Item'}
+            <Text style={[s.tableHeaderCell, { flex: 1, textAlign: 'right' }]}>
+              {isHe ? 'פריט / שירות' : 'ITEM / SERVICE'}
             </Text>
-            <Text style={[s.tableHeaderText, { textAlign: 'left' }]}>
-              {isHe ? 'מחיר' : 'Price'}
+            <Text style={[s.tableHeaderCell, { textAlign: 'left' }]}>
+              {isHe ? 'מחיר' : 'PRICE'}
             </Text>
           </View>
-          <View style={s.tableRow}>
-            <Text style={s.tableRowLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
-            <Text style={s.tableRowPrice}>{formatCurrency(proposal.base_price, proposal.currency)}</Text>
+
+          {/* Base row */}
+          <View style={s.tableRowHighlight} wrap={false}>
+            <Text style={s.tableLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
+            <Text style={s.tablePrice}>{formatCurrency(proposal.base_price, proposal.currency)}</Text>
           </View>
+
+          {/* Add-on rows */}
           {enabledAddOns.map(a => (
-            <View key={a.id} style={s.tableRow}>
-              <Text style={s.tableRowLabel}>+ {a.label}</Text>
-              <Text style={s.tableRowPrice}>{formatCurrency(a.price, proposal.currency)}</Text>
+            <View key={a.id} style={s.tableRow} wrap={false}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.tableLabel}>{a.label}</Text>
+                {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
+              </View>
+              <Text style={s.tablePrice}>{formatCurrency(a.price, proposal.currency)}</Text>
             </View>
           ))}
         </View>
 
-        {/* ── VAT breakdown ───────────────────────────────────────────────── */}
+        {/* ── VAT breakdown ────────────────────────────────────────────────── */}
         {proposal.include_vat && (
-          <View style={s.vatBox}>
+          <View style={s.vatBox} wrap={false}>
             <View style={s.vatRow}>
-              <Text style={s.vatLabel}>{isHe ? 'לפני מע״מ' : 'Before VAT'}</Text>
+              <Text style={s.vatLabel}>{isHe ? 'סה״כ לפני מע״מ' : 'Subtotal (ex. VAT)'}</Text>
               <Text style={s.vatValue}>{formatCurrency(totalAmount, proposal.currency)}</Text>
             </View>
             <View style={s.vatRow}>
               <Text style={s.vatLabel}>
-                {isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}
+                {isHe ? `מע״מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}
               </Text>
               <Text style={s.vatValue}>{formatCurrency(vatAmt, proposal.currency)}</Text>
             </View>
@@ -383,8 +737,8 @@ function ProposalDocument({ proposal, totalAmount, enabledAddOnIds, signatureDat
           </View>
         )}
 
-        {/* ── Grand total ─────────────────────────────────────────────────── */}
-        <View style={s.totalBox}>
+        {/* ── Grand total ──────────────────────────────────────────────────── */}
+        <View style={s.totalBox} wrap={false}>
           <Text style={s.totalLabel}>
             {isHe
               ? (proposal.include_vat ? 'סה״כ לתשלום (כולל מע״מ)' : 'סה״כ להשקעה')
@@ -393,99 +747,194 @@ function ProposalDocument({ proposal, totalAmount, enabledAddOnIds, signatureDat
           <Text style={s.totalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
         </View>
 
-        {/* ── Payment milestones ──────────────────────────────────────────── */}
+        {/* ── Payment milestones ───────────────────────────────────────────── */}
         {milestones.length > 0 && (
-          <View style={[s.section, { marginTop: 14 }]}>
-            <Text style={s.sectionTitle}>{isHe ? 'תנאי תשלום — אבני דרך' : 'Payment Terms — Milestones'}</Text>
-            {milestones.map((m, i) => {
-              const amt = Math.round((m.percentage / 100) * displayTotal)
-              return (
-                <View key={m.id} style={s.milestoneRow}>
-                  <View style={s.milestoneLeft}>
-                    <Text style={s.milestoneName}>{m.name || (isHe ? `אבן דרך ${i + 1}` : `Milestone ${i + 1}`)}</Text>
+          <>
+            <View style={[s.section, { marginTop: 8 }]}>
+              <Text style={s.sectionTitle}>
+                {isHe ? 'לוח תשלומים — אבני דרך' : 'PAYMENT SCHEDULE — MILESTONES'}
+              </Text>
+
+              {/* Header row */}
+              <View style={s.milestoneHeader}>
+                <View style={{ width: 30 }} />
+                <Text style={[s.milestoneHeaderCell, { flex: 1, textAlign: 'right' }]}>
+                  {isHe ? 'שלב / מטרה' : 'MILESTONE'}
+                </Text>
+                <Text style={[s.milestoneHeaderCell, { width: 50, textAlign: 'center' }]}>%</Text>
+                <Text style={[s.milestoneHeaderCell, { width: 80, textAlign: 'left' }]}>
+                  {isHe ? 'סכום' : 'AMOUNT'}
+                </Text>
+              </View>
+
+              {milestones.map((m, i) => {
+                const amt = Math.round((m.percentage / 100) * displayTotal)
+                return (
+                  <View key={m.id} style={s.milestoneRow} wrap={false}>
+                    <View style={s.milestoneNumBadge}>
+                      <Text style={s.milestoneNumText}>{i + 1}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.milestoneName}>
+                        {m.name || (isHe ? `אבן דרך ${i + 1}` : `Milestone ${i + 1}`)}
+                      </Text>
+                      <View style={s.milestoneBarBg}>
+                        <View style={[s.milestoneBarFill, { width: `${m.percentage}%` as unknown as number }]} />
+                      </View>
+                    </View>
                     <Text style={s.milestonePct}>{m.percentage}%</Text>
+                    <Text style={s.milestoneAmt}>{formatCurrency(amt, proposal.currency)}</Text>
                   </View>
-                  <Text style={s.milestoneAmt}>{formatCurrency(amt, proposal.currency)}</Text>
-                </View>
-              )
-            })}
-          </View>
+                )
+              })}
+            </View>
+            <View style={s.sectionDivider} />
+          </>
         )}
 
-        {/* ── Terms & Conditions ──────────────────────────────────────────── */}
+        {/* ── Terms & Conditions ───────────────────────────────────────────── */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>{isHe ? 'תנאים והתניות' : 'Terms & Conditions'}</Text>
+          <Text style={s.sectionTitle}>{isHe ? 'תנאים והתניות' : 'TERMS & CONDITIONS'}</Text>
           {isHe ? (
             <>
-              <Text style={s.termsParagraph}>
+              <Text style={s.termsPara}>
                 חתימה על הצעה זו מהווה הסכם מחייב בין הצדדים בהתאם לחוק חוזים (חלק כללי), תשל״ג-1973. תשלום יבוצע לפי לוח הזמנים המוסכם. ביטול לאחר חתימה כפוף לדמי ביטול.
               </Text>
-              <Text style={s.termsParagraph}>
+              <Text style={s.termsPara}>
                 בעל העסק ו-DealSpace אינם אחראים לעיכובים שנגרמו מגורמים חיצוניים. שינויים בהיקף העבודה ידרשו הסכמה בכתב של שני הצדדים. DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם.
               </Text>
-              <Text style={s.termsParagraph}>
+              <Text style={s.termsPara}>
                 חתימה אלקטרונית זו כפופה לחוק חתימה אלקטרונית, התשס״א-2001. החוק החל הוא דין מדינת ישראל. כל סכסוך יובא לפני בית המשפט המוסמך במחוז תל אביב-יפו.
               </Text>
             </>
           ) : (
             <>
-              <Text style={s.termsParagraph}>
-                Signing this proposal constitutes a binding agreement subject to applicable contract law. Payment will be made according to the agreed schedule. Cancellation after signing is subject to cancellation fees.
+              <Text style={s.termsPara}>
+                Signing this proposal constitutes a binding agreement under applicable contract law. Payment will be made per the agreed schedule. Cancellation after signing is subject to cancellation fees.
               </Text>
-              <Text style={s.termsParagraph}>
+              <Text style={s.termsPara}>
                 Neither the service provider nor DealSpace is liable for delays caused by external factors. Changes to scope require written agreement from both parties. DealSpace serves solely as a technology intermediary and is not a party to this agreement.
               </Text>
-              <Text style={s.termsParagraph}>
+              <Text style={s.termsPara}>
                 This electronic signature is subject to applicable electronic signature laws. Governing law: State of Israel. Disputes resolved in the competent courts of Tel Aviv-Jaffa.
               </Text>
             </>
           )}
         </View>
 
-        {/* ── Digital Signature ───────────────────────────────────────────── */}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>{isHe ? 'חתימה דיגיטלית' : 'Digital Signature'}</Text>
-          <View style={s.sigRow}>
-            <View style={s.sigBox}>
-              {signatureDataUrl?.startsWith('data:image') && (
-                <Image src={signatureDataUrl} style={s.sigImage} />
-              )}
-            </View>
-            <View style={s.sigMeta}>
-              <Text style={s.sigBadge}>
-                {isHe ? '✓ אושר ונחתם אלקטרונית' : '✓ Electronically Approved & Signed'}
-              </Text>
-              <Text style={s.sigDetail}>
-                {isHe ? `תאריך: ${dateStr}` : `Date: ${dateStr}`}
-              </Text>
-              {proposal.client_name ? (
-                <Text style={s.sigDetail}>
-                  {isHe ? `שם: ${proposal.client_name}` : `Name: ${proposal.client_name}`}
-                </Text>
-              ) : null}
-              {proposal.client_signer_role ? (
-                <Text style={s.sigDetail}>
-                  {isHe ? `תפקיד: ${proposal.client_signer_role}` : `Role: ${proposal.client_signer_role}`}
-                </Text>
-              ) : null}
-              {proposal.client_tax_id ? (
-                <Text style={s.sigDetail}>
-                  {isHe ? `ח.פ./ת.ז.: ${proposal.client_tax_id}` : `Tax ID: ${proposal.client_tax_id}`}
-                </Text>
-              ) : null}
-              <Text style={s.sigHash}>Proposal ID: {proposal.id}</Text>
-            </View>
+        {/* Fixed footer — repeated on every content page */}
+        <View style={s.pageFooter} fixed>
+          <Text style={s.pageFooterBrand}>DealSpace</Text>
+          <Text style={s.pageFooterText}>dealspace.app</Text>
+          <Text style={s.pageFooterText}>{proposal.public_token.slice(0, 20)}…</Text>
+        </View>
+
+      </Page>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          LAST PAGE — DIGITAL SIGNATURE CERTIFICATE
+      ════════════════════════════════════════════════════════════════════ */}
+      <Page size="A4" style={s.certPage}>
+
+        {/* Hero */}
+        <View style={s.certHero}>
+          <View style={{ position: 'absolute', top: -18, right: -18, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <View>
+            <Text style={s.certHeroTitle}>
+              {isHe ? 'תעודת חתימה דיגיטלית' : 'DIGITAL SIGNATURE CERTIFICATE'}
+            </Text>
+            <Text style={s.certHeroSub}>
+              {isHe
+                ? 'מסמך זה נחתם דיגיטלית ואובטח באמצעות מערכת DealSpace'
+                : 'This document was digitally signed and secured via DealSpace'}
+            </Text>
+          </View>
+          <View style={s.certCheckCircle}>
+            <Text style={s.certCheckText}>✓</Text>
           </View>
         </View>
 
-        {/* ── Footer ─────────────────────────────────────────────────────── */}
-        <View style={s.footer} fixed>
-          <Text style={s.footerText}>dealspace.app</Text>
-          <Text style={s.footerText}>
+        <View style={s.certBody}>
+
+          {/* Signature + metadata */}
+          <View style={s.certSigRow} wrap={false}>
+            <View style={s.certSigBox}>
+              {signatureDataUrl?.startsWith('data:image')
+                ? <Image src={signatureDataUrl} style={s.certSigImage} />
+                : null}
+            </View>
+            <View style={s.certSigMeta}>
+              <Text style={s.certSigBadge}>
+                {isHe ? '✓ אושר ונחתם אלקטרונית' : '✓ Electronically Approved & Signed'}
+              </Text>
+              {proposal.client_name
+                ? <Text style={s.certSigLine}>{isHe ? 'שם: ' : 'Name: '}<Text style={s.certSigValue}>{proposal.client_name}</Text></Text>
+                : null}
+              {proposal.client_company_name
+                ? <Text style={s.certSigLine}>{isHe ? 'חברה: ' : 'Company: '}<Text style={s.certSigValue}>{proposal.client_company_name}</Text></Text>
+                : null}
+              {proposal.client_signer_role
+                ? <Text style={s.certSigLine}>{isHe ? 'תפקיד: ' : 'Role: '}<Text style={s.certSigValue}>{proposal.client_signer_role}</Text></Text>
+                : null}
+              {proposal.client_tax_id
+                ? <Text style={s.certSigLine}>{isHe ? 'ח.פ / ת.ז.: ' : 'Tax ID: '}<Text style={s.certSigValue}>{proposal.client_tax_id}</Text></Text>
+                : null}
+              <Text style={s.certSigLine}>{isHe ? 'תאריך חתימה: ' : 'Signed: '}<Text style={s.certSigValue}>{dateTimeStr}</Text></Text>
+            </View>
+          </View>
+
+          {/* Document token */}
+          <View style={s.certTokenBox} wrap={false}>
+            <Text style={s.certTokenLabel}>
+              {isHe ? 'מזהה מסמך ייחודי (Document Token)' : 'UNIQUE DOCUMENT TOKEN'}
+            </Text>
+            <Text style={s.certTokenValue}>{proposal.public_token}</Text>
+          </View>
+
+          {/* Audit trail */}
+          <View style={s.certAuditBox} wrap={false}>
+            <Text style={s.certAuditTitle}>
+              {isHe ? 'רשומת ביקורת (Audit Trail)' : 'AUDIT TRAIL'}
+            </Text>
+
+            {[
+              [isHe ? 'שם הפרויקט'        : 'Project Title',        proposal.project_title],
+              [isHe ? 'נותן השירות'        : 'Service Provider',     creator?.company_name ?? creator?.full_name ?? '—'],
+              [isHe ? 'הלקוח'             : 'Client',               proposal.client_name ?? '—'],
+              [isHe ? 'סכום החוזה'         : 'Contract Value',       formatCurrency(displayTotal, proposal.currency)],
+              [isHe ? 'תאריך יצירת המסמך' : 'Document Created',     createdStr],
+              [isHe ? 'תאריך ושעת חתימה'  : 'Signature Timestamp',  dateTimeStr],
+              [isHe ? 'פלטפורמה'           : 'Platform',             'DealSpace — dealspace.app'],
+            ].map(([label, value], idx, arr) => (
+              <View key={idx} style={idx === arr.length - 1 ? s.certAuditRowLast : s.certAuditRow}>
+                <Text style={s.certAuditLabel}>{label}</Text>
+                <Text style={s.certAuditValue}>{value}</Text>
+              </View>
+            ))}
+
+            <View style={s.certAuditRow}>
+              <Text style={s.certAuditLabel}>{isHe ? 'תוקף חוקי' : 'Legal Framework'}</Text>
+              <Text style={s.certAuditValue}>
+                {isHe ? 'חוק חתימה אלקטרונית, התשס״א-2001' : 'Electronic Signature Law, 5761-2001 (Israel)'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Legal disclaimer */}
+          <Text style={s.certLegalNote}>
             {isHe
-              ? 'מסמך זה נוצר על ידי DealSpace ומהווה ראיה לקבלת ההצעה'
-              : 'Generated by DealSpace — evidence of proposal acceptance'}
+              ? 'חתימה אלקטרונית זו כפופה לחוק חתימה אלקטרונית, התשס״א-2001. המסמך הינו ראיה לקבלת ההצעה ולהסכמת הצדדים. DealSpace מספקת שירות טכנולוגי בלבד ואינה צד להסכם. כל סכסוך ידון בבית המשפט המוסמך במחוז תל אביב-יפו.'
+              : 'This electronic signature is legally binding under the Electronic Signature Law, 5761-2001. This document serves as evidence of proposal acceptance and agreement. DealSpace provides technological infrastructure only and is not a party to this agreement. Disputes shall be resolved in the competent courts of Tel Aviv-Jaffa.'}
           </Text>
+        </View>
+
+        {/* Cert footer */}
+        <View style={s.certFooter}>
+          <Text style={s.certFooterBrand}>DealSpace</Text>
+          <Text style={s.certFooterText}>
+            {isHe ? 'מסמך זה נוצר ואובטח על ידי DealSpace' : 'Generated & Secured by DealSpace'}
+          </Text>
+          <Text style={s.certFooterText}>{proposal.public_token.slice(0, 16)}…</Text>
         </View>
 
       </Page>
@@ -493,13 +942,13 @@ function ProposalDocument({ proposal, totalAmount, enabledAddOnIds, signatureDat
   )
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// ─── Public API ────────────────────────────────────────────────────────────────
 
 export async function generateProposalPdf(opts: PdfOptions): Promise<void> {
   const blob = await pdf(<ProposalDocument {...opts} />).toBlob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
   a.download = `DealSpace_${(opts.proposal.project_title || 'Proposal').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`
   document.body.appendChild(a)
   a.click()

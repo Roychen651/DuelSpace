@@ -209,6 +209,7 @@ export default function DealRoom() {
   const [signature, setSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [sigTimestamp, setSigTimestamp] = useState<Date>(new Date())
   const [acceptError, setAcceptError] = useState<string | null>(null)
   const [declined, setDeclined] = useState(false)
   const [declining, setDeclining] = useState(false)
@@ -360,6 +361,7 @@ export default function DealRoom() {
 
     const { error } = await supabase.rpc('accept_proposal', { p_token: token })
     if (!error) {
+      setSigTimestamp(new Date())
       setAccepted(true)
     } else {
       setAcceptError(locale === 'he'
@@ -391,9 +393,10 @@ export default function DealRoom() {
       enabledAddOnIds: enabledIds,
       signatureDataUrl: signature,
       locale,
+      signatureTimestamp: sigTimestamp,
     })
     setPdfGenerating(false)
-  }, [proposal, pdfGenerating, lineItems, grandTotal, signature, locale])
+  }, [proposal, pdfGenerating, lineItems, grandTotal, signature, locale, sigTimestamp])
 
   // ── Toggle locale ──────────────────────────────────────────────────────────
   const toggleLocale = () => {
