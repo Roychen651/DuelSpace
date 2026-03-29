@@ -284,6 +284,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                     WebkitBackdropFilter: 'blur(64px)',
                   }}
                   onCloseAutoFocus={e => e.preventDefault()}
+                  onClick={e => e.stopPropagation()}
                 >
                   <DropItem
                     icon={<Edit3 size={15} />}
