@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { Check, Zap, Eye, Clock, ExternalLink, Lock } from 'lucide-react'
-import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
+import { proposalTotal, applyVat, DEFAULT_VAT_RATE, formatCurrency, STATUS_META } from '../../types/proposal'
 import type { Proposal } from '../../types/proposal'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -182,7 +182,13 @@ function AddOnPreviewCard({
 // ─── Main LivePreview ─────────────────────────────────────────────────────────
 
 export function LivePreview({ proposal, locale, compact = false }: LivePreviewProps) {
-  const total = proposalTotal(proposal)
+  const subtotal = proposalTotal(proposal)
+  const vatRate = (() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('dealspace:vat-rate') : null
+    const v = stored ? parseFloat(stored) : DEFAULT_VAT_RATE
+    return isNaN(v) ? DEFAULT_VAT_RATE : v
+  })()
+  const total = proposal.include_vat ? applyVat(subtotal, vatRate) : subtotal
   const meta = STATUS_META[proposal.status]
 
   const isEmpty =
@@ -415,13 +421,15 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   >
                     <AnimatedPrice total={total} currency={proposal.currency} />
                   </p>
-                  {proposal.add_ons.filter(a => a.enabled).length > 0 && (
-                    <p className="mt-1 text-[11px] text-white/25">
-                      {locale === 'he'
-                        ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
-                        : `Includes ${proposal.add_ons.filter(a => a.enabled).length} add-on${proposal.add_ons.filter(a => a.enabled).length !== 1 ? 's' : ''}`}
-                    </p>
-                  )}
+                  <p className="mt-1 text-[11px] text-white/25">
+                    {proposal.include_vat
+                      ? (locale === 'he' ? `כולל מע"מ ${Math.round(vatRate * 100)}%` : `Incl. VAT ${Math.round(vatRate * 100)}%`)
+                      : proposal.add_ons.filter(a => a.enabled).length > 0
+                        ? (locale === 'he'
+                            ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
+                            : `Includes ${proposal.add_ons.filter(a => a.enabled).length} add-on${proposal.add_ons.filter(a => a.enabled).length !== 1 ? 's' : ''}`)
+                        : null}
+                  </p>
                 </div>
 
                 {/* Meta info */}
