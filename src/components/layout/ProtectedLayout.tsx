@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useProposalStore } from '../../stores/useProposalStore'
+import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
+import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
 
@@ -11,11 +14,14 @@ import { NotificationBell } from '../ui/NotificationBell'
 
 export function ProtectedLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuthStore()
+  const { proposals } = useProposalStore()
+  const { markActive, markInactive } = usePresenceStore()
   const { locale, setLocale, t } = useI18n()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [viewingToast, setViewingToast] = useState<{ title: string; client: string } | null>(null)
 
   const isDashboard = pathname === '/dashboard'
   const isHe = locale === 'he'
@@ -26,6 +32,68 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   const firstName = name.split(' ')[0] || ''
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   const company = user?.user_metadata?.company_name as string | undefined
+
+  // ── Stable refs so channel callback never stales ──────────────────────────
+  const proposalsRef    = useRef(proposals)
+  const isHeRef         = useRef(isHe)
+  const offlineTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const activeSetRef    = useRef<Record<string, boolean>>({})
+  const toastTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { proposalsRef.current = proposals }, [proposals])
+  useEffect(() => { isHeRef.current = isHe }, [isHe])
+
+  // ── Single global channel: user-activity:{userId} ─────────────────────────
+  // DealRoom broadcasts heartbeats here — one subscription covers ALL proposals.
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`user-activity:${user.id}`)
+      .on('broadcast', { event: 'heartbeat' }, (msg) => {
+        const token = (msg as { payload?: { token?: string } }).payload?.token
+        if (!token) return
+
+        const wasInactive = !activeSetRef.current[token]
+        activeSetRef.current[token] = true
+        markActive(token)
+
+        // Toast only on the transition from inactive → active
+        if (wasInactive) {
+          const p = proposalsRef.current.find(q => q.public_token === token)
+          const title  = p?.project_title  || (isHeRef.current ? 'הצעה' : 'a proposal')
+          const client = p?.client_name    || (isHeRef.current ? 'לקוח' : 'Client')
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+          setViewingToast({ title, client })
+          toastTimerRef.current = setTimeout(() => setViewingToast(null), 5_000)
+        }
+
+        // Reset offline timer — 3 s heartbeat + 7 s grace = 10 s window
+        if (offlineTimersRef.current[token]) clearTimeout(offlineTimersRef.current[token])
+        offlineTimersRef.current[token] = setTimeout(() => {
+          markInactive(token)
+          activeSetRef.current[token] = false
+          delete offlineTimersRef.current[token]
+        }, 10_000)
+      })
+      .on('broadcast', { event: 'offline' }, (msg) => {
+        const token = (msg as { payload?: { token?: string } }).payload?.token
+        if (!token) return
+        markInactive(token)
+        activeSetRef.current[token] = false
+        if (offlineTimersRef.current[token]) {
+          clearTimeout(offlineTimersRef.current[token])
+          delete offlineTimersRef.current[token]
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      Object.values(offlineTimersRef.current).forEach(clearTimeout)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [user?.id, markActive, markInactive])
 
   const handleSignOut = async () => {
     await signOut()
@@ -65,10 +133,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               <span className="text-[14px] font-black tracking-tight text-white" style={{ letterSpacing: '-0.02em' }}>
                 {t('brand.name')}
               </span>
-              {company && !isDashboard && (
-                <span className="text-[10px] text-white/30 font-medium truncate max-w-[120px]">{company}</span>
-              )}
-              {isDashboard && company && (
+              {company && (
                 <span className="text-[10px] text-white/30 font-medium truncate max-w-[120px]">{company}</span>
               )}
             </div>
@@ -222,6 +287,52 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </nav>
+
+      {/* ── "Viewing Now" toast — fires on any page, any protected route ──────── */}
+      <AnimatePresence>
+        {viewingToast && (
+          <motion.div
+            key="viewing-toast"
+            initial={{ opacity: 0, y: -16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.96 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="fixed top-[66px] end-4 z-[9998] flex items-center gap-3 rounded-2xl px-4 py-3"
+            style={{
+              background: 'rgba(8,18,12,0.96)',
+              border: '1px solid rgba(34,197,94,0.3)',
+              boxShadow: '0 0 32px rgba(34,197,94,0.12), 0 8px 24px rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(20px)',
+              maxWidth: 280,
+            }}
+          >
+            {/* Pulsing dot */}
+            <span className="relative flex h-3 w-3 flex-none">
+              <span
+                className="absolute inline-flex h-full w-full rounded-full"
+                style={{ background: '#22c55e', opacity: 0.6, animation: 'pl-ping 1.1s ease-in-out infinite' }}
+              />
+              <span className="relative inline-flex h-3 w-3 rounded-full" style={{ background: '#22c55e' }} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[12px] font-bold text-emerald-400 leading-none mb-0.5">
+                {isHe ? 'לקוח צופה עכשיו' : 'Client viewing now'}
+              </p>
+              <p className="text-[11px] text-white/45 truncate">
+                {isHe
+                  ? `"${viewingToast.title}" — ${viewingToast.client}`
+                  : `"${viewingToast.title}" — ${viewingToast.client}`}
+              </p>
+            </div>
+            <style>{`
+              @keyframes pl-ping {
+                0%, 100% { transform: scale(1); opacity: 0.6; }
+                50%       { transform: scale(2.2); opacity: 0; }
+              }
+            `}</style>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Help Center drawer */}
       <HelpCenterDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />

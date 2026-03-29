@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
+import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
-import { supabase } from '../../lib/supabase'
 import type { Proposal } from '../../types/proposal'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
 import { generateProposalPdf } from '../../lib/pdfEngine'
@@ -169,34 +169,14 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
   const { deleteProposal, duplicateProposal } = useProposalStore()
+  const { activeViewers } = usePresenceStore()
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
-  const [clientViewing, setClientViewing] = useState(false)
-  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
 
-  // ── Live presence — subscribe to DealRoom broadcast channel ───────────────
-  useEffect(() => {
-    const channel = supabase
-      .channel(`deal-room:${proposal.public_token}`)
-      .on('broadcast', { event: 'heartbeat' }, () => {
-        setClientViewing(true)
-        // Clear existing timer and set a new 12-second offline timeout
-        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
-        offlineTimerRef.current = setTimeout(() => setClientViewing(false), 12_000)
-      })
-      .on('broadcast', { event: 'offline' }, () => {
-        setClientViewing(false)
-        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
-    }
-  }, [proposal.public_token])
+  // Live presence — fed by the single ProtectedLayout channel, no per-card subscription
+  const clientViewing = Boolean(activeViewers[proposal.public_token])
 
   const total = proposalTotal(proposal)
   const formatted = formatCurrency(total, proposal.currency)

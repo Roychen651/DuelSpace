@@ -173,6 +173,18 @@ const pageKeyframes = `
     50%       { box-shadow: 0 0 20px rgba(99,102,241,0.15); }
   }
   @keyframes dr-spin { to { transform: rotate(360deg); } }
+
+  /* TipTap rich-text description styles */
+  .dr-prose p                          { margin-bottom: 0.7em; }
+  .dr-prose p:last-child               { margin-bottom: 0; }
+  .dr-prose strong, .dr-prose b        { font-weight: 700; color: rgba(255,255,255,0.65); }
+  .dr-prose em, .dr-prose i           { font-style: italic; }
+  .dr-prose h1                         { font-size: 1.4em; font-weight: 800; color: rgba(255,255,255,0.75); margin-bottom: 0.5em; }
+  .dr-prose h2                         { font-size: 1.2em; font-weight: 700; color: rgba(255,255,255,0.7);  margin-bottom: 0.45em; }
+  .dr-prose h3                         { font-size: 1.05em; font-weight: 600; color: rgba(255,255,255,0.65); margin-bottom: 0.4em; }
+  .dr-prose ul                         { list-style: disc inside; padding-inline-start: 1.1em; margin-bottom: 0.7em; }
+  .dr-prose ol                         { list-style: decimal inside; padding-inline-start: 1.1em; margin-bottom: 0.7em; }
+  .dr-prose li                         { margin-bottom: 0.25em; }
 `
 
 // ─── Stagger container ────────────────────────────────────────────────────────
@@ -353,29 +365,31 @@ export default function DealRoom() {
   }, [fetchStatus, token])
 
   // ── Live presence broadcast ────────────────────────────────────────────────
+  // Broadcasts on `user-activity:{userId}` so ProtectedLayout (ONE subscription)
+  // handles all proposals without N per-card channels.
+  // Heartbeat every 3 s for snappy real-time feel.
   useEffect(() => {
-    if (fetchStatus !== 'ok' || !token) return
+    if (fetchStatus !== 'ok' || !proposal) return
+    const { user_id: userId, public_token: publicToken } = proposal
 
-    const channel = supabase.channel(`deal-room:${token}`)
+    const channel = supabase.channel(`user-activity:${userId}`)
     let heartbeatId: ReturnType<typeof setInterval> | null = null
 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        // Announce immediately, then every 5 s
-        channel.send({ type: 'broadcast', event: 'heartbeat', payload: {} })
-        heartbeatId = setInterval(() => {
-          channel.send({ type: 'broadcast', event: 'heartbeat', payload: {} })
-        }, 5_000)
+        const beat = () =>
+          channel.send({ type: 'broadcast', event: 'heartbeat', payload: { token: publicToken } })
+        beat()
+        heartbeatId = setInterval(beat, 3_000)
       }
     })
 
     return () => {
       if (heartbeatId) clearInterval(heartbeatId)
-      // Best-effort offline signal before tearing down the channel
-      channel.send({ type: 'broadcast', event: 'offline', payload: {} })
+      channel.send({ type: 'broadcast', event: 'offline', payload: { token: publicToken } })
       supabase.removeChannel(channel)
     }
-  }, [fetchStatus, token])
+  }, [fetchStatus, proposal?.user_id, proposal?.public_token])
 
   // ── IntersectionObserver — per-section read time ───────────────────────────
   useEffect(() => {
@@ -726,14 +740,13 @@ export default function DealRoom() {
             {proposal.project_title}
           </motion.h1>
 
-          {/* Description */}
+          {/* Description — TipTap HTML rendered safely (creator's own content) */}
           {proposal.description && (
-            <motion.p
+            <motion.div
               variants={slideUp}
-              className="text-[15px] text-white/50 leading-relaxed whitespace-pre-wrap"
-            >
-              {proposal.description}
-            </motion.p>
+              className="dr-prose text-[15px] text-white/50 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: proposal.description }}
+            />
           )}
         </motion.div>
 
