@@ -54,6 +54,15 @@ function ToggleRow({
   onToggle: () => void
 }) {
   const { locale } = useI18n()
+  const isRTL = locale === 'he'
+
+  // Pill: w-9 = 36px, dot: w-4 = 16px. Flush positions: left=2px, right=18px.
+  // In RTL the toggle flips: ON=dot at physical left (2px), OFF=dot at physical right (18px).
+  // In LTR: ON=dot at physical right (18px), OFF=dot at physical left (2px).
+  const dotX = active
+    ? (isRTL ? 'translateX(2px)'  : 'translateX(18px)')
+    : (isRTL ? 'translateX(18px)' : 'translateX(2px)')
+
   return (
     <button
       type="button"
@@ -62,14 +71,18 @@ function ToggleRow({
       style={{
         background: active ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.04)',
         border: active ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
+        direction: 'inherit',
       }}
     >
+      {/* Icon + label — always first in DOM; flex direction follows dir="rtl" on html */}
       <div className="flex items-center gap-2.5">
         <span style={{ color: active ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }}>{icon}</span>
         <span className="text-[12px] font-medium" style={{ color: active ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
           {locale === 'he' ? labelHe : labelEn}
         </span>
       </div>
+
+      {/* Toggle pill */}
       <div
         className="relative h-5 w-9 flex-none rounded-full transition-all"
         style={{
@@ -79,7 +92,7 @@ function ToggleRow({
       >
         <div
           className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform duration-200"
-          style={{ transform: active ? 'translateX(16px)' : 'translateX(2px)', boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+          style={{ transform: dotX, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
         />
       </div>
     </button>
