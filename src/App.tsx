@@ -1,6 +1,7 @@
 import { useEffect, Component, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/useAuthStore'
+import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
@@ -85,6 +86,7 @@ function AppInner() {
         {/* Legal — always public */}
         <Route path="/terms" element={<Legal />} />
         <Route path="/privacy" element={<Legal />} />
+        <Route path="/security" element={<Legal />} />
 
         {/* Landing — always public */}
         <Route path="/" element={<LandingPage />} />
@@ -98,6 +100,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppInner />
+      <AccessibilityWidget />
     </ErrorBoundary>
   )
 }

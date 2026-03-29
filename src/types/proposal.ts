@@ -56,6 +56,8 @@ export interface Proposal {
   brand_color?: string | null
   /** Creator business identity — injected from user_metadata by EditorPanel */
   creator_info?: CreatorInfo | null
+  /** ID of the selected success template shown post-signature */
+  success_template?: string | null
   created_at: string
   updated_at: string
 }

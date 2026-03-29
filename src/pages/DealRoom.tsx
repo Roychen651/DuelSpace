@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2 } from 'lucide-react'
+import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
@@ -11,6 +11,7 @@ import { generateProposalPdf } from '../lib/pdfEngine'
 import { ClientDetailsForm } from '../components/deal-room/ClientDetailsForm'
 import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
 import type { ClientCapturedDetails } from '../components/deal-room/ClientDetailsForm'
+import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../lib/successTemplates'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -207,6 +208,8 @@ export default function DealRoom() {
   const [signature, setSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [declined, setDeclined] = useState(false)
+  const [declining, setDeclining] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const [legalExpanded, setLegalExpanded] = useState(false)
   const [clientDetails, setClientDetails] = useState<ClientCapturedDetails | null>(null)
@@ -258,6 +261,7 @@ export default function DealRoom() {
       setProposal(p)
       setFetchStatus('ok')
       if (p.status === 'accepted') setAccepted(true)
+      if (p.status === 'rejected') setDeclined(true)
 
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of p.add_ons) {
@@ -279,6 +283,7 @@ export default function DealRoom() {
       setProposal(pending)
       setFetchStatus('ok')
       if (pending.status === 'accepted') setAccepted(true)
+      if (pending.status === 'rejected') setDeclined(true)
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of pending.add_ons) {
         init[a.id] = { enabled: a.enabled, qty: 1 }
@@ -347,6 +352,15 @@ export default function DealRoom() {
     if (!error) setAccepted(true)
     setAccepting(false)
   }, [token, accepting, accepted, clientDetails])
+
+  // ── Handle decline ─────────────────────────────────────────────────────────
+  const handleDecline = useCallback(async () => {
+    if (!token || declining || declined) return
+    setDeclining(true)
+    const { error } = await supabase.rpc('decline_proposal', { p_token: token })
+    if (!error) setDeclined(true)
+    setDeclining(false)
+  }, [token, declining, declined])
 
   // ── PDF download ───────────────────────────────────────────────────────────
   const handleDownloadPdf = useCallback(async () => {
@@ -876,94 +890,243 @@ export default function DealRoom() {
         <div className="h-44" />
       </div>
 
-      {/* ── Sticky checkout bar ───────────────────────────────────────────── */}
-      <div className="relative z-20">
-        <CheckoutClimax
-          total={grandTotal}
-          currency={proposal.currency}
-          clientName={proposal.client_name}
-          signature={signature}
-          onSignatureChange={setSignature}
-          onAccept={handleAccept}
-          accepting={accepting}
-          accepted={accepted}
-          locale={locale}
-          includeVat={proposal.include_vat}
-          vatRate={vatRate}
-          legalConsentAccepted={!!clientDetails && legalConsent}
-        />
-      </div>
+      {/* ── Sticky checkout bar (hidden when expired or declined) ───────── */}
+      {(() => {
+        const isExpired = proposal.expires_at
+          ? new Date(proposal.expires_at).getTime() < Date.now()
+          : false
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
+        if (isExpired && !accepted) {
+          return (
+            <div className="sticky bottom-0 z-30 pb-4" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+              <div className="mx-auto max-w-2xl px-4">
+                <motion.div
+                  className="rounded-2xl px-5 py-5 text-center"
+                  initial={{ y: 60, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 32, delay: 0.5 }}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.04) 100%)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    backdropFilter: 'blur(40px)',
+                  }}
+                >
+                  <XCircle size={28} className="text-red-400 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-red-400 mb-1">
+                    {locale === 'he' ? 'תוקף ההצעה פג' : 'This Offer Has Expired'}
+                  </p>
+                  <p className="text-xs text-white/40">
+                    {locale === 'he'
+                      ? 'ההצעה אינה זמינה יותר לאישור. אנא פנה ליוצר לקבלת הצעה מחודשת.'
+                      : 'This proposal is no longer available for signing. Please contact the creator for a renewed offer.'}
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          )
+        }
+
+        if (declined) {
+          return (
+            <div className="sticky bottom-0 z-30 pb-4" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+              <div className="mx-auto max-w-2xl px-4">
+                <motion.div
+                  className="rounded-2xl px-5 py-5 text-center"
+                  initial={{ y: 60, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(40px)',
+                  }}
+                >
+                  <ThumbsDown size={24} className="text-white/30 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-white/50">
+                    {locale === 'he' ? 'ההצעה נדחתה' : 'Offer Declined'}
+                  </p>
+                  <p className="text-xs text-white/30 mt-1">
+                    {locale === 'he'
+                      ? 'ניתן ליצור קשר עם בעל העסק לדיון נוסף.'
+                      : 'You can contact the creator to discuss further.'}
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <>
+            <div className="relative z-20">
+              <CheckoutClimax
+                total={grandTotal}
+                currency={proposal.currency}
+                clientName={proposal.client_name}
+                signature={signature}
+                onSignatureChange={setSignature}
+                onAccept={handleAccept}
+                accepting={accepting}
+                accepted={accepted}
+                locale={locale}
+                includeVat={proposal.include_vat}
+                vatRate={vatRate}
+                legalConsentAccepted={!!clientDetails && legalConsent}
+              />
+            </div>
+            {/* Decline offer ghost button */}
+            {!accepted && (
+              <div className="relative z-20 flex justify-center pb-6" style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
+                <motion.button
+                  type="button"
+                  onClick={handleDecline}
+                  disabled={declining}
+                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-medium transition-opacity disabled:opacity-50"
+                  style={{ color: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
+                  whileHover={{ color: 'rgba(248,113,113,0.7)', borderColor: 'rgba(248,113,113,0.25)' }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  {declining
+                    ? <Loader2 size={11} className="animate-spin" />
+                    : <ThumbsDown size={11} />}
+                  {locale === 'he' ? 'דחה הצעה' : 'Decline Offer'}
+                </motion.button>
+              </div>
+            )}
+          </>
+        )
+      })()}
+
+      {/* ── Post-signature success overlay ───────────────────────────────── */}
       <AnimatePresence>
         {accepted && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: 'rgba(5,5,10,0.85)', backdropFilter: 'blur(20px)' }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            style={{ background: 'rgba(3,3,5,0.92)', backdropFilter: 'blur(24px)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => {}} // Non-dismissible
           >
-            <motion.div
-              className="flex flex-col items-center gap-6 p-8 text-center max-w-sm"
-              initial={{ scale: 0.8, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.1 }}
-            >
+            {/* Confetti-style aurora behind the card */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div
+                className="absolute top-1/4 left-1/4 rounded-full"
+                style={{
+                  width: '50vw', height: '50vw',
+                  background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 65%)',
+                  filter: 'blur(60px)',
+                  animation: 'dr-float-a 8s ease-in-out infinite',
+                }}
+              />
+              <div
+                className="absolute bottom-1/4 right-1/4 rounded-full"
+                style={{
+                  width: '40vw', height: '40vw',
+                  background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)',
+                  filter: 'blur(50px)',
+                  animation: 'dr-float-b 10s ease-in-out infinite',
+                }}
+              />
+            </div>
+
+            <motion.div
+              className="relative w-full max-w-sm mx-4 mb-8 sm:mb-0 rounded-3xl p-8 flex flex-col items-center gap-5 text-center"
+              initial={{ scale: 0.78, opacity: 0, y: 40 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.12 }}
+              style={{
+                background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(34,197,94,0.2)',
+                boxShadow: '0 0 80px rgba(34,197,94,0.12), 0 40px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+              }}
+            >
+              {/* Success icon */}
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 18, delay: 0.3 }}
                 className="flex h-20 w-20 items-center justify-center rounded-full text-4xl"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.08))',
-                  border: '2px solid rgba(34,197,94,0.4)',
-                  boxShadow: '0 0 40px rgba(34,197,94,0.3)',
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.1))',
+                  border: '2px solid rgba(34,197,94,0.35)',
+                  boxShadow: '0 0 40px rgba(34,197,94,0.25)',
                 }}
               >
                 🎉
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-white mb-2">
-                  {locale === 'he' ? 'סגרנו את הדיל!' : 'Deal Closed!'}
-                </h2>
-                <p className="text-white/50 text-sm leading-relaxed">
-                  {locale === 'he'
-                    ? `תודה ${proposal.client_name ? proposal.client_name + ',' : ''} ההסכם אושר ונשמר. ניצור איתך קשר בקרוב.`
-                    : `Thank you${proposal.client_name ? ` ${proposal.client_name}` : ''}! Your approval has been recorded. We'll be in touch shortly.`}
-                </p>
-              </div>
-              <div
-                className="rounded-xl px-4 py-2"
+              </motion.div>
+
+              {/* Success message from template */}
+              {(() => {
+                const templateId = proposal.success_template ?? DEFAULT_TEMPLATE_ID
+                const tmpl = SUCCESS_TEMPLATES.find(t => t.id === templateId) ?? SUCCESS_TEMPLATES.find(t => t.id === DEFAULT_TEMPLATE_ID)!
+                const totalStr = formatCurrency(grandTotal, proposal.currency)
+                const message = interpolateSuccess(tmpl, locale as 'he' | 'en', proposal.client_name || '', totalStr)
+                return (
+                  <motion.p
+                    className="text-sm leading-relaxed text-white/70"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                  >
+                    {message}
+                  </motion.p>
+                )
+              })()}
+
+              {/* Grand total badge */}
+              <motion.div
+                className="rounded-2xl px-5 py-3 w-full"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 }}
                 style={{
-                  background: 'rgba(34,197,94,0.1)',
-                  border: '1px solid rgba(34,197,94,0.2)',
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.06))',
+                  border: '1px solid rgba(34,197,94,0.25)',
                 }}
               >
-                <p className="text-xs font-semibold text-emerald-400">
-                  {locale === 'he'
-                    ? `סה״כ מאושר: ${formatCurrency(grandTotal, proposal.currency)}`
-                    : `Approved: ${formatCurrency(grandTotal, proposal.currency)}`}
+                <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-400/60 mb-0.5">
+                  {locale === 'he' ? 'סה״כ מאושר' : 'Total Approved'}
                 </p>
-              </div>
+                <p
+                  className="text-2xl font-black tabular-nums"
+                  style={{
+                    background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {formatCurrency(grandTotal, proposal.currency)}
+                </p>
+              </motion.div>
 
-              {/* PDF download button */}
-              <button
+              {/* Download signed PDF */}
+              <motion.button
                 onClick={handleDownloadPdf}
                 disabled={pdfGenerating}
-                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white transition disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-4 text-sm font-bold text-white transition disabled:opacity-60"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
                 style={{
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25))',
-                  border: '1px solid rgba(99,102,241,0.35)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+                  boxShadow: '0 0 30px rgba(99,102,241,0.45)',
                 }}
               >
-                <FileDown size={14} className={pdfGenerating ? 'animate-bounce' : ''} />
+                <FileDown size={16} className={pdfGenerating ? 'animate-bounce' : ''} />
                 {pdfGenerating
                   ? (locale === 'he' ? 'יוצר PDF…' : 'Generating PDF…')
-                  : (locale === 'he' ? 'הורד PDF חתום' : 'Download Signed PDF')}
-              </button>
+                  : (locale === 'he' ? '⬇ הורד חוזה חתום (PDF)' : '⬇ Download Signed Contract (PDF)')}
+              </motion.button>
 
-              <p className="text-[10px] text-white/20">
+              <motion.p
+                className="text-[10px] text-white/18"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
                 Powered by DealSpace
-              </p>
+              </motion.p>
             </motion.div>
           </motion.div>
         )}

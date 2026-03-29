@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, LayoutGrid, Columns, Bookmark, FileText } from 'lucide-react'
+import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, LayoutGrid, Columns, Bookmark, FileText, Search, Filter, List, ArrowUp, ArrowDown, FileDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
 import { KanbanBoard } from '../components/dashboard/KanbanBoard'
-import { proposalTotal } from '../types/proposal'
+import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
+import type { ProposalStatus } from '../types/proposal'
+import { generateProposalPdf } from '../lib/pdfEngine'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
@@ -267,7 +269,9 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-type ViewMode = 'grid' | 'kanban'
+type ViewMode = 'grid' | 'kanban' | 'list'
+type SortField = 'date' | 'value'
+type SortDir = 'asc' | 'desc'
 
 export default function Dashboard() {
   const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
@@ -277,6 +281,11 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     (localStorage.getItem('dealspace:view-mode') as ViewMode | null) ?? 'grid'
   )
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<ProposalStatus | 'all'>('all')
+  const [sortField, setSortField] = useState<SortField>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [pdfGenerating, setPdfGenerating] = useState<string | null>(null)
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -306,13 +315,51 @@ export default function Dashboard() {
     return cur === 'ILS' ? '₪' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : cur
   })()
 
+  // ── Filtered + sorted proposals ──────────────────────────────────────────
+  const filteredProposals = useMemo(() => {
+    let list = [...proposals]
+    if (filterStatus !== 'all') list = list.filter(p => p.status === filterStatus)
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter(p =>
+        p.project_title.toLowerCase().includes(q) ||
+        p.client_name.toLowerCase().includes(q)
+      )
+    }
+    list.sort((a, b) => {
+      let cmp = 0
+      if (sortField === 'date') {
+        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      } else {
+        cmp = proposalTotal(a) - proposalTotal(b)
+      }
+      return sortDir === 'desc' ? -cmp : cmp
+    })
+    return list
+  }, [proposals, filterStatus, search, sortField, sortDir])
+
   const handleCreate = () => {
-    // Sprint 3: navigate to /proposals/new
     navigate('/proposals/new')
   }
 
   const handleEdit = (id: string) => {
     navigate(`/proposals/${id}`)
+  }
+
+  const handleDownloadPdf = async (proposalId: string) => {
+    if (pdfGenerating) return
+    const p = proposals.find(x => x.id === proposalId)
+    if (!p) return
+    setPdfGenerating(proposalId)
+    const total = proposalTotal(p)
+    await generateProposalPdf({
+      proposal: p,
+      totalAmount: total,
+      enabledAddOnIds: p.add_ons.filter(a => a.enabled).map(a => a.id),
+      signatureDataUrl: '',
+      locale,
+    })
+    setPdfGenerating(null)
   }
 
   return (
@@ -374,28 +421,60 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* ── Section header ─────────────────────────────────────────────── */}
+        {/* ── Filter / Sort Toolbar ──────────────────────────────────────── */}
         <div
-          className="flex items-center justify-between mb-5"
-          style={{ animation: 'ds-fade-up 0.4s ease-out 0.3s both' }}
+          className="mb-4 space-y-3"
+          style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}
         >
-          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-widest">
-            {locale === 'he' ? 'ההצעות שלי' : 'My Proposals'}
-            {proposals.length > 0 && (
-              <span className="ms-2 rounded-full bg-white/8 px-2 py-0.5 text-xs font-normal text-white/40 normal-case tracking-normal">
-                {proposals.length}
-              </span>
-            )}
-          </h2>
-
-          <div className="flex items-center gap-2">
-            {/* View toggle */}
+          {/* Search + view toggle row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search */}
             <div
-              className="flex items-center rounded-xl p-0.5"
+              className="flex items-center gap-2 flex-1 min-w-[160px] rounded-xl px-3 py-2"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <Search size={12} className="flex-none text-white/30" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={locale === 'he' ? 'חפש לפי שם לקוח או פרויקט…' : 'Search by client or project…'}
+                className="flex-1 bg-transparent text-xs text-white placeholder-white/25 outline-none"
+              />
+            </div>
+
+            {/* Status filter pills */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {(['all', 'draft', 'sent', 'viewed', 'accepted', 'rejected'] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className="rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-all"
+                  style={{
+                    background: filterStatus === s ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.04)',
+                    color: filterStatus === s
+                      ? '#c4b5fd'
+                      : s === 'all'
+                        ? 'rgba(255,255,255,0.35)'
+                        : STATUS_META[s as ProposalStatus].color + 'aa',
+                    border: filterStatus === s ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                  }}
+                >
+                  {s === 'all'
+                    ? (locale === 'he' ? 'הכל' : 'All')
+                    : (locale === 'he' ? STATUS_META[s as ProposalStatus].label_he : STATUS_META[s as ProposalStatus].label_en)}
+                </button>
+              ))}
+            </div>
+
+            {/* View toggles */}
+            <div
+              className="flex items-center rounded-xl p-0.5 flex-none"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {([
                 { mode: 'grid' as ViewMode, icon: <LayoutGrid size={13} />, label: locale === 'he' ? 'רשת' : 'Grid' },
+                { mode: 'list' as ViewMode, icon: <List size={13} />, label: locale === 'he' ? 'רשימה' : 'List' },
                 { mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: locale === 'he' ? 'לוח קנבן' : 'Kanban' },
               ]).map(({ mode, icon, label }) => (
                 <button
@@ -414,15 +493,43 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Mobile create button */}
-            <button
-              onClick={handleCreate}
-              className="sm:hidden flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60"
-            >
-              <Plus size={12} />
-              {locale === 'he' ? 'חדש' : 'New'}
-            </button>
+          {/* Sort row */}
+          <div className="flex items-center gap-2">
+            <Filter size={11} className="text-white/25 flex-none" />
+            <span className="text-[10px] text-white/30 font-semibold uppercase tracking-widest">
+              {locale === 'he' ? 'מיון:' : 'Sort:'}
+            </span>
+            {([
+              { field: 'date' as SortField, label_en: 'Date', label_he: 'תאריך' },
+              { field: 'value' as SortField, label_en: 'Value', label_he: 'ערך' },
+            ]).map(({ field, label_en, label_he }) => (
+              <button
+                key={field}
+                onClick={() => {
+                  if (sortField === field) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
+                  else { setSortField(field); setSortDir('desc') }
+                }}
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all"
+                style={{
+                  background: sortField === field ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)',
+                  color: sortField === field ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                  border: sortField === field ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {locale === 'he' ? label_he : label_en}
+                {sortField === field && (
+                  sortDir === 'desc' ? <ArrowDown size={9} /> : <ArrowUp size={9} />
+                )}
+              </button>
+            ))}
+
+            <span className="ms-auto text-[10px] text-white/25">
+              {filteredProposals.length !== proposals.length
+                ? `${filteredProposals.length} / ${proposals.length}`
+                : `${proposals.length} ${locale === 'he' ? 'הצעות' : 'proposals'}`}
+            </span>
           </div>
         </div>
 
@@ -433,18 +540,120 @@ export default function Dashboard() {
           </div>
         ) : proposals.length === 0 ? (
           <EmptyState onCreate={handleCreate} locale={locale} />
+        ) : filteredProposals.length === 0 ? (
+          <motion.div
+            className="flex flex-col items-center justify-center py-20 text-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+          >
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <Search size={20} className="text-white/20" />
+            </div>
+            <p className="text-sm font-semibold text-white/40">
+              {locale === 'he' ? 'לא נמצאו תוצאות' : 'No results found'}
+            </p>
+            <p className="text-xs text-white/20 mt-1">
+              {locale === 'he' ? 'נסה לשנות את הסינון או החיפוש' : 'Try adjusting your filters or search'}
+            </p>
+          </motion.div>
         ) : viewMode === 'kanban' ? (
           <div data-tour="proposals-list">
             <KanbanBoard
-              proposals={proposals}
+              proposals={filteredProposals}
               locale={locale}
               onEdit={handleEdit}
             />
           </div>
+        ) : viewMode === 'list' ? (
+          <div data-tour="proposals-list" className="space-y-1.5">
+            <AnimatePresence>
+              {filteredProposals.map((p, i) => {
+                const total = proposalTotal(p)
+                const meta = STATUS_META[p.status]
+                const isAccepted = p.status === 'accepted'
+                const date = new Date(p.created_at).toLocaleDateString(
+                  locale === 'he' ? 'he-IL' : 'en-US',
+                  { day: 'numeric', month: 'short', year: 'numeric' }
+                )
+                return (
+                  <motion.div
+                    key={p.id}
+                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
+                    className="group flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all"
+                    onClick={() => handleEdit(p.id)}
+                    whileHover={{ x: 2, backgroundColor: 'rgba(255,255,255,0.055)' }}
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      animation: `ds-fade-up 0.3s ease-out ${0.05 + i * 0.04}s both`,
+                    }}
+                  >
+                    {/* Status dot */}
+                    <div className="flex-none h-2 w-2 rounded-full" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
+
+                    {/* Title + client */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate leading-snug">
+                        {p.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
+                      </p>
+                      <p className="text-[11px] text-white/35 truncate">
+                        {p.client_name || (locale === 'he' ? 'לקוח' : 'Client')}
+                      </p>
+                    </div>
+
+                    {/* Status badge */}
+                    <span
+                      className="hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider flex-none"
+                      style={{ color: meta.color, background: `${meta.color}18`, border: `1px solid ${meta.color}30` }}
+                    >
+                      {locale === 'he' ? meta.label_he : meta.label_en}
+                    </span>
+
+                    {/* Value */}
+                    <p className="text-sm font-bold tabular-nums flex-none" style={{ color: meta.color }}>
+                      {formatCurrency(total, p.currency)}
+                    </p>
+
+                    {/* Date */}
+                    <p className="hidden md:block text-[11px] text-white/25 flex-none w-24 text-end">{date}</p>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                      <button
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/8 hover:text-white/80"
+                        onClick={() => handleEdit(p.id)}
+                        title={locale === 'he' ? 'ערוך' : 'Edit'}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      {isAccepted && (
+                        <button
+                          className="flex h-7 w-7 items-center justify-center rounded-lg transition"
+                          style={{ color: '#4ade80' }}
+                          onClick={() => handleDownloadPdf(p.id)}
+                          disabled={pdfGenerating === p.id}
+                          title={locale === 'he' ? 'הורד PDF' : 'Download PDF'}
+                        >
+                          {pdfGenerating === p.id
+                            ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
+                            : <FileDown size={13} />}
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </div>
         ) : (
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
-              {proposals.map((p, i) => (
+              {filteredProposals.map((p, i) => (
                 <motion.div
                   key={p.id}
                   style={{ animation: `ds-fade-up 0.4s ease-out ${0.35 + i * 0.06}s both` }}

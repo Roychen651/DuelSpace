@@ -3,7 +3,7 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt, Lock, Milestone,
+  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles,
 } from 'lucide-react'
 import type { ProposalInsert, AddOn, PaymentMilestone } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
@@ -15,6 +15,7 @@ import {
   CONTRACT_TEMPLATES, CATEGORY_LABELS, interpolateTemplate,
   type ContractTemplate,
 } from '../../lib/contractTemplates'
+import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID } from '../../lib/successTemplates'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +23,8 @@ interface EditorPanelProps {
   draft: ProposalInsert
   onChange: (patch: Partial<ProposalInsert>) => void
   locale: string
+  /** When true (status === 'accepted'), the editor is read-only */
+  isLocked?: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -402,7 +405,7 @@ function ContractTemplatePicker({
 
 // ─── Main EditorPanel ─────────────────────────────────────────────────────────
 
-export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
+export function EditorPanel({ draft, onChange, locale, isLocked = false }: EditorPanelProps) {
   const isHe = locale === 'he'
   const vatRate = getVatRate()
   const showVat = draft.include_vat
@@ -476,8 +479,10 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
     onChange({ payment_milestones: milestones.filter(m => m.id !== id) })
   }
 
+  const activeTemplateId = draft.success_template ?? DEFAULT_TEMPLATE_ID
+
   return (
-    <div className="p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
+    <div className="relative p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
       {/* Hide browser number-input spinners globally within the builder */}
       <style>{`
         input[type=number]::-webkit-inner-spin-button,
@@ -485,6 +490,52 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
         input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         @keyframes ds-fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
+
+      {/* ── Immutability Banner ─────────────────────────────────────────── */}
+      {isLocked && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(16,185,129,0.05) 100%)',
+            border: '1px solid rgba(34,197,94,0.25)',
+            boxShadow: '0 0 24px rgba(34,197,94,0.08), inset 0 1px 0 rgba(34,197,94,0.1)',
+          }}
+        >
+          <div
+            className="flex-none flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{
+              background: 'rgba(34,197,94,0.15)',
+              border: '1px solid rgba(34,197,94,0.3)',
+              boxShadow: '0 0 12px rgba(34,197,94,0.3)',
+            }}
+          >
+            <ShieldCheck size={16} className="text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">
+              {isHe ? '🔒 הסכם חתום — נעול' : '🔒 Signed Agreement — Locked'}
+            </p>
+            <p className="text-[10px] text-emerald-400/60 mt-0.5">
+              {isHe
+                ? 'לא ניתן לערוך הצעה חתומה. לשינויים, יש לשכפל ולצור טיוטה חדשה.'
+                : 'Signed proposals are immutable. To make changes, duplicate and create a new draft.'}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Read-only overlay (intercepts all pointer events when locked) ── */}
+      {isLocked && (
+        <div
+          className="pointer-events-auto absolute inset-0 z-10 cursor-not-allowed"
+          style={{ background: 'rgba(3,3,5,0.35)' }}
+          title={isHe ? 'ההצעה נעולה לעריכה' : 'Proposal is locked for editing'}
+          onClick={e => e.preventDefault()}
+        />
+      )}
 
       {/* ── Client Details ──────────────────────────────────────────────── */}
       <Section
@@ -865,6 +916,59 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
         locale={locale}
         onAddToProposal={handleAddSavedService}
       />
+
+      {/* ── Success Template Selector ────────────────────────────────────── */}
+      <Section
+        title={isHe ? 'הודעת סגירת עסקה' : 'Post-Signature Message'}
+        icon={<Sparkles size={15} />}
+        defaultOpen={false}
+        badge={isHe
+          ? (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_he ?? '')
+          : (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_en ?? '')}
+      >
+        <p className="text-[11px] text-white/35 leading-relaxed mb-2">
+          {isHe
+            ? 'בחר את ההודעה שתוצג ללקוח לאחר החתימה.'
+            : 'Choose the message shown to the client after they sign.'}
+        </p>
+        <div className="space-y-2">
+          {SUCCESS_TEMPLATES.map(tmpl => {
+            const selected = activeTemplateId === tmpl.id
+            return (
+              <button
+                key={tmpl.id}
+                type="button"
+                onClick={() => onChange({ success_template: tmpl.id })}
+                className="w-full text-start rounded-xl px-3.5 py-3 transition-all"
+                style={{
+                  background: selected ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: selected ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: selected ? '0 0 12px rgba(99,102,241,0.12)' : 'none',
+                }}
+              >
+                <div className="flex items-center justify-between mb-0.5">
+                  <span
+                    className="text-xs font-bold"
+                    style={{ color: selected ? '#c4b5fd' : 'rgba(255,255,255,0.65)' }}
+                  >
+                    {isHe ? tmpl.label_he : tmpl.label_en}
+                  </span>
+                  {selected && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">
+                      {isHe ? '✓ נבחר' : '✓ Selected'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] leading-relaxed line-clamp-2"
+                  style={{ color: selected ? 'rgba(196,181,253,0.55)' : 'rgba(255,255,255,0.28)' }}
+                >
+                  {isHe ? tmpl.message_he : tmpl.message_en}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+      </Section>
 
       <div className="h-8" />
     </div>

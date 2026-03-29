@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
 import { BottomSheet, SheetAction } from './BottomSheet'
 import type { Proposal } from '../../types/proposal'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
+import { generateProposalPdf } from '../../lib/pdfEngine'
 
 // ─── Magnetic tilt hook ───────────────────────────────────────────────────────
 
@@ -153,6 +154,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { deleteProposal, duplicateProposal } = useProposalStore()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
   const menuRef = useRef<HTMLButtonElement>(null)
 
@@ -180,6 +182,20 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
     setSheetOpen(false)
     setDeleting(true)
     await deleteProposal(proposal.id)
+  }
+
+  const handleDownloadPdf = async () => {
+    if (pdfGenerating) return
+    setSheetOpen(false)
+    setPdfGenerating(true)
+    await generateProposalPdf({
+      proposal,
+      totalAmount: total,
+      enabledAddOnIds: proposal.add_ons.filter(a => a.enabled).map(a => a.id),
+      signatureDataUrl: '',
+      locale,
+    })
+    setPdfGenerating(false)
   }
 
   return (
@@ -286,6 +302,21 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
             </div>
           </div>
 
+          {/* Download signed contract (accepted only) */}
+          {proposal.status === 'accepted' && (
+            <button
+              className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-semibold transition-all"
+              style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.18)', color: '#4ade80' }}
+              onClick={e => { e.stopPropagation(); handleDownloadPdf() }}
+              disabled={pdfGenerating}
+            >
+              {pdfGenerating
+                ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
+                : <FileDown size={12} />}
+              {locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
+            </button>
+          )}
+
           {/* Status timeline */}
           <StatusTimeline proposal={proposal} locale={locale} />
         </div>
@@ -312,6 +343,13 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
           label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
           onClick={handleCopyLink}
         />
+        {proposal.status === 'accepted' && (
+          <SheetAction
+            icon={<FileDown size={16} />}
+            label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
+            onClick={handleDownloadPdf}
+          />
+        )}
         <div className="h-px bg-white/5 my-1" />
         <SheetAction
           icon={<Trash2 size={16} />}

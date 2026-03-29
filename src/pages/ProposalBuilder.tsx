@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail, ShieldCheck, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail, ShieldCheck, RefreshCw, FileDown } from 'lucide-react'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { EditorPanel } from '../components/builder/EditorPanel'
 import { LivePreview } from '../components/builder/LivePreview'
 import { BottomSheet } from '../components/dashboard/BottomSheet'
 import type { Proposal, ProposalInsert } from '../types/proposal'
+import { generateProposalPdf } from '../lib/pdfEngine'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -230,6 +231,7 @@ export default function ProposalBuilder() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [sendOpen, setSendOpen] = useState(false)
   const [initializing, setInitializing] = useState(true)
+  const [pdfGenerating, setPdfGenerating] = useState(false)
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const draftRef = useRef<ProposalInsert>(BLANK_DRAFT)
@@ -373,6 +375,22 @@ export default function ProposalBuilder() {
 
   const canSend = Boolean(draft.project_title?.trim())
 
+  // ── Download signed PDF (builder, accepted state) ────────────────────────────
+  const handleDownloadSignedPdf = useCallback(async () => {
+    if (!currentProposal || pdfGenerating) return
+    setPdfGenerating(true)
+    const enabledIds = currentProposal.add_ons.filter(a => a.enabled).map(a => a.id)
+    const total = currentProposal.base_price + currentProposal.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
+    await generateProposalPdf({
+      proposal: currentProposal,
+      totalAmount: total,
+      enabledAddOnIds: enabledIds,
+      signatureDataUrl: '',
+      locale,
+    })
+    setPdfGenerating(false)
+  }, [currentProposal, pdfGenerating, locale])
+
   // ── Build a synthetic Proposal for LivePreview ───────────────────────────────
   const previewProposal: Proposal = {
     ...draft,
@@ -482,6 +500,29 @@ export default function ProposalBuilder() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2">
+          {/* Download signed PDF — only when accepted */}
+          {isAccepted && (
+            <motion.button
+              onClick={handleDownloadSignedPdf}
+              disabled={pdfGenerating}
+              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition disabled:opacity-50"
+              style={{
+                background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.25)',
+                color: '#4ade80',
+              }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <FileDown size={13} className={pdfGenerating ? 'animate-bounce' : ''} />
+              <span className="hidden sm:inline">
+                {pdfGenerating
+                  ? (locale === 'he' ? 'יוצר…' : 'Generating…')
+                  : (locale === 'he' ? 'הורד PDF' : 'Download PDF')}
+              </span>
+            </motion.button>
+          )}
+
           {/* Mobile: preview toggle — with text label for clarity */}
           <button
             onClick={() => setPreviewOpen(true)}
@@ -546,6 +587,7 @@ export default function ProposalBuilder() {
             draft={draft}
             onChange={handleChange}
             locale={locale}
+            isLocked={isAccepted}
           />
         </div>
 

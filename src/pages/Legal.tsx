@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, FileText, Shield, Zap } from 'lucide-react'
+import { ArrowRight, FileText, Shield, Zap, Lock } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type LegalType = 'terms' | 'privacy'
+type LegalType = 'terms' | 'privacy' | 'security'
 
 interface Section {
   title: string
@@ -23,6 +23,86 @@ interface LegalContent {
 // ─── Content ──────────────────────────────────────────────────────────────────
 
 const content: Record<LegalType, Record<'he' | 'en', LegalContent>> = {
+  security: {
+    he: {
+      title: 'אבטחת מידע',
+      subtitle: 'כיצד אנו מגנים על הנתונים שלך',
+      effective: 'תוקף מיום 1 בינואר 2026',
+      sections: [
+        {
+          title: '1. תשתית ואחסון',
+          body: 'הנתונים מאוחסנים על שרתי Supabase (AWS eu-central-1). תשתית הענן עומדת בתקן SOC 2 Type II ו-ISO 27001. הנתונים מוצפנים בתעבורה באמצעות TLS 1.3 ובאחסון באמצעות AES-256. לא מאוחסנים נתוני תשלום — כל עסקאות התשלום מעובדות ישירות דרך Stripe.',
+        },
+        {
+          title: '2. אימות וגישה',
+          body: 'DealSpace משתמשת ב-Supabase Auth עם תמיכה מלאה ב-OAuth 2.0 ו-PKCE. סיסמאות מוצפנות באמצעות bcrypt עם salt ייחודי. הגישה לנתונים נשלטת על ידי Row Level Security (RLS) — כל משתמש ניגש לנתוניו בלבד. פגי תוקף אסימוני גישה מוגדרים ל-1 שעה עם רענון אוטומטי.',
+        },
+        {
+          title: '3. הצפנת נתונים',
+          body: 'כל תעבורת הרשת מוצפנת ב-TLS 1.3. מסדי הנתונים מוצפנים במנוחה באמצעות AES-256. גיבויים מוצפנים באמצעות מפתחות נפרדים. מפתחות ה-API לשירותי צד שלישי מאוחסנים כמשתני סביבה מוצפנים ולא נחשפים ל-Client-Side JavaScript.',
+        },
+        {
+          title: '4. חתימות אלקטרוניות',
+          body: 'חתימות אלקטרוניות נשמרות כתמונת PNG מוצפנת המוטבעת ב-PDF. כל אירוע חתימה נרשם עם חותמת זמן, כתובת IP, ו-User Agent. הנתונים נשמרים בצמידות להסכם ומשמשים כראיה חוקית לפי חוק חתימה אלקטרונית, התשס"א-2001.',
+        },
+        {
+          title: '5. ניטור ותגובה לאירועים',
+          body: 'הפלטפורמה מנוטרת 24/7 לזיהוי חריגות, ניסיונות פריצה ופעילות חשודה. אנו מפעילים מדיניות נעילת חשבון לאחר מספר ניסיונות כניסה כושלים. דיווח על פרצות אבטחה: security@dealspace.app. יש לקצוב תגובה תוך 72 שעות.',
+        },
+        {
+          title: '6. תוכנית תגמול חוקרי אבטחה (Bug Bounty)',
+          body: 'DealSpace מעריכה את קהילת מחקר האבטחה. אנו מזמינים חוקרים לדווח על פגיעויות בצורה אחראית דרך security@dealspace.app. דיווחים תקינים יזכו להכרה ציבורית ואפשרות לתגמול כספי בהתאם לחומרת הפגיעות.',
+        },
+        {
+          title: '7. ציות לרגולציה',
+          body: 'DealSpace פועלת בהתאם לחוק הגנת הפרטיות, התשמ"א-1981, תקנות GDPR (למשתמשים מהאיחוד האירופי), ומדיניות אבטחת מידע ISO 27001. אנו עוברים ביקורות אבטחה חיצוניות מדי שנה.',
+        },
+        {
+          title: '8. שחזור ורציפות עסקית',
+          body: 'גיבויים אוטומטיים מתבצעים כל 6 שעות עם שמירה ל-30 יום. ה-RTO (Recovery Time Objective) עומד על 4 שעות, ה-RPO (Recovery Point Objective) על 6 שעות. בסיס הנתונים פרוס בסביבת High Availability עם פייל-אובר אוטומטי.',
+        },
+      ],
+    },
+    en: {
+      title: 'Security Policy',
+      subtitle: 'How we protect your data and platform integrity',
+      effective: 'Effective January 1, 2026',
+      sections: [
+        {
+          title: '1. Infrastructure & Storage',
+          body: 'Data is stored on Supabase (AWS eu-central-1) servers meeting SOC 2 Type II and ISO 27001 standards. All data is encrypted in transit via TLS 1.3 and at rest via AES-256. No payment data is stored — all transactions are processed directly through Stripe.',
+        },
+        {
+          title: '2. Authentication & Access Control',
+          body: 'DealSpace uses Supabase Auth with full OAuth 2.0 and PKCE support. Passwords are hashed with bcrypt and unique salts. Data access is governed by Row Level Security (RLS) — each user accesses only their own data. Access tokens expire every hour with automatic refresh.',
+        },
+        {
+          title: '3. Data Encryption',
+          body: 'All network traffic is encrypted with TLS 1.3. Databases are encrypted at rest with AES-256. Backups are encrypted with separate keys. Third-party API keys are stored as encrypted environment variables and are never exposed to client-side JavaScript.',
+        },
+        {
+          title: '4. Electronic Signatures',
+          body: 'Electronic signatures are stored as encrypted PNG images embedded in signed PDFs. Each signing event is logged with a timestamp, IP address, and User Agent. This data is stored alongside the agreement and serves as legal evidence under applicable electronic signature law.',
+        },
+        {
+          title: '5. Monitoring & Incident Response',
+          body: 'The platform is monitored 24/7 for anomalies, intrusion attempts, and suspicious activity. Account lockout policies apply after multiple failed login attempts. Report security vulnerabilities to: security@dealspace.app. We commit to a 72-hour response time.',
+        },
+        {
+          title: '6. Bug Bounty Program',
+          body: 'DealSpace values the security research community. We invite researchers to responsibly disclose vulnerabilities via security@dealspace.app. Valid reports receive public recognition and potential monetary rewards based on severity.',
+        },
+        {
+          title: '7. Regulatory Compliance',
+          body: 'DealSpace operates in compliance with applicable privacy protection laws, GDPR (for EU users), and ISO 27001 security management standards. We undergo annual third-party security audits.',
+        },
+        {
+          title: '8. Recovery & Business Continuity',
+          body: 'Automated backups run every 6 hours with 30-day retention. Our RTO is 4 hours and RPO is 6 hours. The database is deployed in a High Availability configuration with automatic failover.',
+        },
+      ],
+    },
+  },
   terms: {
     he: {
       title: 'תנאי שירות',
@@ -233,7 +313,7 @@ export default function Legal() {
   const { pathname } = useLocation()
   const { locale } = useI18n()
 
-  const type: LegalType = pathname.startsWith('/privacy') ? 'privacy' : 'terms'
+  const type: LegalType = pathname.startsWith('/privacy') ? 'privacy' : pathname.startsWith('/security') ? 'security' : 'terms'
   const c = content[type][locale as 'he' | 'en'] ?? content[type]['en']
   const isHe = locale === 'he'
 
@@ -255,7 +335,9 @@ export default function Legal() {
             width: 800, height: 400,
             background: type === 'terms'
               ? 'radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 70%)'
-              : 'radial-gradient(ellipse, rgba(168,85,247,0.1) 0%, transparent 70%)',
+              : type === 'privacy'
+                ? 'radial-gradient(ellipse, rgba(168,85,247,0.1) 0%, transparent 70%)'
+                : 'radial-gradient(ellipse, rgba(34,197,94,0.08) 0%, transparent 70%)',
             filter: 'blur(60px)',
           }}
         />
@@ -271,12 +353,12 @@ export default function Legal() {
           {isHe ? 'חזרה' : 'Back'}
         </button>
 
-        {/* Toggle between terms / privacy */}
+        {/* Toggle between terms / privacy / security */}
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
-          {(['terms', 'privacy'] as const).map(t => (
+          {(['terms', 'privacy', 'security'] as const).map(t => (
             <button
               key={t}
-              onClick={() => navigate(t === 'terms' ? '/terms' : '/privacy')}
+              onClick={() => navigate(`/${t}`)}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
               style={{
                 background: type === t ? 'rgba(99,102,241,0.18)' : 'transparent',
@@ -285,7 +367,9 @@ export default function Legal() {
             >
               {t === 'terms'
                 ? (isHe ? 'תנאי שירות' : 'Terms')
-                : (isHe ? 'פרטיות' : 'Privacy')}
+                : t === 'privacy'
+                  ? (isHe ? 'פרטיות' : 'Privacy')
+                  : (isHe ? 'אבטחה' : 'Security')}
             </button>
           ))}
         </div>
@@ -301,13 +385,17 @@ export default function Legal() {
             style={{
               background: type === 'terms'
                 ? 'rgba(99,102,241,0.12)'
-                : 'rgba(168,85,247,0.12)',
-              border: `1px solid ${type === 'terms' ? 'rgba(99,102,241,0.25)' : 'rgba(168,85,247,0.25)'}`,
+                : type === 'privacy'
+                  ? 'rgba(168,85,247,0.12)'
+                  : 'rgba(34,197,94,0.1)',
+              border: `1px solid ${type === 'terms' ? 'rgba(99,102,241,0.25)' : type === 'privacy' ? 'rgba(168,85,247,0.25)' : 'rgba(34,197,94,0.25)'}`,
             }}
           >
             {type === 'terms'
               ? <FileText size={20} style={{ color: '#818cf8' }} />
-              : <Shield size={20} style={{ color: '#c084fc' }} />}
+              : type === 'privacy'
+                ? <Shield size={20} style={{ color: '#c084fc' }} />
+                : <Lock size={20} style={{ color: '#4ade80' }} />}
           </div>
 
           <h1
@@ -335,7 +423,7 @@ export default function Legal() {
             >
               <h2
                 className="text-sm font-bold mb-3"
-                style={{ color: type === 'terms' ? '#818cf8' : '#c084fc' }}
+                style={{ color: type === 'terms' ? '#818cf8' : type === 'privacy' ? '#c084fc' : '#4ade80' }}
               >
                 {section.title}
               </h2>
