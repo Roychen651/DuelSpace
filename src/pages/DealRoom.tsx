@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { Zap, Clock, Globe, AlertCircle, Check } from 'lucide-react'
+import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
 import { formatCurrency } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
+import { generateProposalPdf } from '../lib/pdfGenerator'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -200,6 +201,12 @@ export default function DealRoom() {
   const [signature, setSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [pdfGenerating, setPdfGenerating] = useState(false)
+  const [legalExpanded, setLegalExpanded] = useState(false)
+
+  // Time tracking
+  const timeSpentRef = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Locale toggle (public page — no auth context)
   const [locale, setLocale] = useState<'he' | 'en'>(() => {
@@ -238,6 +245,33 @@ export default function DealRoom() {
     load()
   }, [token])
 
+  // ── Time tracking ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (fetchStatus !== 'ok' || !token) return
+
+    timerRef.current = setInterval(() => {
+      timeSpentRef.current += 1
+    }, 1000)
+
+    const flush = () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (timeSpentRef.current > 0) {
+        // Fire-and-forget — best effort
+        supabase.rpc('update_proposal_time_spent', {
+          p_token: token,
+          p_seconds: timeSpentRef.current,
+        }).then(() => {})
+        timeSpentRef.current = 0
+      }
+    }
+
+    window.addEventListener('beforeunload', flush)
+    return () => {
+      window.removeEventListener('beforeunload', flush)
+      flush()
+    }
+  }, [fetchStatus, token])
+
   // ── Grand total calculation ────────────────────────────────────────────────
   const grandTotal = proposal
     ? proposal.base_price +
@@ -254,6 +288,23 @@ export default function DealRoom() {
     if (!error) setAccepted(true)
     setAccepting(false)
   }, [token, accepting, accepted])
+
+  // ── PDF download ───────────────────────────────────────────────────────────
+  const handleDownloadPdf = useCallback(async () => {
+    if (!proposal || pdfGenerating) return
+    setPdfGenerating(true)
+    const enabledIds = proposal.add_ons
+      .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
+      .map(a => a.id)
+    await generateProposalPdf({
+      proposal,
+      totalAmount: grandTotal,
+      enabledAddOnIds: enabledIds,
+      signatureDataUrl: signature,
+      locale,
+    })
+    setPdfGenerating(false)
+  }, [proposal, pdfGenerating, lineItems, grandTotal, signature, locale])
 
   // ── Toggle locale ──────────────────────────────────────────────────────────
   const toggleLocale = () => {
@@ -501,6 +552,77 @@ export default function DealRoom() {
           ))}
         </motion.div>
 
+        {/* ── Legal terms box ───────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.8 }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          }}
+        >
+          <button
+            onClick={() => setLegalExpanded(v => !v)}
+            className="flex w-full items-center justify-between px-5 py-4"
+          >
+            <div className="flex items-center gap-2">
+              <Shield size={13} className="text-white/30" />
+              <span className="text-xs font-semibold text-white/40">
+                {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
+              </span>
+            </div>
+            {legalExpanded
+              ? <ChevronUp size={13} className="text-white/30" />
+              : <ChevronDown size={13} className="text-white/30" />}
+          </button>
+
+          <AnimatePresence>
+            {legalExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div
+                  className="px-5 pb-5 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-white/35 space-y-3"
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}
+                >
+                  <p>
+                    {locale === 'he'
+                      ? 'חתימה על הצעה זו מהווה הסכם מחייב בין הצדדים. תשלום יבוצע לפי לוח הזמנים המוסכם. ביטול לאחר חתימה כפוף לדמי ביטול.'
+                      : 'Signing this proposal constitutes a binding agreement between the parties. Payment will be made according to the agreed schedule. Cancellation after signing is subject to cancellation fees.'}
+                  </p>
+                  <p>
+                    {locale === 'he'
+                      ? 'בעל העסק ו-DealSpace אינם אחראים לעיכובים שנגרמו מגורמים חיצוניים. שינויים בהיקף העבודה ידרשו הסכמה בכתב של שני הצדדים.'
+                      : 'Neither the service provider nor DealSpace is liable for delays caused by external factors. Changes to scope require written agreement from both parties.'}
+                  </p>
+                  <p>
+                    {locale === 'he'
+                      ? 'חתימה אלקטרונית זו כפופה לחוק חתימה אלקטרונית, התשס״א-2001. DealSpace משמשת כמתווך טכנולוגי בלבד ואינה צד להסכם.'
+                      : 'This electronic signature is subject to applicable electronic signature laws. DealSpace serves solely as a technology intermediary and is not a party to this agreement.'}
+                  </p>
+                  <p>
+                    {locale === 'he'
+                      ? 'החוק החל על הסכם זה הוא דין מדינת ישראל. כל סכסוך יובא לפני בית המשפט המוסמך במחוז תל אביב-יפו.'
+                      : 'This agreement is governed by the laws of the State of Israel. Any dispute shall be resolved in the competent courts of Tel Aviv-Jaffa.'}
+                  </p>
+                  <p className="text-white/20">
+                    {locale === 'he'
+                      ? 'לתנאי שירות המלאים ומדיניות הפרטיות, בקר ב-dealspace.app/terms'
+                      : 'For full Terms of Service and Privacy Policy, visit dealspace.app/terms'}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
         {/* Spacer so sticky bar doesn't overlap content */}
         <div className="h-44" />
       </div>
@@ -570,6 +692,23 @@ export default function DealRoom() {
                     : `Approved: ${formatCurrency(grandTotal, proposal.currency)}`}
                 </p>
               </div>
+
+              {/* PDF download button */}
+              <button
+                onClick={handleDownloadPdf}
+                disabled={pdfGenerating}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white transition disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25))',
+                  border: '1px solid rgba(99,102,241,0.35)',
+                }}
+              >
+                <FileDown size={14} className={pdfGenerating ? 'animate-bounce' : ''} />
+                {pdfGenerating
+                  ? (locale === 'he' ? 'יוצר PDF…' : 'Generating PDF…')
+                  : (locale === 'he' ? 'הורד PDF חתום' : 'Download Signed PDF')}
+              </button>
+
               <p className="text-[10px] text-white/20">
                 Powered by DealSpace
               </p>

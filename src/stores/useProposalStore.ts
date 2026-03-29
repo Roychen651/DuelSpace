@@ -16,6 +16,7 @@ interface ProposalState {
   updateProposal: (id: string, data: ProposalUpdate) => Promise<void>
   deleteProposal: (id: string) => Promise<void>
   duplicateProposal: (id: string) => Promise<Proposal | null>
+  injectDemoProposal: () => Promise<void>
   clearError: () => void
 }
 
@@ -157,6 +158,53 @@ export const useProposalStore = create<ProposalState>()(
         }
 
         return get().createProposal(insertData)
+      },
+
+      // ── Inject demo proposal for new users ────────────────────────────────
+      injectDemoProposal: async () => {
+        const STORAGE_KEY = 'dealspace:demo-injected'
+        if (localStorage.getItem(STORAGE_KEY)) return
+
+        const { data: userData } = await supabase.auth.getUser()
+        if (!userData.user) return
+
+        const demoData: ProposalInsert = {
+          client_name: 'Dana Cohen',
+          client_email: 'dana@example.com',
+          project_title: 'Brand Photography Package — Demo',
+          description: 'Full-day brand photography session including editing, licensing, and delivery of 30 high-resolution images. This is a demo proposal — feel free to explore and edit it.',
+          base_price: 4800,
+          currency: 'ILS',
+          status: 'sent',
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          last_viewed_at: null,
+          add_ons: [
+            {
+              id: crypto.randomUUID(),
+              label: 'Additional Editing Hours',
+              description: '4 extra hours of post-processing and color grading',
+              price: 800,
+              enabled: true,
+            },
+            {
+              id: crypto.randomUUID(),
+              label: 'Aerial Drone Shots',
+              description: '10 drone photos from licensed pilot',
+              price: 1200,
+              enabled: false,
+            },
+            {
+              id: crypto.randomUUID(),
+              label: 'Rush Delivery (48h)',
+              description: 'Receive all edited images within 48 hours',
+              price: 600,
+              enabled: false,
+            },
+          ],
+        }
+
+        await get().createProposal(demoData)
+        localStorage.setItem(STORAGE_KEY, '1')
       },
 
       clearError: () => set({ error: null }),

@@ -7,6 +7,7 @@ import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
 import { proposalTotal } from '../types/proposal'
+import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
 
@@ -185,6 +186,7 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
       <div className="flex items-center gap-2">
         {/* Create button */}
         <motion.button
+          data-tour="new-proposal"
           onClick={onCreate}
           className="hidden sm:flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white"
           style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}
@@ -210,8 +212,11 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
           onMouseEnter={() => setMenuOpen(true)}
           onMouseLeave={() => setMenuOpen(false)}
         >
-          <button className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white overflow-hidden transition ring-1 ring-white/10 hover:ring-indigo-500/40"
-            style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
+          <button
+            data-tour="profile-avatar"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white overflow-hidden transition ring-1 ring-white/10 hover:ring-indigo-500/40"
+            style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+          >
             {avatar ? <img src={avatar} alt={name} className="h-full w-full object-cover" /> : initials || <User size={14} />}
           </button>
           {/* Dropdown — pt-2 bridges the gap so hover stays active */}
@@ -248,11 +253,27 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { proposals, loading, fetchProposals } = useProposalStore()
+  const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
   const { locale } = useI18n()
   const navigate = useNavigate()
+  const [showTour, setShowTour] = useState(false)
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
+
+  // Inject demo proposal for brand-new users (empty dashboard, first visit)
+  useEffect(() => {
+    if (!loading && proposals.length === 0) {
+      injectDemoProposal()
+    }
+  }, [loading, proposals.length, injectDemoProposal])
+
+  // Show tour once for new users after a short delay
+  useEffect(() => {
+    if (!loading && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+      const t = setTimeout(() => setShowTour(true), 1200)
+      return () => clearTimeout(t)
+    }
+  }, [loading])
 
   // ── KPI calculations ──────────────────────────────────────────────────────
   const sentProposals = proposals.filter(p => p.status !== 'draft')
@@ -356,13 +377,13 @@ export default function Dashboard() {
 
         {/* ── Proposals Grid ────────────────────────────────────────────── */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <ProposalCardSkeleton key={i} />)}
           </div>
         ) : proposals.length === 0 ? (
           <EmptyState onCreate={handleCreate} locale={locale} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
               {proposals.map((p, i) => (
                 <motion.div
@@ -401,6 +422,22 @@ export default function Dashboard() {
             : 'The system is used solely as a proposal generation tool and does not constitute legal or financial advice.'}
         </p>
       </footer>
+
+      {/* Guided tour — shown once to new users */}
+      {showTour && (
+        <GuidedTour
+          steps={DEFAULT_TOUR_STEPS}
+          locale={locale as 'he' | 'en'}
+          onComplete={() => {
+            localStorage.setItem(TOUR_STORAGE_KEY, '1')
+            setShowTour(false)
+          }}
+          onSkip={() => {
+            localStorage.setItem(TOUR_STORAGE_KEY, '1')
+            setShowTour(false)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
 import { BottomSheet, SheetAction } from './BottomSheet'
@@ -42,6 +42,102 @@ function StatusBadge({ status, locale }: { status: Proposal['status']; locale: s
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
       {locale === 'he' ? meta.label_he : meta.label_en}
     </span>
+  )
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTimeSpent(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return s > 0 ? `${m}m ${s}s` : `${m}m`
+}
+
+function timeAgo(dateStr: string, locale: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins  = Math.floor(diff / 60_000)
+  const hours = Math.floor(diff / 3_600_000)
+  const days  = Math.floor(diff / 86_400_000)
+  const isHe  = locale === 'he'
+
+  if (mins < 2)   return isHe ? 'הרגע'      : 'just now'
+  if (mins < 60)  return isHe ? `לפני ${mins} דק'` : `${mins}m ago`
+  if (hours < 24) return isHe ? `לפני ${hours} שע'` : `${hours}h ago`
+  if (days < 30)  return isHe ? `לפני ${days} ימים`  : `${days}d ago`
+  return new Date(dateStr).toLocaleDateString(isHe ? 'he-IL' : 'en-US', { day: 'numeric', month: 'short' })
+}
+
+// ─── Status Timeline ──────────────────────────────────────────────────────────
+
+function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: string }) {
+  const isHe = locale === 'he'
+
+  type TimelineEvent = { labelEn: string; labelHe: string; time: string | null; done: boolean }
+  const events: TimelineEvent[] = [
+    {
+      labelEn: 'Created',
+      labelHe: 'נוצרה',
+      time: proposal.created_at,
+      done: true,
+    },
+    {
+      labelEn: 'Sent',
+      labelHe: 'נשלח',
+      time: proposal.status !== 'draft' ? proposal.updated_at : null,
+      done: proposal.status !== 'draft',
+    },
+    {
+      labelEn: 'Viewed',
+      labelHe: 'נצפה',
+      time: proposal.last_viewed_at ?? null,
+      done: !!proposal.last_viewed_at,
+    },
+    {
+      labelEn: 'Accepted',
+      labelHe: 'אושר',
+      time: proposal.status === 'accepted' ? proposal.updated_at : null,
+      done: proposal.status === 'accepted',
+    },
+  ]
+
+  return (
+    <div className="flex items-center gap-0 mt-3">
+      {events.map((ev, i) => (
+        <div key={ev.labelEn} className="flex items-center flex-1 min-w-0">
+          <div className="flex flex-col items-center gap-0.5 flex-none">
+            <div
+              className="h-1.5 w-1.5 rounded-full"
+              style={{
+                background: ev.done ? '#6366f1' : 'rgba(255,255,255,0.1)',
+                boxShadow: ev.done ? '0 0 4px rgba(99,102,241,0.8)' : 'none',
+              }}
+            />
+            <span
+              className="text-[8px] font-semibold leading-none"
+              style={{ color: ev.done ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)' }}
+            >
+              {isHe ? ev.labelHe : ev.labelEn}
+            </span>
+            {ev.time && ev.done && (
+              <span className="text-[7px] text-white/25 leading-none">
+                {timeAgo(ev.time, locale)}
+              </span>
+            )}
+          </div>
+          {i < events.length - 1 && (
+            <div
+              className="h-px flex-1 mx-0.5"
+              style={{
+                background: events[i + 1].done
+                  ? 'rgba(99,102,241,0.4)'
+                  : 'rgba(255,255,255,0.08)',
+              }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -177,12 +273,21 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                 <Eye size={10} />
                 <span>{proposal.view_count}</span>
               </div>
+              {proposal.time_spent_seconds > 0 && (
+                <div className="flex items-center gap-1 text-[10px] text-white/25">
+                  <Timer size={10} />
+                  <span>{formatTimeSpent(proposal.time_spent_seconds)}</span>
+                </div>
+              )}
               <div className="flex items-center gap-1 text-[10px] text-white/25">
                 <Clock size={10} />
                 <span>{date}</span>
               </div>
             </div>
           </div>
+
+          {/* Status timeline */}
+          <StatusTimeline proposal={proposal} locale={locale} />
         </div>
       </motion.div>
 

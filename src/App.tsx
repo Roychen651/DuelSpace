@@ -9,6 +9,7 @@ import DealRoom from './pages/DealRoom'
 import LandingPage from './pages/LandingPage'
 import Profile from './pages/Profile'
 import ResetPassword from './pages/ResetPassword'
+import Legal from './pages/Legal'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -76,6 +77,10 @@ function AppInner() {
 
         {/* Public deal room — no auth required */}
         <Route path="/deal/:token" element={<DealRoom />} />
+
+        {/* Legal — always public */}
+        <Route path="/terms" element={<Legal />} />
+        <Route path="/privacy" element={<Legal />} />
 
         {/* Landing — always public */}
         <Route path="/" element={<LandingPage />} />
