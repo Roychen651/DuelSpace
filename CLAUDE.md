@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–12.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–13.9.
 
 ---
 
@@ -28,7 +28,8 @@ Read this before touching any file. Everything here reflects the live codebase a
 | State | Zustand | ^5.0 |
 | Backend | Supabase JS | ^2.100 |
 | Icons | Lucide React | ^1.7 |
-| PDF | @react-pdf/renderer | latest |
+| PDF | @react-pdf/renderer | ^4.3 |
+| Rich Text | TipTap | ^2.x |
 
 **Removed:** `react-signature-canvas` — replaced with a native canvas implementation using pointer events and `quadraticCurveTo` for smooth strokes.
 
@@ -121,8 +122,10 @@ src/
 │   │   ├── SignaturePad.tsx       # Native canvas draw signature — NO external dependency
 │   │   ├── ClientDetailsForm.tsx  # Client legal identity capture (name, company, tax ID, address, role)
 │   │   └── MilestoneTimeline.tsx  # Animated payment schedule — spring-animated amounts
+│   ├── builder/
+│   │   └── RichTextEditor.tsx     # TipTap-based rich text editor (contract body)
 │   ├── dashboard/
-│   │   ├── ProposalCard.tsx       # Grid card with status badge, responsive 3-dot menu (desktop dropdown / mobile bottom sheet)
+│   │   ├── ProposalCard.tsx       # Grid card — Radix DropdownMenu (stopPropagation fix), magnetic tilt, status timeline
 │   │   ├── ProposalCardSkeleton   # Loading skeleton
 │   │   ├── KanbanBoard.tsx        # Kanban view grouped by status
 │   │   └── BottomSheet.tsx        # Mobile bottom sheet
@@ -131,7 +134,8 @@ src/
 │   └── ui/
 │       ├── PremiumInputs.tsx      # Shared input primitives (Radix slider, date picker)
 │       ├── AccessibilityWidget.tsx # Draggable FAB + fixed panel, 14 a11y controls, IS 5568 / WCAG 2.2 AA
-│       └── HelpCenterDrawer.tsx   # Side drawer with 10 bilingual FAQ items + category filter; controlled via props
+│       ├── HelpCenterDrawer.tsx   # Side drawer with 10 bilingual FAQ items + category filter; controlled via props
+│       └── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
 │
 ├── stores/
 │   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password
@@ -139,10 +143,13 @@ src/
 │   └── useAccessibilityStore.ts # 14 a11y states, CSS DOM mutations, localStorage persistence (ds:a11y:*)
 │
 ├── lib/
-│   ├── supabase.ts          # Supabase client singleton
-│   ├── i18n.ts              # Zustand i18n store, He/En translations, dir/lang on <html>
-│   ├── pdfEngine.tsx        # @react-pdf/renderer — bilingual PDF with brand color + milestones
-│   └── passwordValidation.ts # Strength rules (score 1-4, color, label_en/he, rules[])
+│   ├── supabase.ts            # Supabase client singleton
+│   ├── i18n.ts                # Zustand i18n store, He/En translations, dir/lang on <html>
+│   ├── pdfEngine.tsx          # @react-pdf/renderer v4 — 3-page enterprise PDF (Cover + Content + Cert)
+│   ├── contractTemplates.ts   # Built-in contract template definitions
+│   ├── successTemplates.ts    # Post-signature success screen template definitions
+│   ├── financialMath.ts       # VAT, rounding, milestone math helpers
+│   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
 │   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo,
@@ -161,6 +168,15 @@ supabase/
     └── 07_sprint11.sql             # success_template column + decline_proposal() RPC
 ```
 
+### New pages (Sprints 13.x)
+
+```
+src/pages/
+├── TermsOfService.tsx       # /terms  — 12-clause bilingual ToS (Israeli corporate standard)
+├── PrivacyPolicy.tsx        # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
+└── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
+```
+
 ---
 
 ## 6. Routing
@@ -177,8 +193,10 @@ supabase/
 /contracts                 → ContractLibrary      (ProtectedRoute)
 /deal/:token               → DealRoom            (fully public, no auth)
 /profile                   → Profile             (ProtectedRoute)
-/terms                     → Legal               (always public)
-/privacy                   → Legal               (always public)
+/terms                     → TermsOfService      (always public — 12-clause He/En)
+/privacy                   → PrivacyPolicy       (always public — 12-clause He/En)
+/security                  → Legal               (always public — security policy)
+/accessibility             → AccessibilityStatement (always public — WCAG 2.2 AA)
 *                          → redirect to /
 ```
 
@@ -496,32 +514,58 @@ These live in `user.user_metadata` and are read by EditorPanel to populate `crea
 
 ## 15. PDF Engine (`src/lib/pdfEngine.tsx`)
 
-Built with `@react-pdf/renderer`. Generates a bilingual (He/En) PDF from a signed proposal.
+Sprint 13.9 complete overhaul. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) 3-page enterprise PDF.
 
 ### Font
-Heebo TTF from Google Fonts CDN v28 (CORS-enabled). Three weights: 400, 700, 900. `Font.registerHyphenationCallback(word => [word])` prevents hyphenation of Hebrew words.
+Heebo TTF from Google Fonts CDN v28 (CORS-enabled). Weights: 400, 700, 900. `Font.registerHyphenationCallback(word => [word])` prevents hyphenation of Hebrew.
 
-### Brand color factory
+### Helpers
 ```ts
 function getBrandColor(proposal: Proposal): string  // validates hex, falls back to #6366f1
-function makeStyles(brand: string): StyleSheet      // factory called at render time
+function alpha(hex: string, a: number): string      // appends 2-char alpha to hex (#6366f1 + 0.15 → #6366f126)
+function makeStyles(brand: string): StyleSheet      // factory called per render
+function parseHtml(html: string): HtmlBlock[]       // TipTap HTML → typed block array
 ```
-Brand color flows through: header background, section title underlines, party labels, VAT/total borders, milestone bars.
 
-### PDF sections
-1. Header — company name from `creator_info.company_name` (not hardcoded "DealSpace")
-2. Project title block
-3. Parties — creator (left) + client (right) side-by-side
-4. Description
-5. Add-ons table (enabled only)
-6. Payment terms — milestone table if `payment_milestones.length > 0`
-7. VAT breakdown if `include_vat`
-8. Total
-9. Signature block — client name, role, signature image, date
+### TipTap HTML parser
+`parseHtml()` handles `<h1–h3>`, `<p>`, `<li>`, `<strong>`, `<b>`, `<em>`, `<i>` via regex with full HTML entity decoding. Returns `HtmlBlock[]` rendered as nested `@react-pdf/renderer` `<Text>` nodes. Falls back to plain-text strip if no block tags found.
+
+### 3-page document structure
+
+**Page 1 — Cover (`coverPage`)**
+- Brand-color hero strip (solid brand bg) with company initials badge + decorative overlay circles
+- Project title (26pt bold), "Prepared For" client block, document ID + date
+
+**Pages 2+ — Main Content (`contentPage`, auto-paginates)**
+- `paddingTop: 48` / `paddingBottom: 40` to clear fixed header/footer
+- **Fixed header** (`position: absolute, top: 0, fixed`): brand accent bar | company | project | page X/Y
+- **Fixed footer** (`position: absolute, bottom: 0, fixed`): DealSpace | dealspace.app | token
+- Sections: Parties (Side A/B), Description (HTML-parsed), Services & Pricing table, VAT box, Grand Total, Milestones table, Terms
+- All critical rows use `wrap={false}` — pricing rows, milestone rows, total box never split across pages
+
+**Last Page — Signature Certificate (`certPage`)**
+- Brand hero with ✓ checkmark circle
+- Signature image in green-bordered box + full signer metadata (name, company, ח.פ/ת.ז, role, timestamp)
+- Unique Document Token block (dashed border)
+- 8-row Audit Trail table (project, provider, client, value, created, signed, platform, legal framework)
+- e-Signature Law 5761-2001 legal disclaimer
+
+### PdfOptions
+```ts
+export interface PdfOptions {
+  proposal: Proposal
+  totalAmount: number
+  enabledAddOnIds: string[]
+  signatureDataUrl: string
+  locale: 'he' | 'en'
+  signatureTimestamp?: Date   // captured at accept_proposal() success in DealRoom
+}
+```
 
 ### Export
 ```ts
-export async function generateProposalPdf(options: PdfOptions): Promise<Blob>
+export async function generateProposalPdf(opts: PdfOptions): Promise<void>
+// downloads file: DealSpace_{title}_{YYYY-MM-DD}.pdf
 ```
 
 ---
@@ -598,6 +642,18 @@ supabase migration repair --status applied <timestamp>
 ---
 
 ## 20. Known Patterns & Decisions
+
+### GlobalFooter coverage
+`GlobalFooter` is imported individually into each page that needs it (Dashboard, LandingPage, DealRoom, Profile, ContractLibrary, ServicesLibrary, TermsOfService, PrivacyPolicy, Legal/Security, AccessibilityStatement). It is NOT injected globally in App.tsx — ProposalBuilder uses a fixed-height split-screen layout that has no room for a footer, and adding it globally would break that layout.
+
+### GlobalFooter z-index vs fixed aurora
+Every Dashboard-style page has a `DashboardAurora` component with `position: fixed; inset: 0`. Non-positioned elements (like `<footer>`) paint BELOW positioned elements in the CSS stacking order, making the footer visually invisible. The fix: `GlobalFooter`'s `<footer>` element has `className="relative z-10"`, which places it above the fixed aurora. Any page with a fixed full-screen background must ensure its footer or content sections have `relative z-index` set.
+
+### Radix Portal click propagation (ProposalCard bug fix)
+Radix `DropdownMenu.Content` renders in a DOM Portal (`document.body`). React portal events still bubble through the **React component tree** (not the DOM tree). The `ProposalCard`'s `onClick` guard only checked for `button` and `[data-radix-dropdown-menu-trigger]`, but Radix `DropdownMenu.Item` renders as `div[role="menuitem"]`, not `button`. Clicks on menu items bubbled to the card's `onClick` and triggered `onEdit`. Fix: `onClick={e => e.stopPropagation()}` on `DropdownMenu.Content`.
+
+### Legal page tab navigation (history bounce fix)
+Tab switchers on legal pages (Terms, Privacy, Security) use `navigate(path, { replace: true })` — **not** `navigate(path)`. Using push creates a growing history stack of legal pages; the back button then bounces between them instead of returning to the previous app page. Always use `replace: true` for in-page tab switches that don't represent distinct navigation steps.
 
 ### Logout hover dropdown
 Using `onMouseEnter/Leave` on a wrapper div (not CSS `group-hover`) because the `mt-2` gap between the avatar and dropdown causes `group-hover:block` to flash off when the mouse crosses the gap. Bridge the gap with `pt-2` padding on the dropdown container.
