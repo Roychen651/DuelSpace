@@ -1,7 +1,9 @@
 import { useEffect, Component, type ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
+import { HelpCenterDrawer } from './components/ui/HelpCenterDrawer'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
@@ -58,6 +60,59 @@ function PublicRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+// ─── Animated Routes ──────────────────────────────────────────────────────────
+
+function AnimatedRoutes() {
+  const location = useLocation()
+  const { status } = useAuthStore()
+  const isDealRoom = location.pathname.startsWith('/deal/')
+
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: 'easeOut' as const }}
+          style={{ minHeight: '100dvh' }}
+        >
+          <Routes location={location}>
+            {/* Public */}
+            <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+
+            {/* Protected */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+            <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+            <Route path="/contracts" element={<ProtectedRoute><ContractLibrary /></ProtectedRoute>} />
+            <Route path="/services" element={<ProtectedRoute><ServicesLibrary /></ProtectedRoute>} />
+
+            {/* Public deal room — no auth required */}
+            <Route path="/deal/:token" element={<DealRoom />} />
+
+            {/* Legal — always public */}
+            <Route path="/terms" element={<Legal />} />
+            <Route path="/privacy" element={<Legal />} />
+            <Route path="/security" element={<Legal />} />
+
+            {/* Landing — always public */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Help Center — show for authenticated users outside the Deal Room */}
+      {status === 'authenticated' && !isDealRoom && <HelpCenterDrawer />}
+    </>
+  )
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 function AppInner() {
@@ -66,32 +121,7 @@ function AppInner() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public */}
-        <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-
-        {/* Protected */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
-        <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
-        <Route path="/contracts" element={<ProtectedRoute><ContractLibrary /></ProtectedRoute>} />
-        <Route path="/services" element={<ProtectedRoute><ServicesLibrary /></ProtectedRoute>} />
-
-        {/* Public deal room — no auth required */}
-        <Route path="/deal/:token" element={<DealRoom />} />
-
-        {/* Legal — always public */}
-        <Route path="/terms" element={<Legal />} />
-        <Route path="/privacy" element={<Legal />} />
-        <Route path="/security" element={<Legal />} />
-
-        {/* Landing — always public */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AnimatedRoutes />
     </BrowserRouter>
   )
 }

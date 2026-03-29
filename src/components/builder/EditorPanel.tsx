@@ -11,6 +11,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { PremiumDatePicker } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
 import { AIGhostwriter } from './AIGhostwriter'
+import { RichTextEditor } from './RichTextEditor'
 import {
   CONTRACT_TEMPLATES, CATEGORY_LABELS, interpolateTemplate,
   type ContractTemplate,
@@ -125,7 +126,6 @@ const inputClass = [
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
 ].join(' ')
 
-const textareaClass = [inputClass, 'resize-none leading-relaxed'].join(' ')
 
 // ─── Currency selector ────────────────────────────────────────────────────────
 
@@ -621,16 +621,16 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
         </Field>
 
         <Field label={isHe ? 'תיאור / מה כלול' : "Description / What's Included"} icon={<FileText size={10} />}>
-          <textarea
-            className={textareaClass}
-            rows={4}
+          <RichTextEditor
+            value={draft.description ?? ''}
+            onChange={html => onChange({ description: html })}
             placeholder={
               isHe
                 ? 'תארו בקצרה מה כולל הפרויקט, מה הלקוח יקבל ואיך תראה ההצלחה...'
                 : "Describe what's included, what the client will receive, and what success looks like..."
             }
-            value={draft.description ?? ''}
-            onChange={e => onChange({ description: e.target.value })}
+            locale={locale}
+            disabled={isLocked}
           />
         </Field>
 

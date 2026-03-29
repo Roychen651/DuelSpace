@@ -4,6 +4,7 @@ import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, Lay
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
+import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
 import { KanbanBoard } from '../components/dashboard/KanbanBoard'
@@ -275,6 +276,7 @@ type SortDir = 'asc' | 'desc'
 
 export default function Dashboard() {
   const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
+  const { user } = useAuthStore()
   const { locale } = useI18n()
   const navigate = useNavigate()
   const [showTour, setShowTour] = useState(false)
@@ -295,6 +297,19 @@ export default function Dashboard() {
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [fetchProposals])
+
+  // Realtime subscription — re-fetch immediately when any proposal row changes (e.g., client accepts)
+  useEffect(() => {
+    if (!user?.id) return
+    const channel = supabase
+      .channel(`proposals:${user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'proposals',
+        filter: `user_id=eq.${user.id}`,
+      }, () => { fetchProposals() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user?.id, fetchProposals])
 
   // Inject demo proposal for brand-new users (empty dashboard, first visit)
   useEffect(() => {
