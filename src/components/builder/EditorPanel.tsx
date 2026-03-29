@@ -386,7 +386,7 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
               borderColor: 'rgba(99,102,241,0.25)',
               background: 'rgba(99,102,241,0.06)',
             }}
-            whileHover={{ scale: 1.01, background: 'rgba(99,102,241,0.1)' } as object}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={13} />

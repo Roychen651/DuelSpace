@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
@@ -170,7 +170,7 @@ const pageKeyframes = `
 
 // ─── Stagger container ────────────────────────────────────────────────────────
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -178,9 +178,9 @@ const staggerContainer = {
   },
 }
 
-const slideUp = {
+const slideUp: Variants = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 }
 
 // ─── Main DealRoom page ───────────────────────────────────────────────────────
