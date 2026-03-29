@@ -209,6 +209,7 @@ const BLANK_DRAFT: ProposalInsert = {
   base_price: 0,
   currency: 'ILS',
   add_ons: [],
+  payment_milestones: [],
   status: 'draft',
   expires_at: null,
   last_viewed_at: null,
