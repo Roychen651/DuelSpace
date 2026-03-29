@@ -209,13 +209,13 @@ const container: Variants = {
 }
 
 const itemFade: Variants = {
-  hidden: { opacity: 0, y: 22, filter: 'blur(8px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.52, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.52, ease: 'easeOut' as const } },
 }
 
 const sectionReveal: Variants = {
-  hidden: { opacity: 0, y: 40, filter: 'blur(14px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.72, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: 'easeOut' as const } },
 }
 
 // ─── Hero Aurora Background ────────────────────────────────────────────────────
@@ -269,11 +269,10 @@ function DealRoomMockup({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
   return (
     <div style={{ perspective: 1400, animation: 'lp-float-mockup 7s ease-in-out infinite' }}>
       <motion.div
-        initial={{ opacity: 0, rotateX: 12, rotateY: -6, y: 30 }}
-        animate={{ opacity: 1, rotateX: 8, rotateY: -4, y: 0 }}
-        transition={{ duration: 1.1, ease: 'easeOut' as const, delay: 0.3 }}
         whileHover={{ rotateX: 4, rotateY: -2, scale: 1.015 }}
         style={{
+          rotateX: 8,
+          rotateY: -4,
           transformStyle: 'preserve-3d',
           borderRadius: 20,
           overflow: 'hidden',
@@ -450,8 +449,8 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Old way */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? 30 : -30, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, x: isHe ? 30 : -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.55, ease: 'easeOut' as const }}
             className="rounded-3xl p-7"
@@ -475,8 +474,8 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
 
           {/* DealSpace way */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? -30 : 30, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, x: isHe ? -30 : 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.55, ease: 'easeOut' as const, delay: 0.08 }}
             className="relative rounded-3xl p-7 overflow-hidden"
@@ -713,6 +712,58 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
   )
 }
 
+// ─── Social Proof Numbers ─────────────────────────────────────────────────────
+
+const PROOF_STATS = [
+  { value: '₪2.3M+', label_he: 'עסקאות שנחתמו', label_en: 'in Signed Deals' },
+  { value: '94%',    label_he: 'אחוז אישור',      label_en: 'Acceptance Rate'  },
+  { value: '2×',     label_he: 'סגירה מהר יותר',  label_en: 'Faster Closing'   },
+  { value: '4.9',    label_he: 'דירוג משתמשים',   label_en: 'User Rating'      },
+]
+
+function SocialProofNumbers({ isHe }: { isHe: boolean }) {
+  return (
+    <section className="relative py-16 px-6">
+      {/* Subtle divider top */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
+      <div className="max-w-4xl mx-auto">
+        <motion.div
+          className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8"
+          variants={container}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-60px' }}
+        >
+          {PROOF_STATS.map((s) => (
+            <motion.div
+              key={s.value}
+              variants={itemFade}
+              className="flex flex-col items-center text-center"
+            >
+              <span
+                className="text-4xl sm:text-5xl font-black tracking-tight mb-2"
+                style={{
+                  background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #c084fc 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {s.value}
+              </span>
+              <span className="text-[13px] text-white/40 font-medium leading-snug">
+                {isHe ? s.label_he : s.label_en}
+              </span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+      {/* Subtle divider bottom */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
+    </section>
+  )
+}
+
 // ─── Testimonials ──────────────────────────────────────────────────────────────
 
 const AVATAR_GRADS = [
@@ -930,44 +981,53 @@ function Footer({ c, isHe, onToggleLang, onNav }: {
   const paths = ['/terms', '/privacy', '/accessibility', '/security']
   return (
     <footer
-      className="relative z-10 px-6 py-10"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}
+      className="relative z-10"
+      style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: '#030305' }}
     >
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-        {/* Brand */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
-            <Zap size={13} className="text-white" />
-          </div>
-          <div>
-            <span className="text-sm font-bold text-white">DealSpace</span>
-            <p className="text-[10px] text-white/30 leading-none mt-0.5">{c.footerTagline}</p>
-          </div>
-        </div>
-
-        {/* Links */}
-        <div className="flex items-center gap-4 flex-wrap justify-center">
-          {c.footerLinks.map((label, i) => (
-            <button
-              key={label}
-              onClick={() => onNav(paths[i])}
-              className="text-[11px] text-white/30 transition hover:text-white/65"
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        {/* Top row: brand + nav */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+          {/* Brand mark */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.35)' }}
             >
-              {label}
-            </button>
-          ))}
+              <Zap size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[15px] font-bold tracking-tight text-white leading-none">DealSpace</p>
+              <p className="text-[11px] text-white/35 mt-1 leading-none">{c.footerTagline}</p>
+            </div>
+          </div>
+
+          {/* Nav links */}
+          <nav className="flex items-center gap-6 flex-wrap">
+            {c.footerLinks.map((label, i) => (
+              <button
+                key={label}
+                onClick={() => onNav(paths[i])}
+                className="text-[13px] text-white/38 transition-colors hover:text-white/72"
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Right: lang + copyright */}
-        <div className="flex flex-col items-end gap-1.5">
+        {/* Divider */}
+        <div className="my-8" style={{ height: 1, background: 'rgba(255,255,255,0.055)' }} />
+
+        {/* Bottom bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12px] text-white/25 order-2 sm:order-1" dir="ltr">{c.footerCopy}</p>
           <button
             onClick={onToggleLang}
-            className="flex items-center gap-1 text-[11px] text-white/30 transition hover:text-white/60"
+            className="flex items-center gap-1.5 text-[12px] text-white/35 transition-colors hover:text-white/62 order-1 sm:order-2"
           >
-            <Globe size={10} />
+            <Globe size={11} />
             {isHe ? 'English' : 'עברית'}
           </button>
-          <p className="text-[10px] text-white/20" dir="ltr">{c.footerCopy}</p>
         </div>
       </div>
     </footer>
@@ -993,11 +1053,9 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
           <div className="flex-1 text-center lg:text-start">
 
             {/* Brand Lockup — converting hero identity */}
-            <motion.div
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: 'easeOut' as const }}
+            <div
               className="flex items-center gap-3.5 justify-center lg:justify-start mb-8"
+              style={{ animation: 'lp-fade-up 0.55s ease-out both' }}
             >
               {/* Logo mark — hero-scale version */}
               <div
@@ -1029,29 +1087,24 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
                   {isHe ? 'פלטפורמת עסקאות B2B' : 'B2B Deal Closing Platform'}
                 </p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' as const, delay: 0.07 }}
+            <div
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7"
               style={{
                 background: 'rgba(99,102,241,0.1)',
                 border: '1px solid rgba(99,102,241,0.28)',
-                animation: 'lp-badge-pulse 3s ease-in-out infinite',
+                animation: 'lp-fade-up 0.5s ease-out 0.1s both, lp-badge-pulse 3s ease-in-out 2s infinite',
               }}
             >
               <span className="text-[12px] font-bold text-indigo-300">{c.badge}</span>
-            </motion.div>
+            </div>
 
             {/* H1 — gradient clipped */}
-            <motion.h1
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: 'easeOut' as const, delay: 0.08 }}
+            <h1
               className="text-4xl sm:text-5xl xl:text-6xl font-black leading-[1.08] tracking-tight mb-5"
+              style={{ animation: 'lp-fade-up 0.65s ease-out 0.18s both' }}
             >
               <span
                 style={{
@@ -1072,25 +1125,20 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
               >
                 {c.h1Line2}
               </span>
-            </motion.h1>
+            </h1>
 
             {/* Subheadline */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' as const, delay: 0.18 }}
+            <p
               className="text-base sm:text-lg text-white/50 leading-relaxed max-w-xl mb-8"
-              style={{ marginInlineStart: 0, marginInlineEnd: 'auto' }}
+              style={{ marginInlineStart: 0, marginInlineEnd: 'auto', animation: 'lp-fade-up 0.6s ease-out 0.28s both' }}
             >
               {c.sub}
-            </motion.p>
+            </p>
 
             {/* CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: 'easeOut' as const, delay: 0.28 }}
+            <div
               className="flex flex-wrap items-center gap-3 justify-center lg:justify-start mb-6"
+              style={{ animation: 'lp-fade-up 0.55s ease-out 0.38s both' }}
             >
               {/* Primary shimmer CTA */}
               <div className="relative">
@@ -1126,14 +1174,12 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
                 {c.cta2}
                 <ArrowRight size={14} />
               </motion.button>
-            </motion.div>
+            </div>
 
             {/* Trust pills */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.42 }}
+            <div
               className="flex flex-wrap items-center gap-4 justify-center lg:justify-start"
+              style={{ animation: 'lp-fade-in 0.5s ease-out 0.52s both' }}
             >
               {c.trust.map((t) => (
                 <span key={t} className="flex items-center gap-1.5 text-[12px] text-white/35">
@@ -1141,11 +1187,14 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
                   {t}
                 </span>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* 3D Mockup */}
-          <div className="flex-1 w-full max-w-sm lg:max-w-md xl:max-w-lg flex-none">
+          <div
+            className="flex-1 w-full max-w-sm lg:max-w-md xl:max-w-lg flex-none"
+            style={{ animation: 'lp-fade-up 0.8s ease-out 0.22s both' }}
+          >
             <DealRoomMockup c={c} isHe={isHe} />
           </div>
 
@@ -1186,6 +1235,7 @@ export default function LandingPage() {
         <MarqueeBand items={c.marqueeItems} isRTL={isHe} />
         <ProblemSolutionSection c={c} isHe={isHe} />
         <BentoGridSection c={c} isHe={isHe} />
+        <SocialProofNumbers isHe={isHe} />
         <TestimonialsSection c={c} />
         <FinalCTASection c={c} onCta={goSignup} />
       </main>

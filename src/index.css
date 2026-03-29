@@ -352,3 +352,13 @@ html.a11y-big-cursor * {
   0%   { transform: scale(1); opacity: 0.7 }
   100% { transform: scale(2.4); opacity: 0 }
 }
+
+@keyframes lp-fade-up {
+  from { opacity: 0; transform: translateY(28px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+
+@keyframes lp-fade-in {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
