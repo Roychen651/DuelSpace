@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Zap, Plus, Trash2, Edit3, Save, Percent } from 'lucide-react'
+import { Plus, Trash2, Edit3, Save, Percent } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../types/proposal'
@@ -230,7 +229,6 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: ServiceRowPr
 // ─── ServicesLibrary page ─────────────────────────────────────────────────────
 
 export default function ServicesLibrary() {
-  const navigate = useNavigate()
   const { locale } = useI18n()
   const isHe = locale === 'he'
 
@@ -278,43 +276,23 @@ export default function ServicesLibrary() {
           style={{ background: 'radial-gradient(ellipse, rgba(212,175,55,0.07) 0%, transparent 70%)', filter: 'blur(60px)' }} />
       </div>
 
-      {/* Header */}
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between px-6 py-4"
-        style={{ background: 'rgba(3,3,5,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex h-8 w-8 items-center justify-center rounded-xl transition"
-            style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-          >
-            <ArrowLeft size={15} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #f59e0b)', boxShadow: '0 0 12px rgba(212,175,55,0.4)' }}>
-              <Zap size={13} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-white">
-              {isHe ? 'ספריית שירותים' : 'Services Library'}
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => { setShowForm(true); setEditingId(null) }}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition"
-          style={{ background: 'linear-gradient(135deg, #d4af37, #f59e0b)', boxShadow: '0 0 12px rgba(212,175,55,0.3)' }}
-        >
-          <Plus size={13} />
-          {isHe ? 'שירות חדש' : 'New Service'}
-        </button>
-      </header>
-
       <main className="relative z-10 max-w-2xl mx-auto px-6 py-8 space-y-6">
+
+        {/* Page heading */}
+        <div className="flex items-center justify-between" style={{ animation: 'ds-fade-up 0.4s ease-out both' }}>
+          <div>
+            <h1 className="text-xl font-black text-white">{isHe ? 'ספריית שירותים' : 'Services Library'}</h1>
+            <p className="text-xs text-white/35 mt-0.5">{isHe ? 'ניהול שירותים שמורים לשימוש חוזר בהצעות' : 'Manage saved services for reuse in proposals'}</p>
+          </div>
+          <button
+            onClick={() => { setShowForm(true); setEditingId(null) }}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #f59e0b)', boxShadow: '0 0 12px rgba(212,175,55,0.3)' }}
+          >
+            <Plus size={13} />
+            {isHe ? 'שירות חדש' : 'New Service'}
+          </button>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>

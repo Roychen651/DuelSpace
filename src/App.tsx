@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
+import { ProtectedLayout } from './components/layout/ProtectedLayout'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
@@ -85,13 +86,15 @@ function AnimatedRoutes() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-            {/* Protected */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            {/* Protected — with shared Navbar via ProtectedLayout */}
+            <Route path="/dashboard" element={<ProtectedRoute><ProtectedLayout><Dashboard /></ProtectedLayout></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProtectedLayout><Profile /></ProtectedLayout></ProtectedRoute>} />
+            <Route path="/contracts" element={<ProtectedRoute><ProtectedLayout><ContractLibrary /></ProtectedLayout></ProtectedRoute>} />
+            <Route path="/services" element={<ProtectedRoute><ProtectedLayout><ServicesLibrary /></ProtectedLayout></ProtectedRoute>} />
+
+            {/* Protected — ProposalBuilder has its own header, no shared layout */}
             <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
             <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
-            <Route path="/contracts" element={<ProtectedRoute><ContractLibrary /></ProtectedRoute>} />
-            <Route path="/services" element={<ProtectedRoute><ServicesLibrary /></ProtectedRoute>} />
 
             {/* Public deal room — no auth required */}
             <Route path="/deal/:token" element={<DealRoom />} />

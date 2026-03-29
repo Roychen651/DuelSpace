@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, User, Mail, Lock, Camera, Check, Eye, EyeOff, Zap, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
@@ -222,7 +221,6 @@ const PRESET_COLORS = [
 // ─── Main Profile ─────────────────────────────────────────────────────────────
 
 export default function Profile() {
-  const navigate = useNavigate()
   const { user, updateProfile, updatePassword } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
@@ -332,8 +330,6 @@ export default function Profile() {
 
   if (!user) return null
 
-  const titleLabel = isHe ? 'הגדרות פרופיל' : 'Profile Settings'
-
   return (
     <div className="min-h-dvh" dir={isHe ? 'rtl' : 'ltr'} style={{ background: '#030305' }}>
       <style>{`
@@ -346,31 +342,6 @@ export default function Profile() {
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full"
           style={{ background: 'radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 70%)', filter: 'blur(60px)' }} />
       </div>
-
-      {/* Top bar */}
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between px-6 py-4"
-        style={{ background: 'rgba(3,3,5,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex h-8 w-8 items-center justify-center rounded-xl transition"
-            style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-          >
-            <ArrowLeft size={15} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}>
-              <Zap size={13} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-white">{titleLabel}</span>
-          </div>
-        </div>
-      </header>
 
       <main className="relative z-10 max-w-2xl mx-auto px-6 py-10 space-y-5">
 

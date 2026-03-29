@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Zap, FileText, ChevronDown, ChevronUp,
+  FileText, ChevronDown, ChevronUp,
   Copy, Check, Edit3, Save, X as CloseIcon, Eye, EyeOff,
 } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
@@ -317,7 +316,6 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
 // ─── ContractLibrary page ─────────────────────────────────────────────────────
 
 export default function ContractLibrary() {
-  const navigate = useNavigate()
   const { locale } = useI18n()
   const isHe = locale === 'he'
 
@@ -348,44 +346,18 @@ export default function ContractLibrary() {
           style={{ background: 'radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 70%)', filter: 'blur(60px)' }} />
       </div>
 
-      {/* Header */}
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between px-6 py-4"
-        style={{ background: 'rgba(3,3,5,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex h-8 w-8 items-center justify-center rounded-xl transition"
-            style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.5)' }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-          >
-            <ArrowLeft size={15} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}>
-              <Zap size={13} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-white">
-              {isHe ? 'ספריית חוזים' : 'Contract Library'}
-            </span>
-          </div>
-        </div>
-
-        <span className="rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-400 border border-indigo-500/20">
-          {templates.length} {isHe ? 'תבניות' : 'templates'}
-        </span>
-      </header>
-
       <main className="relative z-10 max-w-3xl mx-auto px-6 py-8 space-y-6">
 
         {/* Intro */}
         <div style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
-          <h1 className="text-xl font-black text-white mb-1">
-            {isHe ? 'חוזים מקצועיים בעברית' : 'Professional Hebrew Contracts'}
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-xl font-black text-white">
+              {isHe ? 'חוזים מקצועיים בעברית' : 'Professional Hebrew Contracts'}
+            </h1>
+            <span className="rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-400 border border-indigo-500/20">
+              {templates.length} {isHe ? 'תבניות' : 'templates'}
+            </span>
+          </div>
           <p className="text-sm text-white/35 leading-relaxed">
             {isHe
               ? 'תבניות חוזה מותאמות לחוק הישראלי. מלא פרטים, העתק, והכנס להצעה.'
