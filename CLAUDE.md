@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–10.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–12.
 
 ---
 
@@ -101,7 +101,7 @@ src/
 │   ├── Auth.tsx             # /auth — Linear.app style, pure black bg, glassmorphism card
 │   ├── AuthCallback.tsx     # /auth/callback — Supabase PKCE redirect handler
 │   ├── ResetPassword.tsx    # /auth/reset-password — password reset flow
-│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/kanban toggle, avatar dropdown
+│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar, Help button in Navbar
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
 │   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, VAT
@@ -122,18 +122,21 @@ src/
 │   │   ├── ClientDetailsForm.tsx  # Client legal identity capture (name, company, tax ID, address, role)
 │   │   └── MilestoneTimeline.tsx  # Animated payment schedule — spring-animated amounts
 │   ├── dashboard/
-│   │   ├── ProposalCard.tsx       # Grid card with status badge, actions menu
+│   │   ├── ProposalCard.tsx       # Grid card with status badge, responsive 3-dot menu (desktop dropdown / mobile bottom sheet)
 │   │   ├── ProposalCardSkeleton   # Loading skeleton
 │   │   ├── KanbanBoard.tsx        # Kanban view grouped by status
-│   │   └── BottomSheet.tsx        # Mobile preview sheet
+│   │   └── BottomSheet.tsx        # Mobile bottom sheet
 │   ├── onboarding/
 │   │   └── GuidedTour.tsx         # First-run highlight tour
 │   └── ui/
-│       └── PremiumInputs.tsx      # Shared input primitives (Radix slider, date picker)
+│       ├── PremiumInputs.tsx      # Shared input primitives (Radix slider, date picker)
+│       ├── AccessibilityWidget.tsx # Draggable FAB + fixed panel, 14 a11y controls, IS 5568 / WCAG 2.2 AA
+│       └── HelpCenterDrawer.tsx   # Side drawer with 10 bilingual FAQ items + category filter; controlled via props
 │
 ├── stores/
-│   ├── useAuthStore.ts      # Zustand: auth state, signIn/Up/Out, updateProfile/Password
-│   └── useProposalStore.ts  # Zustand: proposals CRUD with optimistic updates + demo injection
+│   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password
+│   ├── useProposalStore.ts    # Zustand: proposals CRUD with optimistic updates + demo injection
+│   └── useAccessibilityStore.ts # 14 a11y states, CSS DOM mutations, localStorage persistence (ds:a11y:*)
 │
 ├── lib/
 │   ├── supabase.ts          # Supabase client singleton
@@ -154,7 +157,8 @@ supabase/
     ├── 03_vat_field.sql            # include_vat column + update_proposal_time_spent RPC
     ├── 04_access_code.sql          # access_code column + get_deal_room_proposal RPC
     ├── 05_fix_deal_room_rpc.sql    # Adds SET search_path = public, grants to authenticated
-    └── 06_sprint10.sql             # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
+    ├── 06_sprint10.sql             # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
+    └── 07_sprint11.sql             # success_template column + decline_proposal() RPC
 ```
 
 ---
@@ -643,7 +647,60 @@ git push origin main
 
 ---
 
-## 22. What NOT To Do
+## 22. Accessibility Engine (Sprint 12)
+
+### `useAccessibilityStore` — 14 states
+Persisted under `ds:a11y:*` localStorage keys. `applyToDom()` runs on boot and on every state change via `store.subscribe()`.
+
+| State | Type | Mechanism |
+|---|---|---|
+| `textSize` | number 1.0–1.5 | CSS var `--a11y-scale` on `<html>` → `font-size: calc(16px * var(--a11y-scale))` |
+| `highContrast` | boolean | `style.filter` — `contrast(1.9) brightness(1.06) saturate(1.2)` |
+| `monochrome` | boolean | `style.filter` — `grayscale(1)` |
+| `invertColors` | boolean | `style.filter` — `invert(1) hue-rotate(180deg)` |
+| `colorBlindMode` | `'none'|'protanopia'|'deuteranopia'|'tritanopia'` | `style.filter` — hue-rotate approximations |
+| `dyslexiaFont` | boolean | class `a11y-dyslexia-font` → Atkinson Hyperlegible |
+| `readableFont` | boolean | class `a11y-readable-font` → Arial |
+| `lineHeightBoost` | boolean | class `a11y-line-height` → line-height 2.1 |
+| `letterSpacing` | boolean | class `a11y-letter-spacing` → letter-spacing 0.06em |
+| `readingMask` | boolean | `<ReadingMask>` React component (pointer-tracked overlay) |
+| `stopAnimations` | boolean | class `a11y-stop-animations` → duration 0.001ms |
+| `highlightLinks` | boolean | class `a11y-highlight-links` → yellow outline on `a, button` |
+| `focusHighlight` | boolean | class `a11y-focus-highlight` → thick yellow focus rings |
+| `bigCursor` | boolean | class `a11y-big-cursor` → SVG cursor data URI |
+
+All filter effects are combined into one `style.filter` string (never stacked layers).
+
+### `AccessibilityWidget`
+- Draggable FAB: `position: fixed; bottom: 24; right: 20` — dragConstraints computed from window size
+- Fixed panel: always `bottom: 88; right: 16` — never moves with FAB drag, never overflows viewport
+- Panel is `flex flex-col; height: panelH` — content area is `flex-1 min-h-0 overflow-y-auto` (scrolls properly)
+- FAB click guards: `e.stopPropagation()` not needed — panel is a sibling element, not nested
+- Reading Mask: separate `<ReadingMask>` component rendered at root level, `z-[9990]`, tracks `mousemove`
+
+### `HelpCenterDrawer`
+- **Controlled mode**: pass `open` + `onClose` props → no floating FAB rendered. Used from Dashboard Navbar.
+- **Uncontrolled mode**: no props → self-contained with desktop-only (`hidden sm:flex`) floating FAB. Used on non-Dashboard pages via App.tsx if needed.
+- 10 bilingual FAQ items (Hebrew + English, professional quality)
+- Category filter: All / Sending / Pricing / Legal / Settings
+- Dashboard Navbar renders a `<HelpCircle>` button that opens the drawer in controlled mode
+
+### Dashboard mobile layout
+- **No floating `+` FAB** — create button lives in the Navbar: icon-only on mobile, icon+text on sm+
+- `pb-32 sm:pb-8` on `<main>` ensures cards are never occluded by bottom FABs
+- Help Center (`?`) button is in the Navbar, always visible on all screen sizes
+- HelpCenterDrawer floating button is `hidden sm:flex` (legacy fallback, not shown on Dashboard)
+
+### Dashboard list view
+- Column header row: project/client, status, amount, date
+- Rows use CSS `grid` with `gridTemplateColumns: '8px 1fr 96px 112px 90px 56px'` on desktop
+- Mobile: simplified flex row (status dot | title+client | price+badge)
+- Hover: left `2px` accent bar in status color + subtle background
+- Actions (edit, download) visible on `group-hover:opacity-100`
+
+---
+
+## 23. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
 - **Do not use `ease: number[]`** in Framer Motion — use named strings with `as const`.

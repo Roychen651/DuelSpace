@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
-import { HelpCenterDrawer } from './components/ui/HelpCenterDrawer'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
@@ -65,8 +64,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
 
 function AnimatedRoutes() {
   const location = useLocation()
-  const { status } = useAuthStore()
-  const isDealRoom = location.pathname.startsWith('/deal/')
+  const { status: _status } = useAuthStore()
 
   return (
     <>
@@ -108,9 +106,6 @@ function AnimatedRoutes() {
           </Routes>
         </motion.div>
       </AnimatePresence>
-
-      {/* Help Center — show for authenticated users outside the Deal Room */}
-      {status === 'authenticated' && !isDealRoom && <HelpCenterDrawer />}
 
       {/* Accessibility Widget — global, always visible on all pages */}
       <AccessibilityWidget />

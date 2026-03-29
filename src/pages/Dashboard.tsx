@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, LayoutGrid, Columns, Bookmark, FileText, Search, Filter, List, ArrowUp, ArrowDown, FileDown } from 'lucide-react'
+import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, LayoutGrid, Columns, Bookmark, FileText, Search, Filter, List, ArrowUp, ArrowDown, FileDown, HelpCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
@@ -12,6 +12,7 @@ import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
 import type { ProposalStatus } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
+import { HelpCenterDrawer } from '../components/ui/HelpCenterDrawer'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
 
@@ -158,6 +159,7 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
   const { locale, setLocale, t } = useI18n()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const avatar = user?.user_metadata?.avatar_url as string | undefined
   const name = (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? ''
@@ -169,102 +171,101 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
   }
 
   return (
-    <nav
-      className="sticky top-0 z-30 flex items-center justify-between px-6 py-4"
-      style={{
-        background: 'rgba(4,6,8,0.8)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-      }}
-    >
-      {/* Logo */}
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 16px rgba(99,102,241,0.4)' }}>
-          <Zap size={15} className="text-white" />
+    <>
+      <nav
+        className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5"
+        style={{
+          background: 'rgba(4,6,8,0.88)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 16px rgba(99,102,241,0.4)' }}>
+            <Zap size={15} className="text-white" />
+          </div>
+          <span className="text-sm font-bold tracking-tight text-white hidden xs:block">{t('brand.name')}</span>
         </div>
-        <span className="text-sm font-bold tracking-tight text-white">{t('brand.name')}</span>
-      </div>
 
-      {/* Right controls */}
-      <div className="flex items-center gap-2">
-        {/* Create button */}
-        <motion.button
-          data-tour="new-proposal"
-          onClick={onCreate}
-          className="hidden sm:flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <Plus size={13} />
-          {locale === 'he' ? 'הצעה חדשה' : 'New Proposal'}
-        </motion.button>
-
-        {/* Lang toggle */}
-        <button
-          onClick={() => setLocale(locale === 'he' ? 'en' : 'he')}
-          className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/50 transition hover:text-white/80"
-        >
-          <Globe size={11} />
-          {locale === 'he' ? 'EN' : 'עב'}
-        </button>
-
-        {/* Avatar / sign out */}
-        <div
-          className="relative"
-          onMouseEnter={() => setMenuOpen(true)}
-          onMouseLeave={() => setMenuOpen(false)}
-        >
-          <button
-            data-tour="profile-avatar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white overflow-hidden transition ring-1 ring-white/10 hover:ring-indigo-500/40"
-            style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+        {/* Right controls */}
+        <div className="flex items-center gap-2">
+          {/* Create button — icon-only on mobile, icon+text on sm+ */}
+          <motion.button
+            data-tour="new-proposal"
+            onClick={onCreate}
+            className="flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            aria-label={locale === 'he' ? 'הצעה חדשה' : 'New Proposal'}
           >
-            {avatar ? <img src={avatar} alt={name} className="h-full w-full object-cover" /> : initials || <User size={14} />}
+            <Plus size={14} />
+            <span className="hidden sm:inline">{locale === 'he' ? 'הצעה חדשה' : 'New Proposal'}</span>
+          </motion.button>
+
+          {/* Help Center — always visible */}
+          <button
+            onClick={() => setHelpOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/6 hover:text-white/80"
+            aria-label={locale === 'he' ? 'מרכז עזרה' : 'Help Center'}
+            title={locale === 'he' ? 'מרכז עזרה' : 'Help Center'}
+          >
+            <HelpCircle size={15} />
           </button>
-          {/* Dropdown — pt-2 bridges the gap so hover stays active */}
-          {menuOpen && (
-            <div className="absolute end-0 top-full pt-2 z-50">
-              <div
-                className="flex flex-col gap-0.5 rounded-xl p-1 min-w-[160px]"
-                style={{ background: '#0d0d18', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}
-              >
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
+
+          {/* Lang toggle */}
+          <button
+            onClick={() => setLocale(locale === 'he' ? 'en' : 'he')}
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/50 transition hover:text-white/80"
+          >
+            <Globe size={11} />
+            {locale === 'he' ? 'EN' : 'עב'}
+          </button>
+
+          {/* Avatar dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setMenuOpen(true)}
+            onMouseLeave={() => setMenuOpen(false)}
+          >
+            <button
+              data-tour="profile-avatar"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white overflow-hidden transition ring-1 ring-white/10 hover:ring-indigo-500/40"
+              style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+            >
+              {avatar ? <img src={avatar} alt={name} className="h-full w-full object-cover" /> : initials || <User size={14} />}
+            </button>
+            {menuOpen && (
+              <div className="absolute end-0 top-full pt-2 z-50">
+                <div
+                  className="flex flex-col gap-0.5 rounded-xl p-1 min-w-[160px]"
+                  style={{ background: '#0d0d18', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}
                 >
-                  <Settings size={12} />
-                  {locale === 'he' ? 'פרופיל' : 'Profile'}
-                </button>
-                <button
-                  onClick={() => navigate('/services')}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
-                >
-                  <Bookmark size={12} />
-                  {locale === 'he' ? 'שירותים שמורים' : 'Saved Services'}
-                </button>
-                <button
-                  onClick={() => navigate('/contracts')}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
-                >
-                  <FileText size={12} />
-                  {locale === 'he' ? 'ספריית חוזים' : 'Contracts'}
-                </button>
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '2px 0' }} />
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-red-500/10 hover:text-red-400 w-full text-start"
-                >
-                  <LogOut size={12} />
-                  {locale === 'he' ? 'התנתק' : 'Sign Out'}
-                </button>
+                  <button onClick={() => navigate('/profile')} className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start">
+                    <Settings size={12} />{locale === 'he' ? 'פרופיל' : 'Profile'}
+                  </button>
+                  <button onClick={() => navigate('/services')} className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start">
+                    <Bookmark size={12} />{locale === 'he' ? 'שירותים שמורים' : 'Saved Services'}
+                  </button>
+                  <button onClick={() => navigate('/contracts')} className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start">
+                    <FileText size={12} />{locale === 'he' ? 'ספריית חוזים' : 'Contracts'}
+                  </button>
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '2px 0' }} />
+                  <button onClick={handleSignOut} className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-red-500/10 hover:text-red-400 w-full text-start">
+                    <LogOut size={12} />{locale === 'he' ? 'התנתק' : 'Sign Out'}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Help Center drawer — controlled from navbar button */}
+      <HelpCenterDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+    </>
   )
 }
 
@@ -589,88 +590,172 @@ export default function Dashboard() {
             />
           </div>
         ) : viewMode === 'list' ? (
-          <div data-tour="proposals-list" className="space-y-1.5">
-            <AnimatePresence>
-              {filteredProposals.map((p, i) => {
-                const total = proposalTotal(p)
-                const meta = STATUS_META[p.status]
-                const isAccepted = p.status === 'accepted'
-                const date = new Date(p.created_at).toLocaleDateString(
-                  locale === 'he' ? 'he-IL' : 'en-US',
-                  { day: 'numeric', month: 'short', year: 'numeric' }
-                )
-                return (
-                  <motion.div
-                    key={p.id}
-                    exit={{ opacity: 0, x: -16, transition: { duration: 0.15 } }}
-                    className="group flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all"
-                    onClick={() => handleEdit(p.id)}
-                    whileHover={{ x: 2, backgroundColor: 'rgba(255,255,255,0.055)' }}
-                    style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      animation: `ds-fade-up 0.3s ease-out ${0.05 + i * 0.04}s both`,
-                    }}
-                  >
-                    {/* Status dot */}
-                    <div className="flex-none h-2 w-2 rounded-full" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
+          <div data-tour="proposals-list">
+            {/* ── Column header ─── */}
+            <div
+              className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl"
+              style={{
+                gridTemplateColumns: '8px 1fr 96px 112px 90px 56px',
+                gap: '0 16px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.04)',
+              }}
+            >
+              <div />
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20">
+                {locale === 'he' ? 'פרויקט / לקוח' : 'Project / Client'}
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-center">
+                {locale === 'he' ? 'סטטוס' : 'Status'}
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-end">
+                {locale === 'he' ? 'סכום' : 'Amount'}
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-end">
+                {locale === 'he' ? 'תאריך' : 'Date'}
+              </p>
+              <div />
+            </div>
 
-                    {/* Title + client */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate leading-snug">
-                        {p.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
-                      </p>
-                      <p className="text-[11px] text-white/35 truncate">
-                        {p.client_name || (locale === 'he' ? 'לקוח' : 'Client')}
-                      </p>
-                    </div>
+            {/* ── Rows ──────────── */}
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              <AnimatePresence>
+                {filteredProposals.map((p, i) => {
+                  const total = proposalTotal(p)
+                  const meta = STATUS_META[p.status]
+                  const isAccepted = p.status === 'accepted'
+                  const date = new Date(p.created_at).toLocaleDateString(
+                    locale === 'he' ? 'he-IL' : 'en-US',
+                    { day: 'numeric', month: 'short' }
+                  )
+                  const isLast = i === filteredProposals.length - 1
 
-                    {/* Status badge */}
-                    <span
-                      className="hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider flex-none"
-                      style={{ color: meta.color, background: `${meta.color}18`, border: `1px solid ${meta.color}30` }}
+                  return (
+                    <motion.div
+                      key={p.id}
+                      exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
+                      className="group relative cursor-pointer"
+                      onClick={() => handleEdit(p.id)}
+                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.032)' }}
+                      style={{
+                        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                        animation: `ds-fade-up 0.25s ease-out ${0.04 + i * 0.03}s both`,
+                      }}
                     >
-                      {locale === 'he' ? meta.label_he : meta.label_en}
-                    </span>
+                      {/* Hover accent — left edge */}
+                      <div
+                        className="absolute inset-y-0 start-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
+                        style={{ background: meta.color }}
+                      />
 
-                    {/* Value */}
-                    <p className="text-sm font-bold tabular-nums flex-none" style={{ color: meta.color }}>
-                      {formatCurrency(total, p.currency)}
-                    </p>
-
-                    {/* Date */}
-                    <p className="hidden md:block text-[11px] text-white/25 flex-none w-24 text-end">{date}</p>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                      <button
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/8 hover:text-white/80"
-                        onClick={() => handleEdit(p.id)}
-                        title={locale === 'he' ? 'ערוך' : 'Edit'}
+                      {/* Desktop grid row */}
+                      <div
+                        className="hidden md:grid items-center px-4 py-3.5"
+                        style={{ gridTemplateColumns: '8px 1fr 96px 112px 90px 56px', gap: '0 16px' }}
                       >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                      {isAccepted && (
-                        <button
-                          className="flex h-7 w-7 items-center justify-center rounded-lg transition"
-                          style={{ color: '#4ade80' }}
-                          onClick={() => handleDownloadPdf(p.id)}
-                          disabled={pdfGenerating === p.id}
-                          title={locale === 'he' ? 'הורד PDF' : 'Download PDF'}
+                        {/* Status dot */}
+                        <div
+                          className="h-2 w-2 rounded-full flex-none"
+                          style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }}
+                        />
+
+                        {/* Title + client */}
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-white/90 truncate leading-snug">
+                            {p.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
+                          </p>
+                          <p className="text-[11px] text-white/35 truncate mt-0.5">
+                            {p.client_name || (locale === 'he' ? '—' : '—')}
+                          </p>
+                        </div>
+
+                        {/* Status badge */}
+                        <div className="flex justify-center">
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                            style={{ color: meta.color, background: `${meta.color}15`, border: `1px solid ${meta.color}30` }}
+                          >
+                            <span className="h-1 w-1 rounded-full" style={{ background: meta.color }} />
+                            {locale === 'he' ? meta.label_he : meta.label_en}
+                          </span>
+                        </div>
+
+                        {/* Amount */}
+                        <p
+                          className="text-[13px] font-bold tabular-nums text-end"
+                          style={{ color: meta.color, textShadow: `0 0 16px ${meta.glow}` }}
                         >
-                          {pdfGenerating === p.id
-                            ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
-                            : <FileDown size={13} />}
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
+                          {formatCurrency(total, p.currency)}
+                        </p>
+
+                        {/* Date */}
+                        <p className="text-[11px] text-white/30 text-end">{date}</p>
+
+                        {/* Actions — visible on hover */}
+                        <div
+                          className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/8 hover:text-white/75"
+                            onClick={() => handleEdit(p.id)}
+                            title={locale === 'he' ? 'ערוך' : 'Edit'}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          {isAccepted && (
+                            <button
+                              className="flex h-7 w-7 items-center justify-center rounded-lg transition hover:bg-emerald-500/10"
+                              style={{ color: '#4ade80' }}
+                              onClick={() => handleDownloadPdf(p.id)}
+                              disabled={pdfGenerating === p.id}
+                              title={locale === 'he' ? 'הורד PDF' : 'Download PDF'}
+                            >
+                              {pdfGenerating === p.id
+                                ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
+                                : <FileDown size={12} />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mobile row — simplified */}
+                      <div className="flex md:hidden items-center gap-3 px-4 py-3.5">
+                        <div
+                          className="h-2 w-2 rounded-full flex-none"
+                          style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-white/90 truncate">
+                            {p.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
+                          </p>
+                          <p className="text-[11px] text-white/35 truncate mt-0.5">
+                            {p.client_name || '—'}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 flex-none">
+                          <p className="text-[13px] font-bold tabular-nums" style={{ color: meta.color }}>
+                            {formatCurrency(total, p.currency)}
+                          </p>
+                          <span
+                            className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                            style={{ color: meta.color, background: `${meta.color}18`, border: `1px solid ${meta.color}30` }}
+                          >
+                            {locale === 'he' ? meta.label_he : meta.label_en}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         ) : (
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -688,20 +773,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Floating create button (mobile) ──────────────────────────── */}
-        <motion.button
-          onClick={handleCreate}
-          className="fixed bottom-24 end-4 z-20 sm:hidden flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl"
-          style={{
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            boxShadow: '0 0 30px rgba(99,102,241,0.5)',
-          }}
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.93 }}
-          aria-label={locale === 'he' ? 'הצעה חדשה' : 'New Proposal'}
-        >
-          <Plus size={22} />
-        </motion.button>
       </main>
 
       {/* Legal footer */}
