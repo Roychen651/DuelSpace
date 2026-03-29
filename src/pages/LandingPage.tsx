@@ -209,13 +209,13 @@ const container: Variants = {
 }
 
 const itemFade: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.52, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 150, damping: 18, mass: 0.7 } },
 }
 
 const sectionReveal: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 36 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 110, damping: 16, mass: 0.8 } },
 }
 
 // ─── Hero Aurora Background ────────────────────────────────────────────────────
@@ -500,7 +500,7 @@ function MarqueeBand({ items, isRTL }: { items: string[]; isRTL: boolean }) {
 
 function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
   return (
-    <section className="relative py-24 px-6">
+    <section className="relative py-16 sm:py-24 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Heading */}
         <motion.div
@@ -513,7 +513,23 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {isHe ? 'השוואה אמיתית' : 'Real comparison'}
           </p>
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight" dir="ltr">{c.vsHeadline}</h2>
+          <h2 className="text-3xl sm:text-4xl font-black mb-5 tracking-tight flex items-center justify-center gap-3 flex-wrap" dir="ltr">
+            <span className="text-white">PDF</span>
+            <span
+              className="rounded-xl px-3 py-1 text-[65%] font-black"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.22) 0%, rgba(168,85,247,0.15) 100%)',
+                border: '1px solid rgba(99,102,241,0.32)',
+                color: '#a5b4fc',
+                fontFamily: 'var(--font-accent)',
+                letterSpacing: '0.08em',
+                boxShadow: '0 0 18px rgba(99,102,241,0.2)',
+              }}
+            >
+              vs.
+            </span>
+            <span className="text-white">{isHe ? 'חדר עסקאות' : 'Deal Room'}</span>
+          </h2>
           <p className="text-white/45 text-base max-w-md mx-auto">{c.vsSub}</p>
         </motion.div>
 
@@ -786,7 +802,7 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
   ]
 
   return (
-    <section className="relative py-24 px-6" style={{ background: 'rgba(255,255,255,0.01)' }}>
+    <section className="relative py-16 sm:py-24 px-6" style={{ background: 'rgba(255,255,255,0.01)' }}>
       <div className="max-w-5xl mx-auto">
         {/* Heading */}
         <motion.div
@@ -804,7 +820,7 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
 
         {/* Asymmetric 3-col grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
           variants={container}
           initial="hidden"
           whileInView="visible"
@@ -942,12 +958,59 @@ const AVATAR_GRADS = [
   'linear-gradient(135deg, #22c55e, #6366f1)',
 ]
 
+function TestimonialCard({ t, i }: {
+  t: { name: string; role: string; text: string; stars: number }
+  i: number
+}) {
+  return (
+    <Tilt3D
+      className="relative rounded-3xl p-6 overflow-hidden h-full"
+      style={{
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%)',
+        border: '1px solid rgba(255,255,255,0.09)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+      }}
+    >
+      <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+      {/* Decorative oversized quote mark */}
+      <div
+        className="pointer-events-none absolute -top-2 start-4 select-none leading-none"
+        style={{ fontSize: 96, fontWeight: 900, color: 'rgba(99,102,241,0.08)', fontFamily: 'var(--font-accent)', lineHeight: 1 }}
+        aria-hidden
+      >
+        "
+      </div>
+      {/* Stars */}
+      <div className="flex gap-0.5 mb-4 relative z-10">
+        {Array.from({ length: t.stars }).map((_, s) => (
+          <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37' }} />
+        ))}
+      </div>
+      {/* Quote */}
+      <p className="relative z-10 text-sm text-white/65 leading-relaxed mb-5">"{t.text}"</p>
+      {/* Author */}
+      <div className="flex items-center gap-3 mt-auto">
+        <div
+          className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-none"
+          style={{ background: AVATAR_GRADS[i] }}
+        >
+          {t.name[0]}
+        </div>
+        <div>
+          <p className="text-[13px] font-bold text-white/90">{t.name}</p>
+          <p className="text-[11px] text-white/35">{t.role}</p>
+        </div>
+      </div>
+    </Tilt3D>
+  )
+}
+
 function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
   return (
-    <section className="relative py-24 px-6">
+    <section className="relative py-16 sm:py-24">
       <div className="max-w-6xl mx-auto">
         <motion.div
-          className="text-center mb-14"
+          className="text-center mb-14 px-6"
           variants={sectionReveal}
           initial="hidden"
           whileInView="visible"
@@ -963,8 +1026,46 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
           </div>
         </motion.div>
 
+        {/* Mobile: horizontal snap-scroll carousel — swipe to reveal all 6 cards */}
+        <div className="sm:hidden">
+          <div
+            className="flex gap-4 overflow-x-auto pb-5"
+            style={{
+              scrollSnapType: 'x mandatory',
+              scrollbarWidth: 'none',
+              paddingInlineStart: 24,
+              paddingInlineEnd: 24,
+            }}
+          >
+            {c.testimonials.map((t, i) => (
+              <div
+                key={t.name}
+                className="flex-none"
+                style={{ scrollSnapAlign: 'start', width: '82vw', maxWidth: 320, minHeight: 220 }}
+              >
+                <TestimonialCard t={t} i={i} />
+              </div>
+            ))}
+          </div>
+          {/* Swipe hint dots */}
+          <div className="flex items-center justify-center gap-1.5 mt-2 px-6">
+            {c.testimonials.map((_, i) => (
+              <div
+                key={i}
+                className="rounded-full transition-all"
+                style={{
+                  width: i === 0 ? 16 : 4,
+                  height: 4,
+                  background: i === 0 ? 'rgba(99,102,241,0.6)' : 'rgba(255,255,255,0.12)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop: staggered reveal grid */}
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+          className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 px-6"
           variants={container}
           initial="hidden"
           whileInView="visible"
@@ -972,45 +1073,7 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
         >
           {c.testimonials.map((t, i) => (
             <motion.div key={t.name} variants={itemFade}>
-              <Tilt3D
-                className="relative rounded-3xl p-6 overflow-hidden h-full"
-                style={{
-                  background: 'linear-gradient(160deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%)',
-                  border: '1px solid rgba(255,255,255,0.09)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-                }}
-              >
-              <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-              {/* Decorative oversized quote mark */}
-              <div
-                className="pointer-events-none absolute -top-2 start-4 select-none leading-none"
-                style={{ fontSize: 96, fontWeight: 900, color: 'rgba(99,102,241,0.08)', fontFamily: 'var(--font-accent)', lineHeight: 1 }}
-                aria-hidden
-              >
-                "
-              </div>
-              {/* Stars */}
-              <div className="flex gap-0.5 mb-4 relative z-10">
-                {Array.from({ length: t.stars }).map((_, s) => (
-                  <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37' }} />
-                ))}
-              </div>
-              {/* Quote */}
-              <p className="relative z-10 text-sm text-white/65 leading-relaxed mb-5">"{t.text}"</p>
-              {/* Author */}
-              <div className="flex items-center gap-3 mt-auto">
-                <div
-                  className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-none"
-                  style={{ background: AVATAR_GRADS[i] }}
-                >
-                  {t.name[0]}
-                </div>
-                <div>
-                  <p className="text-[13px] font-bold text-white/90">{t.name}</p>
-                  <p className="text-[11px] text-white/35">{t.role}</p>
-                </div>
-              </div>
-              </Tilt3D>
+              <TestimonialCard t={t} i={i} />
             </motion.div>
           ))}
         </motion.div>
@@ -1023,7 +1086,7 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
 
 function FinalCTASection({ c, onCta }: { c: typeof copy['he']; onCta: () => void }) {
   return (
-    <section className="relative py-28 px-6 overflow-hidden">
+    <section className="relative py-20 sm:py-28 px-6 overflow-hidden">
       {/* BG layers */}
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(99,102,241,0.18) 0%, rgba(168,85,247,0.06) 40%, transparent 70%)' }} />
       {/* Dot grid texture */}
@@ -1434,7 +1497,9 @@ export default function LandingPage() {
         onToggleLang={() => setLocale(isHe ? 'en' : 'he')}
       />
 
-      <main className="flex-1">
+      {/* key={locale} → clean remount on language switch, re-plays CSS animations,
+          resets FM whileInView state so scroll reveals work correctly in new locale */}
+      <main className="flex-1" key={locale}>
         <HeroSection c={c} isHe={isHe} onCta={goSignup} onDemo={goDemo} />
         <MarqueeBand items={c.marqueeItems} isRTL={isHe} />
         <ProblemSolutionSection c={c} isHe={isHe} />
