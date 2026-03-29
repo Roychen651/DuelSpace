@@ -3,7 +3,7 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles,
+  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal,
 } from 'lucide-react'
 import type { ProposalInsert, AddOn, PaymentMilestone } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
@@ -226,6 +226,19 @@ function AddOnRow({
             aria-label={addOn.enabled ? 'Disable' : 'Enable'}
           >
             {addOn.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+          </button>
+          {/* Client-adjustable quantity toggle */}
+          <button
+            type="button"
+            onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
+            className="transition-colors"
+            title={isHe
+              ? (addOn.clientAdjustable !== false ? 'לקוח יכול לשנות כמות — לחץ לנעילה' : 'כמות נעולה — לחץ לאפשר שינוי')
+              : (addOn.clientAdjustable !== false ? 'Client can adjust qty — click to lock' : 'Qty locked — click to allow')}
+            style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.18)' }}
+            aria-label="Toggle client quantity adjustment"
+          >
+            <SlidersHorizontal size={13} />
           </button>
           <button
             type="button"

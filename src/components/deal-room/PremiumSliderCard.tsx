@@ -11,6 +11,7 @@ interface PremiumSliderCardProps {
   enabled: boolean
   currency: string
   locale: string
+  adjustable: boolean
   onToggle: () => void
   onQuantityChange: (qty: number) => void
 }
@@ -18,7 +19,7 @@ interface PremiumSliderCardProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PremiumSliderCard({
-  addOn, quantity, enabled, currency, locale,
+  addOn, quantity, enabled, currency, locale, adjustable,
   onToggle, onQuantityChange,
 }: PremiumSliderCardProps) {
   const lineTotal = addOn.price * quantity
@@ -129,9 +130,9 @@ export function PremiumSliderCard({
           </div>
         </div>
 
-        {/* ── Quantity slider — only when enabled ─────────────────────────── */}
+        {/* ── Quantity slider — only when enabled AND creator allows adjustment ── */}
         <AnimatePresence initial={false}>
-          {enabled && (
+          {enabled && adjustable && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}

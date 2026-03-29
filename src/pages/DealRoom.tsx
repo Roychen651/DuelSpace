@@ -208,6 +208,7 @@ export default function DealRoom() {
   const [signature, setSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [acceptError, setAcceptError] = useState<string | null>(null)
   const [declined, setDeclined] = useState(false)
   const [declining, setDeclining] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
@@ -335,6 +336,7 @@ export default function DealRoom() {
   const handleAccept = useCallback(async () => {
     if (!token || accepting || accepted) return
     setAccepting(true)
+    setAcceptError(null)
 
     // Save client details before accepting
     if (clientDetails) {
@@ -349,9 +351,15 @@ export default function DealRoom() {
     }
 
     const { error } = await supabase.rpc('accept_proposal', { p_token: token })
-    if (!error) setAccepted(true)
+    if (!error) {
+      setAccepted(true)
+    } else {
+      setAcceptError(locale === 'he'
+        ? 'שגיאה באישור ההצעה. אנא נסה שוב.'
+        : 'Failed to confirm the agreement. Please try again.')
+    }
     setAccepting(false)
-  }, [token, accepting, accepted, clientDetails])
+  }, [token, accepting, accepted, clientDetails, locale])
 
   // ── Handle decline ─────────────────────────────────────────────────────────
   const handleDecline = useCallback(async () => {
@@ -696,6 +704,7 @@ export default function DealRoom() {
                   enabled={lineItems[addOn.id]?.enabled ?? addOn.enabled}
                   currency={proposal.currency}
                   locale={locale}
+                  adjustable={addOn.clientAdjustable !== false}
                   onToggle={() =>
                     setLineItems(prev => ({
                       ...prev,
@@ -973,6 +982,16 @@ export default function DealRoom() {
                 legalConsentAccepted={!!clientDetails && legalConsent}
               />
             </div>
+            {/* Accept error */}
+            {acceptError && (
+              <div className="relative z-20 mx-4 mb-2">
+                <div className="rounded-xl px-4 py-3 flex items-center gap-2"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)' }}>
+                  <AlertCircle size={13} className="text-red-400 flex-none" />
+                  <p className="text-xs text-red-400">{acceptError}</p>
+                </div>
+              </div>
+            )}
             {/* Decline offer ghost button */}
             {!accepted && (
               <div className="relative z-20 flex justify-center pb-6" style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>

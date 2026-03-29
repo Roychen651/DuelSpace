@@ -289,6 +289,13 @@ export default function Dashboard() {
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
+  // Re-fetch when creator returns to the tab (e.g., after client signs in Deal Room)
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) fetchProposals() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [fetchProposals])
+
   // Inject demo proposal for brand-new users (empty dashboard, first visit)
   useEffect(() => {
     if (!loading && proposals.length === 0) {

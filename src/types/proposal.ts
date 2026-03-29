@@ -8,6 +8,8 @@ export interface AddOn {
   description?: string
   price: number
   enabled: boolean
+  /** When false, the client cannot adjust quantity in the Deal Room (qty is fixed at 1). Default: true */
+  clientAdjustable?: boolean
 }
 
 export interface PaymentMilestone {
