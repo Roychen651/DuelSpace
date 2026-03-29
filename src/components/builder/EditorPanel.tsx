@@ -3,8 +3,9 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal,
+  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
 } from 'lucide-react'
+import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -26,6 +27,33 @@ interface EditorPanelProps {
   locale: string
   /** When true (status === 'accepted'), the editor is read-only */
   isLocked?: boolean
+}
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+function Tip({ content, children }: { content: string; children: React.ReactNode }) {
+  return (
+    <Tooltip.Provider delayDuration={200} skipDelayDuration={0}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            sideOffset={6}
+            className="z-[200] max-w-[240px] rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed text-white/75 select-none"
+            style={{
+              background: '#030305',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            {content}
+            <Tooltip.Arrow style={{ fill: '#030305' }} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -696,9 +724,19 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
           <div className="flex items-center gap-2">
             <Receipt size={13} className={showVat ? 'text-indigo-400' : 'text-white/30'} />
             <div>
-              <p className="text-xs font-semibold text-white/70">
-                {isHe ? `כלול מע"מ (${Math.round(vatRate * 100)}%)` : `Include VAT (${Math.round(vatRate * 100)}%)`}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-white/70">
+                  {isHe ? `כלול מע"מ (${Math.round(vatRate * 100)}%)` : `Include VAT (${Math.round(vatRate * 100)}%)`}
+                </p>
+                <Tip content={isHe
+                  ? `הדלק אם אתה עוסק מורשה. המערכת תוסיף ${Math.round(vatRate * 100)}% אוטומטית לסכום הכולל ותציג פירוט מלא בחדר הדיל ובחוזה. ניתן לשנות את השיעור בפרופיל.`
+                  : `Enable if you are a registered VAT business. The system auto-adds ${Math.round(vatRate * 100)}% to the total and shows a full breakdown in the Deal Room and contract. Change the rate in Profile.`
+                }>
+                  <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-0.5" tabIndex={-1}>
+                    <Info size={10} />
+                  </button>
+                </Tip>
+              </div>
               {showVat && draft.base_price > 0 && (
                 <p className="text-[10px] text-indigo-400/70">
                   {isHe
@@ -761,6 +799,14 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
                 {draft.add_ons.filter(a => a.enabled).length}/{draft.add_ons.length}
               </span>
             )}
+            <Tip content={isHe
+              ? 'טיפ: השתמש בסליידר (🟢) לכמויות כמו שעות עבודה, ובמתג הדלקה/כיבוי לשירותי כן/לא. הלקוח יכול להתאים בחדר הדיל.'
+              : 'Tip: Use the slider (🟢) for quantities like hours, and the on/off toggle for yes/no services. The client can adjust in the Deal Room.'
+            }>
+              <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-0.5" tabIndex={-1}>
+                <Info size={12} />
+              </button>
+            </Tip>
           </div>
           {showVat && (
             <span className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-wider">
@@ -823,11 +869,21 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
         badge={milestones.length > 0 ? `${milestones.length}` : undefined}
       >
         {/* Explanation */}
-        <p className="text-[11px] text-white/35 leading-relaxed">
-          {isHe
-            ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
-            : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
-        </p>
+        <div className="flex items-start gap-2">
+          <p className="text-[11px] text-white/35 leading-relaxed flex-1">
+            {isHe
+              ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
+              : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
+          </p>
+          <Tip content={isHe
+            ? 'חלוקת תשלומים מפחיתה סיכון לשני הצדדים. למשל: 30% מקדמה בחתימה, 40% באמצע הפרויקט, 30% במסירה הסופית. הלקוח רואה את לוח התשלומים בחדר הדיל.'
+            : 'Splitting payments reduces risk for both parties. Example: 30% deposit at signing, 40% mid-project, 30% at final delivery. The client sees the schedule in the Deal Room.'
+          }>
+            <button type="button" className="flex-none text-white/20 hover:text-white/50 transition-colors p-0.5 mt-0.5" tabIndex={-1}>
+              <Info size={12} />
+            </button>
+          </Tip>
+        </div>
 
         {/* Quick presets — only shown when no milestones yet */}
         {milestones.length === 0 && (
