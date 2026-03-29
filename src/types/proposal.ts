@@ -81,12 +81,13 @@ export function vatAmount(amount: number, vatRate = DEFAULT_VAT_RATE): number {
 
 export type ProposalUpdate = Partial<ProposalInsert>
 
-/** Computed total price including enabled add-ons */
+/** Computed total price including enabled add-ons.
+ *  Uses integer-safe rounding to avoid floating-point accumulation (e.g. 0.1+0.2). */
 export function proposalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
-    .reduce((sum, a) => sum + a.price, 0)
-  return p.base_price + addOnsTotal
+    .reduce((sum, a) => sum + Math.round(a.price * 100), 0)
+  return Math.round((Math.round(p.base_price * 100) + addOnsTotal)) / 100
 }
 
 export function formatCurrency(amount: number, currency = 'ILS'): string {
@@ -98,10 +99,12 @@ export function formatCurrency(amount: number, currency = 'ILS'): string {
   }).format(amount)
 }
 
-/** Returns true if all milestones sum to exactly 100% */
+/** Returns true if all milestones sum to exactly 100%.
+ *  Uses Math.round to absorb floating-point drift (e.g. 33.3+33.3+33.4 = 99.999…). */
 export function milestonesValid(milestones: PaymentMilestone[]): boolean {
   if (milestones.length === 0) return true
-  return milestones.reduce((sum, m) => sum + m.percentage, 0) === 100
+  const sum = milestones.reduce((s, m) => s + m.percentage, 0)
+  return Math.round(sum) === 100
 }
 
 export const STATUS_META: Record<ProposalStatus, { label_en: string; label_he: string; color: string; glow: string }> = {

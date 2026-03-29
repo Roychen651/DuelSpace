@@ -74,14 +74,22 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete }: Clie
     signer_role:     '',
   })
 
+  // Tracks whether the user has touched the tax_id field (show error on blur)
+  const [taxIdTouched, setTaxIdTouched] = useState(false)
+
   const set = (key: keyof ClientCapturedDetails) => (v: string) =>
     setDetails(d => ({ ...d, [key]: v }))
 
-  const canSubmit = details.full_name.trim().length >= 2
+  // Israeli tax IDs: ת.ז is 9 digits, ח.פ is 9 digits — min 5 chars allows partial
+  const taxIdValid = details.tax_id.replace(/\D/g, '').length >= 5
+  const canSubmit = details.full_name.trim().length >= 2 && taxIdValid
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canSubmit) return
+    if (!canSubmit) {
+      setTaxIdTouched(true)
+      return
+    }
     onComplete(details)
   }
 
@@ -137,13 +145,21 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete }: Clie
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <FormInput
-            label={isHe ? 'ח.פ. / ת.ז' : 'Tax ID / ID No.'}
-            value={details.tax_id}
-            onChange={set('tax_id')}
-            placeholder={isHe ? '123456789' : '123456789'}
-            icon={<Hash size={10} />}
-          />
+          <div className="space-y-1">
+            <FormInput
+              label={isHe ? 'ח.פ. / ת.ז' : 'Tax ID / ID No.'}
+              value={details.tax_id}
+              onChange={v => { set('tax_id')(v); if (taxIdTouched) setTaxIdTouched(true) }}
+              placeholder={isHe ? '123456789' : '123456789'}
+              icon={<Hash size={10} />}
+              required
+            />
+            {taxIdTouched && !taxIdValid && (
+              <p className="text-[10px] font-semibold" style={{ color: '#f87171' }}>
+                {isHe ? 'נדרש ח.פ. / ת.ז. תקין (לפחות 5 ספרות)' : 'Valid Tax ID required (min 5 digits)'}
+              </p>
+            )}
+          </div>
           <FormInput
             label={isHe ? 'תפקיד החותם' : 'Signer Role'}
             value={details.signer_role}
@@ -161,9 +177,10 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete }: Clie
           icon={<MapPin size={10} />}
         />
 
-        {/* Submit */}
+        {/* Submit — also marks taxId touched so validation message appears if skipped */}
         <motion.button
           type="submit"
+          onClick={() => setTaxIdTouched(true)}
           disabled={!canSubmit}
           className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed"
           style={{

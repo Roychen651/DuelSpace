@@ -338,9 +338,9 @@ export default function DealRoom() {
     setAccepting(true)
     setAcceptError(null)
 
-    // Save client details before accepting
+    // Save client legal identity before accepting — must succeed or abort
     if (clientDetails) {
-      await supabase.rpc('save_client_details', {
+      const { error: detailsError } = await supabase.rpc('save_client_details', {
         p_token:        token,
         p_full_name:    clientDetails.full_name,
         p_company_name: clientDetails.company_name,
@@ -348,6 +348,13 @@ export default function DealRoom() {
         p_address:      clientDetails.billing_address,
         p_signer_role:  clientDetails.signer_role,
       })
+      if (detailsError) {
+        setAcceptError(locale === 'he'
+          ? 'שגיאה בשמירת פרטי הזהות. בדוק את החיבור לאינטרנט ונסה שוב.'
+          : 'Failed to save your identity details. Please check your connection and try again.')
+        setAccepting(false)
+        return
+      }
     }
 
     const { error } = await supabase.rpc('accept_proposal', { p_token: token })

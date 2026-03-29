@@ -469,7 +469,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
 
   // ── Milestone helpers ───────────────────────────────────────────────────────
   const milestones: PaymentMilestone[] = draft.payment_milestones ?? []
-  const milestoneSum = milestones.reduce((s, m) => s + m.percentage, 0)
+  const milestoneSum = Math.round(milestones.reduce((s, m) => s + m.percentage, 0))
   const milestonesOk = milestonesValid(milestones)
 
   const addMilestone = () => {

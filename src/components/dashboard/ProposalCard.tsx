@@ -169,6 +169,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
   const { deleteProposal, duplicateProposal } = useProposalStore()
   const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
 
@@ -310,7 +311,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                   <DropItem
                     icon={<Trash2 size={15} />}
                     label={locale === 'he' ? 'מחק הצעה' : 'Delete'}
-                    onClick={handleDelete}
+                    onClick={() => setConfirmingDelete(true)}
                     variant="danger"
                   />
                 </DropdownMenu.Content>
@@ -377,6 +378,35 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                 : <FileDown size={12} />}
               {locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
             </button>
+          )}
+
+          {/* Inline delete confirmation — prevents accidental destructive actions */}
+          {confirmingDelete && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.18 }}
+              className="mt-3 flex items-center gap-2"
+              style={{ overflow: 'hidden' }}
+            >
+              <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
+                {locale === 'he' ? 'למחוק לצמיתות?' : 'Delete permanently?'}
+              </p>
+              <button
+                className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
+                onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
+              >
+                {locale === 'he' ? 'ביטול' : 'Cancel'}
+              </button>
+              <button
+                className="rounded-lg px-3 py-1 text-[11px] font-bold transition-colors"
+                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
+                onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
+              >
+                {locale === 'he' ? 'מחק' : 'Delete'}
+              </button>
+            </motion.div>
           )}
 
           {/* Status timeline */}
