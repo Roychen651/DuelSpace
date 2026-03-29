@@ -332,17 +332,19 @@ function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange:
           role="tab"
           aria-selected={active === tab}
           onClick={() => onChange(tab)}
-          className="relative z-10 flex-1 rounded-lg py-2 text-xs font-semibold transition-colors duration-200"
+          className="relative z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors duration-200"
           style={{ color: active === tab ? '#ffffff' : 'rgba(255,255,255,0.35)' }}
         >
           {t(`auth.tab.${tab}`)}
         </button>
       ))}
       <motion.div
-        className="absolute inset-1 rounded-lg"
+        className="absolute inset-y-1 rounded-lg"
         style={{
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.3) 0%, rgba(168,85,247,0.2) 100%)',
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+          boxShadow: '0 0 22px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.18)',
           width: 'calc(50% - 4px)',
+          left: 4,
         }}
         animate={{ x: active === 'signin' ? 0 : 'calc(100% + 4px)' }}
         transition={{ type: 'spring', stiffness: 400, damping: 35 }}

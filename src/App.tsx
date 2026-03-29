@@ -4,6 +4,8 @@ import { useAuthStore } from './stores/useAuthStore'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
+import ProposalBuilder from './pages/ProposalBuilder'
+import DealRoom from './pages/DealRoom'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -49,18 +51,6 @@ function PublicRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-// ─── Sprint 3 placeholder ─────────────────────────────────────────────────────
-
-function ProposalBuilderPlaceholder() {
-  return (
-    <div style={{ background: '#040608', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-      <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 48 }}>🚧</div>
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, fontFamily: 'system-ui' }}>Proposal Builder — Sprint 3</p>
-      <a href="/dashboard" style={{ color: '#818cf8', fontSize: 13 }}>← Back to Dashboard</a>
-    </div>
-  )
-}
-
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 function AppInner() {
@@ -76,8 +66,11 @@ function AppInner() {
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilderPlaceholder /></ProtectedRoute>} />
-        <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilderPlaceholder /></ProtectedRoute>} />
+        <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+        <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+
+        {/* Public deal room — no auth required */}
+        <Route path="/deal/:token" element={<DealRoom />} />
 
         {/* Default redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

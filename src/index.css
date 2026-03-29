@@ -1,26 +1,43 @@
+/* ── Google Fonts ─────────────────────────────────────────────────────────── */
+/* Outfit: geometric sans for EN/Numbers */
+/* Platypi: premium display serif for HE headings */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Platypi:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── DealSpace Design Tokens ─────────────────────────────────────────────── */
+/* ── Design Tokens ───────────────────────────────────────────────────────── */
 :root {
-  --background: #040608;
-  --foreground: #f8f9fb;
-  --gold-glow: #d4af37;
-  --indigo-glow: #6366f1;
-  --purple-glow: #a855f7;
-  --glass: rgba(255, 255, 255, 0.04);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* OLED-deep background */
+  --background:      #05050A;
+  --foreground:      #f0f0f8;
+
+  /* Accent palette */
+  --indigo:          #6366f1;
+  --purple:          #a855f7;
+  --gold:            #d4af37;
+  --emerald:         #22c55e;
+
+  /* Glow helpers */
+  --glow-indigo:     rgba(99,102,241,0.45);
+  --glow-purple:     rgba(168,85,247,0.35);
+  --glow-gold:       rgba(212,175,55,0.35);
+
+  /* Glass system */
+  --glass-bg:        rgba(255,255,255,0.03);
+  --glass-border:    rgba(255,255,255,0.08);
+  --glass-blur:      blur(24px) saturate(180%);
 
   /* Font stacks */
-  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
-  --font-display: 'Syne', 'Geist', sans-serif;
-  --font-hebrew: 'Heebo', sans-serif;
+  --font-sans:    'Outfit', 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-hebrew:  'Platypi', 'Heebo', sans-serif;
 
   color-scheme: dark;
 }
 
-/* ── Base Reset ──────────────────────────────────────────────────────────── */
+/* ── Base Reset ───────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -39,11 +56,19 @@ body {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
+  letter-spacing: -0.01em;
 }
 
-/* Hebrew RTL — switch font stack when dir=rtl */
-[dir="rtl"] body,
-[dir="rtl"] .font-hebrew {
+/* Hebrew RTL — Platypi for headings, Heebo for body */
+[dir="rtl"] body {
+  font-family: 'Heebo', system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] .font-display {
   font-family: var(--font-hebrew);
 }
 
@@ -54,30 +79,28 @@ body {
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-/* ── Focus rings ─────────────────────────────────────────────────────────── */
-:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.7);
-  outline-offset: 2px;
+  background: rgba(255,255,255,0.09);
   border-radius: 4px;
 }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
-/* ── Selection ───────────────────────────────────────────────────────────── */
+/* ── Focus rings ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.65);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(99,102,241,0.28);
   color: white;
 }
 
-/* ── Reduced motion ──────────────────────────────────────────────────────── */
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -85,10 +108,62 @@ body {
   }
 }
 
-/* ── Utility ──────────────────────────────────────────────────────────────── */
+/* ── Glass utility class ──────────────────────────────────────────────────── */
 .glass-card {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background:         var(--glass-bg);
+  border:             1px solid var(--glass-border);
+  backdrop-filter:    var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow:         inset 0 1px 1px rgba(255,255,255,0.05);
 }
+
+/* ── Custom range slider — Deal Room ─────────────────────────────────────── */
+.deal-room-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.deal-room-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  box-shadow: 0 0 12px rgba(99,102,241,0.6), 0 2px 8px rgba(0,0,0,0.4);
+  cursor: grab;
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.deal-room-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(99,102,241,0.8), 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.deal-room-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  box-shadow: 0 0 12px rgba(99,102,241,0.6);
+  cursor: grab;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.deal-room-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* ── Number tabular ──────────────────────────────────────────────────────── */
+.tabular-nums { font-variant-numeric: tabular-nums; }
