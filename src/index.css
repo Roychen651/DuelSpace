@@ -283,3 +283,65 @@ html.a11y-big-cursor,
 html.a11y-big-cursor * {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M8 4 L8 32 L16 24 L22 36 L26 34 L20 22 L32 22 Z' fill='white' stroke='black' stroke-width='2'/%3E%3C/svg%3E") 4 4, auto !important;
 }
+
+/* ── Landing Page Animations ─────────────────────────────────────────────── */
+
+@keyframes lp-shimmer {
+  0%   { background-position: -200% center }
+  100% { background-position:  200% center }
+}
+
+@keyframes lp-aurora-1 {
+  0%, 100% { transform: translate(0, 0)       scale(1)    }
+  33%       { transform: translate(70px,-50px) scale(1.12) }
+  66%       { transform: translate(-30px,60px) scale(0.9)  }
+}
+
+@keyframes lp-aurora-2 {
+  0%, 100% { transform: translate(0, 0)        scale(1)    }
+  50%       { transform: translate(-70px,-30px) scale(1.18) }
+}
+
+@keyframes lp-aurora-3 {
+  0%, 100% { transform: translate(0, 0)        }
+  40%       { transform: translate(50px, 30px)  }
+  70%       { transform: translate(-20px,-50px) }
+}
+
+@keyframes lp-float-mockup {
+  0%, 100% { transform: translateY(0px)   }
+  50%       { transform: translateY(-14px) }
+}
+
+@keyframes lp-marquee {
+  from { transform: translateX(0) }
+  to   { transform: translateX(-50%) }
+}
+
+@keyframes lp-marquee-rtl {
+  from { transform: translateX(0) }
+  to   { transform: translateX(50%) }
+}
+
+@keyframes lp-cursor-blink {
+  0%, 100% { opacity: 1 }
+  50%       { opacity: 0 }
+}
+
+@keyframes lp-draw-sig {
+  0%   { stroke-dashoffset: 320; opacity: 0 }
+  10%  { opacity: 1 }
+  75%  { stroke-dashoffset: 0;   opacity: 1 }
+  88%  { stroke-dashoffset: 0;   opacity: 1 }
+  100% { stroke-dashoffset: 0;   opacity: 0 }
+}
+
+@keyframes lp-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(99,102,241,0.2); }
+}
+
+@keyframes lp-ping-ring {
+  0%   { transform: scale(1); opacity: 0.7 }
+  100% { transform: scale(2.4); opacity: 0 }
+}
