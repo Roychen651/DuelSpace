@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt, Lock,
+  ChevronDown, FileCheck, Receipt, Lock, Milestone,
 } from 'lucide-react'
-import type { ProposalInsert, AddOn } from '../../types/proposal'
-import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../../types/proposal'
+import type { ProposalInsert, AddOn, PaymentMilestone } from '../../types/proposal'
+import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { PremiumDatePicker } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
 import { AIGhostwriter } from './AIGhostwriter'
@@ -431,6 +432,50 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
     onChange({ add_ons: [...draft.add_ons, addOn] })
   }
 
+  // ── Auto-inject creator info from user profile ──────────────────────────────
+  const { user } = useAuthStore()
+  useEffect(() => {
+    if (!user) return
+    const m = user.user_metadata as Record<string, string | undefined> | null
+    if (!m) return
+    const info = {
+      full_name:      m['full_name']      ?? '',
+      company_name:   m['company_name']   ?? '',
+      tax_id:         m['tax_id']         ?? '',
+      address:        m['address']        ?? '',
+      phone:          m['phone']          ?? '',
+      signatory_name: m['signatory_name'] ?? '',
+    }
+    const brandColor = m['brand_color'] ?? null
+    onChange({ creator_info: info, brand_color: brandColor })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  // ── Milestone helpers ───────────────────────────────────────────────────────
+  const milestones: PaymentMilestone[] = draft.payment_milestones ?? []
+  const milestoneSum = milestones.reduce((s, m) => s + m.percentage, 0)
+  const milestonesOk = milestonesValid(milestones)
+
+  const addMilestone = () => {
+    const remaining = Math.max(0, 100 - milestoneSum)
+    onChange({
+      payment_milestones: [
+        ...milestones,
+        { id: crypto.randomUUID(), name: '', percentage: remaining },
+      ],
+    })
+  }
+
+  const updateMilestone = (id: string, patch: Partial<PaymentMilestone>) => {
+    onChange({
+      payment_milestones: milestones.map(m => m.id === id ? { ...m, ...patch } : m),
+    })
+  }
+
+  const deleteMilestone = (id: string) => {
+    onChange({ payment_milestones: milestones.filter(m => m.id !== id) })
+  }
+
   return (
     <div className="p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
       {/* Hide browser number-input spinners globally within the builder */}
@@ -705,6 +750,108 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
           </motion.button>
         </div>
       </div>
+
+      {/* ── Payment Milestones ──────────────────────────────────────────── */}
+      <Section
+        title={isHe ? 'אבני דרך לתשלום' : 'Payment Milestones'}
+        icon={<Milestone size={15} />}
+        defaultOpen={false}
+        badge={milestones.length > 0 ? `${milestones.length}` : undefined}
+      >
+        <p className="text-[11px] text-white/35 leading-relaxed">
+          {isHe
+            ? 'הגדר לוח תשלומים. אחוזים חייבים להסתכם בדיוק ל-100%.'
+            : 'Define a payment schedule. Percentages must sum to exactly 100%.'}
+        </p>
+
+        <div className="space-y-2">
+          <AnimatePresence>
+            {milestones.map((m, i) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div
+                  className="flex items-center gap-2 rounded-xl p-2.5"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                  }}
+                >
+                  <span className="text-[10px] font-black text-white/20 w-5 text-center flex-none">
+                    {i + 1}
+                  </span>
+                  <input
+                    className={inputClass + ' flex-1 py-2 text-xs'}
+                    placeholder={isHe ? 'שם אבן הדרך' : 'Milestone name'}
+                    value={m.name}
+                    onChange={e => updateMilestone(m.id, { name: e.target.value })}
+                  />
+                  <div className="relative flex-none w-20">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      className={inputClass + ' py-2 text-xs text-center pe-6'}
+                      value={m.percentage || ''}
+                      onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
+                    />
+                    <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-white/30 pointer-events-none">%</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => deleteMilestone(m.id)}
+                    className="text-white/20 hover:text-red-400 transition-colors flex-none"
+                    aria-label="Delete milestone"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Sum indicator */}
+        {milestones.length > 0 && (
+          <div
+            className="flex items-center justify-between rounded-xl px-3.5 py-2.5"
+            style={{
+              background: milestonesOk
+                ? 'rgba(34,197,94,0.07)'
+                : milestoneSum > 100
+                ? 'rgba(239,68,68,0.07)'
+                : 'rgba(212,175,55,0.07)',
+              border: `1px solid ${milestonesOk ? 'rgba(34,197,94,0.2)' : milestoneSum > 100 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.2)'}`,
+            }}
+          >
+            <span className="text-[11px] font-semibold" style={{ color: milestonesOk ? '#22c55e' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
+              {isHe ? `סה"כ: ${milestoneSum}%` : `Total: ${milestoneSum}%`}
+            </span>
+            <span className="text-[10px]" style={{ color: milestonesOk ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.35)' }}>
+              {milestonesOk
+                ? (isHe ? '✓ תקין' : '✓ Valid')
+                : (isHe ? `נדרש עוד ${100 - milestoneSum}%` : `Need ${100 - milestoneSum}% more`)}
+            </span>
+          </div>
+        )}
+
+        <motion.button
+          type="button"
+          onClick={addMilestone}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
+          style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Plus size={13} />
+          {isHe ? 'הוסף אבן דרך' : 'Add Milestone'}
+        </motion.button>
+      </Section>
 
       {/* ── AI Ghostwriter ───────────────────────────────────────────────── */}
       <AIGhostwriter

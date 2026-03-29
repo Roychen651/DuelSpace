@@ -202,6 +202,10 @@ export const useProposalStore = create<ProposalState>()(
               enabled: false,
             },
           ],
+          payment_milestones: [
+            { id: crypto.randomUUID(), name: 'Kickoff Payment', percentage: 50 },
+            { id: crypto.randomUUID(), name: 'Final Delivery', percentage: 50 },
+          ],
         }
 
         await get().createProposal(demoData)

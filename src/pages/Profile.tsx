@@ -1,10 +1,11 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, User, Mail, Lock, Camera, Check, Eye, EyeOff, Zap, CheckCircle2, XCircle, Percent } from 'lucide-react'
+import { ArrowLeft, User, Mail, Lock, Camera, Check, Eye, EyeOff, Zap, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
+import { useI18n } from '../lib/i18n'
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ function SaveButton({ loading, saved, label = 'Save Changes' }: { loading: boole
       {loading ? (
         <span className="h-4 w-4 rounded-full border-2 border-white/30" style={{ borderTopColor: 'white', animation: 'spin 0.8s linear infinite' }} />
       ) : saved ? (
-        <><Check size={14} strokeWidth={3} /> Saved!</>
+        <><Check size={14} strokeWidth={3} />{label === 'Save Changes' ? 'Saved!' : label}</>
       ) : label}
     </motion.button>
   )
@@ -142,24 +143,16 @@ function AvatarUpload({ user }: { user: { name: string; email: string; avatarUrl
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) return
     setUploading(true)
-
-    // Local preview
     const reader = new FileReader()
     reader.onload = e => setPreview(e.target?.result as string)
     reader.readAsDataURL(file)
-
-    // Upload to Supabase Storage
     const ext = file.name.split('.').pop()
     const path = `avatars/${crypto.randomUUID()}.${ext}`
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, file, { upsert: true })
-
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
     if (!uploadError) {
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
       await updateProfile({ avatar_url: data.publicUrl })
     }
-
     setUploading(false)
   }, [updateProfile])
 
@@ -172,9 +165,7 @@ function AvatarUpload({ user }: { user: { name: string; email: string; avatarUrl
           className="h-20 w-20 rounded-2xl overflow-hidden flex items-center justify-center text-xl font-black text-white"
           style={{ background: preview ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 24px rgba(99,102,241,0.3)' }}
         >
-          {preview
-            ? <img src={preview} alt={user.name} className="h-full w-full object-cover" />
-            : initials || <User size={28} />}
+          {preview ? <img src={preview} alt={user.name} className="h-full w-full object-cover" /> : initials || <User size={28} />}
         </div>
         {uploading && (
           <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60">
@@ -202,11 +193,38 @@ function AvatarUpload({ user }: { user: { name: string; email: string; avatarUrl
   )
 }
 
+// ─── Brand Color Picker ───────────────────────────────────────────────────────
+
+function ColorSwatch({ hex, selected, onClick }: { hex: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="h-8 w-8 rounded-xl transition-all"
+      style={{
+        background: hex,
+        border: selected ? `2px solid white` : '2px solid transparent',
+        boxShadow: selected ? `0 0 12px ${hex}80` : 'none',
+        transform: selected ? 'scale(1.15)' : 'scale(1)',
+      }}
+      aria-label={hex}
+    />
+  )
+}
+
+const PRESET_COLORS = [
+  '#6366f1', '#8b5cf6', '#a855f7', '#ec4899',
+  '#ef4444', '#f97316', '#eab308', '#22c55e',
+  '#14b8a6', '#06b6d4', '#3b82f6', '#1d4ed8',
+]
+
 // ─── Main Profile ─────────────────────────────────────────────────────────────
 
 export default function Profile() {
   const navigate = useNavigate()
   const { user, updateProfile, updatePassword } = useAuthStore()
+  const { locale } = useI18n()
+  const isHe = locale === 'he'
 
   const name = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email = user?.email ?? ''
@@ -224,6 +242,37 @@ export default function Profile() {
     setNameSaving(false)
     setNameSaved(true)
     setTimeout(() => setNameSaved(false), 2500)
+  }
+
+  // ── Business identity ─────────────────────────────────────────────────────
+  const [biz, setBiz] = useState({
+    company_name:   (user?.user_metadata?.company_name  as string | undefined) ?? '',
+    tax_id:         (user?.user_metadata?.tax_id         as string | undefined) ?? '',
+    address:        (user?.user_metadata?.address        as string | undefined) ?? '',
+    phone:          (user?.user_metadata?.phone          as string | undefined) ?? '',
+    signatory_name: (user?.user_metadata?.signatory_name as string | undefined) ?? '',
+  })
+  const [bizSaving, setBizSaving] = useState(false)
+  const [bizSaved,  setBizSaved]  = useState(false)
+
+  const handleSaveBiz = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBizSaving(true)
+    const { error } = await supabase.auth.updateUser({ data: biz })
+    setBizSaving(false)
+    if (!error) { setBizSaved(true); setTimeout(() => setBizSaved(false), 2500) }
+  }
+
+  // ── Brand color ───────────────────────────────────────────────────────────
+  const [brandColor, setBrandColor] = useState<string>(
+    (user?.user_metadata?.brand_color as string | undefined) ?? '#6366f1'
+  )
+  const [colorSaved, setColorSaved] = useState(false)
+
+  const handleSaveColor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const { error } = await supabase.auth.updateUser({ data: { brand_color: brandColor } })
+    if (!error) { setColorSaved(true); setTimeout(() => setColorSaved(false), 2500) }
   }
 
   // ── VAT rate ──────────────────────────────────────────────────────────────
@@ -257,7 +306,6 @@ export default function Profile() {
     setPwError(null)
     if (newPw.length < 8) { setPwError('Password must be at least 8 characters'); return }
     setPwSaving(true)
-    // Re-authenticate then update
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: currentPw })
     if (signInError) { setPwError('Current password is incorrect'); setPwSaving(false); return }
     const result = await updatePassword(newPw)
@@ -268,11 +316,29 @@ export default function Profile() {
     setTimeout(() => setPwSaved(false), 2500)
   }
 
+  // Keep biz state in sync if user metadata changes externally
+  useEffect(() => {
+    if (!user) return
+    setBiz({
+      company_name:   (user.user_metadata?.company_name   as string | undefined) ?? '',
+      tax_id:         (user.user_metadata?.tax_id          as string | undefined) ?? '',
+      address:        (user.user_metadata?.address         as string | undefined) ?? '',
+      phone:          (user.user_metadata?.phone           as string | undefined) ?? '',
+      signatory_name: (user.user_metadata?.signatory_name  as string | undefined) ?? '',
+    })
+    setBrandColor((user.user_metadata?.brand_color as string | undefined) ?? '#6366f1')
+  }, [user])
+
   if (!user) return null
 
+  const titleLabel = isHe ? 'הגדרות פרופיל' : 'Profile Settings'
+
   return (
-    <div className="min-h-dvh" style={{ background: '#030305' }}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes ds-fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }`}</style>
+    <div className="min-h-dvh" dir={isHe ? 'rtl' : 'ltr'} style={{ background: '#030305' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes ds-fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
 
       {/* Background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
@@ -300,7 +366,7 @@ export default function Profile() {
               style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}>
               <Zap size={13} className="text-white" />
             </div>
-            <span className="text-sm font-bold text-white">Profile</span>
+            <span className="text-sm font-bold text-white">{titleLabel}</span>
           </div>
         </div>
       </header>
@@ -308,46 +374,170 @@ export default function Profile() {
       <main className="relative z-10 max-w-2xl mx-auto px-6 py-10 space-y-5">
 
         {/* ── Avatar + name banner ───────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          <Card title="Your Identity" icon={<User size={16} />}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'הזהות שלי' : 'Your Identity'} icon={<User size={16} />}>
             <AvatarUpload user={{ name, email, avatarUrl }} />
           </Card>
         </motion.div>
 
         {/* ── Display name ───────────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.5, ease: 'easeOut' }}>
-          <Card title="Display Name" icon={<Mail size={16} />}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'שם תצוגה' : 'Display Name'} icon={<Mail size={16} />}>
             <form onSubmit={handleSaveName} className="space-y-4">
-              <Field
-                label="Full Name"
-                value={displayName}
-                onChange={setDisplayName}
-                placeholder="Your full name"
-              />
-              <Field
-                label="Email Address"
-                value={email}
-                onChange={() => {}}
-                disabled
-                placeholder="your@email.com"
-              />
+              <Field label={isHe ? 'שם מלא' : 'Full Name'} value={displayName} onChange={setDisplayName} placeholder={isHe ? 'שמך המלא' : 'Your full name'} />
+              <Field label={isHe ? 'כתובת אימייל' : 'Email Address'} value={email} onChange={() => {}} disabled placeholder="your@email.com" />
               <div className="flex justify-end pt-1">
-                <SaveButton loading={nameSaving} saved={nameSaved} label="Save Name" />
+                <SaveButton loading={nameSaving} saved={nameSaved} label={isHe ? 'שמור שם' : 'Save Name'} />
+              </div>
+            </form>
+          </Card>
+        </motion.div>
+
+        {/* ── Business Identity ──────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'זהות עסקית' : 'Business Identity'} icon={<Building2 size={16} />}>
+            <p className="text-xs text-white/35 -mt-2 mb-4 leading-relaxed">
+              {isHe
+                ? 'פרטים אלה יוזרקו אוטומטית לחוזים ולקבצי PDF שלך — מלא פעם אחת, לעולם לא תצטרך להקליד שוב.'
+                : 'These details are automatically injected into your contracts and PDFs — fill once, never type again.'}
+            </p>
+            <form onSubmit={handleSaveBiz} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <Field
+                    label={isHe ? 'שם חברה / עסק משפטי' : 'Legal Company / Business Name'}
+                    value={biz.company_name}
+                    onChange={v => setBiz(b => ({ ...b, company_name: v }))}
+                    placeholder={isHe ? 'למשל: צילומי כהן בע"מ' : 'e.g. Cohen Studios Ltd.'}
+                  />
+                </div>
+                <Field
+                  label={isHe ? 'ח.פ. / עוסק מורשה / ת.ז' : 'Tax ID / Business No.'}
+                  value={biz.tax_id}
+                  onChange={v => setBiz(b => ({ ...b, tax_id: v }))}
+                  placeholder={isHe ? '123456789' : '123456789'}
+                  suffix={<Hash size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                />
+                <Field
+                  label={isHe ? 'טלפון ליצירת קשר' : 'Contact Phone'}
+                  value={biz.phone}
+                  onChange={v => setBiz(b => ({ ...b, phone: v }))}
+                  placeholder={isHe ? '050-000-0000' : '+972-50-000-0000'}
+                  suffix={<Phone size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    label={isHe ? 'כתובת עסק מלאה' : 'Full Business Address'}
+                    value={biz.address}
+                    onChange={v => setBiz(b => ({ ...b, address: v }))}
+                    placeholder={isHe ? 'רחוב, עיר, מיקוד' : 'Street, City, ZIP'}
+                    suffix={<MapPin size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    label={isHe ? 'שם מורשה חתימה' : 'Authorized Signatory Name'}
+                    value={biz.signatory_name}
+                    onChange={v => setBiz(b => ({ ...b, signatory_name: v }))}
+                    placeholder={isHe ? 'שם מלא של החותם המורשה' : 'Full name of authorized signer'}
+                    suffix={<PenTool size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end pt-1">
+                <SaveButton loading={bizSaving} saved={bizSaved} label={isHe ? 'שמור פרטי עסק' : 'Save Business Info'} />
+              </div>
+            </form>
+          </Card>
+        </motion.div>
+
+        {/* ── Brand Color ────────────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'צבע מותג' : 'Brand Color'} icon={<Palette size={16} />}>
+            <p className="text-xs text-white/35 -mt-2 mb-4 leading-relaxed">
+              {isHe
+                ? 'הצבע יופיע בחדר הדיל של הלקוח — כפתור האישור, הסליידרים ואפקטי הגלו.'
+                : 'This color appears in your client\'s Deal Room — approve button, sliders, and glow effects.'}
+            </p>
+            <form onSubmit={handleSaveColor} className="space-y-4">
+              {/* Preset swatches */}
+              <div className="flex flex-wrap gap-2">
+                {PRESET_COLORS.map(hex => (
+                  <ColorSwatch key={hex} hex={hex} selected={brandColor === hex} onClick={() => setBrandColor(hex)} />
+                ))}
+              </div>
+              {/* Custom hex + native picker */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={e => {
+                      const v = e.target.value
+                      if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBrandColor(v)
+                    }}
+                    className="w-full rounded-2xl px-4 py-3 ps-11 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                    onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+                    onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                    placeholder="#6366f1"
+                    maxLength={7}
+                  />
+                  {/* Color preview circle */}
+                  <span
+                    className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-lg border border-white/20"
+                    style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1' }}
+                  />
+                </div>
+                {/* Native color picker */}
+                <label className="relative cursor-pointer">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1'}
+                    onChange={e => setBrandColor(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl transition"
+                    style={{
+                      background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1',
+                      boxShadow: `0 0 16px ${/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1'}60`,
+                    }}
+                  >
+                    <Palette size={16} className="text-white/80" />
+                  </div>
+                </label>
+                <SaveButton loading={false} saved={colorSaved} label={isHe ? 'שמור צבע' : 'Save Color'} />
+              </div>
+              {/* Preview */}
+              <div
+                className="rounded-xl px-4 py-3 flex items-center gap-3"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1', boxShadow: `0 0 8px ${brandColor}80` }}
+                />
+                <span className="text-[11px] text-white/40">
+                  {isHe ? 'תצוגה מקדימה של הצבע בחדר הדיל' : 'Preview of your brand color in Deal Room'}
+                </span>
+                <div
+                  className="ms-auto rounded-lg px-3 py-1 text-[11px] font-bold text-white"
+                  style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? `${brandColor}30` : 'rgba(99,102,241,0.2)', border: `1px solid ${/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1'}40` }}
+                >
+                  {isHe ? 'אשר ✓' : 'Approve ✓'}
+                </div>
               </div>
             </form>
           </Card>
         </motion.div>
 
         {/* ── Password ───────────────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.5, ease: 'easeOut' }}>
-          <Card title="Security" icon={<Lock size={16} />}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'אבטחה' : 'Security'} icon={<Lock size={16} />}>
             <form onSubmit={handleSavePassword} className="space-y-4">
               <Field
-                label="Current Password"
+                label={isHe ? 'סיסמה נוכחית' : 'Current Password'}
                 type={showCurrent ? 'text' : 'password'}
                 value={currentPw}
                 onChange={setCurrentPw}
@@ -363,11 +553,11 @@ export default function Profile() {
               />
               <div>
                 <Field
-                  label="New Password"
+                  label={isHe ? 'סיסמה חדשה' : 'New Password'}
                   type={showNew ? 'text' : 'password'}
                   value={newPw}
                   onChange={setNewPw}
-                  placeholder="Min. 8 characters"
+                  placeholder={isHe ? 'מינימום 8 תווים' : 'Min. 8 characters'}
                   suffix={
                     <button type="button" onClick={() => setShowNew(v => !v)}
                       className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
@@ -381,7 +571,6 @@ export default function Profile() {
                   {newPw && <PasswordStrength password={newPw} />}
                 </AnimatePresence>
               </div>
-
               <AnimatePresence>
                 {pwError && (
                   <motion.p className="rounded-xl px-3 py-2.5 text-xs"
@@ -391,49 +580,47 @@ export default function Profile() {
                   </motion.p>
                 )}
               </AnimatePresence>
-
               <div className="flex justify-end pt-1">
-                <SaveButton loading={pwSaving} saved={pwSaved} label="Update Password" />
+                <SaveButton loading={pwSaving} saved={pwSaved} label={isHe ? 'עדכן סיסמה' : 'Update Password'} />
               </div>
             </form>
           </Card>
         </motion.div>
 
         {/* ── VAT Rate ───────────────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.5, ease: 'easeOut' }}>
-          <Card title='מע"מ / VAT Rate' icon={<Percent size={16} />}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'שיעור מע"מ' : 'VAT Rate'} icon={<Percent size={16} />}>
             <form onSubmit={handleSaveVat} className="space-y-4">
               <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                שיעור המע״מ הנוכחי בישראל הוא 18%. ניתן לעדכן כאן אם השיעור ישתנה.
-                <br />
-                <span className="text-white/20">Israeli VAT (מע״מ) is currently 18%. Update here if the rate changes.</span>
+                {isHe
+                  ? 'שיעור המע״מ הנוכחי בישראל הוא 18%. עדכן כאן אם השיעור ישתנה.'
+                  : 'Israeli VAT (מע״מ) is currently 18%. Update here if the rate changes.'}
               </p>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
                   <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.1}
+                    type="number" min={0} max={100} step={0.1}
                     value={vatRateInput}
                     onChange={e => setVatRateInput(e.target.value)}
                     className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                    }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
                     onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' }}
                     onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
                   />
                   <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-white/30">%</span>
                 </div>
-                <SaveButton loading={false} saved={vatSaved} label="Save VAT" />
+                <SaveButton loading={false} saved={vatSaved} label={isHe ? 'שמור מע"מ' : 'Save VAT'} />
               </div>
             </form>
           </Card>
         </motion.div>
 
+        {/* Legal footer */}
+        <p className="text-center text-[10px] text-white/15 pb-4">
+          {isHe
+            ? 'DealSpace — כל הפרטים שלך מאובטחים ומוצפנים.'
+            : 'DealSpace — all your details are secured and encrypted.'}
+        </p>
       </main>
     </div>
   )

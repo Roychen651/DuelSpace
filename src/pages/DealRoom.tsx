@@ -8,6 +8,9 @@ import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
 import { formatCurrency } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
+import { ClientDetailsForm } from '../components/deal-room/ClientDetailsForm'
+import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
+import type { ClientCapturedDetails } from '../components/deal-room/ClientDetailsForm'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -206,6 +209,8 @@ export default function DealRoom() {
   const [accepted, setAccepted] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const [legalExpanded, setLegalExpanded] = useState(false)
+  const [clientDetails, setClientDetails] = useState<ClientCapturedDetails | null>(null)
+  const [legalConsent, setLegalConsent] = useState(false)
 
   // Time tracking
   const timeSpentRef = useRef(0)
@@ -325,10 +330,23 @@ export default function DealRoom() {
   const handleAccept = useCallback(async () => {
     if (!token || accepting || accepted) return
     setAccepting(true)
+
+    // Save client details before accepting
+    if (clientDetails) {
+      await supabase.rpc('save_client_details', {
+        p_token:        token,
+        p_full_name:    clientDetails.full_name,
+        p_company_name: clientDetails.company_name,
+        p_tax_id:       clientDetails.tax_id,
+        p_address:      clientDetails.billing_address,
+        p_signer_role:  clientDetails.signer_role,
+      })
+    }
+
     const { error } = await supabase.rpc('accept_proposal', { p_token: token })
     if (!error) setAccepted(true)
     setAccepting(false)
-  }, [token, accepting, accepted])
+  }, [token, accepting, accepted, clientDetails])
 
   // ── PDF download ───────────────────────────────────────────────────────────
   const handleDownloadPdf = useCallback(async () => {
@@ -515,6 +533,13 @@ export default function DealRoom() {
       dir={dir}
     >
       <style>{pageKeyframes}</style>
+      <style>{`
+        :root {
+          --primary-brand: ${proposal.brand_color ?? '#6366f1'};
+          --primary-brand-20: ${proposal.brand_color ?? '#6366f1'}33;
+          --primary-brand-40: ${proposal.brand_color ?? '#6366f1'}66;
+        }
+      `}</style>
       <DealRoomAurora />
 
       {/* ── Floating locale toggle ───────────────────────────────────────── */}
@@ -681,6 +706,82 @@ export default function DealRoom() {
           </div>
         )}
 
+        {/* ── Milestone timeline ────────────────────────────────────────── */}
+        {(proposal.payment_milestones ?? []).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+            className="mt-6"
+          >
+            <MilestoneTimeline
+              milestones={proposal.payment_milestones ?? []}
+              grandTotal={grandTotal}
+              currency={proposal.currency}
+              locale={locale}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Client details capture (before signature) ─────────────────── */}
+        {!clientDetails && !accepted && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.65 }}
+            className="mt-6"
+          >
+            <ClientDetailsForm
+              locale={locale}
+              prefillName={proposal.client_name}
+              onComplete={details => setClientDetails(details)}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Legal consent checkbox ────────────────────────────────────── */}
+        {clientDetails && !accepted && (
+          <motion.label
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.35 }}
+            className="flex items-start gap-3 cursor-pointer mt-4 rounded-xl px-4 py-3"
+            style={{
+              background: legalConsent ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.025)',
+              border: legalConsent ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.07)',
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+          >
+            <div className="flex-none mt-0.5">
+              <input
+                type="checkbox"
+                checked={legalConsent}
+                onChange={e => setLegalConsent(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
+                style={{
+                  background: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.05)',
+                  borderColor: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.15)',
+                  boxShadow: legalConsent ? '0 0 8px rgba(34,197,94,0.4)' : 'none',
+                }}
+              >
+                {legalConsent && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] leading-relaxed text-white/40">
+              {locale === 'he'
+                ? 'אני מאשר/ת את תנאי השימוש ומדיניות הפרטיות של DealSpace, ומאשר/ת כי הפרטים שהזנתי נכונים ומדויקים.'
+                : 'I agree to DealSpace\'s Terms of Service and Privacy Policy, and confirm that the details I provided are accurate.'}
+            </p>
+          </motion.label>
+        )}
+
         {/* ── Trust signals ─────────────────────────────────────────────── */}
         <motion.div
           className="flex items-center justify-center gap-6 py-6 mt-2"
@@ -789,6 +890,7 @@ export default function DealRoom() {
           locale={locale}
           includeVat={proposal.include_vat}
           vatRate={vatRate}
+          legalConsentAccepted={!!clientDetails && legalConsent}
         />
       </div>
 

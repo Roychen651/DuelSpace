@@ -21,6 +21,7 @@ interface CheckoutClimaxProps {
   includeVat?: boolean
   /** VAT rate as decimal, e.g. 0.18 for 18% */
   vatRate?: number
+  legalConsentAccepted?: boolean
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -44,10 +45,10 @@ function AnimatedTotal({ total, currency }: { total: number; currency: string })
 export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
-  includeVat = false, vatRate = 0.18,
+  includeVat = false, vatRate = 0.18, legalConsentAccepted = true,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
-  const canSign = signature.trim().length >= 2
+  const canSign = signature.trim().length >= 2 && (legalConsentAccepted !== false)
   const vatAmt = Math.round(total * vatRate)
   const totalWithVat = total + vatAmt
   const displayTotal = includeVat ? totalWithVat : total

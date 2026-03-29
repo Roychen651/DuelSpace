@@ -10,27 +10,52 @@ export interface AddOn {
   enabled: boolean
 }
 
+export interface PaymentMilestone {
+  id: string
+  name: string
+  /** Whole number 1–100. All milestones in a proposal MUST sum to exactly 100. */
+  percentage: number
+}
+
+export interface CreatorInfo {
+  full_name?: string
+  company_name?: string
+  tax_id?: string
+  address?: string
+  phone?: string
+  signatory_name?: string
+}
+
 export interface Proposal {
   id: string
   user_id: string
   client_name: string
   client_email?: string
+  client_company_name?: string | null
+  client_tax_id?: string | null
+  client_address?: string | null
+  client_signer_role?: string | null
   project_title: string
   cover_image?: string
   description?: string
   base_price: number
   currency: string
   add_ons: AddOn[]
+  payment_milestones: PaymentMilestone[]
   status: ProposalStatus
   expires_at?: string | null
   public_token: string
   view_count: number
   last_viewed_at?: string | null
   time_spent_seconds: number
-  /** When true, amounts shown to client include 18% Israeli VAT */
+  /** When true, amounts shown to client include VAT */
   include_vat: boolean
   /** Optional 4-digit access code the business shares with the client */
   access_code?: string | null
+  /** Hex brand color injected as CSS variable in the Deal Room */
+  brand_color?: string | null
+  /** Creator business identity — injected from user_metadata by EditorPanel */
+  creator_info?: CreatorInfo | null
   created_at: string
   updated_at: string
 }
@@ -67,6 +92,12 @@ export function formatCurrency(amount: number, currency = 'ILS'): string {
     currency,
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+/** Returns true if all milestones sum to exactly 100% */
+export function milestonesValid(milestones: PaymentMilestone[]): boolean {
+  if (milestones.length === 0) return true
+  return milestones.reduce((sum, m) => sum + m.percentage, 0) === 100
 }
 
 export const STATUS_META: Record<ProposalStatus, { label_en: string; label_he: string; color: string; glow: string }> = {
