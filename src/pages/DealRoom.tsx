@@ -226,46 +226,64 @@ export default function DealRoom() {
     return isNaN(v) ? 0.18 : v
   })()
 
+  // Holds the fetched proposal before the access code gate clears it
+  const pendingProposalRef = useRef<Proposal | null>(null)
+
   // ── Load proposal ──────────────────────────────────────────────────────────
-  const loadProposal = useCallback(async (code?: string): Promise<'ok' | 'requires_code' | 'notfound'> => {
-    if (!token) { setFetchStatus('notfound'); return 'notfound' }
+  useEffect(() => {
+    if (!token) { setFetchStatus('notfound'); return }
+    const load = async () => {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('public_token', token)
+        .single()
 
-    const { data, error } = await supabase.rpc('get_deal_room_proposal', {
-      p_token: token,
-      p_code: code ?? null,
-    })
+      if (error || !data) { setFetchStatus('notfound'); return }
 
-    if (error || !data) { setFetchStatus('notfound'); return 'notfound' }
+      const p = data as Proposal
 
-    if ((data as { _requires_code?: boolean })._requires_code) {
-      setFetchStatus('requires_code')
-      return 'requires_code'
+      // If an access code is set, hold the proposal and show the gate
+      if (p.access_code) {
+        pendingProposalRef.current = p
+        setFetchStatus('requires_code')
+        return
+      }
+
+      setProposal(p)
+      setFetchStatus('ok')
+      if (p.status === 'accepted') setAccepted(true)
+
+      const init: Record<string, { enabled: boolean; qty: number }> = {}
+      for (const a of p.add_ons) {
+        init[a.id] = { enabled: a.enabled, qty: 1 }
+      }
+      setLineItems(init)
+
+      supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
     }
-
-    const p = data as Proposal
-    setProposal(p)
-    setFetchStatus('ok')
-    if (p.status === 'accepted') setAccepted(true)
-
-    const init: Record<string, { enabled: boolean; qty: number }> = {}
-    for (const a of p.add_ons) {
-      init[a.id] = { enabled: a.enabled, qty: 1 }
-    }
-    setLineItems(init)
-
-    supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
-    return 'ok'
+    load()
   }, [token])
 
-  useEffect(() => { loadProposal() }, [loadProposal])
-
-  const handleCodeSubmit = async () => {
-    if (!accessCode.trim()) return
+  const handleCodeSubmit = () => {
+    const pending = pendingProposalRef.current
+    if (!pending || !accessCode.trim()) return
     setCodeLoading(true)
-    setCodeError(false)
-    const result = await loadProposal(accessCode.trim())
+
+    if (accessCode.trim() === pending.access_code) {
+      setProposal(pending)
+      setFetchStatus('ok')
+      if (pending.status === 'accepted') setAccepted(true)
+      const init: Record<string, { enabled: boolean; qty: number }> = {}
+      for (const a of pending.add_ons) {
+        init[a.id] = { enabled: a.enabled, qty: 1 }
+      }
+      setLineItems(init)
+      supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+    } else {
+      setCodeError(true)
+    }
     setCodeLoading(false)
-    if (result === 'requires_code') setCodeError(true)
   }
 
   // ── Time tracking ──────────────────────────────────────────────────────────
