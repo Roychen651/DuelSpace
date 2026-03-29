@@ -119,6 +119,7 @@ export function GlobalFooter() {
   return (
     <footer
       dir={isHe ? 'rtl' : 'ltr'}
+      className="relative z-10"
       style={{ background: '#030305' }}
     >
       {/* Gradient rule */}
