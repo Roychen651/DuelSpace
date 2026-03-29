@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
@@ -142,6 +142,135 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
   )
 }
 
+// ─── Desktop Dropdown Menu ────────────────────────────────────────────────────
+
+interface DesktopMenuProps {
+  open: boolean
+  anchorRef: React.RefObject<HTMLButtonElement | null>
+  onClose: () => void
+  children: React.ReactNode
+}
+
+function DesktopMenu({ open, anchorRef, onClose, children }: DesktopMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [style, setStyle] = useState<React.CSSProperties>({})
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return
+
+    const rect = anchorRef.current.getBoundingClientRect()
+    const MENU_W = 220
+    const MENU_H = 300 // rough max height
+
+    const top = rect.bottom + 6
+    const safeTop = top + MENU_H > window.innerHeight
+      ? Math.max(8, rect.top - MENU_H - 4)
+      : top
+
+    // Align to the button's right edge, but stay within viewport
+    let right = window.innerWidth - rect.right
+    if (right < 8) right = 8
+
+    setStyle({
+      position: 'fixed',
+      top: safeTop,
+      right,
+      width: MENU_W,
+      zIndex: 60,
+    })
+  }, [open, anchorRef])
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        anchorRef.current && !anchorRef.current.contains(e.target as Node)
+      ) {
+        onClose()
+      }
+    }
+    // Use setTimeout to avoid the same click that opened the menu from closing it
+    const t = setTimeout(() => document.addEventListener('mousedown', handler), 0)
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', handler) }
+  }, [open, onClose, anchorRef])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={menuRef}
+          initial={{ opacity: 0, scale: 0.95, y: -6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: -6 }}
+          transition={{ duration: 0.12, ease: 'easeOut' as const }}
+          className="overflow-hidden rounded-2xl py-1.5"
+          onClick={e => e.stopPropagation()}
+          onMouseDown={e => e.stopPropagation()}
+          aria-modal="true"
+          role="menu"
+          style={{
+            ...style,
+            background: 'rgba(14,14,22,0.97)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(40px)',
+          }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+interface DesktopMenuItemProps {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+  variant?: 'default' | 'danger'
+  separator?: boolean
+}
+
+function DesktopMenuItem({ icon, label, onClick, variant = 'default', separator }: DesktopMenuItemProps) {
+  return (
+    <>
+      {separator && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
+      <button
+        role="menuitem"
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm transition-colors"
+        style={{ color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.78)' }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = variant === 'danger'
+            ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.05)'
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+        }}
+      >
+        <span
+          className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
+          style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)' }}
+        >
+          {icon}
+        </span>
+        <span className="font-medium text-[13px]">{label}</span>
+      </button>
+    </>
+  )
+}
+
 // ─── Proposal Card ────────────────────────────────────────────────────────────
 
 interface ProposalCardProps {
@@ -152,7 +281,7 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
   const { deleteProposal, duplicateProposal } = useProposalStore()
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
@@ -167,26 +296,27 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   )
 
   const shareUrl = `${window.location.origin}/deal/${proposal.public_token}`
+  const isMobile = () => window.innerWidth < 768
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(shareUrl)
-    setSheetOpen(false)
+    setMenuOpen(false)
   }
 
   const handleDuplicate = async () => {
-    setSheetOpen(false)
+    setMenuOpen(false)
     await duplicateProposal(proposal.id)
   }
 
   const handleDelete = async () => {
-    setSheetOpen(false)
+    setMenuOpen(false)
     setDeleting(true)
     await deleteProposal(proposal.id)
   }
 
   const handleDownloadPdf = async () => {
     if (pdfGenerating) return
-    setSheetOpen(false)
+    setMenuOpen(false)
     setPdfGenerating(true)
     await generateProposalPdf({
       proposal,
@@ -197,6 +327,40 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
     })
     setPdfGenerating(false)
   }
+
+  const menuActions = (
+    <>
+      <DesktopMenuItem
+        icon={<Edit3 size={14} />}
+        label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
+        onClick={() => { setMenuOpen(false); onEdit(proposal.id) }}
+      />
+      <DesktopMenuItem
+        icon={<Copy size={14} />}
+        label={locale === 'he' ? 'שכפל' : 'Duplicate'}
+        onClick={handleDuplicate}
+      />
+      <DesktopMenuItem
+        icon={<ExternalLink size={14} />}
+        label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
+        onClick={handleCopyLink}
+      />
+      {proposal.status === 'accepted' && (
+        <DesktopMenuItem
+          icon={<FileDown size={14} />}
+          label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
+          onClick={handleDownloadPdf}
+        />
+      )}
+      <DesktopMenuItem
+        icon={<Trash2 size={14} />}
+        label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
+        onClick={handleDelete}
+        variant="danger"
+        separator
+      />
+    </>
+  )
 
   return (
     <>
@@ -249,8 +413,12 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
             <button
               ref={menuRef}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
-              onClick={(e) => { e.stopPropagation(); setSheetOpen(true) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setMenuOpen(v => !v)
+              }}
               aria-label="Options"
+              aria-expanded={menuOpen}
             >
               <MoreVertical size={15} />
             </button>
@@ -322,16 +490,25 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
         </div>
       </motion.div>
 
+      {/* Desktop dropdown — rendered into document body via fixed positioning */}
+      <DesktopMenu
+        open={menuOpen && !isMobile()}
+        anchorRef={menuRef}
+        onClose={() => setMenuOpen(false)}
+      >
+        {menuActions}
+      </DesktopMenu>
+
       {/* Mobile Bottom Sheet */}
       <BottomSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        open={menuOpen && isMobile()}
+        onClose={() => setMenuOpen(false)}
         title={proposal.project_title || (locale === 'he' ? 'פעולות' : 'Actions')}
       >
         <SheetAction
           icon={<Edit3 size={16} />}
           label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
-          onClick={() => { setSheetOpen(false); onEdit(proposal.id) }}
+          onClick={() => { setMenuOpen(false); onEdit(proposal.id) }}
         />
         <SheetAction
           icon={<Copy size={16} />}

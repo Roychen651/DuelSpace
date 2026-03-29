@@ -822,68 +822,144 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
         defaultOpen={false}
         badge={milestones.length > 0 ? `${milestones.length}` : undefined}
       >
+        {/* Explanation */}
         <p className="text-[11px] text-white/35 leading-relaxed">
           {isHe
-            ? 'הגדר לוח תשלומים. אחוזים חייבים להסתכם בדיוק ל-100%.'
-            : 'Define a payment schedule. Percentages must sum to exactly 100%.'}
+            ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
+            : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
         </p>
 
+        {/* Quick presets — only shown when no milestones yet */}
+        {milestones.length === 0 && (
+          <div className="flex flex-wrap gap-2">
+            <p className="w-full text-[10px] font-bold uppercase tracking-widest text-white/20">
+              {isHe ? 'תבניות מהירות' : 'Quick presets'}
+            </p>
+            {[
+              { label: isHe ? '50 / 50' : '50 / 50', splits: [50, 50], names: isHe ? ['מקדמה', 'סיום'] : ['Deposit', 'Final'] },
+              { label: isHe ? '30 / 70' : '30 / 70', splits: [30, 70], names: isHe ? ['מקדמה', 'סיום'] : ['Deposit', 'Final'] },
+              { label: isHe ? '33 / 33 / 34' : '33 / 33 / 34', splits: [33, 33, 34], names: isHe ? ['שלב א׳', 'שלב ב׳', 'סיום'] : ['Phase 1', 'Phase 2', 'Final'] },
+              { label: isHe ? '25 / 25 / 50' : '25 / 25 / 50', splits: [25, 25, 50], names: isHe ? ['פתיחה', 'אמצע', 'סיום'] : ['Kickoff', 'Midpoint', 'Final'] },
+            ].map(preset => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => onChange({
+                  payment_milestones: preset.splits.map((pct, i) => ({
+                    id: crypto.randomUUID(),
+                    name: preset.names[i],
+                    percentage: pct,
+                  })),
+                })}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
+                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc' }}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Visual distribution bar */}
+        {milestones.length > 0 && milestoneSum > 0 && (
+          <div className="rounded-xl overflow-hidden" style={{ height: 8, background: 'rgba(255,255,255,0.05)' }}>
+            <div className="flex h-full">
+              {milestones.map((m, i) => {
+                const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#c084fc', '#e879f9']
+                return (
+                  <div
+                    key={m.id}
+                    className="h-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(m.percentage, 100)}%`,
+                      background: COLORS[i % COLORS.length],
+                      borderRight: i < milestones.length - 1 ? '2px solid rgba(0,0,0,0.4)' : 'none',
+                    }}
+                    title={`${m.name || (isHe ? `שלב ${i + 1}` : `Stage ${i + 1}`)}: ${m.percentage}%`}
+                  />
+                )
+              })}
+              {/* Remaining (unfilled) */}
+              {milestoneSum < 100 && (
+                <div
+                  className="h-full"
+                  style={{ width: `${100 - milestoneSum}%`, background: 'rgba(212,175,55,0.25)' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Milestone rows */}
         <div className="space-y-2">
           <AnimatePresence>
-            {milestones.map((m, i) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div
-                  className="flex items-center gap-2 rounded-xl p-2.5"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }}
+            {milestones.map((m, i) => {
+              const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#c084fc', '#e879f9']
+              const color = COLORS[i % COLORS.length]
+              const milestoneAmt = Math.round((draft.base_price ?? 0) * m.percentage / 100)
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
                 >
-                  <span className="text-[10px] font-black text-white/20 w-5 text-center flex-none">
-                    {i + 1}
-                  </span>
-                  <input
-                    className={inputClass + ' flex-1 py-2 text-xs'}
-                    placeholder={isHe ? 'שם אבן הדרך' : 'Milestone name'}
-                    value={m.name}
-                    onChange={e => updateMilestone(m.id, { name: e.target.value })}
-                  />
-                  <div className="relative flex-none w-20">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      className={inputClass + ' py-2 text-xs text-center pe-6'}
-                      value={m.percentage || ''}
-                      onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
-                    />
-                    <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-white/30 pointer-events-none">%</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteMilestone(m.id)}
-                    className="text-white/20 hover:text-red-400 transition-colors flex-none"
-                    aria-label="Delete milestone"
+                  <div
+                    className="flex items-center gap-2 rounded-xl p-2.5"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                    }}
                   >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                    {/* Color dot */}
+                    <div
+                      className="h-2 w-2 rounded-full flex-none"
+                      style={{ background: color, boxShadow: `0 0 6px ${color}80` }}
+                    />
+                    <input
+                      className={inputClass + ' flex-1 py-2 text-xs'}
+                      placeholder={isHe ? `שם שלב ${i + 1}` : `Stage ${i + 1} name`}
+                      value={m.name}
+                      onChange={e => updateMilestone(m.id, { name: e.target.value })}
+                    />
+                    {/* Amount preview */}
+                    {milestoneAmt > 0 && (
+                      <span className="text-[10px] tabular-nums text-white/30 flex-none">
+                        {formatCurrency(milestoneAmt, draft.currency)}
+                      </span>
+                    )}
+                    <div className="relative flex-none w-16">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className={inputClass + ' py-2 text-xs text-center pe-5'}
+                        value={m.percentage || ''}
+                        onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
+                      />
+                      <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-white/30 pointer-events-none">%</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteMilestone(m.id)}
+                      className="text-white/20 hover:text-red-400 transition-colors flex-none"
+                      aria-label="Delete milestone"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         </div>
 
-        {/* Sum indicator */}
+        {/* Sum indicator — shown when there are milestones */}
         {milestones.length > 0 && (
           <div
-            className="flex items-center justify-between rounded-xl px-3.5 py-2.5"
+            className="flex items-center justify-between rounded-xl px-3.5 py-2"
             style={{
               background: milestonesOk
                 ? 'rgba(34,197,94,0.07)'
@@ -893,13 +969,15 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
               border: `1px solid ${milestonesOk ? 'rgba(34,197,94,0.2)' : milestoneSum > 100 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.2)'}`,
             }}
           >
-            <span className="text-[11px] font-semibold" style={{ color: milestonesOk ? '#22c55e' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
-              {isHe ? `סה"כ: ${milestoneSum}%` : `Total: ${milestoneSum}%`}
+            <span className="text-[11px] font-bold tabular-nums" style={{ color: milestonesOk ? '#22c55e' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
+              {milestoneSum}% / 100%
             </span>
-            <span className="text-[10px]" style={{ color: milestonesOk ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.35)' }}>
+            <span className="text-[10px]" style={{ color: milestonesOk ? 'rgba(34,197,94,0.7)' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
               {milestonesOk
-                ? (isHe ? '✓ תקין' : '✓ Valid')
-                : (isHe ? `נדרש עוד ${100 - milestoneSum}%` : `Need ${100 - milestoneSum}% more`)}
+                ? (isHe ? '✓ מאוזן — מוכן לשליחה' : '✓ Balanced — ready to send')
+                : milestoneSum > 100
+                ? (isHe ? `חריגה של ${milestoneSum - 100}%` : `${milestoneSum - 100}% over`)
+                : (isHe ? `חסר עוד ${100 - milestoneSum}%` : `${100 - milestoneSum}% remaining`)}
             </span>
           </div>
         )}
