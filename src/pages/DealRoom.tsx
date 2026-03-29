@@ -7,7 +7,7 @@ import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
 import { formatCurrency } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
-import { generateProposalPdf } from '../lib/pdfGenerator'
+import { generateProposalPdf } from '../lib/pdfEngine'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 

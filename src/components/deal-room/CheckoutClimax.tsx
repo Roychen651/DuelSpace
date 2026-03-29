@@ -265,6 +265,18 @@ export function CheckoutClimax({
                   : `Your signature constitutes a legally binding electronic acceptance of this proposal.`}
               </motion.p>
             )}
+
+            {/* DealSpace legal disclaimer */}
+            <div
+              className="mt-3 rounded-xl px-3 py-2 text-center"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              <p className="text-[9px] leading-relaxed text-white/18">
+                {isHe
+                  ? 'DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם זה, לאיכות השירות הניתן, או לכל מחלוקת בין הצדדים.'
+                  : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
+              </p>
+            </div>
           </motion.div>
         </div>
       </div>

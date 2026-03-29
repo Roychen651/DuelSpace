@@ -9,6 +9,7 @@ import type { ProposalInsert, AddOn } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../../types/proposal'
 import { PremiumDatePicker } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
+import { AIGhostwriter } from './AIGhostwriter'
 import {
   CONTRACT_TEMPLATES, CATEGORY_LABELS, interpolateTemplate,
   type ContractTemplate,
@@ -704,6 +705,12 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
           </motion.button>
         </div>
       </div>
+
+      {/* ── AI Ghostwriter ───────────────────────────────────────────────── */}
+      <AIGhostwriter
+        locale={locale}
+        onGenerate={onChange}
+      />
 
       {/* ── Saved Services library ──────────────────────────────────────── */}
       <ReusableServices
