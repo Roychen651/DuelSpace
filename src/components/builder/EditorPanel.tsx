@@ -4,9 +4,10 @@ import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
+  Film, Quote,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
-import type { ProposalInsert, AddOn, PaymentMilestone } from '../../types/proposal'
+import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { PremiumDatePicker } from '../ui/PremiumInputs'
@@ -661,6 +662,124 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false }: Edito
             disabled={isLocked}
           />
         </Field>
+
+        {/* Video pitch URL */}
+        <Field
+          label={isHe ? 'וידאו פיץ׳ (YouTube / Vimeo / Loom)' : 'Video Pitch (YouTube / Vimeo / Loom)'}
+          icon={<Film size={10} />}
+        >
+          <input
+            className={inputClass}
+            type="url"
+            placeholder="https://youtu.be/..."
+            value={draft.video_url ?? ''}
+            onChange={e => onChange({ video_url: e.target.value || null })}
+          />
+          <p className="text-[10px] text-white/25 mt-1">
+            {isHe
+              ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
+              : 'Displayed cinematically to the client before pricing'}
+          </p>
+        </Field>
+
+        {/* Testimonials */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: 'rgba(255,255,255,0.45)' }}
+            >
+              <Quote size={10} />
+              {isHe ? 'המלצות לקוחות' : 'Testimonials'}
+            </label>
+            {(draft.testimonials?.length ?? 0) < 3 && (
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    testimonials: [
+                      ...(draft.testimonials ?? []),
+                      { id: crypto.randomUUID(), quote: '', author: '', role: '' },
+                    ],
+                  })
+                }
+                className="flex items-center gap-1 text-[10px] font-semibold text-indigo-400/70 hover:text-indigo-400 transition-colors"
+              >
+                <Plus size={10} />
+                {isHe ? 'הוסף המלצה' : 'Add'}
+              </button>
+            )}
+          </div>
+
+          {(draft.testimonials ?? []).length === 0 && (
+            <p className="text-[10px] text-white/22 leading-relaxed">
+              {isHe
+                ? 'הוסף 1-3 המלצות — תוצגנה ללקוח לפני לוח התמחור להגברת אמון'
+                : 'Add 1-3 testimonials — shown before pricing to build client trust'}
+            </p>
+          )}
+
+          {(draft.testimonials ?? []).map((t: Testimonial, i: number) => (
+            <div
+              key={t.id}
+              className="rounded-xl p-3 space-y-2"
+              style={{
+                background: 'rgba(99,102,241,0.04)',
+                border: '1px solid rgba(99,102,241,0.14)',
+              }}
+            >
+              <textarea
+                className={inputClass + ' resize-none text-xs'}
+                rows={2}
+                placeholder={
+                  isHe
+                    ? '"העבודה שינתה לנו את כל התהליך..."'
+                    : '"This completely transformed our workflow..."'
+                }
+                value={t.quote}
+                onChange={e => {
+                  const updated = [...(draft.testimonials ?? [])]
+                  updated[i] = { ...t, quote: e.target.value }
+                  onChange({ testimonials: updated })
+                }}
+              />
+              <div className="flex gap-2">
+                <input
+                  className={inputClass + ' text-xs flex-1'}
+                  placeholder={isHe ? 'שם הלקוח' : 'Client name'}
+                  value={t.author}
+                  onChange={e => {
+                    const updated = [...(draft.testimonials ?? [])]
+                    updated[i] = { ...t, author: e.target.value }
+                    onChange({ testimonials: updated })
+                  }}
+                />
+                <input
+                  className={inputClass + ' text-xs flex-1'}
+                  placeholder={isHe ? 'תפקיד (אופציונלי)' : 'Role (optional)'}
+                  value={t.role ?? ''}
+                  onChange={e => {
+                    const updated = [...(draft.testimonials ?? [])]
+                    updated[i] = { ...t, role: e.target.value }
+                    onChange({ testimonials: updated })
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange({
+                      testimonials: (draft.testimonials ?? []).filter((_, j) => j !== i),
+                    })
+                  }
+                  className="flex-none text-white/20 hover:text-red-400 transition-colors"
+                  aria-label="Delete testimonial"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Expiry date */}
         <PremiumDatePicker

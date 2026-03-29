@@ -19,6 +19,13 @@ export interface PaymentMilestone {
   percentage: number
 }
 
+export interface Testimonial {
+  id: string
+  quote: string
+  author: string
+  role?: string
+}
+
 export interface CreatorInfo {
   full_name?: string
   company_name?: string
@@ -62,6 +69,10 @@ export interface Proposal {
   success_template?: string | null
   /** Per-section read time (seconds) accumulated by DealRoom IntersectionObserver */
   section_time?: Record<string, number> | null
+  /** Optional video pitch URL (YouTube, Vimeo, or Loom) */
+  video_url?: string | null
+  /** Social proof testimonials shown in the Deal Room before pricing */
+  testimonials?: Testimonial[] | null
   created_at: string
   updated_at: string
 }

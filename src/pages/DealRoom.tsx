@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
 import { formatCurrency } from '../types/proposal'
-import type { Proposal } from '../types/proposal'
+import type { Proposal, Testimonial } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { ClientDetailsForm } from '../components/deal-room/ClientDetailsForm'
 import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
@@ -172,13 +172,22 @@ const pageKeyframes = `
     0%, 100% { box-shadow: 0 0 0 rgba(99,102,241,0); }
     50%       { box-shadow: 0 0 20px rgba(99,102,241,0.15); }
   }
+  @keyframes fomo-pulse {
+    0%, 100% { box-shadow: 0 2px 0 rgba(251,146,60,0); }
+    50%       { box-shadow: 0 2px 24px rgba(251,146,60,0.18); }
+  }
   @keyframes dr-spin { to { transform: rotate(360deg); } }
+  @keyframes dr-glow-ping {
+    0%     { transform: scale(1); opacity: 0.8; }
+    80%, 100% { transform: scale(2); opacity: 0; }
+  }
 
   /* TipTap rich-text description styles */
   .dr-prose p                          { margin-bottom: 0.7em; }
   .dr-prose p:last-child               { margin-bottom: 0; }
   .dr-prose strong, .dr-prose b        { font-weight: 700; color: rgba(255,255,255,0.65); }
-  .dr-prose em, .dr-prose i           { font-style: italic; }
+  .dr-prose em, .dr-prose i            { font-style: italic; }
+  .dr-prose mark                       { background: rgba(255,215,0,0.18); color: inherit; border-radius: 3px; padding: 0.05em 0.2em; }
   .dr-prose h1                         { font-size: 1.4em; font-weight: 800; color: rgba(255,255,255,0.75); margin-bottom: 0.5em; }
   .dr-prose h2                         { font-size: 1.2em; font-weight: 700; color: rgba(255,255,255,0.7);  margin-bottom: 0.45em; }
   .dr-prose h3                         { font-size: 1.05em; font-weight: 600; color: rgba(255,255,255,0.65); margin-bottom: 0.4em; }
@@ -200,6 +209,235 @@ const staggerContainer: Variants = {
 const slideUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+}
+
+// ─── Video URL parser ─────────────────────────────────────────────────────────
+
+function parseVideoEmbed(url: string): string | null {
+  if (!url) return null
+  // YouTube: watch?v= or youtu.be/ or embed/
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1&color=white`
+  // Vimeo
+  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?dnt=1`
+  // Loom
+  const loom = url.match(/loom\.com\/share\/([a-zA-Z0-9]+)/)
+  if (loom) return `https://www.loom.com/embed/${loom[1]}`
+  return null
+}
+
+// ─── Cinematic video player ───────────────────────────────────────────────────
+
+function CinematicVideoPlayer({
+  videoUrl,
+  brandColor,
+  locale,
+}: {
+  videoUrl: string
+  brandColor: string
+  locale: string
+}) {
+  const embedUrl = parseVideoEmbed(videoUrl)
+  if (!embedUrl) return null
+  const isHe = locale === 'he'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.6, ease: 'easeOut' as const }}
+      className="mb-8"
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3 flex items-center gap-2">
+        <span
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px]"
+          style={{ background: `${brandColor}22`, color: brandColor }}
+        >
+          ▶
+        </span>
+        {isHe ? 'מצגת הפרויקט' : 'Project Pitch'}
+      </p>
+
+      <div className="relative">
+        {/* Ambient glow layer */}
+        <div
+          className="pointer-events-none absolute -inset-3 -z-10 rounded-3xl"
+          style={{
+            background: `radial-gradient(ellipse at center, ${brandColor}18 0%, transparent 68%)`,
+            filter: 'blur(24px)',
+          }}
+        />
+
+        {/* Player wrapper */}
+        <div
+          className="relative w-full overflow-hidden rounded-2xl"
+          style={{
+            aspectRatio: '16 / 9',
+            border: `1px solid ${brandColor}30`,
+            boxShadow: `0 0 0 1px ${brandColor}15, 0 32px 80px rgba(0,0,0,0.75), 0 0 48px ${brandColor}12`,
+          }}
+        >
+          <iframe
+            src={embedUrl}
+            title={isHe ? 'מצגת הפרויקט' : 'Project pitch video'}
+            className="absolute inset-0 h-full w-full"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            style={{ border: 'none' }}
+          />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Social proof block ───────────────────────────────────────────────────────
+
+function SocialProofBlock({
+  testimonials,
+  locale,
+  brandColor,
+}: {
+  testimonials: Testimonial[]
+  locale: string
+  brandColor: string
+}) {
+  const isHe = locale === 'he'
+  const visible = testimonials.filter(t => t.quote.trim() && t.author.trim())
+  if (!visible.length) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' as const }}
+      className="mb-8"
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+        {isHe ? '⭐ לקוחות ממליצים' : '⭐ Client Testimonials'}
+      </p>
+
+      <div className={`grid gap-3 ${visible.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+        {visible.map((t, i) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 + i * 0.08, ease: 'easeOut' as const }}
+            className="relative rounded-2xl p-5"
+            style={{
+              background: `linear-gradient(135deg, ${brandColor}0A 0%, rgba(255,255,255,0.02) 100%)`,
+              border: `1px solid ${brandColor}20`,
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.3)`,
+            }}
+          >
+            {/* Decorative opening quote */}
+            <div
+              className="absolute top-2 start-4 select-none pointer-events-none text-5xl font-black leading-none"
+              style={{
+                color: brandColor,
+                opacity: 0.12,
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                lineHeight: 1,
+              }}
+            >
+              &ldquo;
+            </div>
+
+            {/* Quote text */}
+            <p className="relative text-[13px] leading-relaxed text-white/60 mt-4 mb-4">
+              {t.quote}
+            </p>
+
+            {/* Author row */}
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-xs font-black"
+                style={{ background: `${brandColor}20`, color: brandColor }}
+              >
+                {t.author.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-bold text-white/70 leading-tight">{t.author}</p>
+                {t.role && (
+                  <p className="text-[10px] text-white/32 mt-0.5">{t.role}</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Sticky FOMO urgency band (< 48h) ────────────────────────────────────────
+
+function StickyFomoBand({
+  expiresAt,
+  locale,
+  brandColor,
+}: {
+  expiresAt: string
+  locale: string
+  brandColor: string
+}) {
+  const { timeLeft, expired } = useCountdown(expiresAt)
+  const isHe = locale === 'he'
+
+  if (expired || !timeLeft) return null
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const hms = `${timeLeft.d > 0 ? `${timeLeft.d}d ` : ''}${pad(timeLeft.h)}:${pad(timeLeft.m)}:${pad(timeLeft.s)}`
+
+  return (
+    <div
+      className="sticky top-0 z-40 w-full"
+      style={{
+        background: 'linear-gradient(90deg, rgba(251,146,60,0.10) 0%, rgba(245,158,11,0.12) 50%, rgba(251,146,60,0.10) 100%)',
+        borderBottom: '1px solid rgba(251,146,60,0.22)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        animation: 'fomo-pulse 2.8s ease-in-out infinite',
+      }}
+    >
+      <div className="mx-auto flex max-w-2xl items-center justify-center gap-2.5 px-4 py-2">
+        {/* Pulsing dot */}
+        <span className="relative flex h-2 w-2 flex-none">
+          <span
+            className="absolute inline-flex h-full w-full rounded-full opacity-75"
+            style={{ background: '#fb923c', animation: 'dr-glow-ping 1.5s ease-in-out infinite' }}
+          />
+          <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#f59e0b' }} />
+        </span>
+
+        <span className="text-[11px] font-semibold text-amber-300/75">
+          {isHe ? 'ההצעה תפקע בעוד' : 'Offer expires in'}
+        </span>
+
+        <span
+          className="text-[11px] font-black tabular-nums"
+          style={{ color: '#fb923c' }}
+        >
+          {hms}
+        </span>
+
+        <span
+          className="hidden sm:inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider"
+          style={{
+            background: `${brandColor}15`,
+            color: brandColor,
+            border: `1px solid ${brandColor}30`,
+          }}
+        >
+          {isHe ? 'אל תחמיץ' : "Don't miss out"}
+        </span>
+      </div>
+    </div>
+  )
 }
 
 // ─── Main DealRoom page ───────────────────────────────────────────────────────
@@ -663,6 +901,13 @@ export default function DealRoom() {
 
   // ── Render: main ───────────────────────────────────────────────────────────
   if (!proposal) return null
+
+  const brandColor = proposal.brand_color ?? '#6366f1'
+  const isWithin48h = proposal.expires_at
+    ? (new Date(proposal.expires_at).getTime() - Date.now() > 0) &&
+      (new Date(proposal.expires_at).getTime() - Date.now() < 48 * 3_600_000)
+    : false
+
   return (
     <div
       className="relative min-h-dvh flex flex-col"
@@ -672,12 +917,21 @@ export default function DealRoom() {
       <style>{pageKeyframes}</style>
       <style>{`
         :root {
-          --primary-brand: ${proposal.brand_color ?? '#6366f1'};
-          --primary-brand-20: ${proposal.brand_color ?? '#6366f1'}33;
-          --primary-brand-40: ${proposal.brand_color ?? '#6366f1'}66;
+          --primary-brand: ${brandColor};
+          --primary-brand-20: ${brandColor}33;
+          --primary-brand-40: ${brandColor}66;
         }
       `}</style>
       <DealRoomAurora />
+
+      {/* ── Sticky FOMO urgency band (< 48 h) ───────────────────────────── */}
+      {isWithin48h && !accepted && (
+        <StickyFomoBand
+          expiresAt={proposal.expires_at!}
+          locale={locale}
+          brandColor={brandColor}
+        />
+      )}
 
       {/* ── Floating locale toggle ───────────────────────────────────────── */}
       <div className="fixed top-4 end-4 z-40">
@@ -749,6 +1003,24 @@ export default function DealRoom() {
             />
           )}
         </motion.div>
+
+        {/* ── Cinematic video player ────────────────────────────────────── */}
+        {proposal.video_url && (
+          <CinematicVideoPlayer
+            videoUrl={proposal.video_url}
+            brandColor={brandColor}
+            locale={locale}
+          />
+        )}
+
+        {/* ── Social proof block ────────────────────────────────────────── */}
+        {(proposal.testimonials ?? []).length > 0 && (
+          <SocialProofBlock
+            testimonials={proposal.testimonials ?? []}
+            locale={locale}
+            brandColor={brandColor}
+          />
+        )}
 
         {/* ── Base package card ─────────────────────────────────────────── */}
         <motion.div
