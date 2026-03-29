@@ -186,7 +186,7 @@ export function AccessibilityWidget() {
     }
     if (right < margin) right = margin
 
-    setPanelStyle({ bottom, right, maxHeight: panelH })
+    setPanelStyle({ bottom, right, height: panelH })
   }, [])
 
   const handleOpen = useCallback(() => {
@@ -244,9 +244,10 @@ export function AccessibilityWidget() {
         {open && (
           <motion.div
             ref={panelRef}
-            className="fixed z-[9998] w-72 rounded-2xl overflow-hidden"
+            className="fixed z-[9998] w-72 rounded-2xl flex flex-col"
             style={{
               ...panelStyle,
+              overflow: 'hidden',
               background: 'linear-gradient(180deg, rgba(10,10,20,0.99) 0%, rgba(6,6,14,0.99) 100%)',
               border: '1px solid rgba(255,255,255,0.1)',
               backdropFilter: 'blur(60px) saturate(200%)',
@@ -306,7 +307,7 @@ export function AccessibilityWidget() {
             </div>
 
             {/* Scrollable content */}
-            <div className="px-3 py-3 space-y-2.5 overflow-y-auto" style={{ maxHeight: 'calc(100% - 108px)' }}>
+            <div className="px-3 py-3 space-y-2.5 overflow-y-auto flex-1 min-h-0">
 
               {/* ── Vision ────────────────────────────────────── */}
               <SectionLabel he="ראייה" en="Vision" />
