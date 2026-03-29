@@ -229,6 +229,12 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
           30%  { transform: translateY(-3px); }
           100% { transform: translateY(0); }
         }
+        .lp-prose p { margin-bottom: 0.5em; }
+        .lp-prose strong, .lp-prose b { font-weight: 700; color: rgba(255,255,255,0.6); }
+        .lp-prose em, .lp-prose i { font-style: italic; }
+        .lp-prose h1, .lp-prose h2, .lp-prose h3 { font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 0.4em; }
+        .lp-prose ul, .lp-prose ol { padding-inline-start: 1.2em; margin-bottom: 0.5em; }
+        .lp-prose li { margin-bottom: 0.2em; }
       `}</style>
 
       {/* ── Empty state ────────────────────────────────────────────────── */}
@@ -341,9 +347,10 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
 
               {/* ── Description ──────────────────────────────────────── */}
               {proposal.description && (
-                <p className="text-sm text-white/45 leading-relaxed mb-5 whitespace-pre-wrap">
-                  {proposal.description}
-                </p>
+                <div
+                  className="lp-prose text-sm text-white/45 leading-relaxed mb-5"
+                  dangerouslySetInnerHTML={{ __html: proposal.description }}
+                />
               )}
 
               {/* ── Divider ───────────────────────────────────────────── */}

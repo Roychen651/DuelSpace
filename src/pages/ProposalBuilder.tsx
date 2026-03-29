@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail, ShieldCheck, RefreshCw, FileDown } from 'lucide-react'
 import { useProposalStore } from '../stores/useProposalStore'
+import { useAuthStore } from '../stores/useAuthStore'
+import { usePresenceStore } from '../stores/usePresenceStore'
+import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { EditorPanel } from '../components/builder/EditorPanel'
 import { LivePreview } from '../components/builder/LivePreview'
@@ -233,6 +236,9 @@ export default function ProposalBuilder() {
   const [initializing, setInitializing] = useState(true)
   const [pdfGenerating, setPdfGenerating] = useState(false)
 
+  const { user } = useAuthStore()
+  const { markActive, markInactive, activeViewers } = usePresenceStore()
+
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const draftRef = useRef<ProposalInsert>(BLANK_DRAFT)
   const proposalIdRef = useRef<string | null>(id ?? null)
@@ -283,6 +289,31 @@ export default function ProposalBuilder() {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     }
   }, [])
+
+  // ── Live presence — subscribe to user-activity channel ───────────────────────
+  useEffect(() => {
+    if (!user?.id) return
+    const offlineTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+
+    const channel = supabase
+      .channel(`user-activity:${user.id}`)
+      .on('broadcast', { event: 'heartbeat' }, (msg) => {
+        const token: string | undefined = msg.payload?.token
+        if (!token) return
+        markActive(token)
+        if (offlineTimers[token]) clearTimeout(offlineTimers[token])
+        offlineTimers[token] = setTimeout(() => {
+          markInactive(token)
+          delete offlineTimers[token]
+        }, 10_000)
+      })
+      .subscribe()
+
+    return () => {
+      Object.values(offlineTimers).forEach(clearTimeout)
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, markActive, markInactive])
 
   // ── Debounced autosave (lazy DB creation for new proposals) ───────────────────
   const handleChange = useCallback((patch: Partial<ProposalInsert>) => {
@@ -442,6 +473,9 @@ export default function ProposalBuilder() {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes builder-ping {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
       `}</style>
 
       {/* ── Top bar ────────────────────────────────────────────────────────── */}
@@ -500,6 +534,28 @@ export default function ProposalBuilder() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2">
+          {/* Live presence badge — visible when client is viewing the deal room */}
+          {currentProposal?.public_token && activeViewers[currentProposal.public_token] && (
+            <div
+              className="hidden sm:flex items-center gap-1.5 rounded-xl px-2.5 py-1.5"
+              style={{
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.22)',
+              }}
+            >
+              <span className="relative flex h-2 w-2 flex-none">
+                <span
+                  className="absolute inline-flex h-full w-full rounded-full opacity-75"
+                  style={{ background: '#22c55e', animation: 'builder-ping 1.2s ease-in-out infinite' }}
+                />
+                <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#22c55e' }} />
+              </span>
+              <span className="text-[11px] font-semibold" style={{ color: '#4ade80' }}>
+                {locale === 'he' ? 'לקוח צופה עכשיו' : 'Client viewing now'}
+              </span>
+            </div>
+          )}
+
           {/* Download signed PDF — only when accepted */}
           {isAccepted && (
             <motion.button
