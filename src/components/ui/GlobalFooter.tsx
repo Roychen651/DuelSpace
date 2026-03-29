@@ -85,6 +85,36 @@ const COPY = {
   },
 }
 
+// ─── LinkColumn ────────────────────────────────────────────────────────────────
+
+function LinkColumn({
+  heading, links, onNav,
+}: {
+  heading: string
+  links: { label: string; path: string }[]
+  onNav: (path: string) => void
+}) {
+  return (
+    <div>
+      <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/28">
+        {heading}
+      </p>
+      <ul className="space-y-2.5">
+        {links.map(link => (
+          <li key={link.label}>
+            <button
+              onClick={() => onNav(link.path)}
+              className="text-[13px] text-white/48 transition-colors hover:text-white/82 text-start"
+            >
+              {link.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 // ─── GlobalFooter ──────────────────────────────────────────────────────────────
 
 export function GlobalFooter() {
@@ -117,14 +147,17 @@ export function GlobalFooter() {
         }}
       />
 
-      {/* ── Main grid ─────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6 pt-14 pb-10">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+      {/* ── Main content ──────────────────────────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-6 pt-10 pb-8">
 
-          {/* Col 1 — Brand */}
-          <div className="col-span-2 lg:col-span-1">
-            {/* Logo */}
-            <div className="flex items-center gap-3 mb-4">
+        {/* ── Brand block — always full width on mobile ──────────────────── */}
+        <div
+          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5 pb-8 mb-8"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {/* Logo + description */}
+          <div>
+            <div className="flex items-center gap-3 mb-3">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
                 style={{
@@ -141,116 +174,71 @@ export function GlobalFooter() {
                 DealSpace
               </span>
             </div>
-
-            <p className="text-[12.5px] leading-relaxed text-white/40 mb-6 max-w-[240px]">
+            <p className="text-[12.5px] leading-relaxed text-white/38 max-w-xs">
               {c.description}
             </p>
-
-            {/* Language toggle */}
-            <button
-              onClick={() => setLocale(isHe ? 'en' : 'he')}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65"
-              style={{ border: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              <Globe size={11} />
-              {c.langToggle}
-            </button>
           </div>
 
-          {/* Col 2 — Product */}
-          <div>
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/28">
-              {c.col2.heading}
-            </p>
-            <ul className="space-y-2.5">
-              {c.col2.links.map(link => (
-                <li key={link.label}>
-                  <button
-                    onClick={() => nav(link.path)}
-                    className="text-[13px] text-white/48 transition-colors hover:text-white/82"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Language toggle */}
+          <button
+            onClick={() => setLocale(isHe ? 'en' : 'he')}
+            className="self-start flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65"
+            style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <Globe size={11} />
+            {c.langToggle}
+          </button>
+        </div>
 
-          {/* Col 3 — Resources */}
-          <div>
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/28">
-              {c.col3.heading}
-            </p>
-            <ul className="space-y-2.5">
-              {c.col3.links.map(link => (
-                <li key={link.label}>
-                  <button
-                    onClick={() => nav(link.path)}
-                    className="text-[13px] text-white/48 transition-colors hover:text-white/82"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Col 4 — Legal & Trust */}
-          <div>
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/28">
-              {c.col4.heading}
-            </p>
-            <ul className="space-y-2.5">
-              {c.col4.links.map(link => (
-                <li key={link.label}>
-                  <button
-                    onClick={() => nav(link.path)}
-                    className="text-[13px] text-white/48 transition-colors hover:text-white/82"
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {/* ── Link columns grid ─────────────────────────────────────────────
+            Mobile:  1 column — all sections stack vertically
+            Tablet:  2 columns — Product | Resources, Legal spans 2 (full)
+            Desktop: 3 equal columns — Product | Resources | Legal
+        ──────────────────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+          <LinkColumn heading={c.col2.heading} links={c.col2.links} onNav={nav} />
+          <LinkColumn heading={c.col3.heading} links={c.col3.links} onNav={nav} />
+          {/* On tablet: Legal spans both columns (full width). On desktop: 1/3. */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <LinkColumn heading={c.col4.heading} links={c.col4.links} onNav={nav} />
           </div>
         </div>
 
         {/* ── Divider ──────────────────────────────────────────────────────── */}
         <div
-          className="my-8"
-          style={{ height: 1, background: 'rgba(255,255,255,0.06)' }}
+          className="mb-6"
+          style={{ height: 1, background: 'rgba(255,255,255,0.055)' }}
         />
 
         {/* ── Bottom bar ────────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-5">
-          {/* Trust badges */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {c.trust.map((label, i) => (
-              <div
-                key={label}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                style={{
-                  background: 'rgba(255,255,255,0.035)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
-              >
-                {i === 0
-                  ? <Shield size={10} style={{ color: '#818cf8' }} />
-                  : i === 1
-                    ? <Lock size={10} style={{ color: '#818cf8' }} />
-                    : <CheckCircle2 size={10} style={{ color: '#4ade80' }} />}
-                <span className="text-[10px] font-medium text-white/32">{label}</span>
-              </div>
-            ))}
-          </div>
 
-          {/* Copyright + legal disclaimer */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <p className="text-[11px] text-white/20" dir="ltr">{c.copyright}</p>
-            <p className="text-[10px] text-white/16 max-w-md sm:text-end">
-              {c.legalNote}
-            </p>
-          </div>
+        {/* Trust badges — scrollable row on mobile */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-4" style={{ scrollbarWidth: 'none' }}>
+          {[
+            { icon: <Shield size={10} style={{ color: '#818cf8' }} />, text: c.trust[0] },
+            { icon: <Lock size={10} style={{ color: '#818cf8' }} />, text: c.trust[1] },
+            { icon: <CheckCircle2 size={10} style={{ color: '#4ade80' }} />, text: c.trust[2] },
+          ].map(badge => (
+            <div
+              key={badge.text}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-none"
+              style={{
+                background: 'rgba(255,255,255,0.035)',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+            >
+              {badge.icon}
+              <span className="text-[10px] font-medium text-white/32 whitespace-nowrap">{badge.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Copyright + legal note */}
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[11px] text-white/20" dir="ltr">{c.copyright}</p>
+          <p className="text-[10px] text-white/14 leading-relaxed">
+            {c.legalNote}
+          </p>
         </div>
       </div>
     </footer>

@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
 import { useI18n } from '../lib/i18n'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
@@ -615,13 +616,8 @@ export default function Profile() {
           </Card>
         </motion.div>
 
-        {/* Legal footer */}
-        <p className="text-center text-[10px] text-white/15 pb-4">
-          {isHe
-            ? 'DealSpace — כל הפרטים שלך מאובטחים ומוצפנים.'
-            : 'DealSpace — all your details are secured and encrypted.'}
-        </p>
       </main>
+      <GlobalFooter />
     </div>
   )
 }

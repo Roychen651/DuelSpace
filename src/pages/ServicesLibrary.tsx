@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Zap, Plus, Trash2, Edit3, Save, Percent } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../types/proposal'
 import type { SavedService } from '../components/builder/ReusableServices'
 
@@ -392,6 +393,7 @@ export default function ServicesLibrary() {
           </AnimatePresence>
         </div>
       </main>
+      <GlobalFooter />
     </div>
   )
 }

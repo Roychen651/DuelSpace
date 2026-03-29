@@ -358,7 +358,7 @@ export default function Legal() {
           {(['terms', 'privacy', 'security'] as const).map(t => (
             <button
               key={t}
-              onClick={() => navigate(`/${t}`)}
+              onClick={() => navigate(`/${t}`, { replace: true })}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
               style={{
                 background: type === t ? 'rgba(99,102,241,0.18)' : 'transparent',

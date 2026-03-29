@@ -254,7 +254,7 @@ export default function PrivacyPolicy() {
           ]).map(tab => (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => navigate(tab.path, { replace: true })}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
               style={{
                 background: tab.active ? 'rgba(168,85,247,0.18)' : 'transparent',

@@ -276,7 +276,7 @@ export default function TermsOfService() {
           ]).map(tab => (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => navigate(tab.path, { replace: true })}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
               style={{
                 background: tab.active ? 'rgba(99,102,241,0.18)' : 'transparent',

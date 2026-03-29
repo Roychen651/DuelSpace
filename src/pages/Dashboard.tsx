@@ -406,7 +406,7 @@ export default function Dashboard() {
       <DashboardAurora />
       <Navbar onCreate={handleCreate} />
 
-      <main className="relative z-10 flex-1 px-6 py-8 pb-32 sm:pb-8 max-w-7xl mx-auto w-full">
+      <main className="relative z-10 px-6 py-8 pb-8 max-w-7xl mx-auto w-full">
 
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>

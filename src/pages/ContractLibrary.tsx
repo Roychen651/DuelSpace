@@ -6,6 +6,7 @@ import {
   Copy, Check, Edit3, Save, X as CloseIcon, Eye, EyeOff,
 } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 import {
   CONTRACT_TEMPLATES, interpolateTemplate, getTemplatesByCategory,
   CATEGORY_LABELS,
@@ -414,6 +415,7 @@ export default function ContractLibrary() {
           ))}
         </div>
       </main>
+      <GlobalFooter />
     </div>
   )
 }

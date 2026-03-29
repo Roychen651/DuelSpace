@@ -12,6 +12,7 @@ import { ClientDetailsForm } from '../components/deal-room/ClientDetailsForm'
 import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
 import type { ClientCapturedDetails } from '../components/deal-room/ClientDetailsForm'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../lib/successTemplates'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -1117,6 +1118,8 @@ export default function DealRoom() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <GlobalFooter />
     </div>
   )
 }
