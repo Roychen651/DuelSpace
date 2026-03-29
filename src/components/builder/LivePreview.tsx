@@ -449,19 +449,25 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {!compact && (
                 <div className="mt-6">
                   <div
-                    className="relative w-full overflow-hidden rounded-xl py-3.5 text-center text-sm font-bold text-white opacity-60 cursor-default select-none"
+                    className="relative w-full overflow-hidden rounded-xl py-3.5 text-center text-sm font-bold text-white/40 cursor-not-allowed select-none"
                     style={{
-                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-                      boxShadow: '0 0 24px rgba(99,102,241,0.3)',
+                      background: 'rgba(99,102,241,0.12)',
+                      border: '1px dashed rgba(99,102,241,0.25)',
                     }}
                   >
                     {locale === 'he' ? '✓ אשר את ההצעה' : '✓ Accept This Proposal'}
                   </div>
-                  <p className="mt-2 text-center text-[10px] text-white/20">
-                    {locale === 'he'
-                      ? 'כפתור זה יפעל כאשר ההצעה תישלח ללקוח'
-                      : 'This button is active when the proposal is sent to a client'}
-                  </p>
+                  <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: '#d4af37', boxShadow: '0 0 6px rgba(212,175,55,0.6)' }}
+                    />
+                    <p className="text-[10px] font-semibold text-amber-400/50">
+                      {locale === 'he'
+                        ? 'תצוגה מקדימה — הכפתור יופעל כשהלקוח פותח את הקישור'
+                        : 'Preview only — button activates when client opens the link'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
