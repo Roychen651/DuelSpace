@@ -13,6 +13,7 @@ import LandingPage from './pages/LandingPage'
 import Profile from './pages/Profile'
 import ResetPassword from './pages/ResetPassword'
 import Legal from './pages/Legal'
+import AccessibilityStatement from './pages/AccessibilityStatement'
 import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
 
@@ -99,6 +100,7 @@ function AnimatedRoutes() {
             <Route path="/terms" element={<Legal />} />
             <Route path="/privacy" element={<Legal />} />
             <Route path="/security" element={<Legal />} />
+            <Route path="/accessibility" element={<AccessibilityStatement />} />
 
             {/* Landing — always public */}
             <Route path="/" element={<LandingPage />} />
@@ -109,6 +111,9 @@ function AnimatedRoutes() {
 
       {/* Help Center — show for authenticated users outside the Deal Room */}
       {status === 'authenticated' && !isDealRoom && <HelpCenterDrawer />}
+
+      {/* Accessibility Widget — global, always visible on all pages */}
+      <AccessibilityWidget />
     </>
   )
 }
@@ -130,7 +135,6 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppInner />
-      <AccessibilityWidget />
     </ErrorBoundary>
   )
 }

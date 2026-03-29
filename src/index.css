@@ -167,3 +167,63 @@ body {
 
 /* ── Number tabular ──────────────────────────────────────────────────────── */
 .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ── Accessibility Engine ────────────────────────────────────────────────── */
+
+/* Dynamic text scaling via CSS variable set by useAccessibilityStore */
+html {
+  font-size: calc(16px * var(--a11y-scale, 1));
+}
+
+/* High Contrast: boost overall contrast while preserving glassmorphic structure */
+html.a11y-high-contrast {
+  filter: contrast(1.9) brightness(1.08) saturate(1.15) !important;
+}
+
+/* Monochrome: strip all color, preserve layout */
+html.a11y-monochrome {
+  filter: grayscale(100%) !important;
+}
+
+/* Both high contrast + monochrome */
+html.a11y-high-contrast.a11y-monochrome {
+  filter: grayscale(100%) contrast(1.9) brightness(1.08) !important;
+}
+
+/* Stop Animations: collapse durations to near-zero (not 0, to avoid layout flash) */
+html.a11y-stop-animations *,
+html.a11y-stop-animations *::before,
+html.a11y-stop-animations *::after {
+  animation-duration:       0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration:      0.001ms !important;
+  scroll-behavior:          auto !important;
+}
+
+/* Readable Font: replace decorative fonts with accessible system sans-serif */
+html.a11y-readable-font body,
+html.a11y-readable-font input,
+html.a11y-readable-font textarea,
+html.a11y-readable-font button,
+html.a11y-readable-font select,
+html.a11y-readable-font p,
+html.a11y-readable-font span,
+html.a11y-readable-font h1,
+html.a11y-readable-font h2,
+html.a11y-readable-font h3,
+html.a11y-readable-font h4,
+html.a11y-readable-font h5,
+html.a11y-readable-font h6 {
+  font-family: Arial, Helvetica, 'Liberation Sans', sans-serif !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Highlight Links & Buttons: yellow outline + subtle bg for discoverability */
+html.a11y-highlight-links a:not([class*="no-a11y"]),
+html.a11y-highlight-links button:not([aria-hidden="true"]) {
+  outline: 2px solid #facc15 !important;
+  outline-offset: 3px !important;
+  background-color: rgba(250, 204, 21, 0.07) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
