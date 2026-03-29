@@ -286,7 +286,7 @@ export default function ProposalBuilder() {
     setSendOpen(true)
   }, [updateProposal])
 
-  const canSend = Boolean(draft.project_title?.trim() && draft.client_name?.trim())
+  const canSend = Boolean(draft.project_title?.trim())
 
   // ── Build a synthetic Proposal for LivePreview ───────────────────────────────
   const previewProposal: Proposal = {

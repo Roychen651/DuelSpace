@@ -30,8 +30,9 @@ function Section({
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}
     >
       <button
@@ -81,7 +82,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/35">
+      <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>
         {icon && <span>{icon}</span>}
         {label}
         {required && <span className="text-indigo-400/60">*</span>}
@@ -92,9 +93,11 @@ function Field({
 }
 
 const inputClass = [
-  'w-full rounded-xl border bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder-white/20',
+  'w-full rounded-2xl border bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-white/20',
   'outline-none transition-all duration-200',
-  'border-white/[0.08] focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/15',
+  'border-white/[0.1] focus:border-indigo-400/60',
+  'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
 ].join(' ')
 
 const textareaClass = [
@@ -328,8 +331,9 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
       <div
         className="rounded-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         }}
       >
         <div className="flex items-center justify-between px-5 py-4">

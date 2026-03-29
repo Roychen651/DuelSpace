@@ -10,9 +10,7 @@ import { evaluatePassword, validatePassword } from '../lib/passwordValidation'
 
 type AuthMode = 'signin' | 'signup' | 'magic' | 'forgot'
 
-// ─── CSS animation helpers ─────────────────────────────────────────────────────
-// Using CSS animations (not framer-motion initial/animate) for entrance effects
-// so content is ALWAYS visible on first render regardless of React version.
+// ─── CSS animation helpers ────────────────────────────────────────────────────
 
 const fadeUp = (delay = 0, duration = 0.45): React.CSSProperties => ({
   animation: `ds-fade-up ${duration}s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s both`,
@@ -22,56 +20,9 @@ const fadeIn = (delay = 0): React.CSSProperties => ({
   animation: `ds-fade-in 0.4s ease-out ${delay}s both`,
 })
 
-// Mode-switch transitions (between signin/signup/magic/forgot) — safe to use
-// framer-motion here because these don't run on first render.
 const MODE_TRANSITION: Transition = { duration: 0.22, ease: 'easeOut' }
 
-// ─── Aurora Background ────────────────────────────────────────────────────────
-
-function AuroraBackground() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {/* Deep base */}
-      <div className="absolute inset-0 bg-[#040608]" />
-      {/* Aurora orbs — pure CSS animations */}
-      <div
-        className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          animation: 'ds-float-a 18s ease-in-out infinite',
-        }}
-      />
-      <div
-        className="absolute -bottom-32 -right-32 h-[700px] w-[700px] rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-          animation: 'ds-float-b 22s ease-in-out infinite',
-        }}
-      />
-      <div
-        className="absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 65%)',
-          filter: 'blur(50px)',
-          animation: 'ds-pulse-scale 12s ease-in-out infinite',
-        }}
-      />
-      {/* Grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }}
-      />
-    </div>
-  )
-}
-
-// ─── CSS Keyframes (injected once) ───────────────────────────────────────────
+// ─── CSS Keyframes ────────────────────────────────────────────────────────────
 
 function GlobalStyles() {
   return (
@@ -84,60 +35,53 @@ function GlobalStyles() {
         from { opacity: 0; }
         to   { opacity: 1; }
       }
-      @keyframes ds-float-a {
-        0%, 100% { transform: translate(0, 0); }
-        50%      { transform: translate(60px, 40px); }
-      }
-      @keyframes ds-float-b {
-        0%, 100% { transform: translate(0, 0); }
-        50%      { transform: translate(-50px, -60px); }
-      }
-      @keyframes ds-pulse-scale {
-        0%, 100% { transform: translate(-50%, -50%) scale(1); }
-        50%      { transform: translate(-50%, -50%) scale(1.15); }
-      }
       @keyframes ds-shimmer {
-        0%   { transform: translateX(-100%) skewX(12deg); }
-        100% { transform: translateX(200%) skewX(12deg); }
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(500%); }
       }
       @keyframes ds-spin {
         to { transform: rotate(360deg); }
-      }
-      @keyframes ds-tab-bounce {
-        0%, 100% { transform: scaleX(1); }
-        50%      { transform: scaleX(0.96); }
       }
     `}</style>
   )
 }
 
-// ─── Glow Border Card ─────────────────────────────────────────────────────────
+// ─── Background — single blurred radial glow on pure black ───────────────────
 
-function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function LinearBackground() {
   return (
-    <div className={`relative ${className}`}>
-      {/* Glow border */}
+    <div className="pointer-events-none fixed inset-0" aria-hidden>
+      <div className="absolute inset-0" style={{ background: '#000000' }} />
+      {/* Single centered glow — the only decoration */}
       <div
-        className="pointer-events-none absolute -inset-[1px] rounded-2xl"
+        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4"
         style={{
-          background:
-            'linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(212,175,55,0.3) 50%, rgba(168,85,247,0.45) 100%)',
-          opacity: 0.7,
+          width: 700,
+          height: 700,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at center, rgba(99,102,241,0.18) 0%, rgba(168,85,247,0.08) 40%, transparent 70%)',
+          filter: 'blur(60px)',
         }}
-        aria-hidden
       />
-      {/* Glass body */}
-      <div
-        className="relative rounded-2xl p-8"
-        style={{
-          background:
-            'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
-          backdropFilter: 'blur(32px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-        }}
-      >
-        {children}
-      </div>
+    </div>
+  )
+}
+
+// ─── Glass Card — true Linear/Notion glassmorphism ───────────────────────────
+
+function GlassCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="w-full rounded-3xl p-8 sm:p-10"
+      style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(48px)',
+        WebkitBackdropFilter: 'blur(48px)',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}
+    >
+      {children}
     </div>
   )
 }
@@ -154,21 +98,30 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-xs font-medium text-white/50 uppercase tracking-widest">
+      <label htmlFor={id} className="block text-[11px] font-medium uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>
         {label}
       </label>
       <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center text-white/30">
+        <span className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center" style={{ color: 'rgba(255,255,255,0.25)' }}>
           {icon}
         </span>
         <input
           id={id}
-          className={[
-            'w-full rounded-xl border bg-white/5 py-3 pe-10 ps-10 text-sm text-white placeholder-white/20',
-            'outline-none transition-all duration-200',
-            'focus:border-indigo-400/60 focus:ring-2 focus:ring-indigo-500/20',
-            error ? 'border-red-400/50' : 'border-white/10',
-          ].join(' ')}
+          className="w-full rounded-xl py-3 pe-10 ps-10 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.07)',
+          }}
+          onFocus={e => {
+            if (!error) {
+              e.currentTarget.style.border = '1px solid rgba(99,102,241,0.5)'
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.08)'
+            }
+          }}
+          onBlur={e => {
+            e.currentTarget.style.border = error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.07)'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
           {...props}
         />
         {suffix && (
@@ -178,7 +131,8 @@ function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
       <AnimatePresence>
         {error && (
           <motion.p
-            className="text-xs text-red-400"
+            className="text-xs"
+            style={{ color: '#f87171' }}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -205,21 +159,23 @@ function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={loading || disabled}
-      className="group relative w-full overflow-hidden rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+      className="group relative w-full overflow-hidden rounded-xl py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       style={{
         background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-        boxShadow: '0 0 30px rgba(99,102,241,0.35)',
+        boxShadow: '0 0 24px rgba(99,102,241,0.3)',
+      }}
+      onMouseEnter={(e) => {
+        const shimmer = e.currentTarget.querySelector<HTMLSpanElement>('[data-shimmer]')
+        if (!shimmer) return
+        shimmer.style.animation = 'none'
+        void shimmer.offsetWidth // force reflow
+        shimmer.style.animation = 'ds-shimmer 0.65s ease-out forwards'
       }}
     >
-      {/* Shimmer sweep */}
       <span
-        className="pointer-events-none absolute inset-y-0 w-1/3 bg-white/15"
+        data-shimmer=""
+        className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-12deg] bg-white/20"
         style={{ animation: 'none' }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget
-          el.style.animation = 'ds-shimmer 0.7s ease-out forwards'
-          el.addEventListener('animationend', () => { el.style.animation = 'none' }, { once: true })
-        }}
         aria-hidden
       />
       <span className="relative flex items-center justify-center gap-2">
@@ -242,7 +198,14 @@ function GoogleButton({ onClick, loading, label }: { onClick: () => void; loadin
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/20 hover:bg-white/8 active:scale-[0.98] disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        color: 'rgba(255,255,255,0.7)',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.14)'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+      onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
     >
       {loading ? (
         <span
@@ -271,9 +234,9 @@ function GoogleIcon() {
 function OrDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-px flex-1 bg-white/10" />
-      <span className="text-xs text-white/30">{label}</span>
-      <div className="h-px flex-1 bg-white/10" />
+      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
+      <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>{label}</span>
+      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
     </div>
   )
 }
@@ -284,12 +247,12 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
   useEffect(() => { const t = setTimeout(onClose, 5000); return () => clearTimeout(t) }, [onClose])
   return (
     <motion.div
-      className={[
-        'fixed top-4 end-4 z-50 max-w-sm rounded-xl border px-4 py-3 text-sm font-medium shadow-xl',
-        type === 'success'
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-          : 'border-red-500/30 bg-red-500/10 text-red-300',
-      ].join(' ')}
+      className="fixed top-4 end-4 z-50 max-w-sm rounded-xl px-4 py-3 text-sm font-medium shadow-xl"
+      style={{
+        background: type === 'success' ? 'rgba(34,197,94,0.08)' : 'rgba(248,113,113,0.08)',
+        border: type === 'success' ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(248,113,113,0.2)',
+        color: type === 'success' ? '#4ade80' : '#f87171',
+      }}
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
@@ -311,7 +274,10 @@ function LangToggle() {
     <button
       type="button"
       onClick={() => setLocale(other)}
-      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/50 transition hover:border-white/20 hover:text-white/80"
+      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"
+      style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)' }}
+      onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
+      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
       aria-label={`Switch to ${other === 'he' ? 'עברית' : 'English'}`}
     >
       <Globe size={12} aria-hidden />
@@ -323,9 +289,21 @@ function LangToggle() {
 // ─── Auth Tabs ────────────────────────────────────────────────────────────────
 
 function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange: (v: 'signin' | 'signup') => void }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  // In RTL (Hebrew), flex items are visually reversed:
+  // DOM[0]='signin' appears on the RIGHT, DOM[1]='signup' on the LEFT.
+  // Indicator uses `left: 4` (physical left). So we flip the condition for RTL.
+  const isRTL = locale === 'he'
+  const indicatorX = (isRTL ? active === 'signup' : active === 'signin')
+    ? 0
+    : 'calc(100% + 4px)'
+
   return (
-    <div className="relative flex rounded-xl border border-white/10 bg-white/5 p-1" role="tablist">
+    <div
+      className="relative flex rounded-xl p-1"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+      role="tablist"
+    >
       {(['signin', 'signup'] as const).map((tab) => (
         <button
           key={tab}
@@ -342,11 +320,11 @@ function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange:
         className="absolute inset-y-1 rounded-lg"
         style={{
           background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-          boxShadow: '0 0 22px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.18)',
+          boxShadow: '0 0 20px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
           width: 'calc(50% - 4px)',
           left: 4,
         }}
-        animate={{ x: active === 'signin' ? 0 : 'calc(100% + 4px)' }}
+        animate={{ x: indicatorX }}
         transition={{ type: 'spring', stiffness: 400, damping: 35 }}
       />
     </div>
@@ -394,7 +372,9 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
           icon={<Lock size={15} />} error={fieldErrors.password}
           suffix={
             <button type="button" onClick={() => setShowPw(!showPw)}
-              className="text-white/30 transition hover:text-white/60"
+              className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
               aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
               {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
@@ -402,7 +382,10 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
       </div>
       <div style={fadeUp(0.18)} className="flex justify-end">
         <button type="button" onClick={onForgot}
-          className="text-xs text-indigo-400/80 transition hover:text-indigo-300">
+          className="text-xs transition"
+          style={{ color: 'rgba(99,102,241,0.7)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}>
           {t('auth.action.forgotPassword')}
         </button>
       </div>
@@ -410,7 +393,8 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
       <AnimatePresence>
         {error && (
           <motion.p
-            className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
+            className="rounded-xl px-3 py-2.5 text-xs"
+            style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171' }}
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
             {t(error) || error}
@@ -430,7 +414,10 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
       </div>
       <div style={fadeUp(0.36)} className="text-center">
         <button type="button" onClick={onMagic}
-          className="text-xs text-white/40 transition hover:text-white/70 underline-offset-2 hover:underline">
+          className="text-xs transition"
+          style={{ color: 'rgba(255,255,255,0.35)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}>
           {t('auth.action.switchToMagicLink')}
         </button>
       </div>
@@ -453,14 +440,13 @@ function PasswordStrengthMeter({ password, locale }: { password: string; locale:
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Strength bar */}
       <div className="flex items-center gap-2">
         <div className="flex flex-1 gap-1">
           {bars.map(i => (
             <div
               key={i}
               className="h-1 flex-1 rounded-full transition-all duration-300"
-              style={{ background: i <= score - 1 ? color : 'rgba(255,255,255,0.1)' }}
+              style={{ background: i <= score - 1 ? color : 'rgba(255,255,255,0.08)' }}
             />
           ))}
         </div>
@@ -468,8 +454,6 @@ function PasswordStrengthMeter({ password, locale }: { password: string; locale:
           {locale === 'he' ? evaluatePassword(password).label_he : label_en}
         </span>
       </div>
-
-      {/* Rules checklist */}
       <div className="grid grid-cols-2 gap-1">
         {rules.map(rule => (
           <div key={rule.key} className="flex items-center gap-1">
@@ -542,7 +526,9 @@ function SignUpForm() {
             icon={<Lock size={15} />} error={fieldErrors.password}
             suffix={
               <button type="button" onClick={() => setShowPw(!showPw)}
-                className="text-white/30 transition hover:text-white/60"
+                className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
                 aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -555,7 +541,8 @@ function SignUpForm() {
         <AnimatePresence>
           {error && (
             <motion.p
-              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400"
+              className="rounded-xl px-3 py-2.5 text-xs"
+              style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171' }}
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
               {t(error) || error}
@@ -572,11 +559,11 @@ function SignUpForm() {
         <div style={fadeUp(0.28)}>
           <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
         </div>
-        <p style={fadeUp(0.32)} className="text-center text-[10px] text-white/25 leading-relaxed">
+        <p className="text-center text-[10px] leading-relaxed" style={{ ...fadeUp(0.32), color: 'rgba(255,255,255,0.2)' }}>
           {t('auth.legal.agree')}{' '}
-          <a href="/terms" className="underline hover:text-white/50">{t('auth.legal.terms')}</a>
+          <a href="/terms" className="underline" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('auth.legal.terms')}</a>
           {' '}{t('auth.legal.and')}{' '}
-          <a href="/privacy" className="underline hover:text-white/50">{t('auth.legal.privacy')}</a>
+          <a href="/privacy" className="underline" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('auth.legal.privacy')}</a>
         </p>
       </form>
     </>
@@ -601,14 +588,20 @@ function MagicLinkForm({ onBack }: { onBack: () => void }) {
   if (sent) {
     return (
       <div className="space-y-5 text-center" style={fadeUp(0)}>
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/20 ring-1 ring-indigo-500/30">
-          <Zap size={24} className="text-indigo-400" />
+        <div
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
+          style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}
+        >
+          <Zap size={24} style={{ color: '#818cf8' }} />
         </div>
         <div>
           <p className="font-semibold text-white">{t('auth.action.magicLink.sent')}</p>
-          <p className="mt-1 text-sm text-white/40">{t('auth.success.magicLink')}</p>
+          <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('auth.success.magicLink')}</p>
         </div>
-        <button type="button" onClick={onBack} className="text-sm text-indigo-400/80 hover:text-indigo-300">
+        <button type="button" onClick={onBack}
+          className="text-sm transition" style={{ color: 'rgba(99,102,241,0.7)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}>
           {t('auth.action.backToSignIn')}
         </button>
       </div>
@@ -617,7 +610,7 @@ function MagicLinkForm({ onBack }: { onBack: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <p className="text-sm text-white/50" style={fadeIn(0.05)}>{t('auth.page.subtitle')}</p>
+      <p className="text-sm" style={{ ...fadeIn(0.05), color: 'rgba(255,255,255,0.45)' }}>{t('auth.page.subtitle')}</p>
       <div style={fadeUp(0.10)}>
         <AuthInput id="magic-email" label={t('auth.field.email')} type="email"
           autoComplete="email" placeholder={t('auth.field.email.placeholder')}
@@ -629,7 +622,10 @@ function MagicLinkForm({ onBack }: { onBack: () => void }) {
         </PrimaryButton>
       </div>
       <div style={fadeUp(0.20)} className="text-center">
-        <button type="button" onClick={onBack} className="text-xs text-white/40 hover:text-white/70">
+        <button type="button" onClick={onBack}
+          className="text-xs transition" style={{ color: 'rgba(255,255,255,0.35)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}>
           {t('auth.action.switchToPassword')}
         </button>
       </div>
@@ -656,8 +652,11 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   if (sent) {
     return (
       <div className="space-y-4 text-center" style={fadeUp(0)}>
-        <p className="text-sm text-white/70">{t('auth.action.resetPassword.sent')}</p>
-        <button type="button" onClick={onBack} className="text-sm text-indigo-400/80 hover:text-indigo-300">
+        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{t('auth.action.resetPassword.sent')}</p>
+        <button type="button" onClick={onBack}
+          className="text-sm transition" style={{ color: 'rgba(99,102,241,0.7)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}>
           {t('auth.action.backToSignIn')}
         </button>
       </div>
@@ -677,49 +676,14 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
         </PrimaryButton>
       </div>
       <div style={fadeUp(0.14)} className="text-center">
-        <button type="button" onClick={onBack} className="text-xs text-white/40 hover:text-white/70">
+        <button type="button" onClick={onBack}
+          className="text-xs transition" style={{ color: 'rgba(255,255,255,0.35)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}>
           {t('auth.action.backToSignIn')}
         </button>
       </div>
     </form>
-  )
-}
-
-// ─── Brand Panel ──────────────────────────────────────────────────────────────
-
-function BrandPanel() {
-  const { t } = useI18n()
-  return (
-    <div className="hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
-      {/* Logo */}
-      <div className="flex items-center gap-2" style={fadeUp(0.05)}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
-          <Zap size={18} className="text-white" />
-        </div>
-        <span className="text-lg font-bold tracking-tight text-white">{t('brand.name')}</span>
-      </div>
-
-      {/* Hero copy */}
-      <div className="space-y-6" style={fadeUp(0.15)}>
-        <h1 className="text-4xl font-bold leading-tight tracking-tight text-white">
-          {t('auth.page.title')}
-        </h1>
-        <p className="text-base leading-relaxed text-white/40">{t('auth.page.subtitle')}</p>
-        <div className="flex flex-wrap gap-2">
-          {['Interactive Proposals', 'Real-Time Analytics', 'Deal Rooms', 'Auto-Upsell'].map((f, i) => (
-            <span key={f}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/50"
-              style={fadeIn(0.3 + i * 0.08)}>
-              {f}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Social proof */}
-      <p className="text-xs text-white/25" style={fadeIn(0.5)}>{t('auth.social.trusted')}</p>
-    </div>
   )
 }
 
@@ -745,68 +709,82 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden" dir={dir} lang={dir === 'rtl' ? 'he' : 'en'}>
+    <div
+      className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-12"
+      dir={dir}
+      lang={dir === 'rtl' ? 'he' : 'en'}
+      style={{ background: '#000000' }}
+    >
       <GlobalStyles />
-      <AuroraBackground />
+      <LinearBackground />
 
       {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6" style={fadeIn(0)}>
-        <div className="flex items-center gap-2 lg:hidden">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
-            <Zap size={14} className="text-white" />
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-6 py-4" style={fadeIn(0)}>
+        <a href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.35)' }}
+          >
+            <Zap size={13} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-white">{t('brand.name')}</span>
-        </div>
-        <div className="ms-auto"><LangToggle /></div>
+          <span className="text-sm font-bold tracking-tight text-white">{t('brand.name')}</span>
+        </a>
+        <LangToggle />
       </header>
 
-      {/* Main layout */}
-      <main className="relative z-10 flex flex-1 items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-5xl">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <BrandPanel />
-
-            {/* Auth card — visible immediately, no opacity-0 initial */}
-            <div className="w-full" style={fadeUp(0.08)}>
-              <GlassCard>
-                {showTabs && (
-                  <div className="mb-6">
-                    <AuthTabs active={tab} onChange={handleTabChange} />
-                  </div>
-                )}
-                {!showTabs && (
-                  <div className="mb-6">
-                    <p className="text-lg font-semibold text-white">{formTitle[mode]}</p>
-                  </div>
-                )}
-
-                {/* Mode transitions — safe to use framer-motion here (not first render) */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={mode}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={MODE_TRANSITION}
-                  >
-                    {mode === 'signin' && <SignInForm onForgot={() => setMode('forgot')} onMagic={() => setMode('magic')} />}
-                    {mode === 'signup' && <SignUpForm />}
-                    {mode === 'magic' && <MagicLinkForm onBack={() => setMode('signin')} />}
-                    {mode === 'forgot' && <ForgotPasswordForm onBack={() => setMode('signin')} />}
-                  </motion.div>
-                </AnimatePresence>
-              </GlassCard>
+      {/* Card */}
+      <main className="relative z-10 w-full max-w-md">
+        <div style={fadeUp(0.08)}>
+          <GlassCard>
+            {/* Card logo + title */}
+            <div className="mb-8 text-center">
+              <div
+                className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.12))',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  boxShadow: '0 0 20px rgba(99,102,241,0.15)',
+                }}
+              >
+                <Zap size={19} style={{ color: '#818cf8' }} />
+              </div>
+              <h1 className="text-xl font-bold text-white mb-0.5">
+                {showTabs ? t('brand.name') : formTitle[mode]}
+              </h1>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {showTabs
+                  ? (tab === 'signin' ? 'Welcome back' : 'Create your account')
+                  : (mode === 'forgot' ? 'Enter your email to reset' : 'Sign in without a password')}
+              </p>
             </div>
-          </div>
-        </div>
-      </main>
 
-      {/* Legal footer */}
-      <footer className="relative z-10 border-t border-white/5 px-6 py-4 text-center" style={fadeIn(0.4)}>
-        <p className="text-[11px] leading-relaxed text-white/20">{t('footer.legal')}</p>
-        <p className="mt-1 text-[10px] text-white/15">{t('footer.rights')}</p>
-      </footer>
+            {showTabs && (
+              <div className="mb-6">
+                <AuthTabs active={tab} onChange={handleTabChange} />
+              </div>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={MODE_TRANSITION}
+              >
+                {mode === 'signin' && <SignInForm onForgot={() => setMode('forgot')} onMagic={() => setMode('magic')} />}
+                {mode === 'signup' && <SignUpForm />}
+                {mode === 'magic' && <MagicLinkForm onBack={() => setMode('signin')} />}
+                {mode === 'forgot' && <ForgotPasswordForm onBack={() => setMode('signin')} />}
+              </motion.div>
+            </AnimatePresence>
+          </GlassCard>
+        </div>
+
+        <p className="mt-6 text-center text-[10px]" style={{ ...fadeIn(0.3), color: 'rgba(255,255,255,0.15)' }}>
+          {t('footer.legal')}
+        </p>
+      </main>
     </div>
   )
 }

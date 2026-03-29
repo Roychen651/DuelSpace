@@ -22,6 +22,7 @@ interface AuthState {
   sendPasswordResetEmail: (email: string) => Promise<void>
   signOut: () => Promise<void>
   updateProfile: (updates: { full_name?: string; avatar_url?: string }) => Promise<void>
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>
   deleteAccount: () => Promise<void>
   clearError: () => void
 }
@@ -186,6 +187,14 @@ export const useAuthStore = create<AuthState>()(
         }
 
         set({ user: data.user })
+      },
+
+      // ── Update Password ───────────────────────────────────────────────────
+      updatePassword: async (newPassword) => {
+        const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+        if (error) return { error: formatAuthError(error) }
+        set({ user: data.user })
+        return { error: null }
       },
 
       // ── Delete Account ────────────────────────────────────────────────────

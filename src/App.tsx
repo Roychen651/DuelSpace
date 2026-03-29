@@ -6,6 +6,9 @@ import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
 import ProposalBuilder from './pages/ProposalBuilder'
 import DealRoom from './pages/DealRoom'
+import LandingPage from './pages/LandingPage'
+import Profile from './pages/Profile'
+import ResetPassword from './pages/ResetPassword'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -63,18 +66,20 @@ function AppInner() {
         {/* Public */}
         <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
         <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
 
         {/* Public deal room — no auth required */}
         <Route path="/deal/:token" element={<DealRoom />} />
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* Landing — always public */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

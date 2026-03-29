@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User } from 'lucide-react'
+import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
@@ -152,6 +152,7 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
   const { user, signOut } = useAuthStore()
   const { locale, setLocale, t } = useI18n()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const avatar = user?.user_metadata?.avatar_url as string | undefined
   const name = (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? ''
@@ -204,21 +205,40 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
         </button>
 
         {/* Avatar / sign out */}
-        <div className="relative group">
+        <div
+          className="relative"
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+        >
           <button className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white overflow-hidden transition ring-1 ring-white/10 hover:ring-indigo-500/40"
             style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg, #6366f1, #a855f7)' }}>
             {avatar ? <img src={avatar} alt={name} className="h-full w-full object-cover" /> : initials || <User size={14} />}
           </button>
-          {/* Sign out tooltip */}
-          <div className="absolute end-0 top-full mt-2 hidden group-hover:block z-50">
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/10 bg-[#0d0d14] px-3 py-2 text-xs text-white/60 transition hover:text-red-400"
-            >
-              <LogOut size={12} />
-              {locale === 'he' ? 'התנתק' : 'Sign Out'}
-            </button>
-          </div>
+          {/* Dropdown — pt-2 bridges the gap so hover stays active */}
+          {menuOpen && (
+            <div className="absolute end-0 top-full pt-2 z-50">
+              <div
+                className="flex flex-col gap-0.5 rounded-xl p-1 min-w-[140px]"
+                style={{ background: '#0d0d18', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}
+              >
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
+                >
+                  <Settings size={12} />
+                  {locale === 'he' ? 'פרופיל' : 'Profile'}
+                </button>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '2px 0' }} />
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-red-500/10 hover:text-red-400 w-full text-start"
+                >
+                  <LogOut size={12} />
+                  {locale === 'he' ? 'התנתק' : 'Sign Out'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </nav>
