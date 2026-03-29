@@ -30,7 +30,7 @@ const copy = {
     // Problem vs Solution
     problemLabel: 'הדרך הישנה',
     solutionLabel: 'הדרך של DealSpace',
-    vsHeadline: 'PDF נגד חדר עסקאות.',
+    vsHeadline: 'PDF vs. חדר עסקאות.',
     vsSub: 'אתם יודעים שה-PDF שלכם נגמר בסל המחזור. הגיע הזמן לשדרג.',
     problemItems: [
       'PDF שמאבד תשומת לב תוך 10 שניות',
@@ -445,61 +445,134 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
           <p className="text-white/45 text-base max-w-md mx-auto">{c.vsSub}</p>
         </motion.div>
 
-        {/* Two columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Old way */}
+        {/* VS Battle Layout */}
+        <div className="flex flex-col lg:flex-row items-stretch gap-4 lg:gap-0">
+
+          {/* ── Old Way ── */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? 30 : -30 }}
+            initial={{ opacity: 0, x: isHe ? 40 : -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.55, ease: 'easeOut' as const }}
-            className="rounded-3xl p-7"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+            transition={{ duration: 0.6, ease: 'easeOut' as const }}
+            className="flex-1 rounded-3xl p-7"
+            style={{
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.1) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              filter: 'saturate(0.7)',
+            }}
           >
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <X size={14} style={{ color: '#f87171' }} />
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-6">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                <X size={16} style={{ color: '#f87171' }} />
               </div>
-              <p className="text-sm font-bold" style={{ color: '#f87171' }}>{c.problemLabel}</p>
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: '#f87171' }}>{c.problemLabel}</p>
+              </div>
             </div>
-            <ul className="space-y-3.5">
+            <ul className="space-y-4">
               {c.problemItems.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <X size={13} className="mt-0.5 flex-none" style={{ color: '#f87171' }} />
-                  <span className="text-sm text-white/40 leading-snug">{item}</span>
+                  <div className="mt-0.5 flex-none h-5 w-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                    <X size={10} style={{ color: '#f87171' }} />
+                  </div>
+                  <span className="text-sm text-white/35 leading-snug">{item}</span>
                 </li>
               ))}
             </ul>
           </motion.div>
 
-          {/* DealSpace way */}
+          {/* ── VS Divider ── */}
+          <div className="flex lg:flex-col items-center justify-center py-2 lg:py-0 lg:px-5">
+            {/* Line segment */}
+            <div
+              className="flex-1 h-px lg:h-auto lg:w-px"
+              style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)' }}
+            />
+            {/* Badge */}
+            <div className="relative flex-none mx-4 lg:mx-0 lg:my-5">
+              {/* Outer ping ring */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'rgba(99,102,241,0.25)',
+                  animation: 'lp-ping-ring 2.8s ease-out infinite',
+                }}
+              />
+              {/* Soft glow halo */}
+              <div
+                className="absolute -inset-3 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)',
+                  filter: 'blur(10px)',
+                }}
+              />
+              {/* Badge core */}
+              <div
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.15), 0 0 32px rgba(99,102,241,0.7), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-accent)',
+                  fontSize: 13,
+                  fontWeight: 900,
+                  color: 'white',
+                  letterSpacing: '0.08em',
+                  position: 'relative',
+                  zIndex: 1,
+                  textShadow: '0 1px 8px rgba(0,0,0,0.4)',
+                }}
+              >
+                VS
+              </div>
+            </div>
+            {/* Line segment */}
+            <div
+              className="flex-1 h-px lg:h-auto lg:w-px"
+              style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)' }}
+            />
+          </div>
+
+          {/* ── DealSpace Way ── */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? -30 : 30 }}
+            initial={{ opacity: 0, x: isHe ? -40 : 40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.55, ease: 'easeOut' as const, delay: 0.08 }}
-            className="relative rounded-3xl p-7 overflow-hidden"
+            transition={{ duration: 0.6, ease: 'easeOut' as const, delay: 0.1 }}
+            className="flex-1 relative rounded-3xl p-7 overflow-hidden"
             style={{
-              background: 'linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.05) 100%)',
-              border: '1px solid rgba(99,102,241,0.22)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+              background: 'linear-gradient(160deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.07) 50%, rgba(168,85,247,0.04) 100%)',
+              border: '1px solid rgba(99,102,241,0.28)',
+              boxShadow: '0 0 60px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.07)',
             }}
           >
-            {/* Corner glow */}
-            <div className="pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.35)' }}>
-                <Zap size={14} style={{ color: '#a5b4fc' }} />
+            {/* Corner glows */}
+            <div className="pointer-events-none absolute -top-10 -end-10 h-40 w-40 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)', filter: 'blur(24px)' }} />
+            <div className="pointer-events-none absolute -bottom-8 -start-8 h-28 w-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+            {/* Top highlight line */}
+            <div className="pointer-events-none absolute top-0 start-8 end-8 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(165,180,252,0.4), transparent)' }} />
+
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-6">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl" style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.38)', boxShadow: '0 0 14px rgba(99,102,241,0.3)' }}>
+                <Zap size={16} style={{ color: '#a5b4fc' }} />
               </div>
-              <p className="text-sm font-bold" style={{ color: '#a5b4fc' }}>{c.solutionLabel}</p>
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: '#a5b4fc' }}>{c.solutionLabel}</p>
+              </div>
             </div>
-            <ul className="space-y-3.5">
+            <ul className="space-y-4">
               {c.solutionItems.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex-none h-4 w-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.2)' }}>
+                  <div className="mt-0.5 flex-none h-5 w-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.38)' }}>
                     <Check size={10} style={{ color: '#a5b4fc' }} />
                   </div>
-                  <span className="text-sm text-white/75 leading-snug">{item}</span>
+                  <span className="text-sm text-white/80 leading-snug">{item}</span>
                 </li>
               ))}
             </ul>
@@ -734,24 +807,30 @@ function SocialProofNumbers({ isHe }: { isHe: boolean }) {
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
         >
-          {PROOF_STATS.map((s) => (
+          {PROOF_STATS.map((s, i) => (
             <motion.div
               key={s.value}
               variants={itemFade}
               className="flex flex-col items-center text-center"
             >
               <span
-                className="text-4xl sm:text-5xl font-black tracking-tight mb-2"
+                className="text-4xl sm:text-5xl font-black tracking-tight mb-3 tabular-nums"
                 style={{
-                  background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #c084fc 100%)',
+                  background: [
+                    'linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%)',
+                    'linear-gradient(135deg, #a5b4fc 0%, #c084fc 100%)',
+                    'linear-gradient(135deg, #c084fc 0%, #a5b4fc 100%)',
+                    'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)',
+                  ][i],
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 {s.value}
               </span>
-              <span className="text-[13px] text-white/40 font-medium leading-snug">
+              {/* Underline accent */}
+              <div className="w-8 h-0.5 rounded-full mb-2.5" style={{ background: 'rgba(99,102,241,0.35)' }} />
+              <span className="text-[12px] text-white/38 font-semibold uppercase tracking-[0.12em]">
                 {isHe ? s.label_he : s.label_en}
               </span>
             </motion.div>
@@ -809,21 +888,29 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
               variants={itemFade}
               className="relative rounded-3xl p-6 overflow-hidden"
               style={{
-                background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
               }}
-              whileHover={{ y: -4, transition: { duration: 0.22 } }}
+              whileHover={{ y: -5, transition: { duration: 0.22 } }}
             >
-              <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+              <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+              {/* Decorative oversized quote mark */}
+              <div
+                className="pointer-events-none absolute -top-2 start-4 select-none leading-none"
+                style={{ fontSize: 96, fontWeight: 900, color: 'rgba(99,102,241,0.08)', fontFamily: 'var(--font-accent)', lineHeight: 1 }}
+                aria-hidden
+              >
+                "
+              </div>
               {/* Stars */}
-              <div className="flex gap-0.5 mb-4">
+              <div className="flex gap-0.5 mb-4 relative z-10">
                 {Array.from({ length: t.stars }).map((_, s) => (
                   <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37' }} />
                 ))}
               </div>
               {/* Quote */}
-              <p className="text-sm text-white/65 leading-relaxed mb-5">"{t.text}"</p>
+              <p className="relative z-10 text-sm text-white/65 leading-relaxed mb-5">"{t.text}"</p>
               {/* Author */}
               <div className="flex items-center gap-3 mt-auto">
                 <div
@@ -850,12 +937,20 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
 function FinalCTASection({ c, onCta }: { c: typeof copy['he']; onCta: () => void }) {
   return (
     <section className="relative py-28 px-6 overflow-hidden">
-      {/* BG gradient */}
+      {/* BG layers */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(99,102,241,0.18) 0%, rgba(168,85,247,0.06) 40%, transparent 70%)' }} />
+      {/* Dot grid texture */}
       <div
         className="pointer-events-none absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.14) 0%, transparent 65%)' }}
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.14) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          opacity: 0.18,
+        }}
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)' }} />
+      {/* Top edge glow */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.5), rgba(168,85,247,0.4), transparent)' }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent)' }} />
 
       <div className="max-w-2xl mx-auto text-center">
         <motion.div
@@ -919,51 +1014,73 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang }: {
 }) {
   return (
     <nav
-      className="sticky top-0 z-40 flex items-center justify-between px-6 py-3.5"
+      className="sticky top-0 z-40 flex items-center justify-between px-6 py-3"
       style={{
-        background: 'rgba(3,3,5,0.82)',
-        backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(3,3,5,0.92)',
+        backdropFilter: 'blur(32px) saturate(180%)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 1px 0 rgba(99,102,241,0.14), 0 8px 48px rgba(0,0,0,0.28)',
       }}
     >
+      {/* Ambient top-edge accent */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 40%, rgba(168,85,247,0.4) 60%, transparent 100%)' }} />
+
       {/* Logo */}
       <div className="flex items-center gap-2.5">
         <div
           className="flex h-8 w-8 items-center justify-center rounded-xl"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 18px rgba(99,102,241,0.45)' }}
+          style={{
+            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            boxShadow: '0 0 22px rgba(99,102,241,0.55), 0 0 0 1px rgba(255,255,255,0.08)',
+          }}
         >
           <Zap size={15} className="text-white" />
         </div>
-        <span className="text-sm font-bold tracking-tight text-white">DealSpace</span>
+        <span
+          className="text-[15px] font-bold tracking-tight"
+          style={{
+            background: 'linear-gradient(135deg, #ffffff 30%, #c4b5fd 80%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          DealSpace
+        </span>
       </div>
 
       {/* Right actions */}
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleLang}
-          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] text-white/45 transition hover:text-white/75"
-          style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}
+          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] text-white/40 transition-colors hover:text-white/70"
+          style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}
         >
           <Globe size={11} />
           {isHe ? 'EN' : 'עב'}
         </button>
+
+        {/* Login — proper ghost button, clearly tappable */}
         <button
           onClick={onLogin}
-          className="hidden sm:block px-4 py-1.5 rounded-lg text-[13px] font-semibold text-white/55 transition hover:text-white/90"
+          className="hidden sm:flex items-center px-4 py-2 rounded-xl text-[13px] font-semibold text-white/60 transition-all hover:text-white/90 hover:bg-white/5"
+          style={{ border: '1px solid rgba(255,255,255,0.12)' }}
         >
           {c.navLogin}
         </button>
+
+        {/* Primary CTA */}
         <motion.button
           onClick={onCta}
-          whileHover={{ scale: 1.03 }}
+          whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
-          className="px-4 py-2 rounded-xl text-[13px] font-bold text-white"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white"
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            boxShadow: '0 0 16px rgba(99,102,241,0.35)',
+            background: 'linear-gradient(135deg, #6366f1, #7c3aed, #a855f7)',
+            boxShadow: '0 0 22px rgba(99,102,241,0.45), 0 2px 10px rgba(0,0,0,0.3)',
           }}
         >
           {c.navCta}
+          <ChevronRight size={13} />
         </motion.button>
       </div>
     </nav>
