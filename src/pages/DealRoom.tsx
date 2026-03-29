@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield } from 'lucide-react'
+import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
@@ -191,7 +191,10 @@ export default function DealRoom() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [proposal, setProposal] = useState<Proposal | null>(null)
-  const [fetchStatus, setFetchStatus] = useState<'loading' | 'notfound' | 'ok'>('loading')
+  const [fetchStatus, setFetchStatus] = useState<'loading' | 'notfound' | 'requires_code' | 'ok'>('loading')
+  const [accessCode, setAccessCode] = useState('')
+  const [codeError, setCodeError] = useState(false)
+  const [codeLoading, setCodeLoading] = useState(false)
 
   // Per-add-on state: { [id]: { enabled, qty } }
   const [lineItems, setLineItems] = useState<
@@ -224,33 +227,46 @@ export default function DealRoom() {
   })()
 
   // ── Load proposal ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!token) { setFetchStatus('notfound'); return }
-    const load = async () => {
-      const { data, error } = await supabase
-        .from('proposals')
-        .select('*')
-        .eq('public_token', token)
-        .single()
+  const loadProposal = useCallback(async (code?: string): Promise<'ok' | 'requires_code' | 'notfound'> => {
+    if (!token) { setFetchStatus('notfound'); return 'notfound' }
 
-      if (error || !data) { setFetchStatus('notfound'); return }
+    const { data, error } = await supabase.rpc('get_deal_room_proposal', {
+      p_token: token,
+      p_code: code ?? null,
+    })
 
-      setProposal(data as Proposal)
-      setFetchStatus('ok')
-      if (data.status === 'accepted') setAccepted(true)
+    if (error || !data) { setFetchStatus('notfound'); return 'notfound' }
 
-      // Initialise line items from proposal add-ons
-      const init: Record<string, { enabled: boolean; qty: number }> = {}
-      for (const a of (data as Proposal).add_ons) {
-        init[a.id] = { enabled: a.enabled, qty: 1 }
-      }
-      setLineItems(init)
-
-      // Silent "viewed" ping — fire-and-forget
-      supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+    if ((data as { _requires_code?: boolean })._requires_code) {
+      setFetchStatus('requires_code')
+      return 'requires_code'
     }
-    load()
+
+    const p = data as Proposal
+    setProposal(p)
+    setFetchStatus('ok')
+    if (p.status === 'accepted') setAccepted(true)
+
+    const init: Record<string, { enabled: boolean; qty: number }> = {}
+    for (const a of p.add_ons) {
+      init[a.id] = { enabled: a.enabled, qty: 1 }
+    }
+    setLineItems(init)
+
+    supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+    return 'ok'
   }, [token])
+
+  useEffect(() => { loadProposal() }, [loadProposal])
+
+  const handleCodeSubmit = async () => {
+    if (!accessCode.trim()) return
+    setCodeLoading(true)
+    setCodeError(false)
+    const result = await loadProposal(accessCode.trim())
+    setCodeLoading(false)
+    if (result === 'requires_code') setCodeError(true)
+  }
 
   // ── Time tracking ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -343,7 +359,7 @@ export default function DealRoom() {
   }
 
   // ── Render: not found ──────────────────────────────────────────────────────
-  if (fetchStatus === 'notfound' || !proposal) {
+  if (fetchStatus === 'notfound' || (!proposal && fetchStatus !== 'requires_code')) {
     return (
       <div
         style={{
@@ -366,7 +382,114 @@ export default function DealRoom() {
     )
   }
 
+  // ── Render: access code gate ───────────────────────────────────────────────
+  if (fetchStatus === 'requires_code') {
+    const isHe = locale === 'he'
+    return (
+      <div
+        style={{
+          background: '#05050A', minHeight: '100dvh',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', padding: 32,
+        }}
+        dir={dir}
+      >
+        <style>{pageKeyframes}</style>
+        <DealRoomAurora />
+        <motion.div
+          className="relative z-10 w-full max-w-sm space-y-6"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+        >
+          {/* Logo */}
+          <div className="flex flex-col items-center gap-3 mb-2">
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                boxShadow: '0 0 32px rgba(99,102,241,0.5)',
+              }}
+            >
+              <Lock size={24} className="text-white" />
+            </div>
+            <h1 className="text-xl font-black text-white">
+              {isHe ? 'גישה מוגבלת' : 'Access Required'}
+            </h1>
+            <p className="text-center text-sm text-white/45">
+              {isHe
+                ? 'הצעה זו מוגנת. בקש את קוד הגישה מבעל העסק.'
+                : 'This proposal is protected. Ask the business for the access code.'}
+            </p>
+          </div>
+
+          {/* Code input */}
+          <div
+            className="rounded-2xl p-6 space-y-4"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(40px)',
+            }}
+          >
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40">
+                {isHe ? 'קוד גישה' : 'Access Code'}
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={8}
+                placeholder={isHe ? 'הכנס קוד...' : 'Enter code…'}
+                value={accessCode}
+                onChange={e => { setAccessCode(e.target.value); setCodeError(false) }}
+                onKeyDown={e => { if (e.key === 'Enter') handleCodeSubmit() }}
+                className="w-full rounded-2xl border bg-white/[0.05] px-4 py-3 text-center text-xl font-black tracking-[0.3em] text-white placeholder-white/20 outline-none transition-all"
+                style={{
+                  border: codeError
+                    ? '1px solid rgba(248,113,113,0.5)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: codeError
+                    ? '0 0 0 3px rgba(248,113,113,0.12)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+                autoFocus
+              />
+              {codeError && (
+                <motion.p
+                  className="text-[11px] text-red-400 text-center font-semibold"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {isHe ? 'קוד שגוי. נסה שוב.' : 'Incorrect code. Try again.'}
+                </motion.p>
+              )}
+            </div>
+
+            <button
+              onClick={handleCodeSubmit}
+              disabled={!accessCode.trim() || codeLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+                boxShadow: '0 0 24px rgba(99,102,241,0.4)',
+              }}
+            >
+              {codeLoading
+                ? <Loader2 size={16} className="animate-spin" />
+                : <>{isHe ? 'כניסה' : 'Enter'}</>
+              }
+            </button>
+          </div>
+
+          <p className="text-center text-[10px] text-white/20">Powered by DealSpace</p>
+        </motion.div>
+      </div>
+    )
+  }
+
   // ── Render: main ───────────────────────────────────────────────────────────
+  if (!proposal) return null
   return (
     <div
       className="relative min-h-dvh flex flex-col"

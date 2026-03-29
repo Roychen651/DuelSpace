@@ -3,7 +3,7 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt,
+  ChevronDown, FileCheck, Receipt, Lock,
 } from 'lucide-react'
 import type { ProposalInsert, AddOn } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../../types/proposal'
@@ -463,6 +463,36 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
             onChange={e => onChange({ client_email: e.target.value })}
             autoComplete="off"
           />
+        </Field>
+
+        {/* Access code */}
+        <Field label={isHe ? 'קוד גישה (אופציונלי)' : 'Access Code (optional)'} icon={<Lock size={10} />}>
+          <div className="relative">
+            <input
+              className={inputClass}
+              placeholder={isHe ? 'למשל: 1234 — הלקוח יצטרך להזין' : 'e.g. 1234 — client must enter this'}
+              value={draft.access_code ?? ''}
+              onChange={e => onChange({ access_code: e.target.value || null })}
+              autoComplete="off"
+              maxLength={8}
+            />
+            {draft.access_code && (
+              <div
+                className="absolute end-3 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg px-2 py-0.5"
+                style={{ background: 'rgba(99,102,241,0.12)', pointerEvents: 'none' }}
+              >
+                <Lock size={9} style={{ color: '#818cf8' }} />
+                <span className="text-[9px] font-bold text-indigo-400">
+                  {isHe ? 'מוגן' : 'Protected'}
+                </span>
+              </div>
+            )}
+          </div>
+          <p className="text-[10px] text-white/25 mt-1">
+            {isHe
+              ? 'אם מוגדר, הלקוח יצטרך להזין קוד זה לפני צפייה בהצעה'
+              : 'If set, the client must enter this code before viewing the proposal'}
+          </p>
         </Field>
       </Section>
 

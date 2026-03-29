@@ -1,6 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
-import ReactSignatureCanvas from 'react-signature-canvas'
-import type SignatureCanvas from 'react-signature-canvas'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Check, PenLine } from 'lucide-react'
 
@@ -12,28 +10,103 @@ interface SignaturePadProps {
   locale?: string
 }
 
-// ─── SignaturePad ─────────────────────────────────────────────────────────────
+// ─── SignaturePad — native canvas, no external dependency ────────────────────
 
 export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePadProps) {
-  const sigRef = useRef<SignatureCanvas>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isDrawingRef = useRef(false)
+  const lastPtRef = useRef<{ x: number; y: number } | null>(null)
+
   const [isEmpty, setIsEmpty] = useState(true)
   const [isDrawing, setIsDrawing] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const isHe = locale === 'he'
 
+  // ── Initialize canvas once on mount ────────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const container = containerRef.current
+    if (!canvas || !container) return
+    const dpr = window.devicePixelRatio || 1
+    const w = container.clientWidth
+    const h = 160
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    canvas.style.width = '100%'
+    canvas.style.height = h + 'px'
+    const ctx = canvas.getContext('2d')!
+    ctx.scale(dpr, dpr)
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = 2
+    ctx.strokeStyle = '#a5b4fc'
+  }, [])
+
+  const getXY = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const r = canvasRef.current!.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+
+  const onDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    canvasRef.current?.setPointerCapture(e.pointerId)
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const pt = getXY(e)
+    isDrawingRef.current = true
+    lastPtRef.current = pt
+    ctx.strokeStyle = '#a5b4fc'
+    ctx.beginPath()
+    ctx.moveTo(pt.x, pt.y)
+    setIsDrawing(true)
+    setIsEmpty(false)
+    setConfirmed(false)
+  }
+
+  const onMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const pt = getXY(e)
+    const last = lastPtRef.current
+    if (last) {
+      const mid = { x: (last.x + pt.x) / 2, y: (last.y + pt.y) / 2 }
+      ctx.quadraticCurveTo(last.x, last.y, mid.x, mid.y)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(mid.x, mid.y)
+    }
+    lastPtRef.current = pt
+  }
+
+  const onUp = () => {
+    isDrawingRef.current = false
+    lastPtRef.current = null
+    setIsDrawing(false)
+  }
+
   const handleClear = useCallback(() => {
-    sigRef.current?.clear()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const dpr = window.devicePixelRatio || 1
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr)
+    ctx.strokeStyle = '#a5b4fc'
     setIsEmpty(true)
     setConfirmed(false)
+    isDrawingRef.current = false
+    lastPtRef.current = null
     onClear?.()
   }, [onClear])
 
   const handleConfirm = useCallback(() => {
-    if (!sigRef.current || sigRef.current.isEmpty()) return
-    const dataUrl = sigRef.current.getTrimmedCanvas().toDataURL('image/png')
+    if (isEmpty) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const dataUrl = canvas.toDataURL('image/png')
     setConfirmed(true)
     onConfirm(dataUrl)
-  }, [onConfirm])
+  }, [isEmpty, onConfirm])
 
   return (
     <div className="space-y-3">
@@ -63,6 +136,7 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
 
       {/* Canvas area */}
       <motion.div
+        ref={containerRef}
         className="relative rounded-2xl overflow-hidden"
         style={{
           background: 'rgba(255,255,255,0.02)',
@@ -103,20 +177,13 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
           style={{ height: 1, background: 'rgba(255,255,255,0.08)' }}
         />
 
-        <ReactSignatureCanvas
-          ref={sigRef}
-          penColor={confirmed ? '#4ade80' : '#a5b4fc'}
-          canvasProps={{
-            className: 'w-full',
-            style: { height: 160, display: 'block' },
-          }}
-          backgroundColor="transparent"
-          onBegin={() => { setIsDrawing(true); setIsEmpty(false); setConfirmed(false) }}
-          onEnd={() => { setIsDrawing(false); setIsEmpty(sigRef.current?.isEmpty() ?? true) }}
-          dotSize={2}
-          minWidth={1.5}
-          maxWidth={3.5}
-          velocityFilterWeight={0.7}
+        <canvas
+          ref={canvasRef}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerLeave={onUp}
+          style={{ display: 'block', touchAction: 'none' }}
         />
       </motion.div>
 

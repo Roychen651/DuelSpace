@@ -29,6 +29,8 @@ export interface Proposal {
   time_spent_seconds: number
   /** When true, amounts shown to client include 18% Israeli VAT */
   include_vat: boolean
+  /** Optional 4-digit access code the business shares with the client */
+  access_code?: string | null
   created_at: string
   updated_at: string
 }
