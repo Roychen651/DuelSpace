@@ -382,3 +382,23 @@ html.a11y-big-cursor * {
   40%       { transform: translate(46px, -32px) scale(1.1);  opacity: 0.8 }
   75%       { transform: translate(-18px, 38px) scale(0.85); opacity: 0.55 }
 }
+
+@keyframes lp-toast-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes lp-toast-out {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.94); }
+}
+
+@keyframes lp-step-beam {
+  from { transform: scaleX(0); transform-origin: left center; }
+  to   { transform: scaleX(1); transform-origin: left center; }
+}
+
+@keyframes lp-counter-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1; }
+}
