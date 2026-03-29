@@ -49,7 +49,7 @@ const copy = {
 
     // Bento Features
     featuresLabel: 'הפיצ\'רים שיסגרו לכם עסקאות',
-    featuresH2: 'כלים שמכבירים כסף, לא כאב ראש.',
+    featuresH2: 'כלים שסוגרים עסקאות, לא כאב ראש.',
     bento: [
       {
         icon: 'layers',
@@ -220,6 +220,21 @@ const sectionReveal: Variants = {
 
 // ─── Hero Aurora Background ────────────────────────────────────────────────────
 
+const PARTICLES = [
+  { s: 3, x: '14%', y: '22%', bg: 'rgba(99,102,241,0.75)',  a: 1, d: 15, dl: 0   },
+  { s: 2, x: '71%', y: '38%', bg: 'rgba(168,85,247,0.65)',  a: 2, d: 19, dl: 2.5 },
+  { s: 4, x: '37%', y: '62%', bg: 'rgba(99,102,241,0.55)',  a: 3, d: 23, dl: 1.2 },
+  { s: 2, x: '85%', y: '18%', bg: 'rgba(212,175,55,0.55)',  a: 4, d: 17, dl: 3.8 },
+  { s: 3, x: '22%', y: '78%', bg: 'rgba(168,85,247,0.60)',  a: 1, d: 21, dl: 5.1 },
+  { s: 2, x: '58%', y: '48%', bg: 'rgba(99,102,241,0.50)',  a: 2, d: 16, dl: 1.7 },
+  { s: 3, x: '44%', y: '28%', bg: 'rgba(212,175,55,0.45)',  a: 3, d: 25, dl: 4.2 },
+  { s: 2, x: '8%',  y: '55%', bg: 'rgba(99,102,241,0.60)',  a: 4, d: 20, dl: 6.0 },
+  { s: 5, x: '92%', y: '72%', bg: 'rgba(168,85,247,0.45)',  a: 1, d: 18, dl: 2.1 },
+  { s: 2, x: '63%', y: '85%', bg: 'rgba(99,102,241,0.55)',  a: 2, d: 22, dl: 0.9 },
+  { s: 3, x: '30%', y: '12%', bg: 'rgba(168,85,247,0.50)',  a: 3, d: 14, dl: 3.3 },
+  { s: 2, x: '78%', y: '55%', bg: 'rgba(212,175,55,0.40)',  a: 4, d: 26, dl: 7.0 },
+] as const
+
 function HeroAurora() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -237,7 +252,7 @@ function HeroAurora() {
       <div
         className="absolute top-[-20%] left-[15%] h-[700px] w-[700px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(99,102,241,0.22) 0%, rgba(168,85,247,0.1) 45%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.26) 0%, rgba(168,85,247,0.12) 45%, transparent 70%)',
           filter: 'blur(70px)',
           animation: 'lp-aurora-1 28s ease-in-out infinite',
         }}
@@ -245,7 +260,7 @@ function HeroAurora() {
       <div
         className="absolute top-[10%] right-[-10%] h-[600px] w-[600px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(168,85,247,0.16) 0%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 65%)',
           filter: 'blur(80px)',
           animation: 'lp-aurora-2 22s ease-in-out infinite',
         }}
@@ -253,11 +268,68 @@ function HeroAurora() {
       <div
         className="absolute bottom-[-10%] left-[-5%] h-[500px] w-[500px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
           filter: 'blur(60px)',
           animation: 'lp-aurora-3 32s ease-in-out infinite',
         }}
       />
+      {/* Gold accent aurora — depth warmth */}
+      <div
+        className="absolute top-[40%] right-[30%] h-[360px] w-[360px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%)',
+          filter: 'blur(90px)',
+          animation: 'lp-aurora-1 40s ease-in-out infinite reverse',
+        }}
+      />
+      {/* Floating particles */}
+      {PARTICLES.map((p, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: p.s,
+            height: p.s,
+            left: p.x,
+            top: p.y,
+            background: p.bg,
+            filter: 'blur(0.5px)',
+            boxShadow: `0 0 ${p.s * 3}px ${p.bg}`,
+            animation: `lp-particle-${p.a} ${p.d}s ease-in-out infinite`,
+            animationDelay: `${p.dl}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── 3-D Magnetic Tilt Card ────────────────────────────────────────────────────
+// Tracks cursor within card bounds — applies perspective rotateX/Y on mousemove,
+// springs back to flat on mouseleave. No library required — pure pointer events.
+
+function Tilt3D({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  function onMove(e: React.MouseEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    const x = (e.clientX - r.left) / r.width  - 0.5
+    const y = (e.clientY - r.top)  / r.height - 0.5
+    el.style.transition = 'none'
+    el.style.transform = `perspective(900px) rotateX(${y * -11}deg) rotateY(${x * 11}deg) translateZ(6px) scale(1.018)`
+  }
+  function onLeave(e: React.MouseEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    el.style.transition = 'transform 0.7s cubic-bezier(0.23, 1, 0.32, 1)'
+    el.style.transform = ''
+  }
+  return (
+    <div
+      className={className}
+      style={{ ...style, willChange: 'transform', transformStyle: 'preserve-3d' }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+    >
+      {children}
     </div>
   )
 }
@@ -438,10 +510,10 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
         >
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {isHe ? 'השוואה אמיתית' : 'Real comparison'}
           </p>
-          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight">{c.vsHeadline}</h2>
+          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight" dir="ltr">{c.vsHeadline}</h2>
           <p className="text-white/45 text-base max-w-md mx-auto">{c.vsSub}</p>
         </motion.div>
 
@@ -507,8 +579,12 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
                   filter: 'blur(10px)',
                 }}
               />
-              {/* Badge core */}
-              <div
+              {/* Badge core — spring entrance */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                whileInView={{ scale: 1, rotate: 0 }}
+                viewport={{ once: true }}
+                transition={{ type: 'spring' as const, stiffness: 260, damping: 16, delay: 0.35 }}
                 style={{
                   width: 54,
                   height: 54,
@@ -529,7 +605,7 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
                 }}
               >
                 VS
-              </div>
+              </motion.div>
             </div>
             {/* Line segment */}
             <div
@@ -720,7 +796,7 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
         >
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {c.featuresLabel}
           </p>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">{c.featuresH2}</h2>
@@ -738,45 +814,57 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
             <motion.div
               key={card.tag}
               variants={itemFade}
-              className={`relative rounded-3xl p-6 overflow-hidden ${card.wide ? 'md:col-span-2' : 'md:col-span-1'}`}
-              style={{
-                background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
-              whileHover={{ y: -4, transition: { duration: 0.22 } }}
+              className={card.wide ? 'md:col-span-2' : 'md:col-span-1'}
             >
-              {/* Top corner glow */}
-              <div
-                className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full"
-                style={{ background: `radial-gradient(circle, ${BENTO_GLOWS[i]} 0%, transparent 70%)`, filter: 'blur(28px)' }}
-              />
-              {/* Inner top highlight */}
-              <div className="pointer-events-none absolute top-0 left-8 right-8 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-
-              {/* Tag + icon */}
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-xl"
-                  style={{ background: `${BENTO_COLORS[i]}18`, border: `1px solid ${BENTO_COLORS[i]}30`, color: BENTO_COLORS[i] }}
-                >
-                  {icons[i]}
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: BENTO_COLORS[i] }}>
-                  {card.tag}
-                </span>
-              </div>
-
-              <h3 className="text-base font-bold text-white leading-snug mb-2">{card.title}</h3>
-              <p className="text-sm text-white/40 leading-relaxed">{card.body}</p>
-
-              {/* Mini interactive demo */}
-              <div
-                className="mt-4 rounded-2xl p-4"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
+              <Tilt3D
+                className="relative rounded-3xl p-6 overflow-hidden h-full"
+                style={{
+                  background: 'linear-gradient(160deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
+                }}
               >
-                {minis[i]}
-              </div>
+                {/* Top corner glow */}
+                <div
+                  className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full"
+                  style={{ background: `radial-gradient(circle, ${BENTO_GLOWS[i]} 0%, transparent 70%)`, filter: 'blur(28px)' }}
+                />
+                {/* Inner top highlight */}
+                <div className="pointer-events-none absolute top-0 left-8 right-8 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
+
+                {/* Tag + icon */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: `${BENTO_COLORS[i]}1A`, border: `1px solid ${BENTO_COLORS[i]}38`, color: BENTO_COLORS[i], boxShadow: `0 0 12px ${BENTO_COLORS[i]}22` }}
+                  >
+                    {icons[i]}
+                  </div>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-[0.18em]"
+                    style={{
+                      background: `linear-gradient(90deg, ${BENTO_COLORS[i]} 0%, ${BENTO_GLOWS[i].replace('0.35', '1')} 50%, ${BENTO_COLORS[i]} 100%)`,
+                      backgroundSize: '200% 100%',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      animation: 'lp-shimmer 4s linear infinite',
+                    }}
+                  >
+                    {card.tag}
+                  </span>
+                </div>
+
+                <h3 className="text-base font-bold text-white leading-snug mb-2">{card.title}</h3>
+                <p className="text-sm text-white/40 leading-relaxed">{card.body}</p>
+
+                {/* Mini interactive demo */}
+                <div
+                  className="mt-4 rounded-2xl p-4"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  {minis[i]}
+                </div>
+              </Tilt3D>
             </motion.div>
           ))}
         </motion.div>
@@ -865,7 +953,7 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
         >
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {c.socialsLabel}
           </p>
           <div className="flex items-center justify-center gap-1">
@@ -883,17 +971,15 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
           viewport={{ once: true, margin: '-60px' }}
         >
           {c.testimonials.map((t, i) => (
-            <motion.div
-              key={t.name}
-              variants={itemFade}
-              className="relative rounded-3xl p-6 overflow-hidden"
-              style={{
-                background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
-              whileHover={{ y: -5, transition: { duration: 0.22 } }}
-            >
+            <motion.div key={t.name} variants={itemFade}>
+              <Tilt3D
+                className="relative rounded-3xl p-6 overflow-hidden h-full"
+                style={{
+                  background: 'linear-gradient(160deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                }}
+              >
               <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
               {/* Decorative oversized quote mark */}
               <div
@@ -924,6 +1010,7 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
                   <p className="text-[11px] text-white/35">{t.role}</p>
                 </div>
               </div>
+              </Tilt3D>
             </motion.div>
           ))}
         </motion.div>
