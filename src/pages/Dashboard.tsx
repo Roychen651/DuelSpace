@@ -13,6 +13,7 @@ import type { ProposalStatus } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
 import { HelpCenterDrawer } from '../components/ui/HelpCenterDrawer'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
 
@@ -775,14 +776,7 @@ export default function Dashboard() {
 
       </main>
 
-      {/* Legal footer */}
-      <footer className="relative z-10 border-t border-white/5 px-6 py-3 text-center">
-        <p className="text-[10px] text-white/15">
-          {locale === 'he'
-            ? 'המערכת משמשת ככלי ליצירת הצעות מחיר בלבד ואינה מהווה ייעוץ משפטי או פיננסי.'
-            : 'The system is used solely as a proposal generation tool and does not constitute legal or financial advice.'}
-        </p>
-      </footer>
+      <GlobalFooter />
 
       {/* Guided tour — shown once to new users */}
       {showTour && (

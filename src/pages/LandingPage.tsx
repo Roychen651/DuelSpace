@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
+import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Bilingual Copy ────────────────────────────────────────────────────────────
 // Hebrew: punchy, direct, Israeli market ("Tachles"). English: global, professional.
@@ -1237,70 +1238,6 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang }: {
   )
 }
 
-// ─── Footer ────────────────────────────────────────────────────────────────────
-
-function Footer({ c, isHe, onToggleLang, onNav }: {
-  c: typeof copy['he']
-  isHe: boolean
-  onToggleLang: () => void
-  onNav: (path: string) => void
-}) {
-  const paths = ['/terms', '/privacy', '/accessibility', '/security']
-  return (
-    <footer
-      className="relative z-10"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: '#030305' }}
-    >
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* Top row: brand + nav */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-          {/* Brand mark */}
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.35)' }}
-            >
-              <Zap size={16} className="text-white" />
-            </div>
-            <div>
-              <p className="text-[15px] font-bold tracking-tight text-white leading-none">DealSpace</p>
-              <p className="text-[11px] text-white/35 mt-1 leading-none">{c.footerTagline}</p>
-            </div>
-          </div>
-
-          {/* Nav links */}
-          <nav className="flex items-center gap-6 flex-wrap">
-            {c.footerLinks.map((label, i) => (
-              <button
-                key={label}
-                onClick={() => onNav(paths[i])}
-                className="text-[13px] text-white/38 transition-colors hover:text-white/72"
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Divider */}
-        <div className="my-8" style={{ height: 1, background: 'rgba(255,255,255,0.055)' }} />
-
-        {/* Bottom bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[12px] text-white/25 order-2 sm:order-1" dir="ltr">{c.footerCopy}</p>
-          <button
-            onClick={onToggleLang}
-            className="flex items-center gap-1.5 text-[12px] text-white/35 transition-colors hover:text-white/62 order-1 sm:order-2"
-          >
-            <Globe size={11} />
-            {isHe ? 'English' : 'עברית'}
-          </button>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 // ─── Hero Section ──────────────────────────────────────────────────────────────
 
 function HeroSection({ c, isHe, onCta, onDemo }: {
@@ -1509,12 +1446,7 @@ export default function LandingPage() {
         <FinalCTASection c={c} onCta={goSignup} />
       </main>
 
-      <Footer
-        c={c}
-        isHe={isHe}
-        onToggleLang={() => setLocale(isHe ? 'en' : 'he')}
-        onNav={(path) => navigate(path)}
-      />
+      <GlobalFooter />
     </div>
   )
 }

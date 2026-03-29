@@ -12,6 +12,8 @@ import LandingPage from './pages/LandingPage'
 import Profile from './pages/Profile'
 import ResetPassword from './pages/ResetPassword'
 import Legal from './pages/Legal'
+import TermsOfService from './pages/TermsOfService'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 import AccessibilityStatement from './pages/AccessibilityStatement'
 import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
@@ -95,8 +97,8 @@ function AnimatedRoutes() {
             <Route path="/deal/:token" element={<DealRoom />} />
 
             {/* Legal — always public */}
-            <Route path="/terms" element={<Legal />} />
-            <Route path="/privacy" element={<Legal />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/security" element={<Legal />} />
             <Route path="/accessibility" element={<AccessibilityStatement />} />
 
