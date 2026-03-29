@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, Filter, List, ArrowUp, ArrowDown, FileDown } from 'lucide-react'
+import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
@@ -30,38 +31,93 @@ function AnimatedNumber({ value, prefix = '', suffix = '' }: { value: number; pr
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KPICard({
-  icon, label, value, prefix, suffix, color, delay,
+  icon, label, tooltip, value, prefix, suffix, color, delay,
 }: {
-  icon: React.ReactNode; label: string; value: number
+  icon: React.ReactNode; label: string; tooltip: string; value: number
   prefix?: string; suffix?: string; color: string; delay: number
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-5"
+      className="group relative overflow-hidden rounded-2xl p-5 cursor-default"
       style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(20px)',
+        background: `linear-gradient(145deg, ${color}09 0%, rgba(3,3,5,0.55) 100%)`,
+        border: `1px solid ${color}22`,
+        backdropFilter: 'blur(24px)',
         animation: `ds-fade-up 0.5s ease-out ${delay}s both`,
+        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLDivElement
+        el.style.borderColor = `${color}45`
+        el.style.boxShadow = `0 0 40px ${color}18, 0 8px 32px rgba(0,0,0,0.3)`
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLDivElement
+        el.style.borderColor = `${color}22`
+        el.style.boxShadow = 'none'
       }}
     >
-      {/* Corner glow */}
+      {/* Radial glow overlay */}
       <div
-        className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full"
-        style={{ background: `radial-gradient(circle, ${color}30 0%, transparent 70%)`, filter: 'blur(12px)' }}
+        className="pointer-events-none absolute inset-0 rounded-2xl"
+        style={{ background: `radial-gradient(ellipse 90% 55% at 50% -5%, ${color}14 0%, transparent 75%)` }}
+      />
+      {/* Corner orb */}
+      <div
+        className="pointer-events-none absolute -top-8 -right-8 h-28 w-28 rounded-full"
+        style={{ background: `radial-gradient(circle, ${color}35 0%, transparent 70%)`, filter: 'blur(18px)' }}
       />
 
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
-          <span style={{ color }}>{icon}</span>
+      <div className="relative">
+        {/* Icon + pulse dot row */}
+        <div className="flex items-center justify-between mb-4">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ background: `${color}18`, border: `1px solid ${color}30` }}
+          >
+            <span style={{ color }}>{icon}</span>
+          </div>
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 8px ${color}`, opacity: 0.55, animation: 'ds-pulse 2.5s ease-in-out infinite' }}
+          />
         </div>
-      </div>
 
-      <p className="text-2xl font-bold text-white tabular-nums">
-        <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
-      </p>
-      <p className="text-xs text-white/40 mt-1 font-medium">{label}</p>
+        {/* Big animated number */}
+        <p className="text-[2rem] font-black text-white tabular-nums tracking-tight leading-none mb-1.5">
+          <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
+        </p>
+
+        {/* Label with tooltip */}
+        <Tooltip.Provider delayDuration={150} skipDelayDuration={0}>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <p className="flex items-center gap-1 text-xs text-white/40 font-medium w-fit select-none">
+                {label}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v-4m0-4h.01"/>
+                </svg>
+              </p>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                sideOffset={8}
+                className="z-[200] max-w-[210px] rounded-xl px-3.5 py-2.5 text-[11.5px] leading-relaxed text-white/70"
+                style={{
+                  background: 'rgba(3,3,5,0.97)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(24px)',
+                }}
+              >
+                {tooltip}
+                <Tooltip.Arrow style={{ fill: 'rgba(3,3,5,0.97)' }} />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
     </div>
   )
 }
@@ -71,67 +127,154 @@ function KPICard({
 function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string }) {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-24 text-center"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="flex flex-col items-center justify-center py-20 text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
     >
-      {/* SVG illustration */}
-      <motion.div
-        style={{ animation: 'ds-float 5s ease-in-out infinite' }}
-        className="mb-8"
+      {/* Illustration — floating container with orbit rings */}
+      <div
+        className="relative mb-10"
+        style={{ width: 200, height: 200, animation: 'ds-float 6s ease-in-out infinite' }}
       >
-        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden="true">
-          <circle cx="60" cy="60" r="56" fill="rgba(99,102,241,0.08)" stroke="rgba(99,102,241,0.2)" strokeWidth="1"/>
-          <rect x="34" y="38" width="52" height="44" rx="6" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5"/>
-          <rect x="42" y="50" width="36" height="2.5" rx="1.25" fill="rgba(255,255,255,0.25)"/>
-          <rect x="42" y="57" width="28" height="2.5" rx="1.25" fill="rgba(255,255,255,0.15)"/>
-          <rect x="42" y="64" width="20" height="2.5" rx="1.25" fill="rgba(255,255,255,0.1)"/>
-          <circle cx="86" cy="38" r="12" fill="#6366f1" opacity="0.9"/>
-          <path d="M82 38l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </motion.div>
+        {/* Outer orbit ring */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: '1px dashed rgba(99,102,241,0.16)',
+            animation: 'ds-spin-slow 22s linear infinite',
+          }}
+        />
+        {/* Orbiting dot on outer ring */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 7, height: 7,
+            top: -3, left: '50%', marginLeft: -3.5,
+            background: '#6366f1',
+            boxShadow: '0 0 10px #6366f1',
+            animation: 'ds-spin-slow 22s linear infinite',
+            transformOrigin: '3.5px 103px',
+          }}
+        />
+        {/* Inner orbit ring */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            top: '14%', left: '14%', right: '14%', bottom: '14%',
+            border: '1px dashed rgba(168,85,247,0.13)',
+            animation: 'ds-spin-slow 15s linear infinite reverse',
+          }}
+        />
+        {/* Orbiting dot on inner ring */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 5, height: 5,
+            top: '14%', left: '50%', marginLeft: -2.5, marginTop: -2.5,
+            background: '#a855f7',
+            boxShadow: '0 0 8px #a855f7',
+            animation: 'ds-spin-slow 15s linear infinite reverse',
+            transformOrigin: '2.5px 84px',
+          }}
+        />
 
-      <h2 className="text-xl font-bold text-white mb-2">
-        {locale === 'he' ? 'בואו נסגור את הדיל הראשון שלך' : "Let's close your first deal"}
-      </h2>
-      <p className="text-sm text-white/40 max-w-xs mb-8 leading-relaxed">
-        {locale === 'he'
-          ? 'צור הצעת מחיר אינטראקטיבית שתבדיל אותך מהמתחרים ותגרום ללקוחות לאשר מיד.'
-          : 'Create an interactive proposal that sets you apart and makes clients approve instantly.'}
-      </p>
+        {/* Centred SVG illustration */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <svg width="148" height="148" viewBox="0 0 148 148" fill="none" aria-hidden="true">
+            {/* Background glow circle */}
+            <circle cx="74" cy="74" r="66" fill="rgba(99,102,241,0.06)" stroke="rgba(99,102,241,0.14)" strokeWidth="1"/>
 
-      <motion.button
-        onClick={onCreate}
-        className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white"
-        style={{
-          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-          boxShadow: '0 0 30px rgba(99,102,241,0.4)',
-          animation: 'ds-pulse-glow 2.5s ease-in-out infinite',
-        }}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-      >
-        <Plus size={16} />
-        {locale === 'he' ? 'צור הצעה ראשונה' : 'Create First Proposal'}
-      </motion.button>
+            {/* Main document card */}
+            <rect x="36" y="30" width="76" height="88" rx="10" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5"/>
+            {/* Document lines */}
+            <rect x="50" y="48" width="48" height="3" rx="1.5" fill="rgba(255,255,255,0.22)"/>
+            <rect x="50" y="57" width="36" height="3" rx="1.5" fill="rgba(255,255,255,0.14)"/>
+            <rect x="50" y="66" width="42" height="3" rx="1.5" fill="rgba(255,255,255,0.1)"/>
+            <rect x="50" y="75" width="26" height="3" rx="1.5" fill="rgba(255,255,255,0.07)"/>
+
+            {/* Price block — gold accent */}
+            <rect x="50" y="89" width="48" height="16" rx="5" fill="rgba(212,175,55,0.14)" stroke="rgba(212,175,55,0.28)" strokeWidth="1"/>
+            <text x="74" y="100.5" textAnchor="middle" fill="rgba(212,175,55,0.8)" fontSize="7.5" fontWeight="700" fontFamily="monospace">₪ 8,500</text>
+
+            {/* Accept badge */}
+            <circle cx="104" cy="44" r="17" fill="#22c55e" fillOpacity="0.93"/>
+            <path d="M97.5 44l5 5 8.5-9" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/>
+
+            {/* Sparkle dots */}
+            <circle cx="32" cy="28" r="3.5" fill="#6366f1" opacity="0.45" style={{ animation: 'ds-pulse 2s ease-in-out 0.3s infinite' }}/>
+            <circle cx="122" cy="112" r="2.5" fill="#a855f7" opacity="0.45" style={{ animation: 'ds-pulse 2.6s ease-in-out 0.8s infinite' }}/>
+            <circle cx="36" cy="108" r="2" fill="#d4af37" opacity="0.4" style={{ animation: 'ds-pulse 3s ease-in-out 0.5s infinite' }}/>
+            <circle cx="118" cy="32" r="2" fill="#22c55e" opacity="0.4" style={{ animation: 'ds-pulse 2.3s ease-in-out 1.1s infinite' }}/>
+          </svg>
+        </div>
+      </div>
+
+      {/* Heading + subtext */}
+      <div style={{ animation: 'ds-fade-up 0.5s ease-out 0.15s both' }}>
+        <h2
+          className="text-2xl font-black mb-2 tracking-tight"
+          style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.5) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
+          {locale === 'he' ? 'הכל מוכן — סגור את הדיל הראשון' : 'Ready to close your first deal?'}
+        </h2>
+        <p className="text-sm text-white/35 max-w-sm mx-auto leading-relaxed">
+          {locale === 'he'
+            ? 'צור הצעת מחיר אינטראקטיבית שתבדיל אותך מהמתחרים. לקוחות מאשרים בקליק אחד — בלי PDF ישן.'
+            : 'Create an interactive proposal that stands out. Clients approve in one click — no static PDFs.'}
+        </p>
+      </div>
+
+      {/* CTA */}
+      <div style={{ animation: 'ds-fade-up 0.5s ease-out 0.3s both' }} className="mt-8">
+        <motion.button
+          onClick={onCreate}
+          className="relative flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+            boxShadow: '0 0 32px rgba(99,102,241,0.45)',
+          }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          {/* Shimmer sweep */}
+          <span
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%)',
+              animation: 'ds-shimmer 2.8s ease-in-out infinite',
+            }}
+          />
+          <Plus size={16} />
+          {locale === 'he' ? 'צור הצעה ראשונה' : 'Create First Proposal'}
+        </motion.button>
+      </div>
 
       <style>{`
-        @keyframes ds-pulse-glow {
-          0%, 100% { box-shadow: 0 0 24px rgba(99,102,241,0.4); }
-          50%       { box-shadow: 0 0 44px rgba(99,102,241,0.65); }
-        }
         @keyframes ds-float {
           0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-10px); }
+          50%       { transform: translateY(-12px); }
         }
         @keyframes ds-fade-up {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes ds-pulse {
-          0%, 100% { opacity: 0.6; }
+          0%, 100% { opacity: 0.45; }
           50%       { opacity: 1; }
+        }
+        @keyframes ds-spin-slow {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes ds-shimmer {
+          0%        { transform: translateX(-120%); }
+          60%, 100% { transform: translateX(120%); }
         }
       `}</style>
     </motion.div>
@@ -162,6 +305,7 @@ export default function Dashboard() {
   const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
   const { user } = useAuthStore()
   const { locale } = useI18n()
+  const firstName = ((user?.user_metadata?.full_name as string | undefined) ?? '').split(' ')[0] || ''
   const navigate = useNavigate()
   const [showTour, setShowTour] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
@@ -292,7 +436,9 @@ export default function Dashboard() {
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
           <h1 className="text-2xl font-bold text-white mb-1">
-            {locale === 'he' ? 'לוח הבקרה שלי' : 'My Dashboard'}
+            {locale === 'he'
+              ? `שלום${firstName ? `, ${firstName}` : ''}`
+              : `Hello${firstName ? `, ${firstName}` : ''}`}
           </h1>
           <p className="text-sm text-white/35">
             {locale === 'he' ? 'כל הצעות המחיר שלך במקום אחד.' : 'All your proposals in one place.'}
@@ -304,6 +450,7 @@ export default function Dashboard() {
           <KPICard
             icon={<TrendingUp size={16} />}
             label={locale === 'he' ? 'הכנסה בהמתנה' : 'Revenue Pending'}
+            tooltip={locale === 'he' ? 'סך ההכנסות הצפויות מהצעות שנשלחו ועדיין לא אושרו' : 'Expected revenue from proposals sent but not yet accepted'}
             value={revenuePending}
             prefix={kpiCurrencyPrefix}
             color="#d4af37"
@@ -312,6 +459,7 @@ export default function Dashboard() {
           <KPICard
             icon={<Send size={16} />}
             label={locale === 'he' ? 'הצעות שנשלחו' : 'Proposals Sent'}
+            tooltip={locale === 'he' ? 'מספר הצעות המחיר שנשלחו ללקוחות — לא כולל טיוטות' : 'Number of proposals sent to clients, excluding drafts'}
             value={sentProposals.length}
             color="#6366f1"
             delay={0.18}
@@ -319,6 +467,7 @@ export default function Dashboard() {
           <KPICard
             icon={<Trophy size={16} />}
             label={locale === 'he' ? 'אחוז הצלחה' : 'Win Rate'}
+            tooltip={locale === 'he' ? 'אחוז ההצעות שאושרו מתוך כלל ההצעות שנשלחו ונחתמו' : 'Percentage of sent proposals that were accepted and signed'}
             value={winRate}
             suffix="%"
             color="#22c55e"
