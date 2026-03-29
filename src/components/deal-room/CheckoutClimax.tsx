@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { ShieldCheck, Loader2, CheckCircle2, Lock } from 'lucide-react'
 import { formatCurrency } from '../../types/proposal'
+import { SignaturePad } from './SignaturePad'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -9,8 +10,9 @@ interface CheckoutClimaxProps {
   total: number
   currency: string
   clientName: string
+  /** dataUrl from SignaturePad canvas — empty string means unsigned */
   signature: string
-  onSignatureChange: (v: string) => void
+  onSignatureChange: (dataUrl: string) => void
   onAccept: () => void
   accepting: boolean
   accepted: boolean
@@ -36,7 +38,7 @@ function AnimatedTotal({ total, currency }: { total: number; currency: string })
 // ─── CheckoutClimax ───────────────────────────────────────────────────────────
 
 export function CheckoutClimax({
-  total, currency, clientName, signature,
+  total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
@@ -126,50 +128,22 @@ export function CheckoutClimax({
               </div>
             </div>
 
-            {/* ── Signature input ──────────────────────────────────────────── */}
+            {/* ── Signature pad ────────────────────────────────────────────── */}
             <AnimatePresence>
               {!accepted && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.25 }}
                   className="mb-3"
                   style={{ overflow: 'hidden' }}
                 >
-                  <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white/30 mb-1.5">
-                    <ShieldCheck size={10} className="text-indigo-400/70" />
-                    {isHe
-                      ? 'הקלד/י את שמך המלא לחתימה אלקטרונית'
-                      : 'Type your full name to electronically sign'}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={signature}
-                      onChange={e => onSignatureChange(e.target.value)}
-                      placeholder={clientName || (isHe ? 'שמך המלא' : 'Your full name')}
-                      className="w-full rounded-xl border bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white placeholder-white/20 outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20"
-                      style={{
-                        borderColor: canSign
-                          ? 'rgba(99,102,241,0.5)'
-                          : 'rgba(255,255,255,0.08)',
-                        fontFamily: canSign ? 'Georgia, serif' : 'inherit',
-                        fontStyle: canSign ? 'italic' : 'normal',
-                      }}
-                      autoComplete="name"
-                    />
-                    {canSign && (
-                      <motion.div
-                        className="absolute inset-y-0 end-3 flex items-center"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                      >
-                        <CheckCircle2 size={15} className="text-indigo-400" />
-                      </motion.div>
-                    )}
-                  </div>
+                  <SignaturePad
+                    locale={locale}
+                    onConfirm={dataUrl => onSignatureChange(dataUrl)}
+                    onClear={() => onSignatureChange('')}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -250,8 +224,8 @@ export function CheckoutClimax({
                 transition={{ delay: 0.15 }}
               >
                 {isHe
-                  ? `חתימה בשם "${signature}" מהווה קבלה אלקטרונית מחייבת של תנאי הצעה זו.`
-                  : `Signing as "${signature}" constitutes a legally binding electronic acceptance of this proposal.`}
+                  ? `החתימה מהווה קבלה אלקטרונית מחייבת של תנאי הצעה זו.`
+                  : `Your signature constitutes a legally binding electronic acceptance of this proposal.`}
               </motion.p>
             )}
           </motion.div>
