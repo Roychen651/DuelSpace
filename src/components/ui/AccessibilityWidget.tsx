@@ -1,13 +1,46 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
   Accessibility, X, Plus, Minus,
   SunMedium, Contrast, Glasses, Zap, Link2, RotateCcw, FileText,
-  CircleSlash,
+  CircleSlash, FlipHorizontal, BookOpen, AlignJustify, LetterText,
+  Eye, MousePointer2, ScanLine, Type,
 } from 'lucide-react'
-import { useAccessibilityStore } from '../../stores/useAccessibilityStore'
+import { useAccessibilityStore, type ColorBlindMode } from '../../stores/useAccessibilityStore'
 import { useI18n } from '../../lib/i18n'
+
+// ─── Reading Mask overlay ─────────────────────────────────────────────────────
+
+function ReadingMask() {
+  const [mouseY, setMouseY] = useState(0)
+  const STRIP = 80
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => setMouseY(e.clientY)
+    window.addEventListener('mousemove', onMove, { passive: true })
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
+
+  const top = mouseY - STRIP / 2
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-[9990]"
+      style={{
+        background: `linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.78) 0px,
+          rgba(0,0,0,0.78) ${top}px,
+          transparent ${top}px,
+          transparent ${top + STRIP}px,
+          rgba(0,0,0,0.78) ${top + STRIP}px,
+          rgba(0,0,0,0.78) 100%
+        )`,
+      }}
+    />
+  )
+}
 
 // ─── Toggle row ───────────────────────────────────────────────────────────────
 
@@ -37,7 +70,6 @@ function ToggleRow({
           {locale === 'he' ? labelHe : labelEn}
         </span>
       </div>
-      {/* Toggle pill */}
       <div
         className="relative h-5 w-9 flex-none rounded-full transition-all"
         style={{
@@ -59,9 +91,60 @@ function ToggleRow({
 function SectionLabel({ he, en }: { he: string; en: string }) {
   const { locale } = useI18n()
   return (
-    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
+    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-1 pt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
       {locale === 'he' ? he : en}
     </p>
+  )
+}
+
+// ─── Color blind selector ─────────────────────────────────────────────────────
+
+const CB_MODES: { mode: ColorBlindMode; labelHe: string; labelEn: string; color: string }[] = [
+  { mode: 'none',         labelHe: 'רגיל',          labelEn: 'Normal',      color: 'rgba(255,255,255,0.25)' },
+  { mode: 'protanopia',   labelHe: 'פרוטנופיה',     labelEn: 'Protan',      color: '#f87171' },
+  { mode: 'deuteranopia', labelHe: 'דאוטרנופיה',    labelEn: 'Deutan',      color: '#4ade80' },
+  { mode: 'tritanopia',   labelHe: 'טריטנופיה',     labelEn: 'Tritan',      color: '#60a5fa' },
+]
+
+function ColorBlindRow() {
+  const { locale } = useI18n()
+  const { colorBlindMode, setColorBlindMode } = useAccessibilityStore()
+  return (
+    <div
+      className="rounded-xl px-3 py-2.5 space-y-2"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+    >
+      <div className="flex items-center gap-2">
+        <Eye size={13} style={{ color: colorBlindMode !== 'none' ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }} />
+        <span className="text-[12px] font-medium" style={{ color: colorBlindMode !== 'none' ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
+          {locale === 'he' ? 'עיוורון צבעים' : 'Color Blind Mode'}
+        </span>
+      </div>
+      <div className="grid grid-cols-4 gap-1.5">
+        {CB_MODES.map(({ mode, labelHe, labelEn, color }) => {
+          const active = colorBlindMode === mode
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setColorBlindMode(mode)}
+              className="rounded-lg py-1.5 text-[9px] font-bold transition-all"
+              style={{
+                background: active ? 'rgba(99,102,241,0.22)' : 'rgba(255,255,255,0.05)',
+                border: active ? '1px solid rgba(99,102,241,0.45)' : `1px solid ${color}44`,
+                color: active ? '#c4b5fd' : 'rgba(255,255,255,0.45)',
+              }}
+            >
+              <span
+                className="block mx-auto mb-0.5 h-2 w-2 rounded-full"
+                style={{ background: active ? '#a5b4fc' : color }}
+              />
+              {locale === 'he' ? labelHe : labelEn}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -72,220 +155,275 @@ export function AccessibilityWidget() {
   const isHe = locale === 'he'
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const fabRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // FAB drag position tracking (Framer Motion doesn't expose dragged coords easily,
+  // so we read the DOM element's current bounding rect when opening the panel)
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({})
+
+  const computePanelPosition = useCallback(() => {
+    if (!fabRef.current) return
+    const fab = fabRef.current.getBoundingClientRect()
+    const panelW = 288 // w-72
+    const panelH = Math.min(window.innerHeight - 100, 560)
+    const margin = 12
+
+    // Preferred: above the FAB, right-aligned to FAB right edge
+    let bottom = window.innerHeight - fab.top + margin
+    let right = window.innerWidth - fab.right
+
+    // If panel would overflow top, flip to below FAB
+    if (fab.top - panelH - margin < 0) {
+      // Position below instead — but since we use `bottom`, recalculate
+      bottom = window.innerHeight - fab.bottom - margin - panelH
+      if (bottom < margin) bottom = margin
+    }
+
+    // Keep within horizontal viewport
+    if (right + panelW > window.innerWidth - margin) {
+      right = margin
+    }
+    if (right < margin) right = margin
+
+    setPanelStyle({ bottom, right, maxHeight: panelH })
+  }, [])
+
+  const handleOpen = useCallback(() => {
+    computePanelPosition()
+    setOpen(v => !v)
+  }, [computePanelPosition])
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        fabRef.current && !fabRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false)
+      }
+    }
+    setTimeout(() => document.addEventListener('mousedown', handler), 0)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open])
 
   const {
-    textSize, highContrast, monochrome, highlightLinks, readableFont, stopAnimations,
+    textSize, highContrast, monochrome, invertColors,
+    dyslexiaFont, readableFont, lineHeightBoost, letterSpacing, readingMask,
+    stopAnimations, highlightLinks, focusHighlight, bigCursor,
     setTextSize, toggle, reset,
   } = useAccessibilityStore()
 
-  const isDefault = textSize === 1 && !highContrast && !monochrome && !highlightLinks && !readableFont && !stopAnimations
-  const activeCount = [highContrast, monochrome, highlightLinks, readableFont, stopAnimations].filter(Boolean).length
+  const activeCount = [
+    highContrast, monochrome, invertColors, dyslexiaFont, readableFont,
+    lineHeightBoost, letterSpacing, readingMask, stopAnimations,
+    highlightLinks, focusHighlight, bigCursor,
+  ].filter(Boolean).length
     + (textSize !== 1 ? 1 : 0)
+    + (useAccessibilityStore.getState().colorBlindMode !== 'none' ? 1 : 0)
+
+  const isDefault = activeCount === 0
 
   return (
     <>
+      {/* Reading mask — rendered outside widget container so it covers full viewport */}
+      {readingMask && <ReadingMask />}
+
+      {/* Fixed panel — separate from draggable FAB so it never moves with drag */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={panelRef}
+            className="fixed z-[9998] w-72 rounded-2xl overflow-hidden"
+            style={{
+              ...panelStyle,
+              background: 'linear-gradient(180deg, rgba(10,10,20,0.99) 0%, rgba(6,6,14,0.99) 100%)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(60px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(60px) saturate(200%)',
+              boxShadow: '0 32px 80px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+            }}
+            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Inner top highlight */}
+            <div
+              className="pointer-events-none absolute top-0 left-8 right-8 h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }}
+            />
+
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-xl"
+                  style={{ background: 'rgba(99,102,241,0.18)', border: '1px solid rgba(99,102,241,0.3)' }}
+                >
+                  <Accessibility size={13} className="text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-white/85">{isHe ? 'נגישות' : 'Accessibility'}</p>
+                  <p className="text-[9px] text-white/30">WCAG 2.2 AA · IS 5568</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {!isDefault && (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition hover:bg-white/5"
+                    style={{ color: 'rgba(255,255,255,0.35)' }}
+                    title={isHe ? 'איפוס הגדרות' : 'Reset all'}
+                  >
+                    <RotateCcw size={10} />
+                    {isHe ? 'איפוס' : 'Reset'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/8 hover:text-white/60"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="px-3 py-3 space-y-2.5 overflow-y-auto" style={{ maxHeight: 'calc(100% - 108px)' }}>
+
+              {/* ── Vision ────────────────────────────────────── */}
+              <SectionLabel he="ראייה" en="Vision" />
+
+              {/* Text size */}
+              <div
+                className="rounded-xl px-3 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SunMedium size={13} style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }} />
+                    <span className="text-[12px] font-medium" style={{ color: textSize !== 1 ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
+                      {isHe ? 'גודל טקסט' : 'Text Size'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setTextSize(textSize - 0.1)}
+                      disabled={textSize <= 1}
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
+                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                      aria-label={isHe ? 'הקטן טקסט' : 'Decrease text size'}
+                    >
+                      <Minus size={10} className="text-white/60" />
+                    </button>
+                    <span className="w-9 text-center text-[11px] font-black tabular-nums" style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.55)' }}>
+                      {Math.round(textSize * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTextSize(textSize + 0.1)}
+                      disabled={textSize >= 1.5}
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
+                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                      aria-label={isHe ? 'הגדל טקסט' : 'Increase text size'}
+                    >
+                      <Plus size={10} className="text-white/60" />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${((textSize - 1) / 0.5) * 100}%`,
+                      background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <ToggleRow icon={<Contrast size={13} />}        labelHe="ניגודיות גבוהה"       labelEn="High Contrast"        active={highContrast}   onToggle={() => toggle('highContrast')} />
+              <ToggleRow icon={<CircleSlash size={13} />}     labelHe="גווני אפור"            labelEn="Greyscale"            active={monochrome}     onToggle={() => toggle('monochrome')} />
+              <ToggleRow icon={<FlipHorizontal size={13} />}  labelHe="היפוך צבעים"           labelEn="Invert Colors"        active={invertColors}   onToggle={() => toggle('invertColors')} />
+
+              <ColorBlindRow />
+
+              {/* ── Reading & Cognitive ───────────────────── */}
+              <SectionLabel he="קריאה וקוגניציה" en="Reading & Cognitive" />
+
+              <ToggleRow icon={<Type size={13} />}            labelHe="פונט לדיסלקציה (Atkinson)" labelEn="Dyslexia Font (Atkinson)" active={dyslexiaFont}    onToggle={() => toggle('dyslexiaFont')} />
+              <ToggleRow icon={<Glasses size={13} />}         labelHe="פונט קריא (Arial)"     labelEn="Readable Font (Arial)"  active={readableFont}   onToggle={() => toggle('readableFont')} />
+              <ToggleRow icon={<AlignJustify size={13} />}    labelHe="גובה שורה מוגבר"       labelEn="Increased Line Height"  active={lineHeightBoost} onToggle={() => toggle('lineHeightBoost')} />
+              <ToggleRow icon={<LetterText size={13} />}      labelHe="ריווח אותיות"          labelEn="Letter Spacing"         active={letterSpacing}  onToggle={() => toggle('letterSpacing')} />
+              <ToggleRow icon={<ScanLine size={13} />}        labelHe="מסכת קריאה"            labelEn="Reading Mask"           active={readingMask}    onToggle={() => toggle('readingMask')} />
+              <ToggleRow icon={<Zap size={13} />}             labelHe="עצור אנימציות"         labelEn="Stop Animations"        active={stopAnimations} onToggle={() => toggle('stopAnimations')} />
+
+              {/* ── Navigation & Motor ───────────────────── */}
+              <SectionLabel he="ניווט ומוטוריקה" en="Navigation & Motor" />
+
+              <ToggleRow icon={<Link2 size={13} />}           labelHe="הדגש קישורים וכפתורים" labelEn="Highlight Links & Buttons" active={highlightLinks}  onToggle={() => toggle('highlightLinks')} />
+              <ToggleRow icon={<BookOpen size={13} />}        labelHe="הדגש פוקוס"            labelEn="Focus Highlight"           active={focusHighlight} onToggle={() => toggle('focusHighlight')} />
+              <ToggleRow icon={<MousePointer2 size={13} />}   labelHe="סמן עכבר גדול"         labelEn="Large Cursor"              active={bigCursor}      onToggle={() => toggle('bigCursor')} />
+
+            </div>
+
+            {/* Footer */}
+            <div
+              className="px-3 pb-3 pt-2"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <button
+                type="button"
+                onClick={() => { setOpen(false); navigate('/accessibility') }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[11px] font-semibold transition-all hover:bg-indigo-500/10"
+                style={{
+                  background: 'rgba(99,102,241,0.08)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  color: '#a5b4fc',
+                }}
+              >
+                <FileText size={12} />
+                {isHe ? 'הצהרת נגישות' : 'Accessibility Statement'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Draggable FAB — separate from the panel */}
       <motion.div
+        ref={fabRef}
         drag
         dragMomentum={false}
         dragElastic={0}
         dragConstraints={{ left: 0, top: 0, right: 0, bottom: 0 }}
         dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
-        className="fixed z-[999] select-none"
+        className="fixed z-[9999] select-none"
         style={{ bottom: 24, right: 20 }}
         onDragStart={() => setOpen(false)}
+        onDragEnd={computePanelPosition}
       >
-        {/* Panel */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              className="absolute bottom-14 right-0 w-72 rounded-2xl overflow-hidden"
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              style={{
-                background: 'linear-gradient(180deg, rgba(12,12,20,0.98) 0%, rgba(8,8,14,0.99) 100%)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(48px) saturate(200%)',
-                WebkitBackdropFilter: 'blur(48px) saturate(200%)',
-                boxShadow: '0 24px 72px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Inner top highlight */}
-              <div
-                className="pointer-events-none absolute top-0 left-8 right-8 h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }}
-              />
-
-              {/* Header */}
-              <div
-                className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="flex h-6 w-6 items-center justify-center rounded-lg"
-                    style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}
-                  >
-                    <Accessibility size={12} className="text-indigo-400" />
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-bold text-white/85">{isHe ? 'נגישות' : 'Accessibility'}</p>
-                    <p className="text-[9px] text-white/30">{isHe ? 'WCAG 2.2 Level AA' : 'WCAG 2.2 Level AA'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!isDefault && (
-                    <button
-                      type="button"
-                      onClick={reset}
-                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition hover:bg-white/5"
-                      style={{ color: 'rgba(255,255,255,0.35)' }}
-                      title={isHe ? 'איפוס הגדרות' : 'Reset all'}
-                    >
-                      <RotateCcw size={10} />
-                      {isHe ? 'איפוס' : 'Reset'}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="flex h-6 w-6 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/8 hover:text-white/60"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="px-3 py-3 space-y-3 max-h-[calc(100dvh-180px)] overflow-y-auto">
-
-                {/* ── Vision ─────────────────────────────────────── */}
-                <SectionLabel he="ראייה" en="Vision" />
-
-                {/* Text size */}
-                <div
-                  className="rounded-xl px-3 py-2.5"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <SunMedium size={13} style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }} />
-                      <span className="text-[12px] font-medium" style={{ color: textSize !== 1 ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
-                        {isHe ? 'גודל טקסט' : 'Text Size'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setTextSize(textSize - 0.1)}
-                        disabled={textSize <= 1}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
-                        style={{ background: 'rgba(255,255,255,0.08)' }}
-                        aria-label={isHe ? 'הקטן טקסט' : 'Decrease text size'}
-                      >
-                        <Minus size={10} className="text-white/60" />
-                      </button>
-                      <span className="w-9 text-center text-[11px] font-black tabular-nums" style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.55)' }}>
-                        {Math.round(textSize * 100)}%
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setTextSize(textSize + 0.1)}
-                        disabled={textSize >= 1.5}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
-                        style={{ background: 'rgba(255,255,255,0.08)' }}
-                        aria-label={isHe ? 'הגדל טקסט' : 'Increase text size'}
-                      >
-                        <Plus size={10} className="text-white/60" />
-                      </button>
-                    </div>
-                  </div>
-                  {/* Size bar */}
-                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${((textSize - 1) / 0.5) * 100}%`,
-                        background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <ToggleRow
-                  icon={<Contrast size={13} />}
-                  labelHe="ניגודיות גבוהה"
-                  labelEn="High Contrast"
-                  active={highContrast}
-                  onToggle={() => toggle('highContrast')}
-                />
-                <ToggleRow
-                  icon={<CircleSlash size={13} />}
-                  labelHe="מונוכרום (גווני אפור)"
-                  labelEn="Monochrome (Greyscale)"
-                  active={monochrome}
-                  onToggle={() => toggle('monochrome')}
-                />
-                <ToggleRow
-                  icon={<Glasses size={13} />}
-                  labelHe="פונט קריא (Arial)"
-                  labelEn="Readable Font (Arial)"
-                  active={readableFont}
-                  onToggle={() => toggle('readableFont')}
-                />
-
-                {/* ── Cognitive ──────────────────────────────────── */}
-                <SectionLabel he="קוגניטיבי" en="Cognitive" />
-
-                <ToggleRow
-                  icon={<Zap size={13} />}
-                  labelHe="עצור אנימציות"
-                  labelEn="Stop Animations"
-                  active={stopAnimations}
-                  onToggle={() => toggle('stopAnimations')}
-                />
-
-                {/* ── Navigation ─────────────────────────────────── */}
-                <SectionLabel he="ניווט" en="Navigation" />
-
-                <ToggleRow
-                  icon={<Link2 size={13} />}
-                  labelHe="הדגש קישורים וכפתורים"
-                  labelEn="Highlight Links & Buttons"
-                  active={highlightLinks}
-                  onToggle={() => toggle('highlightLinks')}
-                />
-              </div>
-
-              {/* Footer — Accessibility Statement link */}
-              <div
-                className="px-3 pb-3 pt-2"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <button
-                  type="button"
-                  onClick={() => { setOpen(false); navigate('/accessibility') }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[11px] font-semibold transition-all"
-                  style={{
-                    background: 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    color: '#a5b4fc',
-                  }}
-                >
-                  <FileText size={12} />
-                  {isHe ? 'הצהרת נגישות' : 'Accessibility Statement'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* FAB button */}
         <motion.button
           type="button"
-          onClick={() => setOpen(v => !v)}
+          onClick={handleOpen}
           className="relative flex h-12 w-12 items-center justify-center rounded-full"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
@@ -314,7 +452,8 @@ export function AccessibilityWidget() {
               </motion.span>
             )}
           </AnimatePresence>
-          {/* Active-settings badge */}
+
+          {/* Active count badge */}
           {activeCount > 0 && !open && (
             <span
               className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white"
