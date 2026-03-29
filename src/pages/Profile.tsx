@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, User, Mail, Lock, Camera, Check, Eye, EyeOff, Zap, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, User, Mail, Lock, Camera, Check, Eye, EyeOff, Zap, CheckCircle2, XCircle, Percent } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
@@ -226,6 +226,23 @@ export default function Profile() {
     setTimeout(() => setNameSaved(false), 2500)
   }
 
+  // ── VAT rate ──────────────────────────────────────────────────────────────
+  const [vatRateInput, setVatRateInput] = useState(() => {
+    const stored = localStorage.getItem('dealspace:vat-rate')
+    const v = stored ? parseFloat(stored) : 0.18
+    return String(Math.round((isNaN(v) ? 0.18 : v) * 100))
+  })
+  const [vatSaved, setVatSaved] = useState(false)
+
+  const handleSaveVat = (e: React.FormEvent) => {
+    e.preventDefault()
+    const val = parseFloat(vatRateInput)
+    if (isNaN(val) || val < 0 || val > 100) return
+    localStorage.setItem('dealspace:vat-rate', String(val / 100))
+    setVatSaved(true)
+    setTimeout(() => setVatSaved(false), 2500)
+  }
+
   // ── Password form ─────────────────────────────────────────────────────────
   const [currentPw, setCurrentPw] = useState('')
   const [newPw, setNewPw] = useState('')
@@ -377,6 +394,41 @@ export default function Profile() {
 
               <div className="flex justify-end pt-1">
                 <SaveButton loading={pwSaving} saved={pwSaved} label="Update Password" />
+              </div>
+            </form>
+          </Card>
+        </motion.div>
+
+        {/* ── VAT Rate ───────────────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.5, ease: 'easeOut' }}>
+          <Card title='מע"מ / VAT Rate' icon={<Percent size={16} />}>
+            <form onSubmit={handleSaveVat} className="space-y-4">
+              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                שיעור המע״מ הנוכחי בישראל הוא 18%. ניתן לעדכן כאן אם השיעור ישתנה.
+                <br />
+                <span className="text-white/20">Israeli VAT (מע״מ) is currently 18%. Update here if the rate changes.</span>
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={vatRateInput}
+                    onChange={e => setVatRateInput(e.target.value)}
+                    className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    }}
+                    onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+                    onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                  />
+                  <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-white/30">%</span>
+                </div>
+                <SaveButton loading={false} saved={vatSaved} label="Save VAT" />
               </div>
             </form>
           </Card>

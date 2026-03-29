@@ -3,9 +3,16 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown,
+  ChevronDown, FileCheck, Receipt,
 } from 'lucide-react'
 import type { ProposalInsert, AddOn } from '../../types/proposal'
+import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../../types/proposal'
+import { PremiumDatePicker } from '../ui/PremiumInputs'
+import { ReusableServices } from './ReusableServices'
+import {
+  CONTRACT_TEMPLATES, CATEGORY_LABELS, interpolateTemplate,
+  type ContractTemplate,
+} from '../../lib/contractTemplates'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -15,15 +22,23 @@ interface EditorPanelProps {
   locale: string
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getVatRate(): number {
+  const stored = localStorage.getItem('dealspace:vat-rate')
+  return stored ? parseFloat(stored) : DEFAULT_VAT_RATE
+}
+
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
 function Section({
-  title, icon, children, defaultOpen = true,
+  title, icon, children, defaultOpen = true, badge,
 }: {
   title: string
   icon: React.ReactNode
   children: React.ReactNode
   defaultOpen?: boolean
+  badge?: string
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -43,6 +58,11 @@ function Section({
         <div className="flex items-center gap-2.5">
           <span className="text-indigo-400/80">{icon}</span>
           <span className="text-sm font-semibold text-white/80">{title}</span>
+          {badge && (
+            <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
+              {badge}
+            </span>
+          )}
         </div>
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
@@ -100,9 +120,7 @@ const inputClass = [
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
 ].join(' ')
 
-const textareaClass = [
-  inputClass, 'resize-none leading-relaxed',
-].join(' ')
+const textareaClass = [inputClass, 'resize-none leading-relaxed'].join(' ')
 
 // ─── Currency selector ────────────────────────────────────────────────────────
 
@@ -115,16 +133,19 @@ const CURRENCIES = [
 // ─── Add-on row (draggable) ───────────────────────────────────────────────────
 
 function AddOnRow({
-  addOn,
-  locale,
-  onChange,
-  onDelete,
+  addOn, locale, onChange, onDelete, showVat, vatRate, currency,
 }: {
   addOn: AddOn
   locale: string
   onChange: (updated: AddOn) => void
   onDelete: () => void
+  showVat: boolean
+  vatRate: number
+  currency: string
 }) {
+  const isHe = locale === 'he'
+  const vatTotal = addOn.price > 0 ? applyVat(addOn.price, vatRate) : 0
+
   return (
     <Reorder.Item
       value={addOn}
@@ -139,11 +160,7 @@ function AddOnRow({
           : '1px solid rgba(255,255,255,0.06)',
         cursor: 'default',
       }}
-      whileDrag={{
-        scale: 1.02,
-        boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-        zIndex: 10,
-      }}
+      whileDrag={{ scale: 1.02, boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10 }}
       transition={{ duration: 0.15 }}
     >
       <div className="flex items-start gap-3 p-3">
@@ -162,36 +179,46 @@ function AddOnRow({
           <div className="flex gap-2">
             <input
               className={inputClass + ' flex-1'}
-              placeholder={locale === 'he' ? 'שם השירות' : 'Service name'}
+              placeholder={isHe ? 'שם השירות' : 'Service name'}
               value={addOn.label}
               onChange={e => onChange({ ...addOn, label: e.target.value })}
             />
-            <input
-              type="number"
-              min={0}
-              className={inputClass + ' w-24'}
-              placeholder="0"
-              value={addOn.price || ''}
-              onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
-            />
+            <div className="flex flex-col gap-0.5">
+              <input
+                type="number"
+                min={0}
+                className={inputClass + ' w-24'}
+                placeholder="0"
+                value={addOn.price || ''}
+                onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
+                title={isHe ? 'מחיר לפני מע"מ' : 'Price before VAT'}
+              />
+              {showVat && addOn.price > 0 && (
+                <div
+                  className="rounded-lg px-2 py-0.5 text-[9px] text-center font-semibold tabular-nums"
+                  style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
+                >
+                  +{isHe ? 'מע"מ' : 'VAT'} = {formatCurrency(vatTotal, currency)}
+                </div>
+              )}
+            </div>
           </div>
-          {/* Optional description */}
           <input
             className={inputClass + ' text-xs'}
-            placeholder={locale === 'he' ? 'תיאור קצר (אופציונלי)' : 'Short description (optional)'}
+            placeholder={isHe ? 'תיאור קצר (אופציונלי)' : 'Short description (optional)'}
             value={addOn.description ?? ''}
             onChange={e => onChange({ ...addOn, description: e.target.value })}
           />
         </div>
 
-        {/* Right controls: toggle + delete */}
+        {/* Controls */}
         <div className="flex-none flex flex-col items-center gap-2 pt-0.5">
           <button
             type="button"
             onClick={() => onChange({ ...addOn, enabled: !addOn.enabled })}
             className="transition-colors"
             style={{ color: addOn.enabled ? '#6366f1' : 'rgba(255,255,255,0.2)' }}
-            aria-label={addOn.enabled ? 'Disable add-on' : 'Enable add-on'}
+            aria-label={addOn.enabled ? 'Disable' : 'Enable'}
           >
             {addOn.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
           </button>
@@ -199,7 +226,7 @@ function AddOnRow({
             type="button"
             onClick={onDelete}
             className="text-white/20 transition-colors hover:text-red-400"
-            aria-label="Delete add-on"
+            aria-label="Delete"
           >
             <Trash2 size={13} />
           </button>
@@ -209,54 +236,222 @@ function AddOnRow({
   )
 }
 
+// ─── Contract Template Picker ─────────────────────────────────────────────────
+
+function ContractTemplatePicker({
+  locale,
+  onSelect,
+}: {
+  locale: string
+  onSelect: (body: string) => void
+}) {
+  const isHe = locale === 'he'
+  const [open, setOpen] = useState(false)
+  const [activeCategory, setActiveCategory] = useState<ContractTemplate['category'] | 'all'>('all')
+  const [activeTemplate, setActiveTemplate] = useState<ContractTemplate | null>(null)
+  const [vars, setVars] = useState<Record<string, string>>({})
+
+  const categories = Array.from(new Set(CONTRACT_TEMPLATES.map(t => t.category)))
+  const filtered = activeCategory === 'all'
+    ? CONTRACT_TEMPLATES
+    : CONTRACT_TEMPLATES.filter(t => t.category === activeCategory)
+
+  const handleSelectTemplate = (tmpl: ContractTemplate) => {
+    setActiveTemplate(tmpl)
+    const defaults: Record<string, string> = {}
+    tmpl.variables.forEach(v => { defaults[v.key] = v.defaultValue ?? '' })
+    setVars(defaults)
+  }
+
+  const handleInsert = () => {
+    if (!activeTemplate) return
+    const body = interpolateTemplate(activeTemplate.bodyHe, vars)
+    onSelect(body)
+    setOpen(false)
+    setActiveTemplate(null)
+    setVars({})
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all"
+        style={{
+          background: open ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.05)',
+          border: '1px solid rgba(99,102,241,0.25)',
+          color: '#818cf8',
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <FileCheck size={13} />
+          {isHe ? 'בחר תבנית חוזה מקצועי' : 'Attach Contract Template'}
+        </div>
+        <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div
+              className="mt-2 rounded-2xl p-4 space-y-3"
+              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              {!activeTemplate ? (
+                <>
+                  {/* Category tabs */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory('all')}
+                      className="rounded-lg px-2.5 py-1 text-[10px] font-bold transition"
+                      style={{
+                        background: activeCategory === 'all' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+                        color: activeCategory === 'all' ? '#818cf8' : 'rgba(255,255,255,0.35)',
+                      }}
+                    >
+                      {isHe ? 'הכל' : 'All'}
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setActiveCategory(cat)}
+                        className="rounded-lg px-2.5 py-1 text-[10px] font-bold transition"
+                        style={{
+                          background: activeCategory === cat ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+                          color: activeCategory === cat ? '#818cf8' : 'rgba(255,255,255,0.35)',
+                        }}
+                      >
+                        {isHe ? CATEGORY_LABELS[cat].he : CATEGORY_LABELS[cat].en}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Template list */}
+                  <div className="space-y-1.5 max-h-52 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}>
+                    {filtered.map(tmpl => (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => handleSelectTemplate(tmpl)}
+                        className="flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2.5 text-start transition"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.3)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
+                      >
+                        <span className="text-xs font-semibold text-white/80">{tmpl.titleHe}</span>
+                        <span className="text-[10px] text-white/35">{tmpl.descHe}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                /* Variable fill form */
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white/70">{activeTemplate.titleHe}</span>
+                    <button type="button" onClick={() => setActiveTemplate(null)} className="text-[10px] text-white/30 hover:text-white/60">
+                      {isHe ? '← חזור' : '← Back'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-44 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                    {activeTemplate.variables.map(v => (
+                      <div key={v.key} className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                          {isHe ? v.labelHe : v.labelEn}
+                        </label>
+                        <input
+                          className={inputClass + ' py-2 text-xs'}
+                          placeholder={v.defaultValue ?? ''}
+                          value={vars[v.key] ?? ''}
+                          onChange={e => setVars(prev => ({ ...prev, [v.key]: e.target.value }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleInsert}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white transition"
+                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                  >
+                    <FileCheck size={12} />
+                    {isHe ? 'הוסף חוזה להצעה' : 'Add Contract to Proposal'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Main EditorPanel ─────────────────────────────────────────────────────────
 
 export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
-  // ── Add-on helpers ────────────────────────────────────────────────────────
+  const isHe = locale === 'he'
+  const vatRate = getVatRate()
+  const showVat = draft.include_vat
+
+  // Totals with VAT
+  const baseVat = showVat ? applyVat(draft.base_price, vatRate) : draft.base_price
+  const totalAddOns = draft.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
+  const totalNet = draft.base_price + totalAddOns
+  const totalVat = showVat ? vatAmount(totalNet, vatRate) : 0
+  const grandTotal = totalNet + totalVat
+
+  // ── Add-on helpers ──────────────────────────────────────────────────────────
   const handleAddOnChange = (index: number, updated: AddOn) => {
-    const next = draft.add_ons.map((a, i) => i === index ? updated : a)
-    onChange({ add_ons: next })
+    onChange({ add_ons: draft.add_ons.map((a, i) => i === index ? updated : a) })
   }
-
   const handleAddOnDelete = (index: number) => {
-    const next = draft.add_ons.filter((_, i) => i !== index)
-    onChange({ add_ons: next })
+    onChange({ add_ons: draft.add_ons.filter((_, i) => i !== index) })
   }
-
   const handleAddNew = () => {
-    const newAddOn: AddOn = {
-      id: crypto.randomUUID(),
-      label: '',
-      description: '',
-      price: 0,
-      enabled: true,
-    }
-    onChange({ add_ons: [...draft.add_ons, newAddOn] })
+    onChange({
+      add_ons: [...draft.add_ons, {
+        id: crypto.randomUUID(), label: '', description: '', price: 0, enabled: true,
+      }],
+    })
+  }
+  const handleAddSavedService = (addOn: AddOn) => {
+    onChange({ add_ons: [...draft.add_ons, addOn] })
   }
 
   return (
     <div className="p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
 
-      {/* ── Client Details ─────────────────────────────────────────────── */}
+      {/* ── Client Details ──────────────────────────────────────────────── */}
       <Section
-        title={locale === 'he' ? 'פרטי לקוח' : 'Client Details'}
+        title={isHe ? 'פרטי לקוח' : 'Client Details'}
         icon={<User size={15} />}
       >
-        <Field label={locale === 'he' ? 'שם הלקוח' : 'Client Name'} required>
+        <Field label={isHe ? 'שם הלקוח' : 'Client Name'} required>
           <input
             className={inputClass}
-            placeholder={locale === 'he' ? 'שם מלא של הלקוח' : 'Client full name'}
+            placeholder={isHe ? 'שם מלא של הלקוח' : 'Client full name'}
             value={draft.client_name}
             onChange={e => onChange({ client_name: e.target.value })}
             autoComplete="off"
           />
         </Field>
-
-        <Field label={locale === 'he' ? 'אימייל לקוח' : 'Client Email'} icon={<Mail size={10} />}>
+        <Field label={isHe ? 'אימייל לקוח' : 'Client Email'} icon={<Mail size={10} />}>
           <input
             className={inputClass}
             type="email"
-            placeholder={locale === 'he' ? 'client@example.com' : 'client@example.com'}
+            placeholder="client@example.com"
             value={draft.client_email ?? ''}
             onChange={e => onChange({ client_email: e.target.value })}
             autoComplete="off"
@@ -264,42 +459,61 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
         </Field>
       </Section>
 
-      {/* ── Project Info ───────────────────────────────────────────────── */}
+      {/* ── Project Info ────────────────────────────────────────────────── */}
       <Section
-        title={locale === 'he' ? 'פרטי הפרויקט' : 'Project Info'}
+        title={isHe ? 'פרטי הפרויקט' : 'Project Info'}
         icon={<Briefcase size={15} />}
       >
-        <Field label={locale === 'he' ? 'שם הפרויקט' : 'Project Title'} required>
+        <Field label={isHe ? 'שם הפרויקט' : 'Project Title'} required>
           <input
             className={inputClass}
-            placeholder={locale === 'he' ? 'למשל: חבילת תוכן חודשית' : 'e.g. Monthly Content Package'}
+            placeholder={isHe ? 'למשל: חבילת תוכן חודשית' : 'e.g. Monthly Content Package'}
             value={draft.project_title}
             onChange={e => onChange({ project_title: e.target.value })}
           />
         </Field>
 
-        <Field label={locale === 'he' ? 'תיאור / מה כלול' : 'Description / What\'s Included'} icon={<FileText size={10} />}>
+        <Field label={isHe ? 'תיאור / מה כלול' : "Description / What's Included"} icon={<FileText size={10} />}>
           <textarea
             className={textareaClass}
             rows={4}
             placeholder={
-              locale === 'he'
+              isHe
                 ? 'תארו בקצרה מה כולל הפרויקט, מה הלקוח יקבל ואיך תראה ההצלחה...'
-                : 'Describe what\'s included, what the client will receive, and what success looks like...'
+                : "Describe what's included, what the client will receive, and what success looks like..."
             }
             value={draft.description ?? ''}
             onChange={e => onChange({ description: e.target.value })}
           />
         </Field>
+
+        {/* Expiry date */}
+        <PremiumDatePicker
+          value={draft.expires_at}
+          onChange={iso => onChange({ expires_at: iso })}
+          locale={locale}
+          label={isHe ? 'תאריך תפוגה (אופציונלי)' : 'Expiry Date (optional)'}
+          placeholder={isHe ? 'ללא תפוגה' : 'No expiry'}
+          minDate={new Date()}
+        />
+
+        {/* Contract template */}
+        <ContractTemplatePicker
+          locale={locale}
+          onSelect={body => {
+            const existing = draft.description ?? ''
+            onChange({ description: existing ? `${existing}\n\n---\n${body}` : body })
+          }}
+        />
       </Section>
 
-      {/* ── Pricing ────────────────────────────────────────────────────── */}
+      {/* ── Pricing ─────────────────────────────────────────────────────── */}
       <Section
-        title={locale === 'he' ? 'תמחור בסיסי' : 'Base Pricing'}
+        title={isHe ? 'תמחור בסיסי' : 'Base Pricing'}
         icon={<DollarSign size={15} />}
       >
         <div className="flex gap-3">
-          <Field label={locale === 'he' ? 'מחיר בסיס' : 'Base Price'} required>
+          <Field label={isHe ? 'מחיר בסיס' : 'Base Price'} required>
             <input
               type="number"
               min={0}
@@ -309,22 +523,75 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
               onChange={e => onChange({ base_price: Number(e.target.value) || 0 })}
             />
           </Field>
-
-          <Field label={locale === 'he' ? 'מטבע' : 'Currency'}>
+          <Field label={isHe ? 'מטבע' : 'Currency'}>
             <select
               className={inputClass + ' appearance-none cursor-pointer'}
               value={draft.currency}
               onChange={e => onChange({ currency: e.target.value })}
             >
               {CURRENCIES.map(c => (
-                <option key={c.value} value={c.value}
-                  style={{ background: '#0f0f18', color: 'white' }}>
+                <option key={c.value} value={c.value} style={{ background: '#0f0f18', color: 'white' }}>
                   {c.label}
                 </option>
               ))}
             </select>
           </Field>
         </div>
+
+        {/* VAT toggle */}
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-3"
+          style={{
+            background: showVat ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.03)',
+            border: showVat ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Receipt size={13} className={showVat ? 'text-indigo-400' : 'text-white/30'} />
+            <div>
+              <p className="text-xs font-semibold text-white/70">
+                {isHe ? `כלול מע"מ (${Math.round(vatRate * 100)}%)` : `Include VAT (${Math.round(vatRate * 100)}%)`}
+              </p>
+              {showVat && draft.base_price > 0 && (
+                <p className="text-[10px] text-indigo-400/70">
+                  {isHe
+                    ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(baseVat, draft.currency)}`
+                    : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(baseVat, draft.currency)}`}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange({ include_vat: !showVat })}
+            className="transition-colors"
+            style={{ color: showVat ? '#6366f1' : 'rgba(255,255,255,0.2)' }}
+          >
+            {showVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+          </button>
+        </div>
+
+        {/* VAT summary when enabled */}
+        {showVat && totalNet > 0 && (
+          <div
+            className="rounded-xl px-4 py-3 space-y-1.5"
+            style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
+          >
+            <div className="flex items-center justify-between text-xs text-white/50">
+              <span>{isHe ? 'לפני מע"מ' : 'Before VAT'}</span>
+              <span className="tabular-nums font-semibold">{formatCurrency(totalNet, draft.currency)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-indigo-400/70">
+              <span>{isHe ? `מע"מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}</span>
+              <span className="tabular-nums">{formatCurrency(totalVat, draft.currency)}</span>
+            </div>
+            <div className="h-px bg-white/[0.06]" />
+            <div className="flex items-center justify-between text-sm font-bold text-white/90">
+              <span>{isHe ? 'סה"כ לתשלום' : 'Total (incl. VAT)'}</span>
+              <span className="tabular-nums" style={{ color: '#818cf8' }}>{formatCurrency(grandTotal, draft.currency)}</span>
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* ── Add-ons ─────────────────────────────────────────────────────── */}
@@ -340,7 +607,7 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
           <div className="flex items-center gap-2.5">
             <span className="text-indigo-400/80"><Plus size={15} /></span>
             <span className="text-sm font-semibold text-white/80">
-              {locale === 'he' ? 'תוספות ושדרוגים' : 'Add-ons & Upgrades'}
+              {isHe ? 'תוספות ושדרוגים' : 'Add-ons & Upgrades'}
             </span>
             {draft.add_ons.length > 0 && (
               <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
@@ -348,10 +615,14 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
               </span>
             )}
           </div>
+          {showVat && (
+            <span className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-wider">
+              {isHe ? 'מחיר לפני מע"מ' : 'Prices ex. VAT'}
+            </span>
+          )}
         </div>
 
         <div className="px-5 pb-5 space-y-3">
-          {/* Draggable list */}
           <Reorder.Group
             axis="y"
             values={draft.add_ons}
@@ -367,39 +638,43 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
                   locale={locale}
                   onChange={(updated) => handleAddOnChange(i, updated)}
                   onDelete={() => handleAddOnDelete(i)}
+                  showVat={!!showVat}
+                  vatRate={vatRate}
+                  currency={draft.currency}
                 />
               ))}
             </AnimatePresence>
           </Reorder.Group>
 
-          {/* Empty state */}
           {draft.add_ons.length === 0 && (
             <p className="text-center text-xs text-white/25 py-4">
-              {locale === 'he'
+              {isHe
                 ? 'אין תוספות עדיין — הוסף שירותים אופציונליים ללקוח'
                 : 'No add-ons yet — add optional services for your client'}
             </p>
           )}
 
-          {/* Add new button */}
           <motion.button
             type="button"
             onClick={handleAddNew}
             className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
-            style={{
-              borderColor: 'rgba(99,102,241,0.25)',
-              background: 'rgba(99,102,241,0.06)',
-            }}
+            style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={13} />
-            {locale === 'he' ? 'הוסף תוספת חדשה' : 'Add New Add-on'}
+            {isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}
           </motion.button>
         </div>
       </div>
 
-      {/* Bottom padding for scrollable area */}
+      {/* ── Saved Services library ──────────────────────────────────────── */}
+      <ReusableServices
+        currency={draft.currency}
+        locale={locale}
+        onAddToProposal={handleAddSavedService}
+      />
+
       <div className="h-8" />
     </div>
   )

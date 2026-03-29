@@ -3,20 +3,26 @@
 // We just wait for the session and redirect to dashboard.
 
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 
 export default function AuthCallback() {
   const { status } = useAuthStore()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // If a PKCE code is present in the URL, we're mid-exchange — keep showing
+  // spinner even if status briefly hits 'unauthenticated' from the INITIAL_SESSION
+  // event firing before the code exchange completes.
+  const isPkceCallback = searchParams.has('code')
 
   useEffect(() => {
     if (status === 'authenticated') {
       navigate('/dashboard', { replace: true })
-    } else if (status === 'unauthenticated') {
+    } else if (status === 'unauthenticated' && !isPkceCallback) {
       navigate('/auth', { replace: true })
     }
-  }, [status, navigate])
+  }, [status, navigate, isPkceCallback])
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#040608]">

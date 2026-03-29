@@ -41,27 +41,34 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         set({ status: 'loading' })
 
-        // Get existing session from localStorage (PKCE flow restores it)
-        const { data: { session }, error } = await supabase.auth.getSession()
+        // Subscribe FIRST to avoid race: if getSession() resolves after the
+        // onAuthStateChange INITIAL_SESSION event, we'd briefly show unauthenticated.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          // PASSWORD_RECOVERY is handled by ResetPassword.tsx directly — skip here
+          if (event === 'PASSWORD_RECOVERY') return
 
-        if (error) {
-          set({ status: 'unauthenticated', error: error.message })
-          return
-        }
-
-        set({
-          session,
-          user: session?.user ?? null,
-          status: session ? 'authenticated' : 'unauthenticated',
-        })
-
-        // Subscribe to auth state changes for real-time session sync across tabs
-        supabase.auth.onAuthStateChange((_event, session) => {
           set({
             session,
             user: session?.user ?? null,
             status: session ? 'authenticated' : 'unauthenticated',
+            error: null,
           })
+        })
+
+        // Then hydrate from storage (triggers INITIAL_SESSION which fires the subscription)
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          set({ status: 'unauthenticated', error: error.message })
+          subscription.unsubscribe()
+          return
+        }
+
+        // Set immediately — the subscription may not have fired yet on first load
+        set({
+          session,
+          user: session?.user ?? null,
+          status: session ? 'authenticated' : 'unauthenticated',
         })
       },
 

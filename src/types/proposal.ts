@@ -27,6 +27,8 @@ export interface Proposal {
   view_count: number
   last_viewed_at?: string | null
   time_spent_seconds: number
+  /** When true, amounts shown to client include 18% Israeli VAT */
+  include_vat: boolean
   created_at: string
   updated_at: string
 }
@@ -34,6 +36,17 @@ export interface Proposal {
 export type ProposalInsert = Omit<Proposal,
   'id' | 'user_id' | 'public_token' | 'view_count' | 'time_spent_seconds' | 'created_at' | 'updated_at'
 >
+
+/** Default Israeli VAT rate — configurable per account in Profile */
+export const DEFAULT_VAT_RATE = 0.18
+
+export function applyVat(amount: number, vatRate = DEFAULT_VAT_RATE): number {
+  return Math.round(amount * (1 + vatRate))
+}
+
+export function vatAmount(amount: number, vatRate = DEFAULT_VAT_RATE): number {
+  return Math.round(amount * vatRate)
+}
 
 export type ProposalUpdate = Partial<ProposalInsert>
 

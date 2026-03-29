@@ -17,6 +17,10 @@ interface CheckoutClimaxProps {
   accepting: boolean
   accepted: boolean
   locale: string
+  /** When true, shows VAT breakdown below the total */
+  includeVat?: boolean
+  /** VAT rate as decimal, e.g. 0.18 for 18% */
+  vatRate?: number
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -40,9 +44,13 @@ function AnimatedTotal({ total, currency }: { total: number; currency: string })
 export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
+  includeVat = false, vatRate = 0.18,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const canSign = signature.trim().length >= 2
+  const vatAmt = Math.round(total * vatRate)
+  const totalWithVat = total + vatAmt
+  const displayTotal = includeVat ? totalWithVat : total
 
   return (
     <>
@@ -97,10 +105,12 @@ export function CheckoutClimax({
             />
 
             {/* ── Total row ───────────────────────────────────────────────── */}
-            <div className="flex items-baseline justify-between mb-4">
+            <div className="flex items-baseline justify-between mb-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-0.5">
-                  {isHe ? 'סה״כ להשקעה' : 'Total Investment'}
+                  {isHe
+                    ? (includeVat ? 'סה״כ כולל מע״מ' : 'סה״כ להשקעה')
+                    : (includeVat ? 'Total incl. VAT' : 'Total Investment')}
                 </p>
                 <p className="text-3xl font-black leading-none"
                   style={{
@@ -110,7 +120,7 @@ export function CheckoutClimax({
                     filter: 'drop-shadow(0 0 20px rgba(167,139,250,0.4))',
                   }}
                 >
-                  <AnimatedTotal total={total} currency={currency} />
+                  <AnimatedTotal total={displayTotal} currency={currency} />
                 </p>
               </div>
               {/* Lock badge */}
@@ -127,6 +137,33 @@ export function CheckoutClimax({
                 </span>
               </div>
             </div>
+
+            {/* ── VAT breakdown ───────────────────────────────────────────── */}
+            {includeVat && (
+              <div
+                className="mb-3 rounded-xl px-3 py-2.5 space-y-1"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <div className="flex justify-between text-[11px] text-white/35">
+                  <span>{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
+                  <span className="tabular-nums">{formatCurrency(total, currency)}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-white/35">
+                  <span>{isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}</span>
+                  <span className="tabular-nums">{formatCurrency(vatAmt, currency)}</span>
+                </div>
+                <div
+                  className="flex justify-between text-[11px] font-bold text-white/60 pt-1"
+                  style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <span>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</span>
+                  <span className="tabular-nums">{formatCurrency(totalWithVat, currency)}</span>
+                </div>
+              </div>
+            )}
 
             {/* ── Signature pad ────────────────────────────────────────────── */}
             <AnimatePresence>

@@ -216,6 +216,13 @@ export default function DealRoom() {
   })
   const dir = locale === 'he' ? 'rtl' : 'ltr'
 
+  // VAT rate — read from owner's localStorage setting (or default 18%)
+  const vatRate = (() => {
+    const stored = localStorage.getItem('dealspace:vat-rate')
+    const v = stored ? parseFloat(stored) : 0.18
+    return isNaN(v) ? 0.18 : v
+  })()
+
   // ── Load proposal ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!token) { setFetchStatus('notfound'); return }
@@ -639,6 +646,8 @@ export default function DealRoom() {
           accepting={accepting}
           accepted={accepted}
           locale={locale}
+          includeVat={proposal.include_vat}
+          vatRate={vatRate}
         />
       </div>
 

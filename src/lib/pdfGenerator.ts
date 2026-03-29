@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import { formatCurrency } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
 

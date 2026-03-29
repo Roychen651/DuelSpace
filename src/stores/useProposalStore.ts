@@ -178,6 +178,7 @@ export const useProposalStore = create<ProposalState>()(
           status: 'sent',
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           last_viewed_at: null,
+          include_vat: false,
           add_ons: [
             {
               id: crypto.randomUUID(),

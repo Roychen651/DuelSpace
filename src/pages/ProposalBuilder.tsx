@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail } from 'lucide-react'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { EditorPanel } from '../components/builder/EditorPanel'
@@ -20,12 +20,14 @@ function SendModal({
   onClose,
   shareUrl,
   clientName,
+  clientEmail,
   locale,
 }: {
   open: boolean
   onClose: () => void
   shareUrl: string
   clientName: string
+  clientEmail?: string
   locale: string
 }) {
   const [copied, setCopied] = useState(false)
@@ -36,6 +38,13 @@ function SendModal({
     setCopied(true)
     setTimeout(() => setCopied(false), 2500)
   }
+
+  const whatsappMsg = isHe
+    ? `שלום${clientName ? ` ${clientName}` : ''}! הכנתי עבורך הצעת מחיר. לצפייה ואישור: ${shareUrl}`
+    : `Hi${clientName ? ` ${clientName}` : ''}! I've prepared a proposal for you. View and approve here: ${shareUrl}`
+
+  const mailtoHref = `mailto:${clientEmail ?? ''}?subject=${encodeURIComponent(isHe ? 'הצעת מחיר עבורך' : 'Your Proposal')}&body=${encodeURIComponent(whatsappMsg)}`
+  const waHref = `https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`
 
   return (
     <AnimatePresence>
@@ -73,6 +82,7 @@ function SendModal({
               exit={{ scale: 0.92, y: 12, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 28 }}
               onClick={e => e.stopPropagation()}
+              dir={isHe ? 'rtl' : 'ltr'}
             >
               {/* Close */}
               <button
@@ -102,7 +112,7 @@ function SendModal({
               </h2>
               <p className="text-sm text-white/45 text-center mb-6">
                 {isHe
-                  ? `שתף את הקישור עם ${clientName || 'הלקוח'} והם יוכלו לצפות ולאשר.`
+                  ? `שתף את הקישור עם ${clientName || 'הלקוח'} — הם יוכלו לצפות ולאשר מיידית.`
                   : `Share this link with ${clientName || 'your client'} — they can view and approve instantly.`}
               </p>
 
@@ -123,7 +133,7 @@ function SendModal({
               {/* Copy button */}
               <motion.button
                 onClick={handleCopy}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white mb-3"
                 style={{
                   background: copied
                     ? 'linear-gradient(135deg, #22c55e, #16a34a)'
@@ -148,10 +158,40 @@ function SendModal({
                 )}
               </motion.button>
 
+              {/* Share via WhatsApp / Email */}
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    background: 'rgba(37,211,102,0.12)',
+                    border: '1px solid rgba(37,211,102,0.25)',
+                    color: '#25d366',
+                  }}
+                >
+                  <MessageCircle size={13} />
+                  WhatsApp
+                </a>
+                <a
+                  href={mailtoHref}
+                  className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    background: 'rgba(99,102,241,0.1)',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    color: '#818cf8',
+                  }}
+                >
+                  <Mail size={13} />
+                  {isHe ? 'אימייל' : 'Email'}
+                </a>
+              </div>
+
               <p className="mt-3 text-center text-[10px] text-white/20">
                 {isHe
-                  ? 'תוכל לראות כשהלקוח פתח את הקישור ואישר'
-                  : 'You\'ll see when your client views and approves'}
+                  ? 'תראה כשהלקוח פתח את הקישור ואישר'
+                  : "You'll see when your client views and approves"}
               </p>
             </motion.div>
           </motion.div>
@@ -172,6 +212,7 @@ const BLANK_DRAFT: ProposalInsert = {
   status: 'draft',
   expires_at: null,
   last_viewed_at: null,
+  include_vat: false,
 }
 
 // ─── ProposalBuilder ──────────────────────────────────────────────────────────
@@ -192,23 +233,25 @@ export default function ProposalBuilder() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const draftRef = useRef<ProposalInsert>(BLANK_DRAFT)
   const proposalIdRef = useRef<string | null>(id ?? null)
+  // Prevent double-create in StrictMode/concurrent renders
+  const creatingRef = useRef(false)
 
   // Keep refs in sync
   useEffect(() => { draftRef.current = draft }, [draft])
   useEffect(() => { proposalIdRef.current = proposalId }, [proposalId])
 
-  // ── Mount: load existing or create new ──────────────────────────────────────
+  // ── Mount: load existing ─────────────────────────────────────────────────────
+  // For NEW proposals (no id): do NOT touch Supabase. We stay in local state
+  // until the user actually types something (lazy creation via handleChange).
   useEffect(() => {
     const init = async () => {
       if (id) {
-        // Try to find in store first, fetch if not there
         let found = useProposalStore.getState().proposals.find(p => p.id === id)
         if (!found) {
           await fetchProposals()
           found = useProposalStore.getState().proposals.find(p => p.id === id)
         }
         if (found) {
-          // Strip server-managed fields to get a ProposalInsert
           const {
             id: _id, user_id: _uid, public_token: _pt,
             view_count: _vc, time_spent_seconds: _ts,
@@ -223,19 +266,8 @@ export default function ProposalBuilder() {
           navigate('/dashboard', { replace: true })
           return
         }
-      } else {
-        // Create a new draft proposal
-        const created = await createProposal(BLANK_DRAFT)
-        if (created) {
-          setProposalId(created.id)
-          proposalIdRef.current = created.id
-          // Update URL without re-mounting component
-          window.history.replaceState(null, '', `/proposals/${created.id}`)
-        } else {
-          navigate('/dashboard', { replace: true })
-          return
-        }
       }
+      // No `id` → brand-new proposal, leave local state as BLANK_DRAFT
       setInitializing(false)
     }
     init()
@@ -249,7 +281,7 @@ export default function ProposalBuilder() {
     }
   }, [])
 
-  // ── Debounced autosave ───────────────────────────────────────────────────────
+  // ── Debounced autosave (lazy DB creation for new proposals) ───────────────────
   const handleChange = useCallback((patch: Partial<ProposalInsert>) => {
     setDraft(prev => {
       const next = { ...prev, ...patch }
@@ -258,13 +290,33 @@ export default function ProposalBuilder() {
     })
     setSaveStatus('saving')
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
     saveTimerRef.current = setTimeout(async () => {
-      if (!proposalIdRef.current) return
-      await updateProposal(proposalIdRef.current, draftRef.current)
+      const current = draftRef.current
+
+      if (!proposalIdRef.current) {
+        // Only create if there's meaningful content — no ghost drafts
+        if (!current.project_title?.trim() && !current.client_name?.trim()) {
+          setSaveStatus('idle')
+          return
+        }
+        if (creatingRef.current) return
+        creatingRef.current = true
+        const created = await createProposal(current)
+        creatingRef.current = false
+        if (created) {
+          setProposalId(created.id)
+          proposalIdRef.current = created.id
+          window.history.replaceState(null, '', `/proposals/${created.id}`)
+        }
+      } else {
+        await updateProposal(proposalIdRef.current, current)
+      }
+
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2500)
     }, 1500)
-  }, [updateProposal])
+  }, [createProposal, updateProposal])
 
   // ── Send to client ───────────────────────────────────────────────────────────
   const currentProposal = proposals.find(p => p.id === proposalId)
@@ -273,18 +325,33 @@ export default function ProposalBuilder() {
     : ''
 
   const handleSend = useCallback(async () => {
-    if (!proposalIdRef.current) return
-    // Flush debounce — save immediately
+    // Flush debounce + ensure proposal exists in DB
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
       saveTimerRef.current = null
     }
-    await updateProposal(proposalIdRef.current, { ...draftRef.current, status: 'sent' })
+
+    let pid = proposalIdRef.current
+
+    if (!pid) {
+      // Create now if still unsaved
+      if (creatingRef.current) return
+      creatingRef.current = true
+      const created = await createProposal(draftRef.current)
+      creatingRef.current = false
+      if (!created) return
+      setProposalId(created.id)
+      proposalIdRef.current = created.id
+      window.history.replaceState(null, '', `/proposals/${created.id}`)
+      pid = created.id
+    }
+
+    await updateProposal(pid, { ...draftRef.current, status: 'sent' })
     setDraft(prev => ({ ...prev, status: 'sent' }))
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
     setSendOpen(true)
-  }, [updateProposal])
+  }, [createProposal, updateProposal])
 
   const canSend = Boolean(draft.project_title?.trim())
 
@@ -397,12 +464,13 @@ export default function ProposalBuilder() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2">
-          {/* Mobile: preview toggle */}
+          {/* Mobile: preview toggle — with text label for clarity */}
           <button
             onClick={() => setPreviewOpen(true)}
-            className="lg:hidden flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-xs font-semibold text-white/50 transition hover:text-white/80"
+            className="lg:hidden flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-400 transition hover:bg-indigo-500/20"
           >
             <Eye size={13} />
+            <span>{locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}</span>
           </button>
 
           {/* Send to Client — all viewports */}
@@ -456,9 +524,7 @@ export default function ProposalBuilder() {
         onClose={() => setPreviewOpen(false)}
         title={locale === 'he' ? 'תצוגת לקוח' : 'Client Preview'}
       >
-        <div
-          style={{ height: '62vh', overflowY: 'auto', margin: '0 -16px' }}
-        >
+        <div style={{ height: '62vh', overflowY: 'auto', margin: '0 -16px' }}>
           <LivePreview proposal={previewProposal} locale={locale} compact />
         </div>
       </BottomSheet>
@@ -469,6 +535,7 @@ export default function ProposalBuilder() {
         onClose={() => setSendOpen(false)}
         shareUrl={shareUrl}
         clientName={draft.client_name}
+        clientEmail={draft.client_email}
         locale={locale}
       />
     </div>
