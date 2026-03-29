@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -168,53 +168,31 @@ export function AccessibilityWidget() {
   const isHe = locale === 'he'
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
-  const fabRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // FAB drag position tracking (Framer Motion doesn't expose dragged coords easily,
-  // so we read the DOM element's current bounding rect when opening the panel)
-  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({})
-
-  const computePanelPosition = useCallback(() => {
-    if (!fabRef.current) return
-    const fab = fabRef.current.getBoundingClientRect()
-    const panelW = 288 // w-72
-    const panelH = Math.min(window.innerHeight - 100, 560)
-    const margin = 12
-
-    // Preferred: above the FAB, right-aligned to FAB right edge
-    let bottom = window.innerHeight - fab.top + margin
-    let right = window.innerWidth - fab.right
-
-    // If panel would overflow top, flip to below FAB
-    if (fab.top - panelH - margin < 0) {
-      // Position below instead — but since we use `bottom`, recalculate
-      bottom = window.innerHeight - fab.bottom - margin - panelH
-      if (bottom < margin) bottom = margin
-    }
-
-    // Keep within horizontal viewport
-    if (right + panelW > window.innerWidth - margin) {
-      right = margin
-    }
-    if (right < margin) right = margin
-
-    setPanelStyle({ bottom, right, height: panelH })
+  // Drag constraints — keep FAB within viewport
+  // FAB starts at bottom:24 right:20, size 48×48. Constraints are relative offsets from initial position.
+  const [dragBounds, setDragBounds] = useState({ left: 0, top: 0, right: 0, bottom: 0 })
+  useEffect(() => {
+    const compute = () => setDragBounds({
+      left:   -(window.innerWidth  - 48 - 20),
+      top:    -(window.innerHeight - 48 - 24),
+      right:  0,
+      bottom: 0,
+    })
+    compute()
+    window.addEventListener('resize', compute)
+    return () => window.removeEventListener('resize', compute)
   }, [])
 
-  const handleOpen = useCallback(() => {
-    computePanelPosition()
-    setOpen(v => !v)
-  }, [computePanelPosition])
+  // Panel height: fill available space above the FAB
+  const panelH = Math.min(window.innerHeight - 112, 580)
 
   // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (
-        panelRef.current && !panelRef.current.contains(e.target as Node) &&
-        fabRef.current && !fabRef.current.contains(e.target as Node)
-      ) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
@@ -252,14 +230,16 @@ export function AccessibilityWidget() {
       {/* Reading mask — rendered outside widget container so it covers full viewport */}
       {readingMask && <ReadingMask />}
 
-      {/* Fixed panel — separate from draggable FAB so it never moves with drag */}
+      {/* Fixed panel — always anchored bottom-right, 16px from edges, above the FAB */}
       <AnimatePresence>
         {open && (
           <motion.div
             ref={panelRef}
             className="fixed z-[9998] w-72 rounded-2xl flex flex-col"
             style={{
-              ...panelStyle,
+              bottom: 88,
+              right: 16,
+              height: panelH,
               overflow: 'hidden',
               background: 'linear-gradient(180deg, rgba(10,10,20,0.99) 0%, rgba(6,6,14,0.99) 100%)',
               border: '1px solid rgba(255,255,255,0.1)',
@@ -422,22 +402,20 @@ export function AccessibilityWidget() {
         )}
       </AnimatePresence>
 
-      {/* Draggable FAB — separate from the panel */}
+      {/* Draggable FAB — always starts bottom-right, draggable within viewport */}
       <motion.div
-        ref={fabRef}
         drag
         dragMomentum={false}
         dragElastic={0}
-        dragConstraints={{ left: 0, top: 0, right: 0, bottom: 0 }}
+        dragConstraints={dragBounds}
         dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
         className="fixed z-[9999] select-none"
         style={{ bottom: 24, right: 20 }}
         onDragStart={() => setOpen(false)}
-        onDragEnd={computePanelPosition}
       >
         <motion.button
           type="button"
-          onClick={handleOpen}
+          onClick={() => setOpen(v => !v)}
           className="relative flex h-12 w-12 items-center justify-center rounded-full"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}

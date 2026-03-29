@@ -378,7 +378,11 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
         whileTap={{ scale: 0.98 }}
         animate={deleting ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        onClick={() => onEdit(proposal.id)}
+        onClick={(e) => {
+          // Don't navigate if the click originated inside a button (menu trigger, download, etc.)
+          if ((e.target as HTMLElement).closest('button')) return
+          onEdit(proposal.id)
+        }}
       >
         {/* Card background */}
         <div
