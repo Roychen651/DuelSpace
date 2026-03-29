@@ -432,6 +432,13 @@ export function EditorPanel({ draft, onChange, locale }: EditorPanelProps) {
 
   return (
     <div className="p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
+      {/* Hide browser number-input spinners globally within the builder */}
+      <style>{`
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { display: none; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        @keyframes ds-fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
 
       {/* ── Client Details ──────────────────────────────────────────────── */}
       <Section

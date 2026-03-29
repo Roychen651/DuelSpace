@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings } from 'lucide-react'
+import { Plus, LogOut, Zap, TrendingUp, Send, Trophy, Globe, User, Settings, LayoutGrid, Columns, Bookmark, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
+import { KanbanBoard } from '../components/dashboard/KanbanBoard'
 import { proposalTotal } from '../types/proposal'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
 
@@ -223,7 +224,7 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
           {menuOpen && (
             <div className="absolute end-0 top-full pt-2 z-50">
               <div
-                className="flex flex-col gap-0.5 rounded-xl p-1 min-w-[140px]"
+                className="flex flex-col gap-0.5 rounded-xl p-1 min-w-[160px]"
                 style={{ background: '#0d0d18', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}
               >
                 <button
@@ -232,6 +233,20 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
                 >
                   <Settings size={12} />
                   {locale === 'he' ? 'פרופיל' : 'Profile'}
+                </button>
+                <button
+                  onClick={() => navigate('/services')}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
+                >
+                  <Bookmark size={12} />
+                  {locale === 'he' ? 'שירותים שמורים' : 'Saved Services'}
+                </button>
+                <button
+                  onClick={() => navigate('/contracts')}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs text-white/50 transition hover:bg-white/5 hover:text-white/90 w-full text-start"
+                >
+                  <FileText size={12} />
+                  {locale === 'he' ? 'ספריית חוזים' : 'Contracts'}
                 </button>
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '2px 0' }} />
                 <button
@@ -252,11 +267,16 @@ function Navbar({ onCreate }: { onCreate: () => void }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
+type ViewMode = 'grid' | 'kanban'
+
 export default function Dashboard() {
   const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
   const { locale } = useI18n()
   const navigate = useNavigate()
   const [showTour, setShowTour] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    (localStorage.getItem('dealspace:view-mode') as ViewMode | null) ?? 'grid'
+  )
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -365,23 +385,59 @@ export default function Dashboard() {
             )}
           </h2>
 
-          {/* Mobile create button */}
-          <button
-            onClick={handleCreate}
-            className="sm:hidden flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60"
-          >
-            <Plus size={12} />
-            {locale === 'he' ? 'חדש' : 'New'}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div
+              className="flex items-center rounded-xl p-0.5"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              {([
+                { mode: 'grid' as ViewMode, icon: <LayoutGrid size={13} />, label: locale === 'he' ? 'רשת' : 'Grid' },
+                { mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: 'Kanban' },
+              ]).map(({ mode, icon, label }) => (
+                <button
+                  key={mode}
+                  onClick={() => { setViewMode(mode); localStorage.setItem('dealspace:view-mode', mode) }}
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
+                  style={{
+                    background: viewMode === mode ? 'rgba(99,102,241,0.2)' : 'transparent',
+                    color: viewMode === mode ? '#818cf8' : 'rgba(255,255,255,0.35)',
+                    border: viewMode === mode ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+                  }}
+                  title={label}
+                >
+                  {icon}
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile create button */}
+            <button
+              onClick={handleCreate}
+              className="sm:hidden flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60"
+            >
+              <Plus size={12} />
+              {locale === 'he' ? 'חדש' : 'New'}
+            </button>
+          </div>
         </div>
 
-        {/* ── Proposals Grid ────────────────────────────────────────────── */}
+        {/* ── Proposals view ────────────────────────────────────────────── */}
         {loading ? (
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <ProposalCardSkeleton key={i} />)}
           </div>
         ) : proposals.length === 0 ? (
           <EmptyState onCreate={handleCreate} locale={locale} />
+        ) : viewMode === 'kanban' ? (
+          <div data-tour="proposals-list">
+            <KanbanBoard
+              proposals={proposals}
+              locale={locale}
+              onEdit={handleEdit}
+            />
+          </div>
         ) : (
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>

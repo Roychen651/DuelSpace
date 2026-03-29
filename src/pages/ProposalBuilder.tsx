@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail } from 'lucide-react'
+import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail, ShieldCheck, RefreshCw } from 'lucide-react'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useI18n } from '../lib/i18n'
 import { EditorPanel } from '../components/builder/EditorPanel'
@@ -324,7 +324,24 @@ export default function ProposalBuilder() {
     ? `${window.location.origin}/deal/${currentProposal.public_token}`
     : ''
 
+  // Derive the current real status (prefer live proposal over draft state)
+  const currentStatus = currentProposal?.status ?? draft.status ?? 'draft'
+  const isAccepted = currentStatus === 'accepted'
+  const isAlreadySent = currentStatus === 'sent' || currentStatus === 'viewed'
+
   const handleSend = useCallback(async () => {
+    // If already accepted → navigate to deal room (read-only view)
+    if (isAccepted && shareUrl) {
+      window.open(shareUrl, '_blank')
+      return
+    }
+
+    // If already sent/viewed → just open the share modal without re-updating status
+    if (isAlreadySent && shareUrl) {
+      setSendOpen(true)
+      return
+    }
+
     // Flush debounce + ensure proposal exists in DB
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
@@ -351,7 +368,7 @@ export default function ProposalBuilder() {
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
     setSendOpen(true)
-  }, [createProposal, updateProposal])
+  }, [createProposal, updateProposal, isAccepted, isAlreadySent, shareUrl])
 
   const canSend = Boolean(draft.project_title?.trim())
 
@@ -473,26 +490,45 @@ export default function ProposalBuilder() {
             <span>{locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}</span>
           </button>
 
-          {/* Send to Client — all viewports */}
+          {/* Send / Status button — adapts to proposal status */}
           <motion.button
             onClick={handleSend}
-            disabled={!canSend}
+            disabled={!canSend && !isAccepted && !isAlreadySent}
             className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-35"
             style={{
-              background: canSend
-                ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                : 'rgba(255,255,255,0.06)',
-              boxShadow: canSend ? '0 0 18px rgba(99,102,241,0.4)' : 'none',
+              background: isAccepted
+                ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                : isAlreadySent
+                  ? 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))'
+                  : canSend
+                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                    : 'rgba(255,255,255,0.06)',
+              boxShadow: isAccepted
+                ? '0 0 18px rgba(34,197,94,0.4)'
+                : isAlreadySent
+                  ? '0 0 12px rgba(99,102,241,0.25)'
+                  : canSend
+                    ? '0 0 18px rgba(99,102,241,0.4)'
+                    : 'none',
+              border: isAlreadySent && !isAccepted ? '1px solid rgba(99,102,241,0.4)' : 'none',
             }}
-            whileHover={canSend ? { scale: 1.03 } : {}}
-            whileTap={canSend ? { scale: 0.96 } : {}}
+            whileHover={canSend || isAccepted || isAlreadySent ? { scale: 1.03 } : {}}
+            whileTap={canSend || isAccepted || isAlreadySent ? { scale: 0.96 } : {}}
           >
-            <Send size={12} />
+            {isAccepted
+              ? <ShieldCheck size={12} />
+              : isAlreadySent
+                ? <RefreshCw size={12} />
+                : <Send size={12} />}
             <span className="hidden sm:inline">
-              {locale === 'he' ? 'שלח ללקוח' : 'Send to Client'}
+              {isAccepted
+                ? (locale === 'he' ? '✓ חתום ואושר' : '✓ Signed & Accepted')
+                : isAlreadySent
+                  ? (locale === 'he' ? 'שלח שוב' : 'Resend Link')
+                  : (locale === 'he' ? 'שלח ללקוח' : 'Send to Client')}
             </span>
             <span className="sm:hidden">
-              {locale === 'he' ? 'שלח' : 'Send'}
+              {isAccepted ? '✓' : isAlreadySent ? (locale === 'he' ? 'שלח' : 'Resend') : (locale === 'he' ? 'שלח' : 'Send')}
             </span>
           </motion.button>
         </div>

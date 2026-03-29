@@ -10,6 +10,8 @@ import LandingPage from './pages/LandingPage'
 import Profile from './pages/Profile'
 import ResetPassword from './pages/ResetPassword'
 import Legal from './pages/Legal'
+import ContractLibrary from './pages/ContractLibrary'
+import ServicesLibrary from './pages/ServicesLibrary'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -74,6 +76,8 @@ function AppInner() {
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
         <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+        <Route path="/contracts" element={<ProtectedRoute><ContractLibrary /></ProtectedRoute>} />
+        <Route path="/services" element={<ProtectedRoute><ServicesLibrary /></ProtectedRoute>} />
 
         {/* Public deal room — no auth required */}
         <Route path="/deal/:token" element={<DealRoom />} />
