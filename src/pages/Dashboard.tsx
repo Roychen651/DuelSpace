@@ -404,7 +404,7 @@ export default function Dashboard() {
       <DashboardAurora />
       <Navbar onCreate={handleCreate} />
 
-      <main className="relative z-10 flex-1 px-6 py-8 max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 px-6 py-8 pb-32 sm:pb-8 max-w-7xl mx-auto w-full">
 
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
@@ -691,7 +691,7 @@ export default function Dashboard() {
         {/* ── Floating create button (mobile) ──────────────────────────── */}
         <motion.button
           onClick={handleCreate}
-          className="fixed bottom-6 end-6 z-20 sm:hidden flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl"
+          className="fixed bottom-24 end-4 z-20 sm:hidden flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl"
           style={{
             background: 'linear-gradient(135deg, #6366f1, #a855f7)',
             boxShadow: '0 0 30px rgba(99,102,241,0.5)',

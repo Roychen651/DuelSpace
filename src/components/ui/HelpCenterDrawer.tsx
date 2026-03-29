@@ -45,7 +45,7 @@ export function HelpCenterDrawer() {
       {/* ── Trigger FAB ────────────────────────────────────────────────────── */}
       <motion.button
         onClick={() => setOpen(true)}
-        className="fixed z-40 flex h-10 w-10 items-center justify-center rounded-full"
+        className="fixed z-40 hidden sm:flex h-10 w-10 items-center justify-center rounded-full"
         style={{
           bottom: 24,
           left: 20,
