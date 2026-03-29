@@ -4,7 +4,6 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
-import { BottomSheet, SheetAction } from './BottomSheet'
 import type { Proposal } from '../../types/proposal'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
 import { generateProposalPdf } from '../../lib/pdfEngine'
@@ -129,33 +128,32 @@ function DropItem({
   onClick: () => void
   variant?: 'default' | 'danger'
 }) {
+  const dangerBg  = 'rgba(239,68,68,0.09)'
+  const defaultBg = 'rgba(255,255,255,0.06)'
+
   return (
     <DropdownMenu.Item
       onSelect={onClick}
-      className="group flex items-center gap-3 px-3.5 py-2.5 outline-none cursor-pointer rounded-xl mx-1.5 transition-colors"
-      style={{ color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.78)' }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.background = variant === 'danger'
-          ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.06)'
+      className="flex items-center gap-3 outline-none cursor-pointer rounded-xl mx-1.5 select-none"
+      style={{
+        color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.82)',
+        padding: '10px 10px',          /* tall row → easy 44 px touch target */
+        minHeight: 44,
       }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.background = 'transparent'
+      onPointerEnter={e => {
+        (e.currentTarget as HTMLElement).style.background = variant === 'danger' ? dangerBg : defaultBg
       }}
-      onFocus={e => {
-        (e.currentTarget as HTMLElement).style.background = variant === 'danger'
-          ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.06)'
-      }}
-      onBlur={e => {
+      onPointerLeave={e => {
         (e.currentTarget as HTMLElement).style.background = 'transparent'
       }}
     >
       <span
-        className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
-        style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)' }}
+        className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+        style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.07)' }}
       >
         {icon}
       </span>
-      <span className="font-medium text-[13px]">{label}</span>
+      <span className="font-semibold text-[14px] flex-1">{label}</span>
     </DropdownMenu.Item>
   )
 }
@@ -170,7 +168,6 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
   const { deleteProposal, duplicateProposal } = useProposalStore()
-  const [sheetOpen, setSheetOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
@@ -252,83 +249,73 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
             style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }}
           />
 
-          {/* Top row: status + menu trigger */}
+          {/* Top row: status + menu trigger — unified Radix dropdown for all screen sizes */}
           <div className="flex items-start justify-between mb-4">
             <StatusBadge status={proposal.status} locale={locale} />
 
-            {/* Desktop: Radix dropdown — portal-based, no positioning bugs */}
-            <div className="hidden md:block">
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <button
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70 outline-none"
-                    onClick={e => e.stopPropagation()}
-                    aria-label="Options"
-                  >
-                    <MoreVertical size={15} />
-                  </button>
-                </DropdownMenu.Trigger>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-xl outline-none transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.35)', touchAction: 'manipulation' }}
+                  onClick={e => e.stopPropagation()}
+                  onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)' }}
+                  onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                  aria-label={locale === 'he' ? 'פעולות' : 'Options'}
+                >
+                  <MoreVertical size={16} />
+                </button>
+              </DropdownMenu.Trigger>
 
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    sideOffset={6}
-                    align="end"
-                    collisionPadding={8}
-                    className="z-[9997] w-56 rounded-2xl py-2 outline-none"
-                    style={{
-                      background: 'rgba(11,11,20,0.98)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-                      backdropFilter: 'blur(48px)',
-                      animationDuration: '120ms',
-                    }}
-                    onCloseAutoFocus={e => e.preventDefault()}
-                  >
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  sideOffset={6}
+                  align="end"
+                  collisionPadding={12}
+                  avoidCollisions
+                  className="z-[9997] rounded-2xl py-1.5 outline-none"
+                  style={{
+                    width: 'min(72vw, 224px)',
+                    background: 'rgba(10,10,20,0.97)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07)',
+                    backdropFilter: 'blur(64px)',
+                    WebkitBackdropFilter: 'blur(64px)',
+                  }}
+                  onCloseAutoFocus={e => e.preventDefault()}
+                >
+                  <DropItem
+                    icon={<Edit3 size={15} />}
+                    label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
+                    onClick={() => onEdit(proposal.id)}
+                  />
+                  <DropItem
+                    icon={<Copy size={15} />}
+                    label={locale === 'he' ? 'שכפל' : 'Duplicate'}
+                    onClick={handleDuplicate}
+                  />
+                  <DropItem
+                    icon={<ExternalLink size={15} />}
+                    label={locale === 'he' ? 'העתק קישור' : 'Copy Link'}
+                    onClick={handleCopyLink}
+                  />
+                  {proposal.status === 'accepted' && (
                     <DropItem
-                      icon={<Edit3 size={14} />}
-                      label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
-                      onClick={() => onEdit(proposal.id)}
+                      icon={<FileDown size={15} />}
+                      label={locale === 'he' ? 'הורד חוזה' : 'Download PDF'}
+                      onClick={handleDownloadPdf}
                     />
-                    <DropItem
-                      icon={<Copy size={14} />}
-                      label={locale === 'he' ? 'שכפל' : 'Duplicate'}
-                      onClick={handleDuplicate}
-                    />
-                    <DropItem
-                      icon={<ExternalLink size={14} />}
-                      label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
-                      onClick={handleCopyLink}
-                    />
-                    {proposal.status === 'accepted' && (
-                      <DropItem
-                        icon={<FileDown size={14} />}
-                        label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
-                        onClick={handleDownloadPdf}
-                      />
-                    )}
-                    <DropdownMenu.Separator
-                      className="my-1 h-px"
-                      style={{ background: 'rgba(255,255,255,0.06)', margin: '4px 12px' }}
-                    />
-                    <DropItem
-                      icon={<Trash2 size={14} />}
-                      label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
-                      onClick={handleDelete}
-                      variant="danger"
-                    />
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
-            </div>
-
-            {/* Mobile: 3-dot opens BottomSheet */}
-            <button
-              className="flex md:hidden h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
-              onClick={e => { e.stopPropagation(); setSheetOpen(true) }}
-              aria-label="Options"
-            >
-              <MoreVertical size={15} />
-            </button>
+                  )}
+                  <DropdownMenu.Separator style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 14px' }} />
+                  <DropItem
+                    icon={<Trash2 size={15} />}
+                    label={locale === 'he' ? 'מחק הצעה' : 'Delete'}
+                    onClick={handleDelete}
+                    variant="danger"
+                  />
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
 
           {/* Client + title */}
@@ -397,42 +384,6 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
         </div>
       </motion.div>
 
-      {/* Mobile Bottom Sheet */}
-      <BottomSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        title={proposal.project_title || (locale === 'he' ? 'פעולות' : 'Actions')}
-      >
-        <SheetAction
-          icon={<Edit3 size={16} />}
-          label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
-          onClick={() => { setSheetOpen(false); onEdit(proposal.id) }}
-        />
-        <SheetAction
-          icon={<Copy size={16} />}
-          label={locale === 'he' ? 'שכפל' : 'Duplicate'}
-          onClick={() => { setSheetOpen(false); handleDuplicate() }}
-        />
-        <SheetAction
-          icon={<ExternalLink size={16} />}
-          label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
-          onClick={() => { setSheetOpen(false); handleCopyLink() }}
-        />
-        {proposal.status === 'accepted' && (
-          <SheetAction
-            icon={<FileDown size={16} />}
-            label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
-            onClick={() => { setSheetOpen(false); handleDownloadPdf() }}
-          />
-        )}
-        <div className="h-px bg-white/5 my-1" />
-        <SheetAction
-          icon={<Trash2 size={16} />}
-          label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
-          onClick={() => { setSheetOpen(false); handleDelete() }}
-          variant="danger"
-        />
-      </BottomSheet>
     </>
   )
 }
