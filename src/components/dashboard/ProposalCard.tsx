@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
+import { supabase } from '../../lib/supabase'
 import type { Proposal } from '../../types/proposal'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
 import { generateProposalPdf } from '../../lib/pdfEngine'
@@ -171,7 +172,31 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
+  const [clientViewing, setClientViewing] = useState(false)
+  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
+
+  // ── Live presence — subscribe to DealRoom broadcast channel ───────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel(`deal-room:${proposal.public_token}`)
+      .on('broadcast', { event: 'heartbeat' }, () => {
+        setClientViewing(true)
+        // Clear existing timer and set a new 12-second offline timeout
+        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
+        offlineTimerRef.current = setTimeout(() => setClientViewing(false), 12_000)
+      })
+      .on('broadcast', { event: 'offline' }, () => {
+        setClientViewing(false)
+        if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current)
+    }
+  }, [proposal.public_token])
 
   const total = proposalTotal(proposal)
   const formatted = formatCurrency(total, proposal.currency)
@@ -250,9 +275,32 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
             style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }}
           />
 
-          {/* Top row: status + menu trigger — unified Radix dropdown for all screen sizes */}
+          {/* Top row: status + live badge + menu trigger */}
           <div className="flex items-start justify-between mb-4">
-            <StatusBadge status={proposal.status} locale={locale} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <StatusBadge status={proposal.status} locale={locale} />
+              {clientViewing && (
+                <span
+                  className="flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold"
+                  style={{
+                    background: 'rgba(34,197,94,0.1)',
+                    border: '1px solid rgba(34,197,94,0.28)',
+                    color: '#4ade80',
+                    boxShadow: '0 0 10px rgba(34,197,94,0.15)',
+                  }}
+                >
+                  {/* Ping dot */}
+                  <span className="relative flex h-2 w-2 flex-none">
+                    <span
+                      className="absolute inline-flex h-full w-full rounded-full"
+                      style={{ background: '#22c55e', opacity: 0.7, animation: 'card-ping 1.2s ease-in-out infinite' }}
+                    />
+                    <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#22c55e' }} />
+                  </span>
+                  {locale === 'he' ? 'צופה עכשיו' : 'Viewing Now'}
+                </span>
+              )}
+            </div>
 
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
@@ -410,8 +458,66 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
             </motion.div>
           )}
 
+          {/* ── X-Ray: per-section time breakdown ────────────────────────── */}
+          {proposal.section_time && Object.keys(proposal.section_time).filter(k => (proposal.section_time![k] ?? 0) > 0).length > 0 && (() => {
+            const LABELS: Record<string, { he: string; en: string }> = {
+              pricing:    { he: 'תמחור',   en: 'Pricing'    },
+              addons:     { he: 'תוספות',  en: 'Add-ons'    },
+              milestones: { he: 'תשלומים', en: 'Milestones' },
+              contract:   { he: 'חוזה',    en: 'Contract'   },
+            }
+            const sections = Object.entries(proposal.section_time!)
+              .filter(([, t]) => t > 0)
+              .sort(([, a], [, b]) => b - a)
+            const total = sections.reduce((s, [, t]) => s + t, 0)
+            return (
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/25 mb-2 flex items-center gap-1">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  {locale === 'he' ? 'X-RAY — זמן לפי קטע' : 'X-RAY — Time Per Section'}
+                </p>
+                <div className="space-y-1.5">
+                  {sections.map(([name, time]) => {
+                    const pct = Math.round((time / total) * 100)
+                    const label = (LABELS[name]?.[locale as 'he' | 'en']) ?? name
+                    return (
+                      <div key={name} className="flex items-center gap-2">
+                        <span className="text-[10px] text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
+                          {label}
+                        </span>
+                        <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                          <div
+                            className="h-1 rounded-full"
+                            style={{
+                              width: `${pct}%`,
+                              background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+                              transition: 'width 0.6s ease',
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-white/30 font-medium flex-none text-end" style={{ width: 28 }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Status timeline */}
           <StatusTimeline proposal={proposal} locale={locale} />
+
+          {/* Keyframes for live badge ping */}
+          <style>{`
+            @keyframes card-ping {
+              0%, 100% { transform: scale(1); opacity: 0.7; }
+              50%       { transform: scale(2.2); opacity: 0; }
+            }
+          `}</style>
         </div>
       </motion.div>
 

@@ -60,12 +60,14 @@ export interface Proposal {
   creator_info?: CreatorInfo | null
   /** ID of the selected success template shown post-signature */
   success_template?: string | null
+  /** Per-section read time (seconds) accumulated by DealRoom IntersectionObserver */
+  section_time?: Record<string, number> | null
   created_at: string
   updated_at: string
 }
 
 export type ProposalInsert = Omit<Proposal,
-  'id' | 'user_id' | 'public_token' | 'view_count' | 'time_spent_seconds' | 'created_at' | 'updated_at'
+  'id' | 'user_id' | 'public_token' | 'view_count' | 'time_spent_seconds' | 'section_time' | 'created_at' | 'updated_at'
 >
 
 /** Default Israeli VAT rate — configurable per account in Profile */

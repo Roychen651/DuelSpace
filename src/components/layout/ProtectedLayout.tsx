@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useI18n } from '../../lib/i18n'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
+import { NotificationBell } from '../ui/NotificationBell'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -125,6 +126,9 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           >
             <HelpCircle size={14} />
           </button>
+
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* New Proposal button */}
           <motion.button

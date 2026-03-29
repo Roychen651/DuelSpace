@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import type { RefObject } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
@@ -220,7 +221,15 @@ export default function DealRoom() {
 
   // Time tracking
   const timeSpentRef = useRef(0)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Section-time telemetry (IntersectionObserver X-Ray)
+  const sectionTimeRef  = useRef<Record<string, number>>({})
+  const sectionEnterRef = useRef<Record<string, number>>({})
+  const pricingSectionRef    = useRef<HTMLDivElement>(null)
+  const addonsSectionRef     = useRef<HTMLDivElement>(null)
+  const milestonesSectionRef = useRef<HTMLDivElement>(null)
+  const contractSectionRef   = useRef<HTMLDivElement>(null)
 
   // Locale toggle (public page — no auth context)
   const [locale, setLocale] = useState<'he' | 'en'>(() => {
@@ -299,7 +308,7 @@ export default function DealRoom() {
     setCodeLoading(false)
   }
 
-  // ── Time tracking ──────────────────────────────────────────────────────────
+  // ── Time tracking + section-time flush ────────────────────────────────────
   useEffect(() => {
     if (fetchStatus !== 'ok' || !token) return
 
@@ -309,13 +318,30 @@ export default function DealRoom() {
 
     const flush = () => {
       if (timerRef.current) clearInterval(timerRef.current)
+
+      // Finalise time for sections still in viewport at flush time
+      for (const [name, enterTime] of Object.entries(sectionEnterRef.current)) {
+        sectionTimeRef.current[name] =
+          (sectionTimeRef.current[name] ?? 0) + Math.round((Date.now() - enterTime) / 1000)
+      }
+      sectionEnterRef.current = {}
+
+      // Fire-and-forget total time
       if (timeSpentRef.current > 0) {
-        // Fire-and-forget — best effort
         supabase.rpc('update_proposal_time_spent', {
-          p_token: token,
+          p_token:   token,
           p_seconds: timeSpentRef.current,
         }).then(() => {})
         timeSpentRef.current = 0
+      }
+
+      // Fire-and-forget section breakdown
+      if (Object.keys(sectionTimeRef.current).length > 0) {
+        supabase.rpc('update_section_time', {
+          p_token:        token,
+          p_section_time: sectionTimeRef.current,
+        }).then(() => {})
+        sectionTimeRef.current = {}
       }
     }
 
@@ -325,6 +351,70 @@ export default function DealRoom() {
       flush()
     }
   }, [fetchStatus, token])
+
+  // ── Live presence broadcast ────────────────────────────────────────────────
+  useEffect(() => {
+    if (fetchStatus !== 'ok' || !token) return
+
+    const channel = supabase.channel(`deal-room:${token}`)
+    let heartbeatId: ReturnType<typeof setInterval> | null = null
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        // Announce immediately, then every 5 s
+        channel.send({ type: 'broadcast', event: 'heartbeat', payload: {} })
+        heartbeatId = setInterval(() => {
+          channel.send({ type: 'broadcast', event: 'heartbeat', payload: {} })
+        }, 5_000)
+      }
+    })
+
+    return () => {
+      if (heartbeatId) clearInterval(heartbeatId)
+      // Best-effort offline signal before tearing down the channel
+      channel.send({ type: 'broadcast', event: 'offline', payload: {} })
+      supabase.removeChannel(channel)
+    }
+  }, [fetchStatus, token])
+
+  // ── IntersectionObserver — per-section read time ───────────────────────────
+  useEffect(() => {
+    if (fetchStatus !== 'ok') return
+
+    const SECTIONS: Array<{ ref: RefObject<HTMLDivElement | null>; name: string }> = [
+      { ref: pricingSectionRef,    name: 'pricing'    },
+      { ref: addonsSectionRef,     name: 'addons'     },
+      { ref: milestonesSectionRef, name: 'milestones' },
+      { ref: contractSectionRef,   name: 'contract'   },
+    ]
+
+    const observers: IntersectionObserver[] = []
+
+    for (const { ref, name } of SECTIONS) {
+      const el = ref.current
+      if (!el) continue
+
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            sectionEnterRef.current[name] = Date.now()
+          } else {
+            const t = sectionEnterRef.current[name]
+            if (t != null) {
+              sectionTimeRef.current[name] =
+                (sectionTimeRef.current[name] ?? 0) + Math.round((Date.now() - t) / 1000)
+              delete sectionEnterRef.current[name]
+            }
+          }
+        },
+        { threshold: 0.3 }
+      )
+      obs.observe(el)
+      observers.push(obs)
+    }
+
+    return () => observers.forEach(obs => obs.disconnect())
+  }, [fetchStatus])
 
   // ── Grand total calculation ────────────────────────────────────────────────
   const grandTotal = proposal
@@ -649,6 +739,7 @@ export default function DealRoom() {
 
         {/* ── Base package card ─────────────────────────────────────────── */}
         <motion.div
+          ref={pricingSectionRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
@@ -691,7 +782,7 @@ export default function DealRoom() {
 
         {/* ── Add-ons section ───────────────────────────────────────────── */}
         {proposal.add_ons.length > 0 && (
-          <div className="mt-6 mb-4">
+          <div ref={addonsSectionRef} className="mt-6 mb-4">
             <motion.p
               className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3"
               initial={{ opacity: 0 }}
@@ -743,6 +834,7 @@ export default function DealRoom() {
         {/* ── Milestone timeline ────────────────────────────────────────── */}
         {(proposal.payment_milestones ?? []).length > 0 && (
           <motion.div
+            ref={milestonesSectionRef}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
@@ -796,6 +888,7 @@ export default function DealRoom() {
 
         {/* ── Legal terms box ───────────────────────────────────────────── */}
         <motion.div
+          ref={contractSectionRef}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.8 }}
