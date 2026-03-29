@@ -762,48 +762,7 @@ export default function DealRoom() {
           </motion.div>
         )}
 
-        {/* ── Legal consent checkbox ────────────────────────────────────── */}
-        {clientDetails && !accepted && (
-          <motion.label
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.35 }}
-            className="flex items-start gap-3 cursor-pointer mt-4 rounded-xl px-4 py-3"
-            style={{
-              background: legalConsent ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.025)',
-              border: legalConsent ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.07)',
-              transition: 'background 0.2s, border-color 0.2s',
-            }}
-          >
-            <div className="flex-none mt-0.5">
-              <input
-                type="checkbox"
-                checked={legalConsent}
-                onChange={e => setLegalConsent(e.target.checked)}
-                className="sr-only"
-              />
-              <div
-                className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
-                style={{
-                  background: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.05)',
-                  borderColor: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.15)',
-                  boxShadow: legalConsent ? '0 0 8px rgba(34,197,94,0.4)' : 'none',
-                }}
-              >
-                {legalConsent && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </div>
-            </div>
-            <p className="text-[11px] leading-relaxed text-white/40">
-              {locale === 'he'
-                ? 'אני מאשר/ת את תנאי השימוש ומדיניות הפרטיות של DealSpace, ומאשר/ת כי הפרטים שהזנתי נכונים ומדויקים.'
-                : 'I agree to DealSpace\'s Terms of Service and Privacy Policy, and confirm that the details I provided are accurate.'}
-            </p>
-          </motion.label>
-        )}
+        {/* Legal consent is now inside CheckoutClimax, shown after signature is confirmed */}
 
         {/* ── Trust signals ─────────────────────────────────────────────── */}
         <motion.div
@@ -979,7 +938,8 @@ export default function DealRoom() {
                 locale={locale}
                 includeVat={proposal.include_vat}
                 vatRate={vatRate}
-                legalConsentAccepted={!!clientDetails && legalConsent}
+                legalConsent={legalConsent}
+                onLegalConsentChange={setLegalConsent}
               />
             </div>
             {/* Accept error */}

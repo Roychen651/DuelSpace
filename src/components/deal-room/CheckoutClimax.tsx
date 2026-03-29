@@ -21,7 +21,8 @@ interface CheckoutClimaxProps {
   includeVat?: boolean
   /** VAT rate as decimal, e.g. 0.18 for 18% */
   vatRate?: number
-  legalConsentAccepted?: boolean
+  legalConsent: boolean
+  onLegalConsentChange: (v: boolean) => void
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -45,10 +46,11 @@ function AnimatedTotal({ total, currency }: { total: number; currency: string })
 export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
-  includeVat = false, vatRate = 0.18, legalConsentAccepted = true,
+  includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
-  const canSign = signature.trim().length >= 2 && (legalConsentAccepted !== false)
+  const signatureConfirmed = signature.trim().length >= 2
+  const canSign = signatureConfirmed && legalConsent
   const vatAmt = Math.round(total * vatRate)
   const totalWithVat = total + vatAmt
   const displayTotal = includeVat ? totalWithVat : total
@@ -183,6 +185,52 @@ export function CheckoutClimax({
                     onClear={() => onSignatureChange('')}
                   />
                 </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── Legal consent (shown once signature is drawn) ────────────── */}
+            <AnimatePresence>
+              {signatureConfirmed && !accepted && (
+                <motion.label
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-start gap-3 cursor-pointer mb-3 rounded-xl px-3 py-2.5"
+                  style={{
+                    background: legalConsent ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.025)',
+                    border: legalConsent ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}
+                >
+                  <div className="flex-none mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={legalConsent}
+                      onChange={e => onLegalConsentChange(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
+                      style={{
+                        background: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.05)',
+                        borderColor: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.15)',
+                        boxShadow: legalConsent ? '0 0 8px rgba(34,197,94,0.4)' : 'none',
+                      }}
+                    >
+                      {legalConsent && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: legalConsent ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
+                    {isHe
+                      ? 'אני מאשר/ת שקראתי את תנאי ההצעה ומסכים/ה לביצועה כהסכם מחייב.'
+                      : 'I confirm I have read the proposal terms and agree to its execution as a binding agreement.'}
+                  </p>
+                </motion.label>
               )}
             </AnimatePresence>
 
