@@ -169,6 +169,7 @@ export function AccessibilityWidget() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
+  const fabRef = useRef<HTMLDivElement>(null)
 
   // Drag constraints — keep FAB within viewport
   // FAB starts at bottom:24 right:20, size 48×48. Constraints are relative offsets from initial position.
@@ -192,7 +193,10 @@ export function AccessibilityWidget() {
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        fabRef.current && !fabRef.current.contains(e.target as Node)
+      ) {
         setOpen(false)
       }
     }
@@ -404,6 +408,7 @@ export function AccessibilityWidget() {
 
       {/* Draggable FAB — always starts bottom-right, draggable within viewport */}
       <motion.div
+        ref={fabRef}
         drag
         dragMomentum={false}
         dragElastic={0}

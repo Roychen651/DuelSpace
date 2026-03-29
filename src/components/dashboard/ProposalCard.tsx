@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useState } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
@@ -76,30 +77,10 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
 
   type TimelineEvent = { labelEn: string; labelHe: string; time: string | null; done: boolean }
   const events: TimelineEvent[] = [
-    {
-      labelEn: 'Created',
-      labelHe: 'נוצרה',
-      time: proposal.created_at,
-      done: true,
-    },
-    {
-      labelEn: 'Sent',
-      labelHe: 'נשלח',
-      time: proposal.status !== 'draft' ? proposal.updated_at : null,
-      done: proposal.status !== 'draft',
-    },
-    {
-      labelEn: 'Viewed',
-      labelHe: 'נצפה',
-      time: proposal.last_viewed_at ?? null,
-      done: !!proposal.last_viewed_at,
-    },
-    {
-      labelEn: 'Accepted',
-      labelHe: 'אושר',
-      time: proposal.status === 'accepted' ? proposal.updated_at : null,
-      done: proposal.status === 'accepted',
-    },
+    { labelEn: 'Created', labelHe: 'נוצרה', time: proposal.created_at, done: true },
+    { labelEn: 'Sent',    labelHe: 'נשלח',  time: proposal.status !== 'draft' ? proposal.updated_at : null, done: proposal.status !== 'draft' },
+    { labelEn: 'Viewed',  labelHe: 'נצפה',  time: proposal.last_viewed_at ?? null, done: !!proposal.last_viewed_at },
+    { labelEn: 'Accepted',labelHe: 'אושר',  time: proposal.status === 'accepted' ? proposal.updated_at : null, done: proposal.status === 'accepted' },
   ]
 
   return (
@@ -129,11 +110,7 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
           {i < events.length - 1 && (
             <div
               className="h-px flex-1 mx-0.5"
-              style={{
-                background: events[i + 1].done
-                  ? 'rgba(99,102,241,0.4)'
-                  : 'rgba(255,255,255,0.08)',
-              }}
+              style={{ background: events[i + 1].done ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)' }}
             />
           )}
         </div>
@@ -142,132 +119,44 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
   )
 }
 
-// ─── Desktop Dropdown Menu ────────────────────────────────────────────────────
+// ─── Radix dropdown item ──────────────────────────────────────────────────────
 
-interface DesktopMenuProps {
-  open: boolean
-  anchorRef: React.RefObject<HTMLButtonElement | null>
-  onClose: () => void
-  children: React.ReactNode
-}
-
-function DesktopMenu({ open, anchorRef, onClose, children }: DesktopMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null)
-  const [style, setStyle] = useState<React.CSSProperties>({})
-
-  useEffect(() => {
-    if (!open || !anchorRef.current) return
-
-    const rect = anchorRef.current.getBoundingClientRect()
-    const MENU_W = 220
-    const MENU_H = 300 // rough max height
-
-    const top = rect.bottom + 6
-    const safeTop = top + MENU_H > window.innerHeight
-      ? Math.max(8, rect.top - MENU_H - 4)
-      : top
-
-    // Align to the button's right edge, but stay within viewport
-    let right = window.innerWidth - rect.right
-    if (right < 8) right = 8
-
-    setStyle({
-      position: 'fixed',
-      top: safeTop,
-      right,
-      width: MENU_W,
-      zIndex: 60,
-    })
-  }, [open, anchorRef])
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target as Node) &&
-        anchorRef.current && !anchorRef.current.contains(e.target as Node)
-      ) {
-        onClose()
-      }
-    }
-    // Use setTimeout to avoid the same click that opened the menu from closing it
-    const t = setTimeout(() => document.addEventListener('mousedown', handler), 0)
-    return () => { clearTimeout(t); document.removeEventListener('mousedown', handler) }
-  }, [open, onClose, anchorRef])
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={menuRef}
-          initial={{ opacity: 0, scale: 0.95, y: -6 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -6 }}
-          transition={{ duration: 0.12, ease: 'easeOut' as const }}
-          className="overflow-hidden rounded-2xl py-1.5"
-          onClick={e => e.stopPropagation()}
-          onMouseDown={e => e.stopPropagation()}
-          aria-modal="true"
-          role="menu"
-          style={{
-            ...style,
-            background: 'rgba(14,14,22,0.97)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(40px)',
-          }}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-interface DesktopMenuItemProps {
+function DropItem({
+  icon, label, onClick, variant = 'default',
+}: {
   icon: React.ReactNode
   label: string
   onClick: () => void
   variant?: 'default' | 'danger'
-  separator?: boolean
-}
-
-function DesktopMenuItem({ icon, label, onClick, variant = 'default', separator }: DesktopMenuItemProps) {
+}) {
   return (
-    <>
-      {separator && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
-      <button
-        role="menuitem"
-        type="button"
-        onClick={onClick}
-        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm transition-colors"
-        style={{ color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.78)' }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLButtonElement).style.background = variant === 'danger'
-            ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.05)'
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-        }}
+    <DropdownMenu.Item
+      onSelect={onClick}
+      className="group flex items-center gap-3 px-3.5 py-2.5 outline-none cursor-pointer rounded-xl mx-1.5 transition-colors"
+      style={{ color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.78)' }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.background = variant === 'danger'
+          ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.06)'
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.background = 'transparent'
+      }}
+      onFocus={e => {
+        (e.currentTarget as HTMLElement).style.background = variant === 'danger'
+          ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.06)'
+      }}
+      onBlur={e => {
+        (e.currentTarget as HTMLElement).style.background = 'transparent'
+      }}
+    >
+      <span
+        className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
+        style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)' }}
       >
-        <span
-          className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
-          style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.06)' }}
-        >
-          {icon}
-        </span>
-        <span className="font-medium text-[13px]">{label}</span>
-      </button>
-    </>
+        {icon}
+      </span>
+      <span className="font-medium text-[13px]">{label}</span>
+    </DropdownMenu.Item>
   )
 }
 
@@ -281,11 +170,10 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
   const { deleteProposal, duplicateProposal } = useProposalStore()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
-  const menuRef = useRef<HTMLButtonElement>(null)
 
   const total = proposalTotal(proposal)
   const formatted = formatCurrency(total, proposal.currency)
@@ -296,27 +184,22 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   )
 
   const shareUrl = `${window.location.origin}/deal/${proposal.public_token}`
-  const isMobile = () => window.innerWidth < 768
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(shareUrl)
-    setMenuOpen(false)
   }
 
   const handleDuplicate = async () => {
-    setMenuOpen(false)
     await duplicateProposal(proposal.id)
   }
 
   const handleDelete = async () => {
-    setMenuOpen(false)
     setDeleting(true)
     await deleteProposal(proposal.id)
   }
 
   const handleDownloadPdf = async () => {
     if (pdfGenerating) return
-    setMenuOpen(false)
     setPdfGenerating(true)
     await generateProposalPdf({
       proposal,
@@ -328,50 +211,11 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
     setPdfGenerating(false)
   }
 
-  const menuActions = (
-    <>
-      <DesktopMenuItem
-        icon={<Edit3 size={14} />}
-        label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
-        onClick={() => { setMenuOpen(false); onEdit(proposal.id) }}
-      />
-      <DesktopMenuItem
-        icon={<Copy size={14} />}
-        label={locale === 'he' ? 'שכפל' : 'Duplicate'}
-        onClick={handleDuplicate}
-      />
-      <DesktopMenuItem
-        icon={<ExternalLink size={14} />}
-        label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
-        onClick={handleCopyLink}
-      />
-      {proposal.status === 'accepted' && (
-        <DesktopMenuItem
-          icon={<FileDown size={14} />}
-          label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
-          onClick={handleDownloadPdf}
-        />
-      )}
-      <DesktopMenuItem
-        icon={<Trash2 size={14} />}
-        label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
-        onClick={handleDelete}
-        variant="danger"
-        separator
-      />
-    </>
-  )
-
   return (
     <>
       <motion.div
         className="group relative rounded-2xl overflow-hidden cursor-pointer select-none"
-        style={{
-          rotateX,
-          rotateY,
-          transformStyle: 'preserve-3d',
-          transformPerspective: 1000,
-        }}
+        style={{ rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 1000 }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         whileHover={{ scale: 1.02, y: -4 }}
@@ -379,8 +223,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
         animate={deleting ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
         onClick={(e) => {
-          // Don't navigate if the click originated inside a button (menu trigger, download, etc.)
-          if ((e.target as HTMLElement).closest('button')) return
+          if ((e.target as HTMLElement).closest('button,[data-radix-dropdown-menu-trigger]')) return
           onEdit(proposal.id)
         }}
       >
@@ -406,23 +249,83 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
           {/* Hover shimmer */}
           <div
             className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            style={{
-              background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)',
-            }}
+            style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }}
           />
 
-          {/* Top row: status + menu */}
+          {/* Top row: status + menu trigger */}
           <div className="flex items-start justify-between mb-4">
             <StatusBadge status={proposal.status} locale={locale} />
+
+            {/* Desktop: Radix dropdown — portal-based, no positioning bugs */}
+            <div className="hidden md:block">
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70 outline-none"
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Options"
+                  >
+                    <MoreVertical size={15} />
+                  </button>
+                </DropdownMenu.Trigger>
+
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    sideOffset={6}
+                    align="end"
+                    collisionPadding={8}
+                    className="z-[9997] w-56 rounded-2xl py-2 outline-none"
+                    style={{
+                      background: 'rgba(11,11,20,0.98)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+                      backdropFilter: 'blur(48px)',
+                      animationDuration: '120ms',
+                    }}
+                    onCloseAutoFocus={e => e.preventDefault()}
+                  >
+                    <DropItem
+                      icon={<Edit3 size={14} />}
+                      label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
+                      onClick={() => onEdit(proposal.id)}
+                    />
+                    <DropItem
+                      icon={<Copy size={14} />}
+                      label={locale === 'he' ? 'שכפל' : 'Duplicate'}
+                      onClick={handleDuplicate}
+                    />
+                    <DropItem
+                      icon={<ExternalLink size={14} />}
+                      label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
+                      onClick={handleCopyLink}
+                    />
+                    {proposal.status === 'accepted' && (
+                      <DropItem
+                        icon={<FileDown size={14} />}
+                        label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
+                        onClick={handleDownloadPdf}
+                      />
+                    )}
+                    <DropdownMenu.Separator
+                      className="my-1 h-px"
+                      style={{ background: 'rgba(255,255,255,0.06)', margin: '4px 12px' }}
+                    />
+                    <DropItem
+                      icon={<Trash2 size={14} />}
+                      label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
+                      onClick={handleDelete}
+                      variant="danger"
+                    />
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+
+            {/* Mobile: 3-dot opens BottomSheet */}
             <button
-              ref={menuRef}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
-              onClick={(e) => {
-                e.stopPropagation()
-                setMenuOpen(v => !v)
-              }}
+              className="flex md:hidden h-7 w-7 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
+              onClick={e => { e.stopPropagation(); setSheetOpen(true) }}
               aria-label="Options"
-              aria-expanded={menuOpen}
             >
               <MoreVertical size={15} />
             </button>
@@ -494,48 +397,39 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
         </div>
       </motion.div>
 
-      {/* Desktop dropdown — rendered into document body via fixed positioning */}
-      <DesktopMenu
-        open={menuOpen && !isMobile()}
-        anchorRef={menuRef}
-        onClose={() => setMenuOpen(false)}
-      >
-        {menuActions}
-      </DesktopMenu>
-
       {/* Mobile Bottom Sheet */}
       <BottomSheet
-        open={menuOpen && isMobile()}
-        onClose={() => setMenuOpen(false)}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
         title={proposal.project_title || (locale === 'he' ? 'פעולות' : 'Actions')}
       >
         <SheetAction
           icon={<Edit3 size={16} />}
           label={locale === 'he' ? 'ערוך הצעה' : 'Edit Proposal'}
-          onClick={() => { setMenuOpen(false); onEdit(proposal.id) }}
+          onClick={() => { setSheetOpen(false); onEdit(proposal.id) }}
         />
         <SheetAction
           icon={<Copy size={16} />}
           label={locale === 'he' ? 'שכפל' : 'Duplicate'}
-          onClick={handleDuplicate}
+          onClick={() => { setSheetOpen(false); handleDuplicate() }}
         />
         <SheetAction
           icon={<ExternalLink size={16} />}
           label={locale === 'he' ? 'העתק קישור ללקוח' : 'Copy Client Link'}
-          onClick={handleCopyLink}
+          onClick={() => { setSheetOpen(false); handleCopyLink() }}
         />
         {proposal.status === 'accepted' && (
           <SheetAction
             icon={<FileDown size={16} />}
             label={locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
-            onClick={handleDownloadPdf}
+            onClick={() => { setSheetOpen(false); handleDownloadPdf() }}
           />
         )}
         <div className="h-px bg-white/5 my-1" />
         <SheetAction
           icon={<Trash2 size={16} />}
           label={locale === 'he' ? 'מחק הצעה' : 'Delete Proposal'}
-          onClick={handleDelete}
+          onClick={() => { setSheetOpen(false); handleDelete() }}
           variant="danger"
         />
       </BottomSheet>
