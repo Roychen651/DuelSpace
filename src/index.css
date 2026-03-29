@@ -1,8 +1,9 @@
 /* ── Google Fonts ─────────────────────────────────────────────────────────── */
-/* Outfit: geometric sans for EN/Numbers */
-/* Platypi: premium display serif for HE headings */
-/* Atkinson Hyperlegible: accessibility font for low-vision / dyslexia */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Platypi:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/* Plus Jakarta Sans : premium EN display & body — used by top global SaaS          */
+/* Rubik             : modern HE + embedded Latin — used by Wix, monday.com, etc.   */
+/* Syne              : ultra-modern display accent for large hero numbers/callouts   */
+/* Atkinson Hyperlegible: accessibility — low-vision / dyslexia                     */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Rubik:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Syne:wght@400;500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -30,10 +31,14 @@
   --glass-border:    rgba(255,255,255,0.08);
   --glass-blur:      blur(24px) saturate(180%);
 
-  /* Font stacks */
-  --font-sans:    'Outfit', 'Inter', system-ui, sans-serif;
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-hebrew:  'Platypi', 'Heebo', sans-serif;
+  /* Font stacks
+     EN: Plus Jakarta Sans (premium geometric) — Latin glyphs only
+     HE: Rubik covers both Hebrew AND clean Latin (no script mixing glitch)
+     Accent: Syne for large display numbers/callouts                        */
+  --font-sans:    'Plus Jakarta Sans', 'Rubik', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Rubik', system-ui, sans-serif;
+  --font-hebrew:  'Rubik', 'Plus Jakarta Sans', sans-serif;
+  --font-accent:  'Syne', 'Plus Jakarta Sans', sans-serif;
 
   color-scheme: dark;
 }
@@ -60,10 +65,11 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Hebrew RTL — Platypi for headings, Heebo for body */
+/* Hebrew RTL — Rubik handles BOTH Hebrew glyphs AND embedded Latin (PDF, DealSpace, etc.)
+   This prevents the ugly cross-script fallback that made English words in HE look terrible. */
 [dir="rtl"] body {
-  font-family: 'Heebo', system-ui, sans-serif;
-  letter-spacing: 0;
+  font-family: 'Rubik', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 [dir="rtl"] h1,
@@ -71,6 +77,7 @@ body {
 [dir="rtl"] h3,
 [dir="rtl"] .font-display {
   font-family: var(--font-hebrew);
+  font-weight: 800;
 }
 
 #root {

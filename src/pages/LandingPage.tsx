@@ -209,8 +209,13 @@ const container: Variants = {
 }
 
 const itemFade: Variants = {
-  hidden: { opacity: 0, y: 22 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.52, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, y: 22, filter: 'blur(8px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.52, ease: 'easeOut' as const } },
+}
+
+const sectionReveal: Variants = {
+  hidden: { opacity: 0, y: 40, filter: 'blur(14px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.72, ease: 'easeOut' as const } },
 }
 
 // ─── Hero Aurora Background ────────────────────────────────────────────────────
@@ -371,25 +376,47 @@ function DealRoomMockup({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
 }
 
 // ─── Marquee Trust Band ────────────────────────────────────────────────────────
+// Items are quadrupled so the track is always wider than any viewport at 4× density.
+// CSS animates translateX(0 → -50%) over 38s — seamless because 2nd half == 1st half.
+
+const MARQUEE_ICONS = ['⚡', '🏆', '⚡', '🔥', '⚡', '⭐']
 
 function MarqueeBand({ items, isRTL }: { items: string[]; isRTL: boolean }) {
-  const doubled = [...items, ...items]
+  // Quadruple for dense fill — guarantees content always wider than any viewport
+  const quad = [...items, ...items, ...items, ...items]
+
   return (
     <div
-      className="overflow-hidden py-4"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.015)' }}
+      className="relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(90deg, rgba(99,102,241,0.07) 0%, rgba(168,85,247,0.04) 50%, rgba(99,102,241,0.07) 100%)',
+        borderTop:    '1px solid rgba(99,102,241,0.14)',
+        borderBottom: '1px solid rgba(99,102,241,0.14)',
+        padding: '16px 0',
+      }}
     >
+      {/* Fade-out edges */}
+      <div className="pointer-events-none absolute inset-y-0 start-0 w-24 z-10"
+        style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+      <div className="pointer-events-none absolute inset-y-0 end-0 w-24 z-10"
+        style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+
+      {/* Scrolling track — always LTR so CSS animation direction is predictable */}
       <div
         dir="ltr"
         style={{
           display: 'flex',
           width: 'max-content',
-          animation: isRTL ? 'lp-marquee-rtl 28s linear infinite' : 'lp-marquee 28s linear infinite',
+          animation: isRTL ? 'lp-marquee-rtl 38s linear infinite' : 'lp-marquee 38s linear infinite',
         }}
       >
-        {doubled.map((item, i) => (
-          <span key={i} className="flex items-center gap-2 px-8 text-[12px] font-semibold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            <span style={{ color: '#6366f1' }}>✦</span>
+        {quad.map((item, i) => (
+          <span
+            key={i}
+            className="flex items-center gap-2.5 whitespace-nowrap"
+            style={{ padding: '0 40px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.62)', fontFamily: 'var(--font-sans)' }}
+          >
+            <span style={{ fontSize: 11, color: '#818cf8', opacity: 0.85 }}>{MARQUEE_ICONS[i % MARQUEE_ICONS.length]}</span>
             {item}
           </span>
         ))}
@@ -407,10 +434,10 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
         {/* Heading */}
         <motion.div
           className="text-center mb-16"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.55, ease: 'easeOut' as const }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
             {isHe ? 'השוואה אמיתית' : 'Real comparison'}
@@ -423,8 +450,8 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Old way */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? 30 : -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: isHe ? 30 : -30, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.55, ease: 'easeOut' as const }}
             className="rounded-3xl p-7"
@@ -448,8 +475,8 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
 
           {/* DealSpace way */}
           <motion.div
-            initial={{ opacity: 0, x: isHe ? -30 : 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: isHe ? -30 : 30, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.55, ease: 'easeOut' as const, delay: 0.08 }}
             className="relative rounded-3xl p-7 overflow-hidden"
@@ -616,10 +643,10 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
         {/* Heading */}
         <motion.div
           className="text-center mb-14"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.55, ease: 'easeOut' as const }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
             {c.featuresLabel}
@@ -703,10 +730,10 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
       <div className="max-w-6xl mx-auto">
         <motion.div
           className="text-center mb-14"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.55, ease: 'easeOut' as const }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ color: '#6366f1' }}>
             {c.socialsLabel}
@@ -781,10 +808,10 @@ function FinalCTASection({ c, onCta }: { c: typeof copy['he']; onCta: () => void
 
       <div className="max-w-2xl mx-auto text-center">
         <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.65, ease: 'easeOut' as const }}
         >
           <h2
             className="text-4xl sm:text-5xl font-black tracking-tight mb-2"
@@ -965,11 +992,50 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
           {/* Text block */}
           <div className="flex-1 text-center lg:text-start">
 
+            {/* Brand Lockup — converting hero identity */}
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: 'easeOut' as const }}
+              className="flex items-center gap-3.5 justify-center lg:justify-start mb-8"
+            >
+              {/* Logo mark — hero-scale version */}
+              <div
+                className="relative flex h-12 w-12 items-center justify-center rounded-[14px] flex-none"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.1), 0 0 48px rgba(99,102,241,0.6), 0 8px 24px rgba(0,0,0,0.4)',
+                }}
+              >
+                <Zap size={22} className="text-white" />
+                {/* Inner top highlight */}
+                <div className="pointer-events-none absolute top-0 inset-x-0 h-px rounded-t-[14px]"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
+              </div>
+
+              {/* Wordmark + descriptor */}
+              <div className="text-start">
+                <div
+                  className="text-[26px] font-black tracking-[-0.02em] leading-none"
+                  style={{
+                    background: 'linear-gradient(135deg, #ffffff 20%, #c4b5fd 55%, #e0d9ff 85%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  DealSpace
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] mt-1" style={{ color: 'rgba(165,180,252,0.55)' }}>
+                  {isHe ? 'פלטפורמת עסקאות B2B' : 'B2B Deal Closing Platform'}
+                </p>
+              </div>
+            </motion.div>
+
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' as const }}
+              transition={{ duration: 0.5, ease: 'easeOut' as const, delay: 0.07 }}
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7"
               style={{
                 background: 'rgba(99,102,241,0.1)',
