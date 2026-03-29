@@ -480,6 +480,7 @@ export default function DealRoom() {
   const addonsSectionRef     = useRef<HTMLDivElement>(null)
   const milestonesSectionRef = useRef<HTMLDivElement>(null)
   const contractSectionRef   = useRef<HTMLDivElement>(null)
+  const clientDetailsFormRef = useRef<HTMLDivElement>(null)
 
   // Locale toggle (public page — no auth context)
   const [locale, setLocale] = useState<'he' | 'en'>(() => {
@@ -679,11 +680,13 @@ export default function DealRoom() {
   // ── Handle accept ──────────────────────────────────────────────────────────
   const handleAccept = useCallback(async () => {
     if (!token || accepting || accepted) return
+    // Hard guard — identity form must be completed before accepting
+    if (!clientDetails) return
     setAccepting(true)
     setAcceptError(null)
 
     // Save client legal identity before accepting — must succeed or abort
-    if (clientDetails) {
+    {
       const { error: detailsError } = await supabase.rpc('save_client_details', {
         p_token:        token,
         p_full_name:    clientDetails.full_name,
@@ -1143,6 +1146,7 @@ export default function DealRoom() {
         {/* ── Client details capture (before signature) ─────────────────── */}
         {!clientDetails && !accepted && (
           <motion.div
+            ref={clientDetailsFormRef}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.65 }}
@@ -1336,6 +1340,10 @@ export default function DealRoom() {
                 legalConsent={legalConsent}
                 onLegalConsentChange={setLegalConsent}
                 onRequestRevision={handleRequestRevision}
+                clientDetailsConfirmed={!!clientDetails}
+                onScrollToDetails={() =>
+                  clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
               />
             </div>
             {/* Accept error */}

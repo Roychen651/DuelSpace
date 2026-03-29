@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { ShieldCheck, Loader2, CheckCircle2, Lock, MessageSquarePlus, X, Send as SendIcon, CheckCheck } from 'lucide-react'
+import { ShieldCheck, Loader2, CheckCircle2, Lock, MessageSquarePlus, X, Send as SendIcon, CheckCheck, ArrowUp } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { formatCurrency } from '../../types/proposal'
 import { SignaturePad } from './SignaturePad'
@@ -26,6 +26,10 @@ interface CheckoutClimaxProps {
   onLegalConsentChange: (v: boolean) => void
   /** When provided, shows "Request Changes" button and calls this on submit */
   onRequestRevision?: (notes: string) => Promise<void>
+  /** Must be true before signature is unlocked — gates the entire sign flow */
+  clientDetailsConfirmed?: boolean
+  /** Called when user taps "fill details first" locked state — scrolls form into view */
+  onScrollToDetails?: () => void
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -50,11 +54,11 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
-  onRequestRevision,
+  onRequestRevision, clientDetailsConfirmed = false, onScrollToDetails,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
-  const canSign = signatureConfirmed && legalConsent
+  const canSign = clientDetailsConfirmed && signatureConfirmed && legalConsent
 
   // Revision request state
   const [revisionOpen, setRevisionOpen] = useState(false)
@@ -190,14 +194,62 @@ export function CheckoutClimax({
               </div>
             )}
 
-            {/* ── Signature pad ────────────────────────────────────────────── */}
-            <AnimatePresence>
-              {!accepted && (
+            {/* ── Signature section ─────────────────────────────────────── */}
+            <AnimatePresence mode="wait">
+              {!accepted && !clientDetailsConfirmed && (
+                // Locked state — identity details not yet filled
+                <motion.button
+                  key="locked"
+                  type="button"
+                  onClick={onScrollToDetails}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full mb-3 rounded-xl px-4 py-4 flex flex-col items-center gap-2 cursor-pointer transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.025)',
+                    border: '1px dashed rgba(255,255,255,0.1)',
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget
+                    el.style.borderColor = 'rgba(99,102,241,0.35)'
+                    el.style.background = 'rgba(99,102,241,0.05)'
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget
+                    el.style.borderColor = 'rgba(255,255,255,0.1)'
+                    el.style.background = 'rgba(255,255,255,0.025)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 text-white/30">
+                    <Lock size={14} />
+                    <span className="text-xs font-semibold">
+                      {isHe ? 'חתימה אלקטרונית' : 'Electronic Signature'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-white/22 text-center leading-relaxed">
+                    {isHe
+                      ? 'מלא את פרטי הזהות למעלה כדי לפתוח את החתימה'
+                      : 'Fill in your identity details above to unlock signing'}
+                  </p>
+                  {onScrollToDetails && (
+                    <div className="flex items-center gap-1 mt-0.5" style={{ color: '#818cf8' }}>
+                      <ArrowUp size={11} />
+                      <span className="text-[10px] font-bold">
+                        {isHe ? 'מלא פרטים' : 'Fill details'}
+                      </span>
+                    </div>
+                  )}
+                </motion.button>
+              )}
+              {!accepted && clientDetailsConfirmed && (
                 <motion.div
+                  key="unlocked"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' as const }}
                   className="mb-3"
                   style={{ overflow: 'hidden' }}
                 >
