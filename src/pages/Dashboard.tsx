@@ -299,9 +299,12 @@ export default function Dashboard() {
   const sentProposals = proposals.filter(p => p.status !== 'draft')
   const accepted = proposals.filter(p => p.status === 'accepted')
   const winRate = sentProposals.length > 0 ? Math.round((accepted.length / sentProposals.length) * 100) : 0
-  const revenuePending = proposals
-    .filter(p => p.status === 'sent' || p.status === 'viewed')
-    .reduce((sum, p) => sum + proposalTotal(p), 0)
+  const pendingProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed')
+  const revenuePending = pendingProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
+  const kpiCurrencyPrefix = (() => {
+    const cur = pendingProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
+    return cur === 'ILS' ? '₪' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : cur
+  })()
 
   const handleCreate = () => {
     // Sprint 3: navigate to /proposals/new
@@ -350,7 +353,7 @@ export default function Dashboard() {
             icon={<TrendingUp size={16} />}
             label={locale === 'he' ? 'הכנסה בהמתנה' : 'Revenue Pending'}
             value={revenuePending}
-            prefix="₪"
+            prefix={kpiCurrencyPrefix}
             color="#d4af37"
             delay={0.1}
           />
@@ -393,7 +396,7 @@ export default function Dashboard() {
             >
               {([
                 { mode: 'grid' as ViewMode, icon: <LayoutGrid size={13} />, label: locale === 'he' ? 'רשת' : 'Grid' },
-                { mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: 'Kanban' },
+                { mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: locale === 'he' ? 'לוח קנבן' : 'Kanban' },
               ]).map(({ mode, icon, label }) => (
                 <button
                   key={mode}

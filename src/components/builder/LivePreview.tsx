@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Check, Zap, Eye, Clock, ExternalLink } from 'lucide-react'
+import { Check, Zap, Eye, Clock, ExternalLink, Lock } from 'lucide-react'
 import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
 import type { Proposal } from '../../types/proposal'
 
@@ -449,25 +449,23 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {!compact && (
                 <div className="mt-6">
                   <div
-                    className="relative w-full overflow-hidden rounded-xl py-3.5 text-center text-sm font-bold text-white/40 cursor-not-allowed select-none"
+                    className="relative w-full overflow-hidden rounded-xl py-3 text-center text-xs font-semibold cursor-not-allowed select-none flex items-center justify-center gap-2"
                     style={{
-                      background: 'rgba(99,102,241,0.12)',
-                      border: '1px dashed rgba(99,102,241,0.25)',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px dashed rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.2)',
                     }}
                   >
-                    {locale === 'he' ? '✓ אשר את ההצעה' : '✓ Accept This Proposal'}
+                    <Lock size={11} style={{ opacity: 0.4 }} />
+                    <span style={{ opacity: 0.5 }}>
+                      {locale === 'he' ? 'אשר וחתום על ההצעה' : 'Approve & Sign Proposal'}
+                    </span>
                   </div>
-                  <div className="mt-2.5 flex items-center justify-center gap-1.5">
-                    <span
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: '#d4af37', boxShadow: '0 0 6px rgba(212,175,55,0.6)' }}
-                    />
-                    <p className="text-[10px] font-semibold text-amber-400/50">
-                      {locale === 'he'
-                        ? 'תצוגה מקדימה — הכפתור יופעל כשהלקוח פותח את הקישור'
-                        : 'Preview only — button activates when client opens the link'}
-                    </p>
-                  </div>
+                  <p className="mt-2 text-center text-[10px] text-white/20">
+                    {locale === 'he'
+                      ? 'הכפתור יופעל בחדר הדיל של הלקוח בלבד'
+                      : 'Button is only active in the client\'s Deal Room'}
+                  </p>
                 </div>
               )}
             </div>
