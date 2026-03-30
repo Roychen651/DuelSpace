@@ -577,7 +577,11 @@ export default function DealRoom() {
       }
       setLineItems(init)
 
-      supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+      // Only mark as viewed for non-terminal statuses — accepted/rejected proposals
+      // must not bump updated_at (it would corrupt the StatusTimeline timestamps)
+      if (p.status !== 'accepted' && p.status !== 'rejected') {
+        supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+      }
     }
     load()
   }, [token])
@@ -597,7 +601,9 @@ export default function DealRoom() {
         init[a.id] = { enabled: a.enabled, qty: 1 }
       }
       setLineItems(init)
-      supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+      if (pending.status !== 'accepted' && pending.status !== 'rejected') {
+        supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
+      }
     } else {
       setCodeError(true)
     }
@@ -754,6 +760,9 @@ export default function DealRoom() {
       setSigTimestamp(new Date())
       freshSignedRef.current = true
       setAccepted(true)
+      // Notify the Dashboard in the same browser tab/session immediately —
+      // faster than waiting for Supabase Realtime Postgres Changes to propagate
+      try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
       // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
       if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
     } else {

@@ -75,6 +75,10 @@ export interface Proposal {
   video_url?: string | null
   /** Social proof testimonials shown in the Deal Room before pricing */
   testimonials?: Testimonial[] | null
+  /** Timestamp of first status transition away from 'draft' (when the proposal was sent) */
+  sent_at?: string | null
+  /** Timestamp of when the client accepted/signed the proposal */
+  accepted_at?: string | null
   created_at: string
   updated_at: string
 }

@@ -77,10 +77,10 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
 
   type TimelineEvent = { labelEn: string; labelHe: string; time: string | null; done: boolean }
   const events: TimelineEvent[] = [
-    { labelEn: 'Created', labelHe: 'נוצרה', time: proposal.created_at, done: true },
-    { labelEn: 'Sent',    labelHe: 'נשלח',  time: proposal.status !== 'draft' ? proposal.updated_at : null, done: proposal.status !== 'draft' },
-    { labelEn: 'Viewed',  labelHe: 'נצפה',  time: proposal.last_viewed_at ?? null, done: !!proposal.last_viewed_at },
-    { labelEn: 'Accepted',labelHe: 'אושר',  time: proposal.status === 'accepted' ? proposal.updated_at : null, done: proposal.status === 'accepted' },
+    { labelEn: 'Created', labelHe: 'נוצרה', time: proposal.created_at,                                                                       done: true },
+    { labelEn: 'Sent',    labelHe: 'נשלח',  time: proposal.sent_at ?? null,                                                                   done: proposal.status !== 'draft' },
+    { labelEn: 'Viewed',  labelHe: 'נצפה',  time: proposal.last_viewed_at ?? null,                                                            done: !!proposal.last_viewed_at },
+    { labelEn: 'Accepted',labelHe: 'אושר',  time: proposal.status === 'accepted' ? (proposal.accepted_at ?? null) : null, done: proposal.status === 'accepted' },
   ]
 
   return (

@@ -308,7 +308,7 @@ export default function Dashboard() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [fetchProposals])
 
-  // Realtime subscription — re-fetch immediately when any proposal row changes (e.g., client accepts)
+  // Realtime subscription — re-fetch when any proposal row changes (e.g., client accepts)
   useEffect(() => {
     if (!user?.id) return
     const channel = supabase
@@ -320,6 +320,18 @@ export default function Dashboard() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user?.id, fetchProposals])
+
+  // BroadcastChannel — instant same-browser update when a Deal Room tab completes signing.
+  // Faster than waiting for Supabase Realtime Postgres Changes to propagate (which can take
+  // several seconds, or miss events if the WS connection is warming up).
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null
+    try {
+      bc = new BroadcastChannel('dealspace:proposals')
+      bc.onmessage = () => { fetchProposals() }
+    } catch (_) {}
+    return () => { try { bc?.close() } catch (_) {} }
+  }, [fetchProposals])
 
   // Inject demo proposal for brand-new users (empty dashboard, first visit)
   useEffect(() => {
