@@ -378,9 +378,12 @@ function makeStyles(brand: string) {
     htmlBold:   { fontWeight: 700, color: C.text },
 
     // ── Pricing table ──────────────────────────────────────────────────────────
+    // All rows use flexDirection: 'row-reverse' so that in react-pdf's LTR engine
+    // the first child (label) visually lands on the RIGHT and the second child
+    // (price) lands on the LEFT — correct RTL reading order without relying on
+    // justifyContent which react-pdf mishandles in mixed Bidi contexts.
     tableHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       alignItems: 'center',
       backgroundColor: C.surface,
       borderRadius: 4,
@@ -390,25 +393,24 @@ function makeStyles(brand: string) {
     },
     tableHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
     tableRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: 'row-reverse',
+      alignItems: 'flex-start',
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderBottom: `1px solid ${C.border}`,
     },
     tableRowHighlight: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       alignItems: 'center',
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderBottom: `1px solid ${C.border}`,
       backgroundColor: bDim,
     },
-    tableLabel:    { fontSize: 9.5, color: C.text,  flex: 1, textAlign: 'right', flexWrap: 'wrap' },
-    tableLabelSub: { fontSize: 7.5, color: C.muted, flex: 1, textAlign: 'right', marginTop: 1, flexWrap: 'wrap' },
-    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, width: 90, textAlign: 'left', flexShrink: 0 },
+    // tableLabel / tableLabelSub have no width — they live inside a 65%-wide wrapper View
+    tableLabel:    { fontSize: 9.5, color: C.text,  textAlign: 'right' },
+    tableLabelSub: { fontSize: 7.5, color: C.muted, textAlign: 'right', marginTop: 2 },
+    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, width: '35%', textAlign: 'left' },
 
     // ── VAT box ────────────────────────────────────────────────────────────────
     vatBox: {
@@ -419,12 +421,13 @@ function makeStyles(brand: string) {
       backgroundColor: bDim,
       border: `1px solid ${bBorder}`,
     },
-    vatRow:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    vatLabel:      { fontSize: 8.5, color: 'rgba(232,234,240,0.50)', textAlign: 'right' },
-    vatValue:      { fontSize: 8.5, fontWeight: 700, color: 'rgba(232,234,240,0.50)' },
+    // row-reverse: label (first child) → RIGHT, value (second child) → LEFT
+    vatRow:        { flexDirection: 'row-reverse', marginBottom: 4 },
+    vatLabel:      { fontSize: 8.5, color: 'rgba(232,234,240,0.50)', textAlign: 'right', width: '60%' },
+    vatValue:      { fontSize: 8.5, fontWeight: 700, color: 'rgba(232,234,240,0.50)', width: '40%', textAlign: 'left' },
     vatDivider:    { height: 1, backgroundColor: C.border, marginVertical: 6 },
-    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text,     textAlign: 'right' },
-    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.lavender },
+    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text,     textAlign: 'right', width: '60%' },
+    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.lavender, width: '40%', textAlign: 'left' },
 
     // ── Grand total ────────────────────────────────────────────────────────────
     totalBox: {
@@ -435,12 +438,11 @@ function makeStyles(brand: string) {
       paddingVertical: 14,
       backgroundColor: C.card,
       border: `1.5px solid ${brand}`,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',   // label → RIGHT, value → LEFT
       alignItems: 'center',
     },
-    totalLabel: { fontSize: 11, fontWeight: 700, color: C.text,     textAlign: 'right' },
-    totalValue: { fontSize: 20, fontWeight: 900, color: C.lavender },
+    totalLabel: { fontSize: 11, fontWeight: 700, color: C.text, textAlign: 'right', width: '55%' },
+    totalValue: { fontSize: 20, fontWeight: 900, color: C.lavender, width: '45%', textAlign: 'left' },
 
     // ── Milestones ─────────────────────────────────────────────────────────────
     milestoneHeader: {
@@ -454,7 +456,7 @@ function makeStyles(brand: string) {
     },
     milestoneHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
     milestoneRow: {
-      flexDirection: 'row',
+      flexDirection: 'row-reverse',   // badge → RIGHT, name → middle, pct + amt → LEFT
       alignItems: 'center',
       paddingHorizontal: 14,
       paddingVertical: 8,
@@ -466,7 +468,7 @@ function makeStyles(brand: string) {
       border: `1px solid ${bBorder}`,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 10,
+      marginLeft: 10,   // in row-reverse, left margin = gap toward the name column
       flexShrink: 0,
     },
     milestoneNumText: { fontSize: 7.5, fontWeight: 700, color: brand },
@@ -539,19 +541,19 @@ function makeStyles(brand: string) {
       textAlign: 'right', marginBottom: 10,
       paddingBottom: 6, borderBottom: `1px solid ${C.border}`,
     },
+    // Audit rows: row-reverse so label (first child) is on the RIGHT,
+    // value (second child) is on the LEFT. Explicit widths prevent overflow.
     certAuditRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       paddingVertical: 4,
       borderBottom: `1px solid rgba(28,28,48,0.6)`,
     },
     certAuditRowLast: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       paddingVertical: 4,
     },
-    certAuditLabel: { fontSize: 7.5, color: C.muted, textAlign: 'right', width: '33%' },
-    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left', width: '65%' },
+    certAuditLabel: { fontSize: 7.5, color: C.muted,      textAlign: 'right', width: '33%' },
+    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left',  width: '67%' },
 
     certLegalNote: {
       fontSize: 7,
@@ -630,7 +632,9 @@ function ProposalDocument(opts: PdfOptions) {
   const totalSavings = fin.totalSavings
 
   const creator       = proposal.creator_info
-  const companyName   = creator?.company_name ?? 'DealSpace'
+  // Provider display: prefer company_name, fall back to full_name, then sentinel
+  const providerName  = (creator?.company_name?.trim() || creator?.full_name?.trim() || 'DealSpace Creator')
+  const companyName   = creator?.company_name?.trim() || 'DealSpace'
   const initials      = getInitials(creator?.company_name)
   const projectTitle  = proposal.project_title || (isHe ? 'הצעת מחיר' : 'Proposal')
   const dateStr       = fmtDate(sigTs)
@@ -687,7 +691,8 @@ function ProposalDocument(opts: PdfOptions) {
           {/* Decorative circle bottom-left */}
           <View style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.10)' }} />
 
-          <View>
+          {/* Content right-aligned for RTL — alignItems flex-end pushes circle to right */}
+          <View style={{ alignItems: 'flex-end' }}>
             <View style={s.coverInitialCircle}>
               <Text style={s.coverInitialText}>{initials}</Text>
             </View>
@@ -801,26 +806,28 @@ function ProposalDocument(opts: PdfOptions) {
         <View style={s.section}>
           <Text style={s.sectionTitle}>{isHe ? 'פירוט מחירים ושירותים' : 'SERVICES & PRICING'}</Text>
 
-          {/* Table header */}
+          {/* Table header — row-reverse: label col RIGHT, price col LEFT */}
           <View style={s.tableHeader}>
-            <Text style={[s.tableHeaderCell, { flex: 1, textAlign: 'right' }]}>
+            <Text style={[s.tableHeaderCell, { width: '65%', textAlign: 'right' }]}>
               {isHe ? 'פריט / שירות' : 'ITEM / SERVICE'}
             </Text>
-            <Text style={[s.tableHeaderCell, { textAlign: 'left' }]}>
+            <Text style={[s.tableHeaderCell, { width: '35%', textAlign: 'left' }]}>
               {isHe ? 'מחיר' : 'PRICE'}
             </Text>
           </View>
 
-          {/* Base row */}
+          {/* Base row — wrapper View provides the 65% label column width */}
           <View style={s.tableRowHighlight} wrap={false}>
-            <Text style={s.tableLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
+            <View style={{ width: '65%' }}>
+              <Text style={s.tableLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
+            </View>
             <Text style={s.tablePrice}>{fmtCurrencyPdf(proposal.base_price, proposal.currency)}</Text>
           </View>
 
-          {/* Add-on rows */}
+          {/* Add-on rows — inner column View forces label+sub to stack vertically */}
           {enabledAddOns.map(a => (
             <View key={a.id} style={s.tableRow} wrap={false}>
-              <View style={{ flex: 1 }}>
+              <View style={{ width: '65%', flexDirection: 'column' }}>
                 <Text style={s.tableLabel}>{a.label}</Text>
                 {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
               </View>
@@ -1015,7 +1022,7 @@ function ProposalDocument(opts: PdfOptions) {
                 </Text>
                 {[
                   [isHe ? 'שם הפרויקט'  : 'Project Title',   proposal.project_title],
-                  [isHe ? 'נותן השירות' : 'Service Provider', creator?.company_name ?? creator?.full_name ?? '—'],
+                  [isHe ? 'נותן השירות' : 'Service Provider', providerName],
                   [isHe ? 'לקוח'        : 'Client',           proposal.client_name ?? '—'],
                   [isHe ? 'סכום הצעה'   : 'Proposal Value',   fmtCurrencyPdf(displayTotal, proposal.currency)],
                   [isHe ? 'תאריך הפקה'  : 'Generated',        fmtDateTime(sigTs)],
@@ -1104,7 +1111,7 @@ function ProposalDocument(opts: PdfOptions) {
 
             {[
               [isHe ? 'שם הפרויקט'        : 'Project Title',        proposal.project_title],
-              [isHe ? 'נותן השירות'        : 'Service Provider',     creator?.company_name ?? creator?.full_name ?? '—'],
+              [isHe ? 'נותן השירות'        : 'Service Provider',     providerName],
               [isHe ? 'הלקוח'             : 'Client',               proposal.client_name ?? '—'],
               [isHe ? 'סכום החוזה'         : 'Contract Value',       fmtCurrencyPdf(displayTotal, proposal.currency)],
               [isHe ? 'תאריך יצירת המסמך' : 'Document Created',     createdStr],
