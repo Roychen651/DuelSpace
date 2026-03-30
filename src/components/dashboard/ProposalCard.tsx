@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
+import { useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
 import type { Proposal } from '../../types/proposal'
@@ -185,11 +186,13 @@ function DropItem({
 interface ProposalCardProps {
   proposal: Proposal
   onEdit: (id: string) => void
+  onUpgradeRequired?: () => void
 }
 
-export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
+export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCardProps) {
   const { locale } = useI18n()
-  const { archiveProposal, unarchiveProposal, deleteProposal, duplicateProposal } = useProposalStore()
+  const { archiveProposal, unarchiveProposal, deleteProposal, duplicateProposal, proposals } = useProposalStore()
+  const tier = useTier()
   const { activeViewers } = usePresenceStore()
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -217,6 +220,11 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   }
 
   const handleDuplicate = async () => {
+    const activeCount = proposals.filter(p => !p.is_archived).length
+    if (tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT) {
+      onUpgradeRequired?.()
+      return
+    }
     await duplicateProposal(proposal.id)
   }
 

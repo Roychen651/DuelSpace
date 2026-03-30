@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated'
+export type PlanTier = 'free' | 'pro' | 'unlimited'
 
 interface AuthState {
   user: User | null
@@ -227,6 +228,18 @@ export const useAuthStore = create<AuthState>()(
     { name: 'DealSpace:Auth' }
   )
 )
+
+// ─── Tier selector ───────────────────────────────────────────────────────────
+// Reads plan_tier from user_metadata reactively. Defaults to 'free' if missing.
+// Usage: const tier = useTier()
+
+export const useTier = (): PlanTier => useAuthStore(s => {
+  const raw = s.user?.user_metadata?.plan_tier as string | undefined
+  if (raw === 'pro' || raw === 'unlimited') return raw
+  return 'free'
+})
+
+export const FREE_PROPOSAL_LIMIT = 5
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

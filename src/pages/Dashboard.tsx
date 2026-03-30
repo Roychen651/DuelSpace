@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, Filter, List, ArrowUp, ArrowDown, FileDown, Archive } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/useAuthStore'
+import { useAuthStore, useTier, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
@@ -15,6 +15,7 @@ import type { ProposalStatus } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
+import { UpgradeModal } from '../components/dashboard/UpgradeModal'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
 
@@ -300,6 +301,8 @@ export default function Dashboard() {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [pdfGenerating, setPdfGenerating] = useState<string | null>(null)
   const [viewArchive, setViewArchive] = useState(false)
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
+  const tier = useTier()
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -414,6 +417,10 @@ export default function Dashboard() {
   }, [proposals, filterStatus, search, sortField, sortDir, viewArchive]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = () => {
+    if (tier === 'free' && activeProposals.length >= FREE_PROPOSAL_LIMIT) {
+      setUpgradeModalOpen(true)
+      return
+    }
     navigate('/proposals/new')
   }
 
@@ -563,6 +570,48 @@ export default function Dashboard() {
               )}
             </button>
           </div>
+
+          {/* Quota progress bar — free tier only, active view only */}
+          {!viewArchive && tier === 'free' && (() => {
+            const activeCount = activeProposals.length
+            const pct = Math.min(100, (activeCount / FREE_PROPOSAL_LIMIT) * 100)
+            const isMax = activeCount >= FREE_PROPOSAL_LIMIT
+            const isWarn = activeCount >= FREE_PROPOSAL_LIMIT - 1 && !isMax
+            const barColor = isMax ? 'linear-gradient(90deg, #f87171, #ef4444)' : isWarn ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : 'linear-gradient(90deg, #6366f1, #a855f7)'
+            const textColor = isMax ? '#f87171' : isWarn ? '#fbbf24' : 'rgba(255,255,255,0.4)'
+            return (
+              <div
+                className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${isMax ? 'rgba(239,68,68,0.2)' : isWarn ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)'}` }}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-semibold" style={{ color: textColor }}>
+                      {locale === 'he'
+                        ? `ניצלת ${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות חינם`
+                        : `Used ${activeCount} of ${FREE_PROPOSAL_LIMIT} free proposals`}
+                    </span>
+                    <button
+                      onClick={() => setUpgradeModalOpen(true)}
+                      className="text-[10px] font-black tracking-wide transition-opacity hover:opacity-70 flex-none"
+                      style={{ color: '#818cf8' }}
+                    >
+                      {locale === 'he' ? '↑ שדרג' : '↑ Upgrade'}
+                    </button>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.7, ease: 'easeOut' as const }}
+                      style={{ background: barColor }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Search + view toggle row */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -886,7 +935,7 @@ export default function Dashboard() {
                   style={{ animation: `ds-fade-up 0.4s ease-out ${0.35 + i * 0.06}s both` }}
                   exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
                 >
-                  <ProposalCard proposal={p} onEdit={handleEdit} />
+                  <ProposalCard proposal={p} onEdit={handleEdit} onUpgradeRequired={() => setUpgradeModalOpen(true)} />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -896,6 +945,13 @@ export default function Dashboard() {
       </main>
 
       <GlobalFooter />
+
+      {/* Upgrade modal — triggered by quota guard */}
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        activeCount={activeProposals.length}
+      />
 
       {/* Guided tour — shown once to new users */}
       {showTour && (
