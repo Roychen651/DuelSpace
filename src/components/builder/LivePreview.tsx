@@ -330,6 +330,27 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                 </span>
               </div>
 
+              {/* ── Creator logo ─────────────────────────────────────── */}
+              {proposal.creator_info?.logo_url && (
+                <div className="flex justify-center mb-5">
+                  <div
+                    className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    <img
+                      src={proposal.creator_info!.logo_url}
+                      className="max-h-9 max-w-[140px] object-contain"
+                      alt="Company logo"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* ── Client greeting ──────────────────────────────────── */}
               {proposal.client_name && (
                 <p className="text-xs text-white/35 mb-1 font-medium">
@@ -454,9 +475,20 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                 </div>
               )}
 
-              {/* ── Proposal extras: video + access protection ────────── */}
-              {(proposal.video_url || proposal.access_code) && (
+              {/* ── Proposal extras: contract + video + access protection */}
+              {(proposal.description || proposal.video_url || proposal.access_code) && (
                 <div className="flex flex-wrap gap-2 mb-5">
+                  {proposal.description && (
+                    <div
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
+                      style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
+                    >
+                      <FileText size={11} style={{ color: '#818cf8', flexShrink: 0 }} />
+                      <span className="text-[11px] font-medium" style={{ color: 'rgba(129,140,248,0.85)' }}>
+                        {locale === 'he' ? '📄 חוזה התקשרות מצורף' : '📄 Contract included'}
+                      </span>
+                    </div>
+                  )}
                   {proposal.video_url && (
                     <div
                       className="flex items-center gap-1.5 rounded-xl px-3 py-2"

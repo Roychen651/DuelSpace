@@ -123,7 +123,7 @@ function Section({
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="px-5 pb-5 space-y-4">{children}</div>
+            <div className="px-5 pb-6 space-y-5">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -143,7 +143,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>
+      <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
         {icon && <span>{icon}</span>}
         {label}
         {required && <span className="text-indigo-400/60">*</span>}
@@ -285,6 +285,26 @@ function AddOnRow({
               </span>
             )}
           </div>
+
+          {/* Client-adjustable quantity — clear labeled pill */}
+          <button
+            type="button"
+            onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
+            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
+            style={{
+              background: addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.35)',
+            }}
+            aria-label={isHe ? 'שינוי כמות על ידי לקוח' : 'Toggle client adjustable'}
+          >
+            <SlidersHorizontal size={12} />
+            <span>
+              {addOn.clientAdjustable !== false
+                ? (isHe ? '🔓 פתוח ללקוח לשינוי כמות' : '🔓 Client can adjust quantity')
+                : (isHe ? '🔒 כמות קבועה' : '🔒 Fixed quantity')}
+            </span>
+          </button>
         </div>
 
         {/* Controls */}
@@ -297,23 +317,6 @@ function AddOnRow({
             aria-label={addOn.enabled ? 'Disable' : 'Enable'}
           >
             {addOn.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
-          </button>
-          {/* Client-adjustable quantity toggle — visible badge */}
-          <button
-            type="button"
-            onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
-            className="flex flex-col items-center gap-0.5 transition-all"
-            aria-label={isHe ? 'שינוי כמות על ידי לקוח' : 'Toggle client qty'}
-          >
-            <SlidersHorizontal size={12} style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.22)' }} />
-            <span
-              className="text-[8px] font-bold uppercase leading-none"
-              style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.22)' }}
-            >
-              {addOn.clientAdjustable !== false
-                ? (isHe ? 'פתוח' : 'Free')
-                : (isHe ? 'נעול' : 'Lock')}
-            </span>
           </button>
           <button
             type="button"
@@ -572,7 +575,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
   const activeTemplateId = draft.success_template ?? DEFAULT_TEMPLATE_ID
 
   return (
-    <div className="relative p-4 space-y-4" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
+    <div className="relative p-4 space-y-5" style={{ animation: 'ds-fade-up 0.35s ease-out both' }}>
       {/* Hide browser number-input spinners globally within the builder */}
       <style>{`
         input[type=number]::-webkit-inner-spin-button,
