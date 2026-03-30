@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Archive, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
@@ -189,11 +189,12 @@ interface ProposalCardProps {
 
 export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { locale } = useI18n()
-  const { archiveProposal, duplicateProposal } = useProposalStore()
+  const { archiveProposal, unarchiveProposal, deleteProposal, duplicateProposal } = useProposalStore()
   const { activeViewers } = usePresenceStore()
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [archiveError, setArchiveError] = useState<string | null>(null)
+  const isArchived = proposal.is_archived
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
 
@@ -219,14 +220,20 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
     await duplicateProposal(proposal.id)
   }
 
+  const handleUnarchive = async () => {
+    await unarchiveProposal(proposal.id)
+  }
+
+  // In active view: moves to archive. In archive view: permanently deletes.
   const handleDelete = async () => {
     setDeleting(true)
     setArchiveError(null)
-    const result = await archiveProposal(proposal.id)
+    const result = isArchived
+      ? await deleteProposal(proposal.id)
+      : await archiveProposal(proposal.id)
     if (!result.ok) {
       setDeleting(false)
       setArchiveError(result.message)
-      // Auto-clear after 6 seconds
       setTimeout(() => setArchiveError(null), 6000)
     }
   }
@@ -367,12 +374,33 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                     />
                   )}
                   <DropdownMenu.Separator style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 14px' }} />
-                  <DropItem
-                    icon={<Archive size={15} />}
-                    label={locale === 'he' ? 'העבר לארכיון' : 'Archive'}
-                    onClick={() => setConfirmingDelete(true)}
-                    variant="danger"
-                  />
+                  {isArchived ? (
+                    // ── Archive view actions ───────────────────────────────
+                    <>
+                      <DropItem
+                        icon={<ArchiveRestore size={15} />}
+                        label={locale === 'he' ? 'הסר מארכיון' : 'Unarchive'}
+                        onClick={handleUnarchive}
+                      />
+                      {/* Permanent delete only for non-signed proposals */}
+                      {proposal.status !== 'accepted' && (
+                        <DropItem
+                          icon={<Trash2 size={15} />}
+                          label={locale === 'he' ? 'מחק לצמיתות' : 'Delete permanently'}
+                          onClick={() => setConfirmingDelete(true)}
+                          variant="danger"
+                        />
+                      )}
+                    </>
+                  ) : (
+                    // ── Active view actions ────────────────────────────────
+                    <DropItem
+                      icon={<Archive size={15} />}
+                      label={locale === 'he' ? 'העבר לארכיון' : 'Archive'}
+                      onClick={() => setConfirmingDelete(true)}
+                      variant="danger"
+                    />
+                  )}
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
@@ -522,7 +550,9 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
               style={{ overflow: 'hidden' }}
             >
               <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
-                {locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?'}
+                {isArchived
+                  ? (locale === 'he' ? 'למחוק לצמיתות? לא ניתן לשחזר' : 'Delete permanently? Cannot undo.')
+                  : (locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?')}
               </p>
               <button
                 className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
@@ -536,7 +566,9 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                 style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
                 onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
               >
-                {locale === 'he' ? 'ארכיון' : 'Archive'}
+                {isArchived
+                  ? (locale === 'he' ? 'מחק' : 'Delete')
+                  : (locale === 'he' ? 'ארכיון' : 'Archive')}
               </button>
             </motion.div>
           )}

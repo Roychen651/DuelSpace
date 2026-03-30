@@ -10,6 +10,7 @@ import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
 import { KanbanBoard } from '../components/dashboard/KanbanBoard'
 import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
+import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 import type { ProposalStatus } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
@@ -353,6 +354,16 @@ export default function Dashboard() {
   const activeProposals  = proposals.filter(p => !p.is_archived)
   const archivedProposals = proposals.filter(p => p.is_archived)
 
+  // ── KPI financial calculation — same engine as the cards ─────────────────
+  // Uses calculateFinancials so KPI numbers always match what the user sees
+  // on each card (VAT-inclusive when include_vat is true).
+  const vatRate = (() => {
+    const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? '')
+    return isNaN(v) ? ISRAELI_VAT_RATE : v
+  })()
+  const kpiTotal = (p: Parameters<typeof proposalTotal>[0]) =>
+    calculateFinancials(p, undefined, vatRate).grandTotal
+
   // ── CRM KPI calculations ──────────────────────────────────────────────────
   // Pipeline Value — active opportunities only (archived = no longer pursuing)
   const pipelineProposals = activeProposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
@@ -361,8 +372,8 @@ export default function Dashboard() {
   // Win Rate — ALL resolved proposals including archived (true historical conversion rate)
   const rejectedProposals = proposals.filter(p => p.status === 'rejected')
 
-  const pipelineValue = pipelineProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
-  const closedWon = acceptedProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
+  const pipelineValue = pipelineProposals.reduce((sum, p) => sum + kpiTotal(p), 0)
+  const closedWon = acceptedProposals.reduce((sum, p) => sum + kpiTotal(p), 0)
   // Win Rate: accepted / (accepted + rejected) — excludes pending from denominator
   const resolvedCount = acceptedProposals.length + rejectedProposals.length
   const winRate = resolvedCount > 0 ? Math.round((acceptedProposals.length / resolvedCount) * 100) : 0

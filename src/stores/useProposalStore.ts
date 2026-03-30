@@ -20,6 +20,8 @@ interface ProposalState {
   createProposal: (data: ProposalInsert) => Promise<Proposal | null>
   updateProposal: (id: string, data: ProposalUpdate) => Promise<void>
   archiveProposal: (id: string) => Promise<{ ok: true } | { ok: false; message: string }>
+  unarchiveProposal: (id: string) => Promise<void>
+  deleteProposal: (id: string) => Promise<{ ok: true } | { ok: false; message: string }>
   duplicateProposal: (id: string) => Promise<Proposal | null>
   injectDemoProposal: () => Promise<void>
   subscribeRealtime: (userId: string) => void
@@ -176,6 +178,64 @@ export const useProposalStore = create<ProposalState>()(
         // Re-fetch authoritative DB state — guards against any race where
         // a Realtime fetchProposals() call happened before our UPDATE committed.
         get().fetchProposals()
+        return { ok: true }
+      },
+
+      // ── Unarchive — restore proposal to active view ───────────────────────
+      unarchiveProposal: async (id) => {
+        const snapshot = get().proposals.find(p => p.id === id)
+        if (!snapshot) return
+
+        set(s => ({
+          proposals: s.proposals.map(p => p.id === id ? { ...p, is_archived: false } : p),
+        }))
+
+        const { error } = await supabase
+          .from('proposals')
+          .update({ is_archived: false })
+          .eq('id', id)
+
+        if (error) {
+          console.error('[unarchiveProposal] failed:', error.message)
+          set(s => ({
+            proposals: s.proposals.map(p => p.id === id ? snapshot : p),
+            error: error.message,
+          }))
+        } else {
+          get().fetchProposals()
+        }
+      },
+
+      // ── Permanent delete (only for non-accepted archived proposals) ──────
+      deleteProposal: async (id) => {
+        const snapshot = get().proposals.find(p => p.id === id)
+        if (!snapshot) return { ok: false, message: 'Proposal not found in local state' }
+
+        // Hard guard — signed contracts are immutable and must never be destroyed
+        if (snapshot.status === 'accepted') {
+          return { ok: false, message: 'Signed contracts cannot be permanently deleted. Archive only.' }
+        }
+
+        // Optimistic remove
+        set(s => ({ proposals: s.proposals.filter(p => p.id !== id) }))
+
+        const { error } = await supabase.from('proposals').delete().eq('id', id)
+
+        if (error) {
+          console.error('[deleteProposal] Supabase DELETE failed:', {
+            message: error.message, details: error.details, hint: error.hint,
+            code: error.code, proposalId: id,
+          })
+          // Rollback — restore in original position
+          set(s => ({
+            proposals: [snapshot, ...s.proposals].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            ),
+            error: error.message,
+          }))
+          return { ok: false, message: error.message }
+        }
+
         return { ok: true }
       },
 
