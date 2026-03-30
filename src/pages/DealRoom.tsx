@@ -907,6 +907,10 @@ export default function DealRoom() {
     setSigTimestamp(new Date())
     freshSignedRef.current = true
     setAccepted(true)
+    // Persist signature dataUrl to localStorage so the PDF download works even after
+    // page reload or when the business owner visits the sealed link from the same browser.
+    // Key is scoped to the token so multiple deals don't collide.
+    try { localStorage.setItem(`dealspace:sig:${token}`, signature) } catch (_) {}
     // Notify the Dashboard in the same browser tab/session immediately —
     // faster than waiting for Supabase Realtime Postgres Changes to propagate
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
@@ -959,11 +963,16 @@ export default function DealRoom() {
     const enabledIds = proposal.add_ons
       .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
       .map(a => a.id)
+    // Use in-memory signature first; fall back to localStorage copy for revisits /
+    // same-browser reloads. The localStorage key is scoped to the proposal token.
+    const sigForPdf = signature || (() => {
+      try { return localStorage.getItem(`dealspace:sig:${token}`) ?? '' } catch { return '' }
+    })()
     await generateProposalPdf({
       proposal,
       totalAmount: grandTotal,
       enabledAddOnIds: enabledIds,
-      signatureDataUrl: signature,
+      signatureDataUrl: sigForPdf,
       locale,
       signatureTimestamp: sigTimestamp,
     })
