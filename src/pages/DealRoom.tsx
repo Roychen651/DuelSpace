@@ -543,6 +543,15 @@ export default function DealRoom() {
   // ── Sprint 21: Spotlight flashlight on base package card ──────────────────
   const [baseSpotlight, setBaseSpotlight] = useState({ x: 50, y: 50, active: false })
 
+  // ── Sprint 21.6: 3D tilt physics on base package card ─────────────────────
+  const baseTiltX = useMotionValue(0)
+  const baseTiltY = useMotionValue(0)
+  const baseTiltXSpring = useSpring(baseTiltX, { stiffness: 180, damping: 20, restDelta: 0.001 })
+  const baseTiltYSpring = useSpring(baseTiltY, { stiffness: 180, damping: 20, restDelta: 0.001 })
+
+  // ── Sprint 21.6: Auto-scroll anchor ref (after client details form submit) ─
+  const checkoutScrollTargetRef = useRef<HTMLDivElement>(null)
+
   // ── Derived status flags — single source of truth is proposal.status ──────
   // These are NEVER stored in state. They are always computed from the proposal
   // object, which is the single source of truth (loaded from DB, kept in sync
@@ -1220,8 +1229,13 @@ export default function DealRoom() {
           {/* Project title */}
           <motion.h1
             variants={slideUp}
-            className="font-display text-3xl sm:text-4xl font-black leading-tight text-white mb-4"
-            style={{ letterSpacing: '-0.02em' }}
+            className="font-display text-3xl sm:text-4xl font-black leading-tight mb-4"
+            style={{
+              letterSpacing: '-0.02em',
+              background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.72) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
           >
             {proposal.project_title}
           </motion.h1>
@@ -1260,7 +1274,6 @@ export default function DealRoom() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          whileHover={{ scale: 1.012, transition: { type: 'spring' as const, stiffness: 340, damping: 28 } }}
           whileTap={{ scale: 0.984, transition: { type: 'spring' as const, stiffness: 500, damping: 18 } }}
           className="relative rounded-2xl p-5 mb-3 overflow-hidden cursor-default"
           style={{
@@ -1269,12 +1282,23 @@ export default function DealRoom() {
             boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
+            rotateX: baseTiltXSpring,
+            rotateY: baseTiltYSpring,
+            transformPerspective: 1200,
           }}
           onMouseMove={e => {
             const r = e.currentTarget.getBoundingClientRect()
-            setBaseSpotlight({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100, active: true })
+            const x = ((e.clientX - r.left) / r.width) * 100
+            const y = ((e.clientY - r.top) / r.height) * 100
+            setBaseSpotlight({ x, y, active: true })
+            baseTiltX.set(((e.clientY - r.top) / r.height - 0.5) * -8)
+            baseTiltY.set(((e.clientX - r.left) / r.width - 0.5) * 10)
           }}
-          onMouseLeave={() => setBaseSpotlight(s => ({ ...s, active: false }))}
+          onMouseLeave={() => {
+            setBaseSpotlight(s => ({ ...s, active: false }))
+            baseTiltX.set(0)
+            baseTiltY.set(0)
+          }}
         >
           {/* Aceternity spotlight layer */}
           <div
@@ -1390,8 +1414,8 @@ export default function DealRoom() {
           </motion.div>
         )}
 
-        {/* ── Client details capture (before signature) ─────────────────── */}
-        {!clientDetails && !accepted && !revisionSent && (
+        {/* ── Client details capture / sealed confirmation ───────────────── */}
+        {!accepted && !revisionSent && (
           <motion.div
             ref={clientDetailsFormRef}
             initial={{ opacity: 0, y: 16 }}
@@ -1402,12 +1426,20 @@ export default function DealRoom() {
             <ClientDetailsForm
               locale={locale}
               prefillName={proposal.client_name}
-              onComplete={details => setClientDetails(details)}
+              sealed={!!clientDetails}
+              onEdit={() => setClientDetails(null)}
+              onComplete={details => {
+                setClientDetails(details)
+                setTimeout(() => {
+                  checkoutScrollTargetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }, 150)
+              }}
             />
           </motion.div>
         )}
 
-        {/* Legal consent is now inside CheckoutClimax, shown after signature is confirmed */}
+        {/* Checkout scroll anchor — scrolled to after client details form submission */}
+        <div ref={checkoutScrollTargetRef} />
 
         {/* ── Trust signals — only before signing ───────────────────────── */}
         {!accepted && !revisionSent && (
