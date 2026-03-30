@@ -283,17 +283,25 @@ export default function ProposalBuilder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── BroadcastChannel: refresh when client accepts in another tab ─────────────
+  // ── Sync: re-fetch when tab becomes visible (cross-device: client signs on mobile,
+  // creator is on desktop with this tab in the background — visibilitychange fires
+  // when they switch back, and we get fresh status from DB immediately).
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) fetchProposals() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── BroadcastChannel: refresh when client accepts in the same browser ─────────
   useEffect(() => {
     if (!id) return
     let ch: BroadcastChannel
     try {
       ch = new BroadcastChannel('dealspace:proposals')
-      ch.onmessage = (e) => {
-        if (e.data?.type === 'accepted') {
-          // Re-fetch so the status badge updates instantly without manual refresh
-          fetchProposals()
-        }
+      ch.onmessage = () => {
+        // Any deal-room event (accepted, revision_requested, declined) → re-fetch
+        fetchProposals()
       }
     } catch (_) { /* BroadcastChannel not supported */ }
     return () => { try { ch?.close() } catch (_) {} }

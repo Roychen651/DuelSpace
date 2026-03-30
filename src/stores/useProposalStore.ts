@@ -248,12 +248,12 @@ export const useProposalStore = create<ProposalState>()(
             },
             (payload) => {
               const { eventType, new: newRow, old: oldRow } = payload
-              if (eventType === 'UPDATE' && newRow) {
-                set(s => ({
-                  proposals: s.proposals.map(p =>
-                    p.id === (newRow as Proposal).id ? (newRow as Proposal) : p
-                  ),
-                }))
+              if (eventType === 'UPDATE') {
+                // Always re-fetch on UPDATE — the Realtime payload's `new` object may be
+                // partial (only changed columns), so an optimistic in-place replace would
+                // wipe the full proposal and desync the UI (root cause of the "other side
+                // doesn't see accepted" bug). A full re-fetch guarantees complete, fresh data.
+                get().fetchProposals()
               } else if (eventType === 'INSERT' && newRow) {
                 set(s => {
                   const exists = s.proposals.some(p => p.id === (newRow as Proposal).id)
