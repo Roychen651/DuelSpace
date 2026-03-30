@@ -282,25 +282,40 @@ export default function Profile() {
   )
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoSaved, setLogoSaved] = useState(false)
+  const [logoError, setLogoError] = useState<string | null>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   const handleLogoFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) return
     setLogoUploading(true)
-    const ext = file.name.split('.').pop() ?? 'png'
-    const path = `logos/${user?.id ?? 'unknown'}.${ext}`
+    setLogoError(null)
+    // Path stays inside the `avatars/` subfolder — matching the bucket policy
+    // used by avatar uploads. Using a fixed name (no extension) means upsert
+    // always overwrites the same file regardless of format chosen.
+    const path = `avatars/logo-${user?.id ?? 'unknown'}`
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, file, { upsert: true })
-    if (!uploadError) {
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      const url = data.publicUrl
-      setLogoUrl(url)
-      const { error: saveError } = await supabase.auth.updateUser({ data: { logo_url: url } })
-      if (!saveError) { setLogoSaved(true); setTimeout(() => setLogoSaved(false), 2500) }
+      .upload(path, file, { upsert: true, contentType: file.type })
+    if (uploadError) {
+      setLogoError(isHe ? 'שגיאה בהעלאה — נסה שנית' : 'Upload failed — please try again')
+      console.error('[logo upload]', uploadError)
+      setLogoUploading(false)
+      return
+    }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    // Bust the CDN cache by appending a timestamp so the browser reloads the new image
+    const url = `${data.publicUrl}?t=${Date.now()}`
+    setLogoUrl(url)
+    const { error: saveError } = await supabase.auth.updateUser({ data: { logo_url: url } })
+    if (saveError) {
+      setLogoError(isHe ? 'שגיאה בשמירה — נסה שנית' : 'Save failed — please try again')
+      console.error('[logo save]', saveError)
+    } else {
+      setLogoSaved(true)
+      setTimeout(() => setLogoSaved(false), 2500)
     }
     setLogoUploading(false)
-  }, [user?.id])
+  }, [user?.id, isHe])
 
   // ── VAT rate ──────────────────────────────────────────────────────────────
   const [vatRateInput, setVatRateInput] = useState(() => {
@@ -589,6 +604,11 @@ export default function Profile() {
                 {logoSaved && (
                   <p className="text-[11px] font-semibold text-emerald-400">
                     {isHe ? 'הלוגו נשמר ✓' : 'Logo saved ✓'}
+                  </p>
+                )}
+                {logoError && (
+                  <p className="text-[11px] font-semibold" style={{ color: '#f87171' }}>
+                    {logoError}
                   </p>
                 )}
                 <p className="text-[10px] text-white/25">
