@@ -488,6 +488,7 @@ export default function DealRoom() {
   const [acceptError, setAcceptError] = useState<string | null>(null)
   const [declined, setDeclined] = useState(false)
   const [declining, setDeclining] = useState(false)
+  const [revisionSent, setRevisionSent] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const [legalExpanded, setLegalExpanded] = useState(false)
 
@@ -570,6 +571,7 @@ export default function DealRoom() {
       setFetchStatus('ok')
       if (p.status === 'accepted') setAccepted(true)
       if (p.status === 'rejected') setDeclined(true)
+      if (p.status === 'needs_revision') setRevisionSent(true)
 
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of p.add_ons) {
@@ -577,9 +579,9 @@ export default function DealRoom() {
       }
       setLineItems(init)
 
-      // Only mark as viewed for non-terminal statuses — accepted/rejected proposals
-      // must not bump updated_at (it would corrupt the StatusTimeline timestamps)
-      if (p.status !== 'accepted' && p.status !== 'rejected') {
+      // Only mark as viewed for active statuses — terminal/pending-revision proposals
+      // must not bump updated_at (it would corrupt StatusTimeline timestamps or revert status)
+      if (p.status !== 'accepted' && p.status !== 'rejected' && p.status !== 'needs_revision') {
         supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
       }
     }
@@ -596,12 +598,13 @@ export default function DealRoom() {
       setFetchStatus('ok')
       if (pending.status === 'accepted') setAccepted(true)
       if (pending.status === 'rejected') setDeclined(true)
+      if (pending.status === 'needs_revision') setRevisionSent(true)
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of pending.add_ons) {
         init[a.id] = { enabled: a.enabled, qty: 1 }
       }
       setLineItems(init)
-      if (pending.status !== 'accepted' && pending.status !== 'rejected') {
+      if (pending.status !== 'accepted' && pending.status !== 'rejected' && pending.status !== 'needs_revision') {
         supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
       }
     } else {
@@ -777,6 +780,7 @@ export default function DealRoom() {
   const handleRequestRevision = useCallback(async (notes: string) => {
     if (!token) return
     await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
+    setRevisionSent(true)
     // Notify Dashboard in same browser — creator sees status flip to needs_revision instantly
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'revision_requested', token }) } catch (_) {}
   }, [token])
@@ -1203,7 +1207,7 @@ export default function DealRoom() {
         )}
 
         {/* ── Client details capture (before signature) ─────────────────── */}
-        {!clientDetails && !accepted && (
+        {!clientDetails && !accepted && !revisionSent && (
           <motion.div
             ref={clientDetailsFormRef}
             initial={{ opacity: 0, y: 16 }}
@@ -1222,7 +1226,7 @@ export default function DealRoom() {
         {/* Legal consent is now inside CheckoutClimax, shown after signature is confirmed */}
 
         {/* ── Trust signals — only before signing ───────────────────────── */}
-        {!accepted && (
+        {!accepted && !revisionSent && (
           <motion.div
             className="flex items-center justify-center gap-6 py-6 mt-2"
             initial={{ opacity: 0 }}
@@ -1243,7 +1247,7 @@ export default function DealRoom() {
         )}
 
         {/* ── Legal terms box — only before signing ─────────────────────── */}
-        {!accepted && (
+        {!accepted && !revisionSent && (
           <motion.div
             ref={contractSectionRef}
             initial={{ opacity: 0, y: 12 }}
@@ -1470,6 +1474,7 @@ export default function DealRoom() {
                 legalConsent={legalConsent}
                 onLegalConsentChange={setLegalConsent}
                 onRequestRevision={handleRequestRevision}
+                revisionSent={revisionSent}
                 clientDetailsConfirmed={!!clientDetails}
                 onScrollToDetails={() =>
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -1487,7 +1492,7 @@ export default function DealRoom() {
               </div>
             )}
             {/* Decline offer ghost button */}
-            {!accepted && (
+            {!accepted && !revisionSent && (
               <div className="relative z-20 flex justify-center pb-6" style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
                 <motion.button
                   type="button"

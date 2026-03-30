@@ -26,6 +26,8 @@ interface CheckoutClimaxProps {
   onLegalConsentChange: (v: boolean) => void
   /** When provided, shows "Request Changes" button and calls this on submit */
   onRequestRevision?: (notes: string) => Promise<void>
+  /** True when a revision request was submitted (persists across page refresh via DB status) */
+  revisionSent?: boolean
   /** Must be true before signature is unlocked — gates the entire sign flow */
   clientDetailsConfirmed?: boolean
   /** Called when user taps "fill details first" locked state — scrolls form into view */
@@ -54,7 +56,7 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
-  onRequestRevision, clientDetailsConfirmed = false, onScrollToDetails,
+  onRequestRevision, revisionSent = false, clientDetailsConfirmed = false, onScrollToDetails,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -200,7 +202,7 @@ export function CheckoutClimax({
 
             {/* ── Revision done: replace entire signing flow with success state ─ */}
             <AnimatePresence mode="wait">
-              {revisionDone ? (
+              {(revisionDone || revisionSent) ? (
                 <motion.div
                   key="revision-success"
                   initial={{ opacity: 0, scale: 0.96, y: 8 }}
