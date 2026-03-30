@@ -25,7 +25,7 @@ const copy = {
 
     // Hero
     badge: '⚡ 100 המשתמשים הראשונים — חינם לנצח',
-    h1Part1: 'אל תשלחו PDF.',
+    h1Part1: 'אל תשלחו PDF',
     h1Pre2: 'שלחו ',
     h1Highlight: 'חדר עסקאות',
     h1Post2: ' שסוגר לבד.',
@@ -235,14 +235,25 @@ function useGyroscope(strength = 1) {
     const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
     if (typeof DOE.requestPermission === 'function') return // needs gesture — skip
 
+    // Throttle to one update per rAF frame — deviceorientation can fire faster than 60fps
+    let raf: number | null = null
     function handler(e: DeviceOrientationEvent) {
-      const b = Math.max(-12, Math.min(12, (e.beta  ?? 45) - 45)) // front-back
-      const g = Math.max(-12, Math.min(12, e.gamma ?? 0))          // left-right
-      rotX.set(b * 0.45 * strength)
-      rotY.set(g * 0.65 * strength)
+      if (raf !== null) return
+      const beta  = e.beta  ?? 45
+      const gamma = e.gamma ?? 0
+      raf = requestAnimationFrame(() => {
+        raf = null
+        const b = Math.max(-12, Math.min(12, beta  - 45))
+        const g = Math.max(-12, Math.min(12, gamma))
+        rotX.set(b * 0.45 * strength)
+        rotY.set(g * 0.65 * strength)
+      })
     }
     window.addEventListener('deviceorientation', handler, { passive: true })
-    return () => window.removeEventListener('deviceorientation', handler)
+    return () => {
+      window.removeEventListener('deviceorientation', handler)
+      if (raf !== null) cancelAnimationFrame(raf)
+    }
   }, [rotX, rotY, strength])
 
   return { springX, springY }
@@ -632,8 +643,8 @@ function HowItWorksSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean })
                 </div>
 
                 {/* Text */}
-                <h3 className="text-lg font-bold text-white mb-2.5">{step.title}</h3>
-                <p className="text-sm text-white/40 leading-relaxed max-w-[240px]">{step.body}</p>
+                <h3 className="text-lg font-bold text-white mb-2.5" dir={isHe ? 'rtl' : 'ltr'}>{step.title}</h3>
+                <p className="text-sm text-white/40 leading-relaxed max-w-[240px]" dir={isHe ? 'rtl' : 'ltr'}>{step.body}</p>
               </motion.div>
             ))}
           </div>
@@ -1262,7 +1273,11 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang }: {
 }) {
   const { scrollY } = useScroll()
   const [isPill, setIsPill] = useState(false)
-  useMotionValueEvent(scrollY, 'change', (v) => setIsPill(v > 80))
+  const pillRef = useRef(false)
+  useMotionValueEvent(scrollY, 'change', (v) => {
+    const next = v > 80
+    if (next !== pillRef.current) { pillRef.current = next; setIsPill(next) }
+  })
 
   const logoMark = (size: number, radius: number) => (
     <div
@@ -1523,7 +1538,7 @@ export default function LandingPage() {
   const goDemo   = () => navigate('/deal/abc123')
 
   return (
-    <ReactLenis root options={{ lerp: 0.085, duration: 1.4, syncTouch: true }}>
+    <ReactLenis root options={{ lerp: 0.085, duration: 1.4, syncTouch: false }}>
       <div
         className="relative min-h-dvh flex flex-col"
         dir={isHe ? 'rtl' : 'ltr'}
