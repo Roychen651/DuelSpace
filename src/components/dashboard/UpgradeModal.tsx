@@ -36,15 +36,15 @@ const PLANS: PlanDef[] = [
     price: 0, periodEn: 'forever', periodHe: 'לתמיד',
     featuresEn: [
       `Up to ${FREE_PROPOSAL_LIMIT} active proposals`,
-      'All core features',
-      'DealSpace watermark',
-      'Community support',
+      'Deal Room + digital e-signature',
+      'Professional PDF export',
+      'View & engagement analytics',
     ],
     featuresHe: [
       `עד ${FREE_PROPOSAL_LIMIT} הצעות פעילות`,
-      'כל הפיצ׳רים הבסיסיים',
-      'לוגו DealSpace על המסמכים',
-      'תמיכה קהילתית',
+      'Deal Room + חתימה דיגיטלית',
+      'ייצוא PDF מקצועי',
+      'אנליטיקות צפייה ומעורבות',
     ],
     ctaEn: 'Current plan', ctaHe: 'תוכנית נוכחית',
     popular: false,
@@ -56,15 +56,15 @@ const PLANS: PlanDef[] = [
     price: 19, periodEn: '/ month', periodHe: '/ חודש',
     featuresEn: [
       'Up to 100 active proposals',
-      'Remove DealSpace watermark',
-      'Custom brand color',
-      'Priority email support',
+      'Everything in Free',
+      'Direct email support',
+      'Early access to new features',
     ],
     featuresHe: [
       'עד 100 הצעות פעילות',
-      'הסרת לוגו DealSpace',
-      'צבע מותג מותאם',
-      'תמיכה בעדיפות גבוהה',
+      'הכל כולל תוכנית חינם',
+      'תמיכה ישירה בדוא"ל',
+      'גישה מוקדמת לפיצ׳רים חדשים',
     ],
     ctaEn: 'Upgrade to Pro', ctaHe: 'שדרג לפרו',
     popular: false,
@@ -75,16 +75,16 @@ const PLANS: PlanDef[] = [
     nameEn: 'Premium', nameHe: 'פרימיום',
     price: 39, periodEn: '/ month', periodHe: '/ חודש',
     featuresEn: [
-      'Unlimited proposals',
+      'Unlimited active proposals',
       'Everything in Pro',
-      'Webhook integrations',
-      'Priority phone support',
+      'Priority support',
+      'Input on the product roadmap',
     ],
     featuresHe: [
-      'הצעות ללא הגבלה',
+      'הצעות פעילות ללא הגבלה',
       'הכל כולל תוכנית פרו',
-      'אינטגרציות Webhook',
-      'תמיכה טלפונית VIP',
+      'תמיכה בעדיפות גבוהה',
+      'השפעה על מפת הדרכים',
     ],
     ctaEn: 'Upgrade to Premium', ctaHe: 'שדרג לפרימיום',
     popular: true,
@@ -224,8 +224,8 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
                   {/* Footer note */}
                   <p className="text-center text-[10px] text-white/20 pb-5">
                     {isHe
-                      ? 'ביטול בכל עת · ללא דמי ביטול · מחירים כוללים מע"מ'
-                      : 'Cancel anytime · No cancellation fees · Prices include VAT'}
+                      ? 'ביטול בכל עת · ללא התחייבות · מחירים בשקל'
+                      : 'Cancel anytime · No commitment · Prices in ILS'}
                   </p>
                 </div>
               </motion.div>
