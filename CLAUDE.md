@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–25.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–27.
 
 ---
 
@@ -118,7 +118,7 @@ src/
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
 │   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT
-│   ├── ServicesLibrary.tsx  # /services — reusable service definitions
+│   ├── ServicesLibrary.tsx  # /services — services catalog CRUD (Supabase-backed via useServicesStore)
 │   ├── ContractLibrary.tsx  # /contracts — contract template management
 │   ├── Legal.tsx            # /security — security policy page
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
@@ -131,7 +131,8 @@ src/
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
 │   │   ├── AIGhostwriter.tsx     # AI description generator (contextual, bilingual)
 │   │   ├── ReusableServices.tsx  # Pick from saved services library to add to proposal
-│   │   └── RichTextEditor.tsx    # TipTap-based rich text editor (contract body)
+│   │   ├── RichTextEditor.tsx    # TipTap-based rich text editor (contract body)
+│   └── ReusableServices.tsx  # Services injection modal — multi-select + bulk inject into proposal
 │   ├── deal-room/
 │   │   ├── PremiumSliderCard.tsx  # Interactive add-on card with range slider
 │   │   ├── CheckoutClimax.tsx     # Sticky bottom bar: animated total, VAT breakdown, signature, CTA
@@ -154,6 +155,7 @@ src/
 ├── stores/
 │   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password
 │   ├── useProposalStore.ts    # Zustand: proposals CRUD with optimistic updates + demo injection
+│   ├── useServicesStore.ts    # Zustand: services catalog CRUD (Supabase-backed, optimistic)
 │   └── useAccessibilityStore.ts # 14 a11y states, CSS DOM mutations, localStorage persistence (ds:a11y:*)
 │
 ├── lib/
@@ -179,7 +181,11 @@ supabase/
     ├── 04_access_code.sql          # access_code column + get_deal_room_proposal RPC
     ├── 05_fix_deal_room_rpc.sql    # Adds SET search_path = public, grants to authenticated
     ├── 06_sprint10.sql             # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
-    └── 07_sprint11.sql             # success_template column + decline_proposal() RPC
+    ├── 07_sprint11.sql             # success_template column + decline_proposal() RPC
+    ├── 08_xray_section_time.sql    # section_time jsonb column for Deal Room X-Ray analytics
+    ├── 09–14_*.sql                 # Negotiation engine, status timestamps, discount engine, bugfixes
+    ├── 15_storage_avatars_bucket.sql # avatars Storage bucket + RLS policies
+    └── 16_services_table.sql       # services table + RLS + index (Sprint 27)
 ```
 
 ---
@@ -313,9 +319,22 @@ if (eventType === 'UPDATE') {
 | `created_at` | timestamptz | now() |
 | `updated_at` | timestamptz | auto-updated via trigger |
 
-### RLS Policies
+### RLS Policies (proposals)
 - `owner_select / owner_insert / owner_update / owner_delete` — `auth.uid() = user_id`
 - `public_token_select` — `public_token IS NOT NULL` (lets anyone read via token — required for Deal Room)
+
+### `services` table (Sprint 27 — migration 16)
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | gen_random_uuid() |
+| `user_id` | uuid FK | references auth.users, cascade delete |
+| `label` | text | service name, required |
+| `description` | text | nullable |
+| `price` | numeric(12,2) | pre-VAT price, default 0 |
+| `created_at` | timestamptz | now() |
+
+RLS: `services_owner_select / insert / update / delete` — `auth.uid() = user_id` (owner-only, no public access). Index: `(user_id, created_at DESC)`.
 
 ### RPCs (all SECURITY DEFINER, SET search_path = public)
 
@@ -1223,7 +1242,124 @@ All numeric fields also carry the appropriate `inputMode`:
 
 ---
 
-## 24. What NOT To Do
+## 24. Services Catalog & Injection Engine (Sprint 27)
+
+### Architecture overview
+
+The Services Catalog is a **Stripe Product Catalog** analogue — creators save reusable services once and inject them into proposals with two clicks.
+
+Three layers:
+1. **`useServicesStore`** — Zustand store, Supabase-backed, optimistic updates (same pattern as `useProposalStore`)
+2. **`ServicesLibrary.tsx`** (`/services`) — full CRUD page: create, edit, delete services in a modal form
+3. **`ReusableServices.tsx`** — injection modal opened from EditorPanel with a "✨ Library" button; multi-select + bulk inject
+
+### `useServicesStore` pattern
+
+```ts
+import { useServicesStore, type Service, type ServiceInsert } from '../stores/useServicesStore'
+
+const { services, loading, fetchServices, createService, updateService, deleteService } = useServicesStore()
+
+// Fetch on mount — idempotent, safe to call multiple times
+useEffect(() => { fetchServices() }, [fetchServices])
+
+// Types
+type ServiceInsert = { label: string; description: string | null; price: number }
+```
+
+All mutations are optimistic: UI updates instantly, rolls back on error. No realtime subscription needed (services are private, no multi-device sync required).
+
+### Injection modal (`ReusableServices`)
+
+```tsx
+// Props
+interface ReusableServicesProps {
+  open: boolean
+  onClose: () => void
+  currency: string
+  locale: string
+  onInject: (addOns: AddOn[]) => void
+}
+
+// Usage in EditorPanel
+<ReusableServices
+  open={libraryOpen}
+  onClose={() => setLibraryOpen(false)}
+  currency={draft.currency}
+  locale={locale}
+  onInject={handleInjectServices}
+/>
+```
+
+The modal fetches services on open (no-op if cached), resets selection on every open, and closes on Escape. Includes a search filter shown only when `services.length > 3`.
+
+### CRITICAL: Always generate fresh UUIDs on injection
+
+```ts
+// Inside onInject handler — EditorPanel
+const handleInjectServices = (addOns: AddOn[]) => {
+  onChange({ add_ons: [...draft.add_ons, ...addOns] })
+}
+
+// Inside ReusableServices.handleInject — map from Service → AddOn
+const addOns: AddOn[] = services
+  .filter(s => selected.has(s.id))
+  .map(s => ({
+    id: crypto.randomUUID(),   // ← ALWAYS fresh — never use s.id
+    label: s.label,
+    description: s.description ?? '',
+    price: s.price,
+    enabled: true,
+  }))
+```
+
+**Why:** The proposal's `add_ons` array must hold unique instances. If the service is later edited or deleted from the library, existing proposals must not be affected. Using the service's DB `id` as the add-on `id` would silently link them and risk historical mutation.
+
+### Services vs. Add-ons relationship
+
+- **Service** = library template (stored in `services` table, belongs to the creator)
+- **Add-on** = proposal instance (stored in `add_ons` jsonb on the proposal)
+- A service can be injected into many proposals — each injection creates an independent copy with a fresh UUID
+- Editing a service in the library does NOT affect previously injected add-ons
+
+### ServicesLibrary page patterns
+
+- Uses a `<ServiceForm>` modal (AnimatePresence, slide-up panel) for create/edit
+- `saving` boolean tracks async state during `createService` / `updateService` — disables submit button
+- Service list uses `<AnimatePresence>` with `layout` prop for smooth add/remove animations
+- Empty state: floating Layers orb + orbiting dot + shimmer CTA (same `@keyframes` namespace as `svc-*`)
+- Stats cards show skeleton loaders (`animate-pulse`) while `loading && services.length === 0`
+
+### EditorPanel trigger button
+
+The "✨ Library" button lives in a `flex gap-2` row next to "Add New Add-on":
+```tsx
+<div className="flex gap-2">
+  <motion.button ...> {/* Add New Add-on */} </motion.button>
+  <motion.button onClick={() => setLibraryOpen(true)} ...>
+    <Library size={13} />
+    <span className="hidden sm:inline whitespace-nowrap">✨ Library / ✨ ספרייה</span>
+  </motion.button>
+</div>
+```
+Button sizing: `h-9` + `whitespace-nowrap` to match the header uniformity system. Text hidden on mobile (icon only), shown on `sm+`.
+
+### Deal Room logo display (Sprint 27 fix)
+
+The company logo in Deal Room (`creator_info.logo_url`) is shown inside a **glassmorphism pill** — NOT with `filter: brightness(0) invert(1)` which destroyed colored/white logos:
+
+```tsx
+<div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}
+  className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden">
+  <img src={logo_url} className="max-h-10 max-w-[160px] object-contain" />
+</div>
+```
+
+Logo container is centered (`flex justify-center` on parent). If no logo but `company_name` exists, the company name is shown as a text fallback.
+
+---
+
+## 25. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
 - **Do not use `ease: number[]`** in Framer Motion — use named strings with `as const`.
@@ -1262,3 +1398,6 @@ All numeric fields also carry the appropriate `inputMode`:
 - **Do not use dark/neon backgrounds in the PDF** — the PDF engine uses white paper aesthetics. Brand color is restricted to: cover/cert hero strips, table header backgrounds (white text), section title text, grand total left accent bar, milestone badges. No dark backgrounds, no neon glow, no `rgba(0,0,0,0.x)` card fills.
 - **Do not rely on `justifyContent: 'space-between'` in react-pdf for RTL rows** — it behaves unreliably in mixed Bidi contexts. Use `flexDirection: 'row-reverse'` with explicit child widths instead.
 - **Do not skip `sealed={accepted}` on `PremiumSliderCard` in DealRoom** — once a proposal is accepted, all slider/toggle controls must be locked. The `sealed` prop disables the toggle, hides the quantity slider, and removes hover effects.
+- **Do not use the service's DB `id` as the injected add-on `id`** — always call `crypto.randomUUID()` when mapping a `Service` → `AddOn` in `ReusableServices`. Using the same id links the proposal's add-on to the library entry, causing silent historical mutation if the service is later edited or deleted.
+- **Do not apply `filter: brightness(0) invert(1)` to company logos in Deal Room** — this filter first turns all pixels black then white, destroying any logo with a colored or non-transparent background. Display logos inside a glassmorphism pill container instead.
+- **Do not read services from localStorage** — `ServicesLibrary.tsx` and `ReusableServices.tsx` both source data from `useServicesStore` (Supabase). The old `dealspace:saved-services` localStorage key is abandoned as of Sprint 27.

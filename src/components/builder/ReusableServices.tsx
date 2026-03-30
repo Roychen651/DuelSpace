@@ -1,317 +1,335 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Plus, Trash2, Zap, ChevronDown, ChevronUp } from 'lucide-react'
-import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../../types/proposal'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { X, Check, Search, Layers, Zap } from 'lucide-react'
+import { useServicesStore } from '../../stores/useServicesStore'
+import { formatCurrency } from '../../types/proposal'
 import type { AddOn } from '../../types/proposal'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface SavedService {
-  id: string
-  label: string
-  description: string
-  price: number
-  currency: string
-  createdAt: string
-}
-
-const STORAGE_KEY = 'dealspace:saved-services'
-
-function loadServices(): SavedService[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as SavedService[]) : []
-  } catch {
-    return []
-  }
-}
-
-function saveServices(services: SavedService[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(services))
-}
-
-function getVatRate(): number {
-  const stored = localStorage.getItem('dealspace:vat-rate')
-  return stored ? parseFloat(stored) : DEFAULT_VAT_RATE
-}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ReusableServicesProps {
+  open: boolean
+  onClose: () => void
   currency: string
   locale: string
-  onAddToProposal: (addOn: AddOn) => void
+  onInject: (addOns: AddOn[]) => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ReusableServices({ currency, locale, onAddToProposal }: ReusableServicesProps) {
+export function ReusableServices({ open, onClose, currency, locale, onInject }: ReusableServicesProps) {
   const isHe = locale === 'he'
-  const vatRate = getVatRate()
+  const { services, loading, fetchServices } = useServicesStore()
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [query, setQuery] = useState('')
 
-  const [services, setServices] = useState<SavedService[]>(loadServices)
-  const [expanded, setExpanded] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [newLabel, setNewLabel] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [newPrice, setNewPrice] = useState('')
-  const [showVat, setShowVat] = useState(false)
-
+  // Fetch on open (no-op if data already loaded); reset selection every open
   useEffect(() => {
-    saveServices(services)
-  }, [services])
-
-  const handleSaveService = () => {
-    if (!newLabel.trim() || !newPrice) return
-    const price = Number(newPrice)
-    const service: SavedService = {
-      id: crypto.randomUUID(),
-      label: newLabel.trim(),
-      description: newDesc.trim(),
-      price,
-      currency,
-      createdAt: new Date().toISOString(),
+    if (open) {
+      fetchServices()
+      setSelected(new Set())
+      setQuery('')
     }
-    setServices(prev => [service, ...prev])
-    setNewLabel('')
-    setNewDesc('')
-    setNewPrice('')
-    setShowForm(false)
+  }, [open, fetchServices])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  const filtered = services.filter(s =>
+    s.label.toLowerCase().includes(query.toLowerCase()) ||
+    (s.description ?? '').toLowerCase().includes(query.toLowerCase())
+  )
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
 
-  const handleDelete = (id: string) => {
-    setServices(prev => prev.filter(s => s.id !== id))
+  const handleInject = () => {
+    const addOns: AddOn[] = services
+      .filter(s => selected.has(s.id))
+      .map(s => ({
+        // CRITICAL: always generate a fresh UUID for the injected add-on.
+        // Using the service's DB id would mutate historical proposals if the
+        // library entry is ever edited or deleted.
+        id: crypto.randomUUID(),
+        label: s.label,
+        description: s.description ?? '',
+        price: s.price,
+        enabled: true,
+      }))
+    onInject(addOns)
+    onClose()
   }
 
-  const handleAdd = (service: SavedService) => {
-    const addOn: AddOn = {
-      id: crypto.randomUUID(),
-      label: service.label,
-      description: service.description,
-      price: service.price,
-      enabled: true,
-    }
-    onAddToProposal(addOn)
+  // ── Animation variants ────────────────────────────────────────────────────
+
+  const backdropVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.2 } },
+    exit: { opacity: 0, transition: { duration: 0.18, delay: 0.05 } },
   }
 
-  const inputCls = [
-    'w-full rounded-xl border bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/20',
-    'outline-none transition-all border-white/[0.1] focus:border-indigo-400/60',
-    'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]',
-  ].join(' ')
+  const panelVariants: Variants = {
+    hidden: { opacity: 0, y: 36, scale: 0.97 },
+    visible: {
+      opacity: 1, y: 0, scale: 1,
+      transition: { type: 'spring' as const, stiffness: 360, damping: 28, delay: 0.04 },
+    },
+    exit: { opacity: 0, y: 20, scale: 0.97, transition: { duration: 0.18 } },
+  }
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-      }}
-    >
-      {/* Header */}
-      <button
-        type="button"
-        onClick={() => setExpanded(v => !v)}
-        className="flex w-full items-center justify-between px-5 py-4"
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="text-amber-400/80"><Bookmark size={15} /></span>
-          <span className="text-sm font-semibold text-white/80">
-            {isHe ? 'שירותים שמורים' : 'Saved Services'}
-          </span>
-          {services.length > 0 && (
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
-              {services.length}
-            </span>
-          )}
-        </div>
-        {expanded ? <ChevronUp size={14} className="text-white/30" /> : <ChevronDown size={14} className="text-white/30" />}
-      </button>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
+    <AnimatePresence>
+      {open && (
+        <>
+          <style>{`@keyframes reuse-shimmer { 0%{transform:translateX(-140%)} 60%,100%{transform:translateX(140%)} }`}</style>
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(12px)' }}
+            onClick={e => { if (e.target === e.currentTarget) onClose() }}
           >
-            <div className="px-5 pb-5 space-y-3">
+            <motion.div
+              variants={panelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              dir={isHe ? 'rtl' : 'ltr'}
+              className="w-full max-w-lg flex flex-col rounded-3xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(160deg, rgba(22,22,36,0.99) 0%, rgba(12,12,22,0.99) 100%)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07)',
+                maxHeight: '82vh',
+              }}
+            >
 
-              {/* VAT display toggle */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowVat(v => !v)}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition"
+              {/* ── Header ── */}
+              <div
+                className="flex items-center gap-3 px-5 py-4 flex-none"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div
+                  className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                   style={{
-                    background: showVat ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.05)',
-                    border: showVat ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                    color: showVat ? '#818cf8' : 'rgba(255,255,255,0.35)',
+                    background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(245,158,11,0.1))',
+                    border: '1px solid rgba(212,175,55,0.3)',
                   }}
                 >
-                  {showVat
-                    ? (isHe ? `כולל מע"מ (${Math.round(vatRate * 100)}%)` : `Incl. VAT (${Math.round(vatRate * 100)}%)`)
-                    : (isHe ? `הצג כולל מע"מ` : 'Show with VAT')}
+                  <Layers size={14} className="text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-white">
+                    {isHe ? 'ספריית שירותים' : 'Services Library'}
+                  </p>
+                  <p className="text-[10px] text-white/35">
+                    {isHe ? 'בחר שירותים להוספה להצעה' : 'Select services to inject into the proposal'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-none flex h-7 w-7 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.08] hover:text-white/70"
+                >
+                  <X size={14} />
                 </button>
               </div>
 
-              {/* Service list */}
-              {services.length === 0 && !showForm && (
-                <p className="text-center text-xs text-white/25 py-3">
-                  {isHe
-                    ? 'שמור שירותים שאתה מוסיף לעתים קרובות'
-                    : 'Save services you frequently add to proposals'}
-                </p>
+              {/* ── Search — shown when > 3 services ── */}
+              {services.length > 3 && (
+                <div className="px-5 pt-3 pb-1 flex-none">
+                  <div className="relative">
+                    <Search
+                      size={13}
+                      className="absolute top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+                      style={{ [isHe ? 'right' : 'left']: 12 }}
+                    />
+                    <input
+                      value={query}
+                      onChange={e => setQuery(e.target.value)}
+                      placeholder={isHe ? 'חיפוש שירות…' : 'Search services…'}
+                      className="w-full rounded-xl border bg-white/[0.05] py-2 text-sm text-white placeholder-white/20 outline-none transition-all"
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.09)',
+                        paddingInlineStart: 36,
+                        paddingInlineEnd: 12,
+                      }}
+                      onFocus={e => {
+                        e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,175,55,0.1)'
+                      }}
+                      onBlur={e => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    />
+                  </div>
+                </div>
               )}
 
-              <AnimatePresence>
-                {services.map(service => {
-                  const displayPrice = showVat
-                    ? applyVat(service.price, vatRate)
-                    : service.price
-                  return (
-                    <motion.div
-                      key={service.id}
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="flex items-center gap-3 rounded-xl p-3"
-                      style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                      }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white/85 truncate">{service.label}</p>
-                        {service.description && (
-                          <p className="text-xs text-white/35 truncate">{service.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs font-bold text-indigo-300">
-                            {formatCurrency(displayPrice, service.currency || currency)}
-                          </span>
-                          {showVat && (
-                            <span className="text-[9px] text-white/30">
-                              ({isHe ? 'לפני מע"מ' : 'ex. VAT'}: {formatCurrency(service.price, service.currency || currency)})
-                            </span>
+              {/* ── Service list ── */}
+              <div
+                className="flex-1 overflow-y-auto px-5 py-3 space-y-2"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(212,175,55,0.3) transparent' }}
+              >
+                {/* Loading skeleton */}
+                {loading && (
+                  <div className="space-y-2">
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-16 rounded-2xl animate-pulse"
+                        style={{ background: 'rgba(255,255,255,0.04)', animationDelay: `${i * 0.06}s` }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty / no results */}
+                {!loading && filtered.length === 0 && (
+                  <div className="flex flex-col items-center gap-3 py-10 text-center">
+                    <Layers size={28} className="text-white/15" />
+                    <p className="text-sm text-white/30">
+                      {query
+                        ? (isHe ? 'לא נמצאו תוצאות' : 'No results found')
+                        : (isHe ? 'עדיין אין שירותים שמורים' : 'No saved services yet')}
+                    </p>
+                    {!query && (
+                      <p className="text-xs text-white/20">
+                        {isHe ? 'הוסף שירותים בדף ספריית השירותים' : 'Add services in the Services Library page'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Service rows */}
+                <AnimatePresence initial={false}>
+                  {filtered.map((service, idx) => {
+                    const isChecked = selected.has(service.id)
+                    return (
+                      <motion.button
+                        key={service.id}
+                        type="button"
+                        onClick={() => toggleSelect(service.id)}
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0, transition: { delay: idx * 0.03, duration: 0.18 } }}
+                        exit={{ opacity: 0, scale: 0.97 }}
+                        className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-start transition-all"
+                        style={{
+                          background: isChecked
+                            ? 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(245,158,11,0.06) 100%)'
+                            : 'rgba(255,255,255,0.03)',
+                          border: isChecked
+                            ? '1px solid rgba(212,175,55,0.35)'
+                            : '1px solid rgba(255,255,255,0.07)',
+                          boxShadow: isChecked ? '0 0 16px rgba(212,175,55,0.08)' : 'none',
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <div
+                          className="flex-none flex h-5 w-5 items-center justify-center rounded-lg transition-all"
+                          style={{
+                            background: isChecked
+                              ? 'linear-gradient(135deg, #d4af37, #f59e0b)'
+                              : 'rgba(255,255,255,0.06)',
+                            border: isChecked ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                            boxShadow: isChecked ? '0 0 8px rgba(212,175,55,0.45)' : 'none',
+                          }}
+                        >
+                          {isChecked && <Check size={11} className="text-black" strokeWidth={3} />}
+                        </div>
+
+                        {/* Name + desc */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white/90 truncate">{service.label}</p>
+                          {service.description && (
+                            <p className="text-xs text-white/35 truncate">{service.description}</p>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-none">
-                        <button
-                          type="button"
-                          onClick={() => handleAdd(service)}
-                          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-indigo-400 transition hover:bg-indigo-500/15"
-                          style={{ border: '1px solid rgba(99,102,241,0.25)' }}
-                          title={isHe ? 'הוסף להצעה' : 'Add to proposal'}
-                        >
-                          <Zap size={10} />
-                          {isHe ? 'הוסף' : 'Add'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(service.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/20 transition hover:text-red-400"
-                          title={isHe ? 'מחק' : 'Delete'}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
 
-              {/* New service form */}
-              <AnimatePresence>
-                {showForm && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
+                        {/* Price */}
+                        <p
+                          className="flex-none text-sm font-black tabular-nums transition-colors"
+                          style={{ color: isChecked ? '#d4af37' : 'rgba(255,255,255,0.45)' }}
+                        >
+                          {formatCurrency(service.price, currency)}
+                        </p>
+                      </motion.button>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* ── Sticky bottom CTA ── */}
+              <div
+                className="flex-none px-5 pb-5 pt-3 space-y-2"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                {selected.size > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-2 rounded-xl p-3"
-                    style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)' }}
+                    className="text-center text-xs text-amber-400/70"
                   >
-                    <input
-                      className={inputCls}
-                      placeholder={isHe ? 'שם השירות *' : 'Service name *'}
-                      value={newLabel}
-                      onChange={e => setNewLabel(e.target.value)}
-                      autoFocus
-                    />
-                    <input
-                      className={inputCls}
-                      placeholder={isHe ? 'תיאור (אופציונלי)' : 'Description (optional)'}
-                      value={newDesc}
-                      onChange={e => setNewDesc(e.target.value)}
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        className={inputCls + ' flex-1'}
-                        placeholder={isHe ? `מחיר (לפני מע"מ)` : 'Price (before VAT)'}
-                        value={newPrice}
-                        onChange={e => setNewPrice(e.target.value)}
-                      />
-                      {newPrice && (
-                        <div
-                          className="flex flex-col justify-center rounded-xl px-3 text-[10px] font-bold flex-none"
-                          style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
-                        >
-                          <span>{isHe ? `כולל מע"מ` : 'with VAT'}</span>
-                          <span>{formatCurrency(applyVat(Number(newPrice), vatRate), currency)}</span>
-                          <span className="text-white/30 font-normal">
-                            {isHe ? `מע"מ` : 'VAT'}: {formatCurrency(vatAmount(Number(newPrice), vatRate), currency)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSaveService}
-                        disabled={!newLabel.trim() || !newPrice}
-                        className="flex-1 rounded-xl py-2 text-xs font-bold text-white transition disabled:opacity-40"
-                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-                      >
-                        {isHe ? 'שמור שירות' : 'Save Service'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowForm(false)}
-                        className="rounded-xl px-3 py-2 text-xs text-white/40 transition hover:text-white/70"
-                        style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-                      >
-                        {isHe ? 'ביטול' : 'Cancel'}
-                      </button>
-                    </div>
-                  </motion.div>
+                    {isHe
+                      ? `${selected.size} שירות${selected.size > 1 ? 'ים' : ''} נבחר${selected.size > 1 ? 'ו' : ''}`
+                      : `${selected.size} service${selected.size > 1 ? 's' : ''} selected`}
+                  </motion.p>
                 )}
-              </AnimatePresence>
 
-              {/* Add new service button */}
-              {!showForm && (
-                <button
+                <motion.button
                   type="button"
-                  onClick={() => setShowForm(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-amber-400 transition-all"
+                  onClick={handleInject}
+                  disabled={selected.size === 0}
+                  className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl h-11 text-sm font-bold transition-all disabled:opacity-40 whitespace-nowrap"
                   style={{
-                    borderColor: 'rgba(212,175,55,0.25)',
-                    background: 'rgba(212,175,55,0.06)',
+                    background: selected.size > 0
+                      ? 'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)'
+                      : 'rgba(255,255,255,0.06)',
+                    border: selected.size > 0 ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: selected.size > 0 ? '0 0 28px rgba(212,175,55,0.35)' : 'none',
+                    color: selected.size > 0 ? '#000' : 'rgba(255,255,255,0.3)',
                   }}
+                  whileHover={selected.size > 0 ? { scale: 1.02 } : undefined}
+                  whileTap={selected.size > 0 ? { scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } } : undefined}
                 >
-                  <Plus size={13} />
-                  {isHe ? 'שמור שירות חדש' : 'Save New Service'}
-                </button>
-              )}
-            </div>
+                  {selected.size > 0 && (
+                    <span
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.2) 50%, transparent 62%)',
+                        animation: 'reuse-shimmer 3s ease-in-out infinite',
+                      }}
+                      aria-hidden
+                    />
+                  )}
+                  <Zap size={15} />
+                  <span>
+                    {selected.size === 0
+                      ? (isHe ? 'בחר שירותים מהרשימה' : 'Select services above')
+                      : (isHe
+                          ? `הוסף ${selected.size} שירות${selected.size > 1 ? 'ים' : ''} להצעה`
+                          : `Add ${selected.size} service${selected.size > 1 ? 's' : ''} to proposal`)}
+                  </span>
+                </motion.button>
+              </div>
+
+            </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </>
+      )}
+    </AnimatePresence>
   )
 }

@@ -4,7 +4,7 @@ import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
-  Film, Quote, MessageSquarePlus, Percent, Tag,
+  Film, Quote, MessageSquarePlus, Percent, Tag, Library,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
@@ -518,8 +518,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
       }],
     })
   }
-  const handleAddSavedService = (addOn: AddOn) => {
-    onChange({ add_ons: [...draft.add_ons, addOn] })
+  const [libraryOpen, setLibraryOpen] = useState(false)
+
+  const handleInjectServices = (addOns: AddOn[]) => {
+    onChange({ add_ons: [...draft.add_ons, ...addOns] })
   }
 
   // ── Auto-inject creator info from user profile ──────────────────────────────
@@ -1127,17 +1129,34 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             </p>
           )}
 
-          <motion.button
-            type="button"
-            onClick={handleAddNew}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
-            style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-          >
-            <Plus size={13} />
-            {isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              type="button"
+              onClick={handleAddNew}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border h-9 text-xs font-semibold text-indigo-400 transition-all duration-200 whitespace-nowrap"
+              style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+            >
+              <Plus size={13} />
+              <span className="whitespace-nowrap">{isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}</span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => setLibraryOpen(true)}
+              className="flex-none flex items-center gap-1.5 rounded-xl border h-9 px-3 text-xs font-semibold text-amber-400 transition-all duration-200 whitespace-nowrap"
+              style={{ borderColor: 'rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.06)' }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+              title={isHe ? 'משוך מהספרייה' : 'Pull from Library'}
+            >
+              <Library size={13} />
+              <span className="hidden sm:inline whitespace-nowrap">
+                {isHe ? '✨ ספרייה' : '✨ Library'}
+              </span>
+            </motion.button>
+          </div>
         </div>
       </div>
 
@@ -1340,13 +1359,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         onGenerate={onChange}
       />
 
-      {/* ── Saved Services library ──────────────────────────────────────── */}
-      <ReusableServices
-        currency={draft.currency}
-        locale={locale}
-        onAddToProposal={handleAddSavedService}
-      />
-
       {/* ── Success Template Selector ────────────────────────────────────── */}
       <Section
         title={isHe ? 'הודעת סגירת עסקה' : 'Post-Signature Message'}
@@ -1401,6 +1413,15 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
       </Section>
 
       <div className="h-8" />
+
+      {/* ── Services injection modal ─────────────────────────────────────── */}
+      <ReusableServices
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        currency={draft.currency}
+        locale={locale}
+        onInject={handleInjectServices}
+      />
     </div>
   )
 }
