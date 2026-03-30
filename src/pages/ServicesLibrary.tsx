@@ -110,34 +110,39 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
             onBlur={blurInput}
           />
 
-          <div className="flex gap-2 items-start">
-            <div className="flex-1">
-              <input
-                type="number"
-                min={0}
-                inputMode="decimal"
-                className={inputBase}
-                placeholder={isHe ? `מחיר לפני מע"מ *` : 'Price (excl. VAT) *'}
-                value={price}
-                onChange={e => setPrice(e.target.value)}
-                onFocus={focusInput}
-                onBlur={blurInput}
-              />
-            </div>
-            {priceNum > 0 && (
-              <div
-                className="flex-none rounded-xl px-3 py-2.5 text-[10px] flex flex-col gap-0.5"
-                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.15)' }}
-              >
-                <span className="text-indigo-400 font-bold tabular-nums">
+          <input
+            type="number"
+            min={0}
+            inputMode="decimal"
+            className={inputBase}
+            placeholder={isHe ? `מחיר לפני מע"מ *` : 'Price (excl. VAT) *'}
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            onFocus={focusInput}
+            onBlur={blurInput}
+          />
+
+          {/* VAT summary row — appears only when price is entered */}
+          {priceNum > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between rounded-xl px-3 py-2"
+              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
+            >
+              <span className="text-[10px] text-white/35">
+                {isHe ? `כולל מע"מ (${Math.round(vatRate * 100)}%)` : `Incl. VAT (${Math.round(vatRate * 100)}%)`}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-white/30 tabular-nums">
+                  +{formatCurrency(vatAmount(priceNum, vatRate), currency)}
+                </span>
+                <span className="text-sm font-black text-indigo-300 tabular-nums">
                   {formatCurrency(applyVat(priceNum, vatRate), currency)}
                 </span>
-                <span className="text-white/35">
-                  {isHe ? `מע"מ` : 'VAT'}: +{formatCurrency(vatAmount(priceNum, vatRate), currency)}
-                </span>
               </div>
-            )}
-          </div>
+            </motion.div>
+          )}
 
           <div className="flex gap-2 pt-1">
             <button
@@ -197,31 +202,33 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
         {service.description && (
           <p className="text-xs text-white/35 truncate mt-0.5">{service.description}</p>
         )}
-        <div className="flex items-center gap-3 mt-1.5">
-          <span className="text-sm font-black text-indigo-300 tabular-nums">
-            {formatCurrency(service.price, 'ILS')}
-          </span>
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setShowVat(v => !v)}
-            className="flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-0.5 transition-all"
             style={{
               background: showVat ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              color: showVat ? '#818cf8' : 'rgba(255,255,255,0.3)',
+              border: '1px solid rgba(99,102,241,0.2)',
             }}
           >
-            <Percent size={9} />
-            {isHe ? `כולל מע"מ` : 'incl. VAT'}
+            <span
+              className="text-sm font-black tabular-nums"
+              style={{ color: showVat ? '#818cf8' : '#a5b4fc' }}
+            >
+              {formatCurrency(showVat ? applyVat(service.price, vatRate) : service.price, 'ILS')}
+            </span>
+            <span className="text-[9px] font-semibold" style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.3)' }}>
+              {showVat
+                ? (isHe ? `כולל מע"מ` : 'incl. VAT')
+                : (isHe ? `לפני מע"מ` : 'ex. VAT')}
+            </span>
+            <Percent size={8} style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.2)' }} />
           </button>
           {showVat && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-xs font-bold text-white/50 tabular-nums"
-            >
-              {formatCurrency(applyVat(service.price, vatRate), 'ILS')}
-            </motion.span>
+            <span className="text-[10px] text-white/25 tabular-nums">
+              {isHe ? 'לפני מע"מ' : 'Base'}: {formatCurrency(service.price, 'ILS')}
+            </span>
           )}
         </div>
       </div>

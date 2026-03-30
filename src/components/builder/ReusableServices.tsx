@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { X, Check, Search, Layers, Zap } from 'lucide-react'
+import { X, Check, Search, Layers, Zap, Percent } from 'lucide-react'
 import { useServicesStore } from '../../stores/useServicesStore'
-import { formatCurrency } from '../../types/proposal'
+import { formatCurrency, applyVat, DEFAULT_VAT_RATE } from '../../types/proposal'
 import type { AddOn } from '../../types/proposal'
+
+function getVatRate(): number {
+  const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? '')
+  return isNaN(v) ? DEFAULT_VAT_RATE : v
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -19,9 +24,11 @@ interface ReusableServicesProps {
 
 export function ReusableServices({ open, onClose, currency, locale, onInject }: ReusableServicesProps) {
   const isHe = locale === 'he'
+  const vatRate = getVatRate()
   const { services, loading, fetchServices } = useServicesStore()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState('')
+  const [showVat, setShowVat] = useState(false)
 
   // Fetch on open (no-op if data already loaded); reset selection every open
   useEffect(() => {
@@ -29,6 +36,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
       fetchServices()
       setSelected(new Set())
       setQuery('')
+      setShowVat(false)
     }
   }, [open, fetchServices])
 
@@ -97,7 +105,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:pb-[14vh]"
             style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(12px)' }}
             onClick={e => { if (e.target === e.currentTarget) onClose() }}
           >
@@ -138,13 +146,30 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                     {isHe ? 'בחר שירותים להוספה להצעה' : 'Select services to inject into the proposal'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-none flex h-7 w-7 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.08] hover:text-white/70"
-                >
-                  <X size={14} />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {/* VAT toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowVat(v => !v)}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition"
+                    style={{
+                      background: showVat ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
+                      border: showVat ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                      color: showVat ? '#d4af37' : 'rgba(255,255,255,0.35)',
+                    }}
+                  >
+                    <Percent size={9} />
+                    <span>{isHe ? `מע"מ` : 'VAT'}</span>
+                  </button>
+                  {/* Close */}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex h-7 w-7 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.08] hover:text-white/70"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
 
               {/* ── Search — shown when > 3 services ── */}
@@ -259,13 +284,20 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                           )}
                         </div>
 
-                        {/* Price */}
-                        <p
-                          className="flex-none text-sm font-black tabular-nums transition-colors"
-                          style={{ color: isChecked ? '#d4af37' : 'rgba(255,255,255,0.45)' }}
-                        >
-                          {formatCurrency(service.price, currency)}
-                        </p>
+                        {/* Price — base or VAT-inclusive */}
+                        <div className="flex-none text-end">
+                          <p
+                            className="text-sm font-black tabular-nums transition-colors"
+                            style={{ color: isChecked ? '#d4af37' : 'rgba(255,255,255,0.5)' }}
+                          >
+                            {formatCurrency(showVat ? applyVat(service.price, vatRate) : service.price, currency)}
+                          </p>
+                          {showVat && (
+                            <p className="text-[9px] text-white/25 tabular-nums">
+                              {isHe ? `לפני מע"מ: ` : 'ex. VAT: '}{formatCurrency(service.price, currency)}
+                            </p>
+                          )}
+                        </div>
                       </motion.button>
                     )
                   })}
