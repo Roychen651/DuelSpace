@@ -786,7 +786,23 @@ export default function DealRoom() {
     : null
   const grandTotal         = financials?.grandTotal         ?? 0
   const originalGrandTotal = financials?.originalGrandTotal ?? 0
-  const totalSavings       = financials?.totalSavings       ?? 0
+
+  // Resolved add-ons: apply client overrides for per-item receipt display
+  const resolvedAddOns = proposal
+    ? proposal.add_ons.map(a => {
+        const lo = lineItems[a.id]
+        const discount_pct = a.discount_pct ?? 0
+        return {
+          id: a.id,
+          label: a.label,
+          price: a.price,
+          discountedPrice: Math.round(a.price * (1 - discount_pct / 100)),
+          qty: lo?.qty ?? 1,
+          discount_pct,
+          enabled: lo ? lo.enabled : a.enabled,
+        }
+      })
+    : []
 
   // ── Handle accept ──────────────────────────────────────────────────────────
   const handleAccept = useCallback(async () => {
@@ -1551,8 +1567,11 @@ export default function DealRoom() {
                 onLegalConsentChange={setLegalConsent}
                 onRequestRevision={handleRequestRevision}
                 revisionSent={revisionSent}
-                totalSavings={totalSavings}
                 originalTotal={originalGrandTotal}
+                financials={financials ?? undefined}
+                resolvedAddOns={resolvedAddOns}
+                globalDiscountPct={proposal.global_discount_pct ?? 0}
+                basePrice={proposal.base_price}
                 clientDetailsConfirmed={!!clientDetails}
                 onScrollToDetails={() =>
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })

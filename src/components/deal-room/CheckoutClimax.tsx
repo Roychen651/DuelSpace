@@ -3,11 +3,25 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { ShieldCheck, Loader2, CheckCircle2, Lock, MessageSquarePlus, X, Send as SendIcon, CheckCheck, ArrowUp } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { formatCurrency } from '../../types/proposal'
+import type { Financials } from '../../lib/financialMath'
 import { SignaturePad } from './SignaturePad'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
+export interface ResolvedAddOn {
+  id: string
+  label: string
+  /** Original price per unit (before item discount) */
+  price: number
+  /** Price per unit after item discount */
+  discountedPrice: number
+  qty: number
+  discount_pct: number
+  enabled: boolean
+}
+
 interface CheckoutClimaxProps {
+  /** Grand total the client pays — already includes VAT when includeVat=true */
   total: number
   currency: string
   clientName: string
@@ -18,7 +32,7 @@ interface CheckoutClimaxProps {
   accepting: boolean
   accepted: boolean
   locale: string
-  /** When true, shows VAT breakdown below the total */
+  /** When true, shows VAT section in breakdown */
   includeVat?: boolean
   /** VAT rate as decimal, e.g. 0.18 for 18% */
   vatRate?: number
@@ -28,10 +42,16 @@ interface CheckoutClimaxProps {
   onRequestRevision?: (notes: string) => Promise<void>
   /** True when a revision request was submitted (persists across page refresh via DB status) */
   revisionSent?: boolean
-  /** Absolute currency savings = originalTotal − grandTotal. Shows "You Saved" badge when > 0. */
-  totalSavings?: number
-  /** Full undiscounted grand total (incl. VAT if applicable) — shown as strikethrough anchor price */
+  /** Full undiscounted grand total (incl. VAT) — shown as strikethrough anchor price */
   originalTotal?: number
+  /** Full financial breakdown from calculateFinancials — powers the itemized receipt */
+  financials?: Financials
+  /** Resolved add-ons (with client overrides) for per-item receipt rows */
+  resolvedAddOns?: ResolvedAddOn[]
+  /** Global discount % applied to proposal (e.g. 6) */
+  globalDiscountPct?: number
+  /** Base package price for the first receipt row */
+  basePrice?: number
   /** Must be true before signature is unlocked — gates the entire sign flow */
   clientDetailsConfirmed?: boolean
   /** Called when user taps "fill details first" locked state — scrolls form into view */
@@ -60,7 +80,8 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
-  onRequestRevision, revisionSent = false, totalSavings = 0, originalTotal = 0,
+  onRequestRevision, revisionSent = false, originalTotal = 0,
+  financials, resolvedAddOns, globalDiscountPct = 0, basePrice = 0,
   clientDetailsConfirmed = false, onScrollToDetails,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
@@ -80,9 +101,19 @@ export function CheckoutClimax({
     setRequesting(false)
     setRevisionDone(true)
   }
-  const vatAmt = Math.round(total * vatRate)
-  const totalWithVat = total + vatAmt
-  const displayTotal = includeVat ? totalWithVat : total
+
+  // total prop is already the final amount (VAT-inclusive when includeVat=true)
+  // — no internal VAT computation to avoid double-counting
+  const displayTotal = total
+
+  // True money saved = original (no-discount) grand total minus final total
+  const trueSavings = originalTotal > 0 && originalTotal > total ? originalTotal - total : 0
+  const savingsPct  = originalTotal > 0 && trueSavings > 0
+    ? Math.round((trueSavings / originalTotal) * 100)
+    : 0
+
+  // Whether to render the itemized receipt section
+  const showReceipt = !!(financials && (trueSavings > 0 || includeVat))
 
   return (
     <>
@@ -156,8 +187,7 @@ export function CheckoutClimax({
                     ? (includeVat ? 'סה״כ כולל מע״מ' : 'סה״כ להשקעה')
                     : (includeVat ? 'Total incl. VAT' : 'Total Investment')}
                 </p>
-                {/* Strikethrough anchor price — shown only when there are savings */}
-                {totalSavings > 0 && originalTotal > 0 && originalTotal !== displayTotal && (
+                {trueSavings > 0 && originalTotal > 0 && (
                   <p
                     className="text-sm font-bold tabular-nums line-through mb-0.5 leading-none"
                     style={{ color: 'rgba(255,255,255,0.22)' }}
@@ -192,92 +222,172 @@ export function CheckoutClimax({
               </div>
             </div>
 
-            {/* ── Receipt breakdown — discount row + optional VAT ──────────── */}
-            {(totalSavings > 0 || includeVat) && (
-              <div
-                className="mb-3 rounded-xl px-3 py-2.5 space-y-1"
+            {/* ── Itemized receipt breakdown ────────────────────────────────── */}
+            {showReceipt && financials && (
+              <motion.div
+                className="mb-3 rounded-2xl overflow-hidden"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' as const }}
                 style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.07)',
                 }}
               >
-                {/* Original subtotal line — anchors the discount row */}
-                {totalSavings > 0 && (
-                  <>
-                    <div className="flex justify-between text-[11px] text-white/30">
-                      <span>{isHe ? 'מחיר מקורי' : 'Original price'}</span>
-                      <span className="tabular-nums">{formatCurrency(originalTotal, currency)}</span>
+                {/* ── Per-item rows (base + add-ons) ─────────────────────── */}
+                {resolvedAddOns && (
+                  <div
+                    className="px-3.5 pt-3 pb-2.5 space-y-2"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    {/* Base package */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white/40">{isHe ? 'חבילת בסיס' : 'Base Package'}</span>
+                      <span className="text-[11px] text-white/55 tabular-nums">{formatCurrency(basePrice, currency)}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] font-semibold"
-                      style={{ color: '#4ade80' }}>
-                      <span>{isHe ? '🎁 הנחה' : '🎁 Discount'}</span>
-                      <span className="tabular-nums">
-                        − {formatCurrency(totalSavings, currency)}
-                      </span>
-                    </div>
-                    {!includeVat && (
-                      <div
-                        className="flex justify-between text-[11px] font-bold text-white/55 pt-1"
-                        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
-                      >
-                        <span>{isHe ? 'לאחר הנחה' : 'After discount'}</span>
-                        <span className="tabular-nums">{formatCurrency(total, currency)}</span>
+                    {/* Enabled add-ons */}
+                    {resolvedAddOns.filter(a => a.enabled).map(a => (
+                      <div key={a.id} className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[11px] text-white/40 truncate">
+                            {a.label}{a.qty > 1 ? ` ×${a.qty}` : ''}
+                          </span>
+                          {a.discount_pct > 0 && (
+                            <span
+                              className="flex-none text-[9px] font-black rounded-full px-1.5 py-0.5 tabular-nums"
+                              style={{
+                                background: 'rgba(34,197,94,0.12)',
+                                color: '#4ade80',
+                                border: '1px solid rgba(34,197,94,0.22)',
+                              }}
+                            >
+                              −{a.discount_pct}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-none">
+                          {a.discount_pct > 0 && (
+                            <span
+                              className="text-[10px] line-through tabular-nums"
+                              style={{ color: 'rgba(255,255,255,0.18)' }}
+                            >
+                              {formatCurrency(a.price * a.qty, currency)}
+                            </span>
+                          )}
+                          <span
+                            className="text-[11px] font-semibold tabular-nums"
+                            style={{ color: a.discount_pct > 0 ? '#4ade80' : 'rgba(255,255,255,0.5)' }}
+                          >
+                            {formatCurrency(a.discountedPrice * a.qty, currency)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── Subtotal + discount rows ────────────────────────────── */}
+                {(financials.itemSavings > 0 || financials.globalSavings > 0) && (
+                  <div
+                    className="px-3.5 py-2.5 space-y-1.5"
+                    style={{ borderBottom: includeVat ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+                  >
+                    {/* After-item-discounts subtotal — only shown when items had individual discounts */}
+                    {financials.itemSavings > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] text-white/32">
+                          {isHe ? 'סה״כ לאחר הנחות פרטניות' : 'Subtotal (after item discounts)'}
+                        </span>
+                        <span className="text-[11px] text-white/32 tabular-nums">
+                          {formatCurrency(financials.discountedSubtotal, currency)}
+                        </span>
                       </div>
                     )}
-                  </>
+                    {/* Global discount row */}
+                    {financials.globalSavings > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-semibold" style={{ color: '#4ade80' }}>
+                          {isHe
+                            ? `🏷 הנחה גלובלית (−${globalDiscountPct}%)`
+                            : `🏷 Global Discount (−${globalDiscountPct}%)`}
+                        </span>
+                        <span className="text-[11px] font-semibold tabular-nums" style={{ color: '#4ade80' }}>
+                          −{formatCurrency(financials.globalSavings, currency)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
-                {/* VAT rows */}
+
+                {/* ── VAT section ─────────────────────────────────────────── */}
                 {includeVat && (
-                  <>
-                    {totalSavings > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
-                    <div className="flex justify-between text-[11px] text-white/35">
-                      <span>{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
-                      <span className="tabular-nums">{formatCurrency(total, currency)}</span>
+                  <div className="px-3.5 py-2.5 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white/35">{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
+                      <span className="text-[11px] text-white/35 tabular-nums">
+                        {formatCurrency(financials.beforeVat, currency)}
+                      </span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-white/35">
-                      <span>{isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}</span>
-                      <span className="tabular-nums">{formatCurrency(vatAmt, currency)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white/35">
+                        {isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}
+                      </span>
+                      <span className="text-[11px] text-white/35 tabular-nums">
+                        +{formatCurrency(financials.vatAmount, currency)}
+                      </span>
                     </div>
                     <div
-                      className="flex justify-between text-[11px] font-bold text-white/60 pt-1"
-                      style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                      className="flex justify-between items-center pt-1.5"
+                      style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
                     >
-                      <span>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</span>
-                      <span className="tabular-nums">{formatCurrency(totalWithVat, currency)}</span>
+                      <span className="text-[12px] font-bold text-white/65">
+                        {isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}
+                      </span>
+                      <span className="text-[12px] font-bold text-white/65 tabular-nums">
+                        {formatCurrency(financials.grandTotal, currency)}
+                      </span>
                     </div>
-                  </>
+                  </div>
                 )}
-              </div>
-            )}
 
-            {/* ── "You Saved" badge — appears when any discount is applied ──── */}
-            {totalSavings > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.92 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 380, damping: 26, delay: 0.15 }}
-                className="mb-3 flex items-center justify-between rounded-xl px-4 py-2.5"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(16,185,129,0.06) 100%)',
-                  border: '1px solid rgba(34,197,94,0.25)',
-                  animation: 'checkout-savings-pulse 2.4s ease-in-out infinite',
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base leading-none select-none">🎉</span>
-                  <span className="text-[12px] font-bold" style={{ color: '#4ade80' }}>
-                    {isHe ? 'חסכת' : 'You Saved'}
-                  </span>
-                </div>
-                <span
-                  className="text-[15px] font-black tabular-nums"
-                  style={{
-                    color: '#4ade80',
-                    textShadow: '0 0 20px rgba(34,197,94,0.5)',
-                  }}
-                >
-                  {formatCurrency(totalSavings, currency)}
-                </span>
+                {/* ── Savings summary banner ──────────────────────────────── */}
+                {trueSavings > 0 && (
+                  <div
+                    className="flex justify-between items-center px-3.5 py-3"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(34,197,94,0.09) 0%, rgba(16,185,129,0.04) 100%)',
+                      borderTop: '1px solid rgba(34,197,94,0.18)',
+                      animation: 'checkout-savings-pulse 2.4s ease-in-out infinite',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base leading-none select-none">🎉</span>
+                      <span className="text-[12px] font-bold" style={{ color: '#4ade80' }}>
+                        {isHe ? 'חסכת' : 'You Saved'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {savingsPct > 0 && (
+                        <span
+                          className="text-[10px] font-black tabular-nums rounded-full px-2 py-0.5"
+                          style={{
+                            background: 'rgba(34,197,94,0.14)',
+                            color: '#4ade80',
+                            border: '1px solid rgba(34,197,94,0.22)',
+                          }}
+                        >
+                          {savingsPct}%
+                        </span>
+                      )}
+                      <span
+                        className="text-[15px] font-black tabular-nums"
+                        style={{ color: '#4ade80', textShadow: '0 0 20px rgba(34,197,94,0.5)' }}
+                      >
+                        {formatCurrency(trueSavings, currency)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
