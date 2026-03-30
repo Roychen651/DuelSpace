@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–13.9.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–16.2.
 
 ---
 
@@ -24,6 +24,7 @@ Read this before touching any file. Everything here reflects the live codebase a
 | Language | TypeScript | ~5.9 (strict) |
 | Styling | Tailwind CSS | ^3.4 |
 | Animation | Framer Motion | ^12.38 |
+| Smooth Scroll | Lenis | ^1.3.21 |
 | Routing | react-router-dom | ^7.13 |
 | State | Zustand | ^5.0 |
 | Backend | Supabase JS | ^2.100 |
@@ -91,6 +92,16 @@ whileHover={{ scale: 1.02 }}
 ### 4.5 `ProposalInsert` must include all required fields
 `payment_milestones` is required (non-optional) on `ProposalInsert`. Any `BLANK_DRAFT` constant or default object must include `payment_milestones: []`. Missing it causes `tsc -b` to fail with a "property missing" error, which has broken CI before.
 
+### 4.6 Combining two `useMotionValue`s with `useTransform`
+The tuple overload requires `as const` on the array argument, and the transformer callback must be typed explicitly:
+```tsx
+// ❌ TypeScript cannot infer element types
+const combined = useTransform([a, b], ([x, y]) => x + y)
+
+// ✅ Correct
+const combined = useTransform([a, b] as const, ([x, y]: number[]) => x + y)
+```
+
 ---
 
 ## 5. File & Folder Map
@@ -98,32 +109,34 @@ whileHover={{ scale: 1.02 }}
 ```
 src/
 ├── pages/
-│   ├── LandingPage.tsx      # / — marketing page, bilingual He/En, default Hebrew
+│   ├── LandingPage.tsx      # / — marketing page, bilingual He/En, Awwwards-level design
 │   ├── Auth.tsx             # /auth — Linear.app style, pure black bg, glassmorphism card
 │   ├── AuthCallback.tsx     # /auth/callback — Supabase PKCE redirect handler
 │   ├── ResetPassword.tsx    # /auth/reset-password — password reset flow
-│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar, Help button in Navbar
+│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
 │   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, VAT
 │   ├── ServicesLibrary.tsx  # /services — reusable service definitions
 │   ├── ContractLibrary.tsx  # /contracts — contract template management
-│   └── Legal.tsx            # /terms + /privacy — legal pages
+│   ├── Legal.tsx            # /security — security policy page
+│   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
+│   ├── PrivacyPolicy.tsx    # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
+│   └── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
 │
 ├── components/
 │   ├── builder/
 │   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, contract picker, AI Ghostwriter
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
 │   │   ├── AIGhostwriter.tsx     # AI description generator (contextual, bilingual)
-│   │   └── ReusableServices.tsx  # Pick from saved services library to add to proposal
+│   │   ├── ReusableServices.tsx  # Pick from saved services library to add to proposal
+│   │   └── RichTextEditor.tsx    # TipTap-based rich text editor (contract body)
 │   ├── deal-room/
 │   │   ├── PremiumSliderCard.tsx  # Interactive add-on card with range slider
 │   │   ├── CheckoutClimax.tsx     # Sticky bottom bar: animated total, VAT breakdown, signature, CTA
 │   │   ├── SignaturePad.tsx       # Native canvas draw signature — NO external dependency
 │   │   ├── ClientDetailsForm.tsx  # Client legal identity capture (name, company, tax ID, address, role)
 │   │   └── MilestoneTimeline.tsx  # Animated payment schedule — spring-animated amounts
-│   ├── builder/
-│   │   └── RichTextEditor.tsx     # TipTap-based rich text editor (contract body)
 │   ├── dashboard/
 │   │   ├── ProposalCard.tsx       # Grid card — Radix DropdownMenu (stopPropagation fix), magnetic tilt, status timeline
 │   │   ├── ProposalCardSkeleton   # Loading skeleton
@@ -166,15 +179,6 @@ supabase/
     ├── 05_fix_deal_room_rpc.sql    # Adds SET search_path = public, grants to authenticated
     ├── 06_sprint10.sql             # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
     └── 07_sprint11.sql             # success_template column + decline_proposal() RPC
-```
-
-### New pages (Sprints 13.x)
-
-```
-src/pages/
-├── TermsOfService.tsx       # /terms  — 12-clause bilingual ToS (Israeli corporate standard)
-├── PrivacyPolicy.tsx        # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
-└── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
 ```
 
 ---
@@ -255,7 +259,7 @@ injectDemoProposal()             // Inserts a rich demo proposal (localStorage g
 
 ## 9. Database Schema
 
-### `proposals` table — all columns across all 6 migrations
+### `proposals` table — all columns across all migrations
 
 | Column | Type | Notes |
 |---|---|---|
@@ -354,6 +358,22 @@ In Hebrew (RTL), flex items are visually reversed. The tab indicator uses `left:
 const indicatorX = (isRTL ? active === 'signup' : active === 'signin') ? 0 : 'calc(100% + 4px)'
 ```
 
+### Hebrew Bidi Period Placement
+
+**Root cause of the "period on wrong side" bug:** If a container has `dir="ltr"` for layout reasons (e.g., enforcing left-to-right visual order of elements), all descendant `<p>`, `<h3>`, etc. inherit it. Hebrew text inside an LTR paragraph context causes neutral characters like `.` to take LTR direction and appear at the visual left instead of the correct visual right (end of line in RTL text).
+
+**Fix:** Add `dir={isHe ? 'rtl' : 'ltr'}` explicitly to every `<h3>` and `<p>` element that contains Hebrew text, overriding the inherited container direction:
+```tsx
+// Container must be LTR for flow reasons
+<div className="flex flex-row" dir="ltr">
+  {/* Override direction on each text element */}
+  <h3 dir={isHe ? 'rtl' : 'ltr'}>{step.title}</h3>
+  <p dir={isHe ? 'rtl' : 'ltr'}>{step.body}</p>
+</div>
+```
+
+**Never place a trailing period directly after a Latin word** (e.g., `'שלחו PDF.'`) — the period adjacent to the Latin word takes LTR direction, appearing at the wrong visual position. Remove the period or add a Hebrew character immediately after it.
+
 ---
 
 ## 11. Design System
@@ -405,10 +425,136 @@ box-shadow: 0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)
 - **Scroll reveals:** `useInView` from framer-motion with `once: true` and `margin: '-80px'`
 - **Drag:** `Reorder.Group` / `Reorder.Item` (EditorPanel add-ons)
 - **Spring counters:** `useMotionValue` + `useSpring` + `useTransform` (Dashboard KPIs, CheckoutClimax total, MilestoneTimeline amounts)
+- **Scroll-linked:** `useScroll({ target: ref, offset: [...] })` + `useSpring(useTransform(...))` for precise per-section timing
+
+### CSS keyframe injection
+Each page/component injects custom keyframes via a `<style>` tag inside JSX. Names are namespaced to avoid collisions:
+- `lp-*` — LandingPage
+- `ds-*` — Dashboard
+- `checkout-*` — CheckoutClimax
+- `builder-*` — ProposalBuilder
 
 ---
 
-## 12. ProposalBuilder Architecture
+## 12. LandingPage Architecture (Sprint 16 — Awwwards Redesign)
+
+`LandingPage.tsx` is a self-contained ~1600-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
+
+### Section structure
+```
+<ReactLenis root options={{ lerp: 0.085, duration: 1.4, syncTouch: false }}>
+  <div dir={...}>
+    <div className="h-[52px]" />   ← spacer for fixed navbar
+    <Navbar />                      ← Dynamic Island pill at scrollY > 80px
+    <main>
+      <HeroSection />               ← Full-screen with DealRoomMockup + gyro/mouse 3D tilt
+      <SocialProofNumbers />        ← 4 animated stat counters (ScrambleCounter on viewport entry)
+      <HowItWorksSection />         ← 3-step flow, horizontal connector beam, LTR step order
+      <ProblemSolutionSection />    ← PDF vs Deal Room, scroll-linked SVG divider drawing
+      <BentoFeaturesGrid />         ← 6-card bento grid (AI, signature, PDF, analytics, security, mobile)
+      <TestimonialsSection />       ← 3 testimonial cards
+      <FinalCTASection />           ← Full-width conversion section
+    </main>
+    <GlobalFooter />
+  </div>
+</ReactLenis>
+```
+
+### Lenis smooth scroll
+```tsx
+import { ReactLenis } from 'lenis/react'
+
+// Always use syncTouch: false — syncTouch: true intercepts iOS native composited
+// scrolling and runs physics on the JS main thread, causing severe FPS drops on mobile.
+<ReactLenis root options={{ lerp: 0.085, duration: 1.4, syncTouch: false }}>
+```
+
+### Dynamic Island pill navbar
+The navbar morphs from full-width to a centered compact pill at `scrollY > 80`.
+
+```tsx
+const [isPill, setIsPill] = useState(false)
+const pillRef = useRef(false)  // guard against re-renders on every scroll tick
+
+useMotionValueEvent(scrollY, 'change', (v) => {
+  const next = v > 80
+  if (next !== pillRef.current) {
+    pillRef.current = next
+    setIsPill(next)
+  }
+})
+
+// AnimatePresence mode="wait" — key="pill" | key="full"
+```
+
+### Gyroscope + mouse tilt (3D card effect)
+`useGyroscope(strength)` hook provides mobile tilt from `DeviceOrientationEvent`. Combined additively with mouse-based tilt in `Tilt3D` and `DealRoomMockup`:
+
+```tsx
+function useGyroscope(strength = 1) {
+  const rotX = useMotionValue(0)
+  const rotY = useMotionValue(0)
+  const springX = useSpring(rotX, { stiffness: 90, damping: 18, restDelta: 0.001 })
+  const springY = useSpring(rotY, { stiffness: 90, damping: 18, restDelta: 0.001 })
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: coarse)').matches) return
+    // iOS 13+ requires requestPermission (needs user gesture) — skip silently
+    const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+    if (typeof DOE.requestPermission === 'function') return
+    let raf: number | null = null
+    function handler(e: DeviceOrientationEvent) {
+      if (raf !== null) return  // throttle to one rAF per tick
+      const beta = e.beta ?? 45
+      const gamma = e.gamma ?? 0
+      raf = requestAnimationFrame(() => {
+        raf = null
+        rotX.set(Math.max(-12, Math.min(12, beta - 45)) * 0.45 * strength)
+        rotY.set(Math.max(-12, Math.min(12, gamma)) * 0.65 * strength)
+      })
+    }
+    window.addEventListener('deviceorientation', handler, { passive: true })
+    return () => {
+      window.removeEventListener('deviceorientation', handler)
+      if (raf !== null) cancelAnimationFrame(raf)
+    }
+  }, [rotX, rotY, strength])
+  return { springX, springY }
+}
+
+// Combining mouse + gyro into a single motion value:
+const rotateX = useTransform([mouseSpringX, gyroX] as const, ([m, g]: number[]) => m + g)
+const rotateY = useTransform([mouseSpringY, gyroY] as const, ([m, g]: number[]) => m + g)
+```
+
+### ScrambleCounter
+Slot-machine number animation that triggers once on viewport entry:
+```tsx
+function ScrambleCounter({ value, inView }: { value: string; inView: boolean }) {
+  // hasRun ref prevents re-triggering
+  // 18 frames × 48ms: displays random digits, then locks to value
+}
+```
+
+### Scroll-linked VS divider
+In `ProblemSolutionSection`, the divider line between "Old Way" and "Deal Room" draws as the section scrolls into view:
+```tsx
+const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start 0.9', 'center center'] })
+const topLine    = useSpring(useTransform(scrollYProgress, [0.05, 0.45], [0, 1]), { stiffness: 60, damping: 16 })
+const vsScale    = useTransform(scrollYProgress, [0.40, 0.65], [0, 1])
+const vsRotate   = useTransform(scrollYProgress, [0.40, 0.65], [-180, 0])
+const bottomLine = useSpring(useTransform(scrollYProgress, [0.60, 0.90], [0, 1]), { stiffness: 60, damping: 16 })
+// Lines use: style={{ scaleY: topLine/bottomLine, transformOrigin: 'top center' }}
+```
+
+### Haptic tap states
+All CTAs and interactive elements use spring squish:
+```tsx
+whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+```
+
+---
+
+## 13. ProposalBuilder Architecture
 
 Split-screen at `100dvh`, no page scroll.
 
@@ -443,7 +589,7 @@ Debounced 1500ms on every `handleChange`. On Send, the debounce is flushed synch
 
 ---
 
-## 13. Deal Room Architecture
+## 14. Deal Room Architecture
 
 **Fully public route — no auth required.**
 
@@ -488,9 +634,9 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 
 ---
 
-## 14. Profile Page
+## 15. Profile Page
 
-`/profile` (ProtectedRoute) — four sections:
+`/profile` (ProtectedRoute) — six sections:
 
 1. **Avatar** — upload to Supabase Storage, `updateProfile({ avatar_url })`
 2. **Display Name** — `updateProfile({ full_name })`
@@ -512,7 +658,7 @@ These live in `user.user_metadata` and are read by EditorPanel to populate `crea
 
 ---
 
-## 15. PDF Engine (`src/lib/pdfEngine.tsx`)
+## 16. PDF Engine (`src/lib/pdfEngine.tsx`)
 
 Sprint 13.9 complete overhaul. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) 3-page enterprise PDF.
 
@@ -570,7 +716,7 @@ export async function generateProposalPdf(opts: PdfOptions): Promise<void>
 
 ---
 
-## 16. Payment Milestones System
+## 17. Payment Milestones System
 
 ### Types
 ```ts
@@ -593,7 +739,7 @@ function milestonesValid(milestones: PaymentMilestone[]): boolean
 
 ---
 
-## 17. Environment Variables
+## 18. Environment Variables
 
 Stored in `.env.local` (gitignored — never commit).
 
@@ -610,7 +756,7 @@ SUPABASE_ACCESS_TOKEN=sbp_...                  # Supabase PAT — needed for npm
 
 ---
 
-## 18. localStorage Keys
+## 19. localStorage Keys
 
 | Key | Value | Owner |
 |---|---|---|
@@ -619,10 +765,11 @@ SUPABASE_ACCESS_TOKEN=sbp_...                  # Supabase PAT — needed for npm
 | `dealspace:view-mode` | `'grid'` \| `'kanban'` | Dashboard.tsx |
 | `dealspace:demo-injected` | `'true'` | useProposalStore |
 | `dealspace:contract-defaults` | JSON string | ContractLibrary |
+| `ds:a11y:*` | various | useAccessibilityStore (14 keys) |
 
 ---
 
-## 19. Running Migrations
+## 20. Running Migrations
 
 ```bash
 npm run migrate
@@ -641,7 +788,7 @@ supabase migration repair --status applied <timestamp>
 
 ---
 
-## 20. Known Patterns & Decisions
+## 21. Known Patterns & Decisions
 
 ### GlobalFooter coverage
 `GlobalFooter` is imported individually into each page that needs it (Dashboard, LandingPage, DealRoom, Profile, ContractLibrary, ServicesLibrary, TermsOfService, PrivacyPolicy, Legal/Security, AccessibilityStatement). It is NOT injected globally in App.tsx — ProposalBuilder uses a fixed-height split-screen layout that has no room for a footer, and adding it globally would break that layout.
@@ -664,9 +811,6 @@ The shimmer `<span>` has `pointer-events-none`, so `onMouseEnter` on it never fi
 ### Framer Motion first-render visibility
 FM v12 + React 19 (no StrictMode) can occasionally drop first-render `initial` states. Entrance effects on mount use CSS `animation:` via a style prop. Framer Motion is only used for interactive transitions triggered by state changes after mount.
 
-### CSS keyframe injection
-Each page/component injects custom keyframes via a `<style>` tag inside JSX. Keep names namespaced (`ds-`, `lp-`, `checkout-`, `builder-`) to avoid collisions.
-
 ### `add_ons` and `payment_milestones` in Supabase
 Both are `jsonb` columns — always update the whole array (not individual elements) in `updateProposal`. Supabase returns them as plain JS objects; TypeScript casts via the `Proposal` type.
 
@@ -675,6 +819,19 @@ DealRoom is fully public (no auth) — it cannot read `user_metadata`. Solution:
 
 ### Creator info in PDF from public context
 Same problem as brand color. Solution: `creator_info` is stored as jsonb in the proposal record, auto-populated by EditorPanel's useEffect whenever `user` changes. The anon PDF download has full creator identity because it's embedded in the proposal.
+
+### `useMotionValueEvent` state guard
+When subscribing to a `MotionValue` (e.g., scroll position) to drive a boolean React state, always gate the `setState` call with a ref to prevent unnecessary re-renders on every tick:
+```tsx
+const stateRef = useRef(initialValue)
+useMotionValueEvent(motionValue, 'change', (v) => {
+  const next = v > threshold
+  if (next !== stateRef.current) {
+    stateRef.current = next
+    setState(next)
+  }
+})
+```
 
 ### Vercel retry vs fresh deploy
 When a Vercel deployment fails, the "Redeploy" button in the dashboard replays the **same commit** — it does not pick up newer pushes to `main`. If you've pushed a fix but Vercel is still failing on the old commit, push an empty commit to force a fresh webhook:
@@ -685,7 +842,7 @@ git push origin main
 
 ---
 
-## 21. Git & Deployment Workflow
+## 22. Git & Deployment Workflow
 
 - **Branch:** `main` is the single branch. All commits go to `main`.
 - **Vercel:** Auto-deploys every push to `main`.
@@ -703,7 +860,7 @@ git push origin main
 
 ---
 
-## 22. Accessibility Engine (Sprint 12)
+## 23. Accessibility Engine (Sprint 12)
 
 ### `useAccessibilityStore` — 14 states
 Persisted under `ds:a11y:*` localStorage keys. `applyToDom()` runs on boot and on every state change via `store.subscribe()`.
@@ -756,7 +913,7 @@ All filter effects are combined into one `style.filter` string (never stacked la
 
 ---
 
-## 23. What NOT To Do
+## 24. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
 - **Do not use `ease: number[]`** in Framer Motion — use named strings with `as const`.
@@ -773,3 +930,8 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - **Do not expose `SUPABASE_SERVICE_ROLE_KEY` to the browser** — only `VITE_*` variables reach the bundle.
 - **Do not guard `/deal/:token` with auth** — it's the public client-facing URL.
 - **Do not use the Vercel "Redeploy" button on a failed build** if you've pushed a fix — push an empty commit instead to trigger a fresh webhook.
+- **Do not use Lenis `syncTouch: true`** — it intercepts iOS native composited scrolling and runs physics on the JS main thread, causing severe FPS drops and eye strain on mobile. Always use `syncTouch: false`.
+- **Do not put `dir="ltr"` on a container that holds Hebrew text** without overriding `dir` on the individual text elements — inherited LTR direction makes periods appear at the wrong visual position in Hebrew sentences (they take LTR direction and appear on the left instead of the right).
+- **Do not put a trailing period directly after a Latin word in Hebrew text** (e.g., `'שלחו PDF.'`) — the period adjacent to the Latin characters takes LTR direction and renders at the wrong visual position. Remove the period or restructure the sentence.
+- **Do not call `setState` inside `useMotionValueEvent` without a ref guard** — it fires on every animation tick (60fps) and causes constant unnecessary re-renders. Always compare against a ref before calling `setState`.
+- **Do not fire `DeviceOrientationEvent` handlers without a `requestAnimationFrame` throttle** — the event fires faster than 60fps on some devices. Gate with a single `rAF` per tick.
