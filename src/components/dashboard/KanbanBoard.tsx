@@ -50,25 +50,34 @@ interface KanbanCardProps {
   onDragEnd: () => void
 }
 
+// Statuses that cannot be dragged FROM (immutable outcomes)
+const SEALED_FROM_DRAG: Set<ProposalStatus> = new Set(['accepted'])
+// Statuses that cannot receive drops (require proper flow, not manual drag)
+const SEALED_FROM_DROP: Set<ProposalStatus> = new Set(['accepted'])
+
 function KanbanCard({ proposal, locale, isDragging, onEdit, onDragStart, onDragEnd }: KanbanCardProps) {
   const isHe = locale === 'he'
   const vatRate = (() => { const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? ''); return isNaN(v) ? ISRAELI_VAT_RATE : v })()
   const total = calculateFinancials(proposal, undefined, vatRate).grandTotal
   const meta = STATUS_META[proposal.status]
+  const isSealed = SEALED_FROM_DRAG.has(proposal.status)
 
   return (
     <motion.div
       layout
-      draggable
-      onDragStart={() => onDragStart(proposal.id)}
-      onDragEnd={onDragEnd}
+      draggable={!isSealed}
+      onDragStart={isSealed ? undefined : () => onDragStart(proposal.id)}
+      onDragEnd={isSealed ? undefined : onDragEnd}
       onClick={() => onEdit(proposal.id)}
       animate={isDragging ? { opacity: 0.45, scale: 0.96, rotate: 2 } : { opacity: 1, scale: 1, rotate: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="relative rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none group"
+      className="relative rounded-xl p-3.5 select-none group"
       style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        cursor: isSealed ? 'pointer' : 'grab',
+        background: isSealed
+          ? 'linear-gradient(160deg, rgba(34,197,94,0.06) 0%, rgba(34,197,94,0.02) 100%)'
+          : 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)',
+        border: isSealed ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.08)',
         backdropFilter: 'blur(8px)',
         boxShadow: isDragging
           ? `0 20px 60px rgba(0,0,0,0.6), 0 0 30px ${meta.glow}`
@@ -81,10 +90,25 @@ function KanbanCard({ proposal, locale, isDragging, onEdit, onDragStart, onDragE
         style={{ background: `linear-gradient(90deg, transparent, ${meta.color}60, transparent)` }}
       />
 
-      {/* Drag handle */}
-      <div className="absolute top-3 start-2 opacity-0 group-hover:opacity-30 transition-opacity">
-        <GripVertical size={12} className="text-white" />
-      </div>
+      {/* Drag handle — hidden for sealed cards */}
+      {!isSealed && (
+        <div className="absolute top-3 start-2 opacity-0 group-hover:opacity-30 transition-opacity">
+          <GripVertical size={12} className="text-white" />
+        </div>
+      )}
+
+      {/* Lock badge for sealed cards */}
+      {isSealed && (
+        <div className="absolute top-2.5 end-2.5 flex items-center gap-1 rounded-full px-1.5 py-0.5"
+          style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)' }}>
+          <svg width="8" height="9" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span className="text-[8px] font-black" style={{ color: '#4ade80' }}>
+            {isHe ? 'חתום' : 'SIGNED'}
+          </span>
+        </div>
+      )}
 
       {/* Client name */}
       <p className="text-[10px] font-bold uppercase tracking-widest text-white/35 truncate mb-0.5 ps-1">
@@ -135,14 +159,15 @@ interface KanbanColumnProps {
 function KanbanColumn({ col, proposals, locale, draggedId, onEdit, onDragStart, onDragEnd, onDrop }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false)
   const isHe = locale === 'he'
+  const isDropLocked = SEALED_FROM_DROP.has(col.status)
 
   return (
     <div
       className="flex flex-col min-w-0"
       style={{ minWidth: 220, flex: 1 }}
-      onDragOver={e => { e.preventDefault(); setIsOver(true) }}
-      onDragLeave={() => setIsOver(false)}
-      onDrop={() => { setIsOver(false); onDrop(col.status) }}
+      onDragOver={isDropLocked ? undefined : e => { e.preventDefault(); setIsOver(true) }}
+      onDragLeave={isDropLocked ? undefined : () => setIsOver(false)}
+      onDrop={isDropLocked ? undefined : () => { setIsOver(false); onDrop(col.status) }}
     >
       {/* Column header */}
       <div
@@ -249,6 +274,10 @@ export function KanbanBoard({ proposals, locale, onEdit }: KanbanBoardProps) {
     if (!id) return
     const proposal = proposals.find(p => p.id === id)
     if (!proposal || proposal.status === targetStatus) return
+    // Triple-lock: never allow dragging FROM or TO a sealed status.
+    // accepted = signed legal contract — immutable.
+    // accepted column = requires client signature via RPC, not a manual drag.
+    if (SEALED_FROM_DRAG.has(proposal.status) || SEALED_FROM_DROP.has(targetStatus)) return
     await updateProposal(id, { status: targetStatus })
     setDraggedId(null)
     draggedIdRef.current = null
