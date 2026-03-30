@@ -705,6 +705,46 @@ export default function DealRoom() {
     }
   }, [fetchStatus, proposal?.user_id, proposal?.public_token])
 
+  // ── Realtime — watch for proposal status changes ──────────────────────────
+  // When the creator edits and resends the proposal (status → 'sent'), the client's
+  // open tab needs to detect it automatically — without a manual refresh.
+  // We subscribe to Postgres Changes on the proposals table, filtered by public_token.
+  // On status change: update local proposal state and reset revision/decline flags.
+  useEffect(() => {
+    if (!token || fetchStatus !== 'ok' || !proposal) return
+
+    const channel = supabase
+      .channel(`proposal-status:${token}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'proposals',
+          filter: `public_token=eq.${token}`,
+        },
+        (payload) => {
+          const updated = payload.new as typeof proposal
+          // Refresh proposal in state (picks up new base_price, add_ons, global_discount_pct, etc.)
+          setProposal(updated)
+
+          // Reconcile UI flags with the new status
+          const s = updated.status
+          if (s === 'sent' || s === 'viewed') {
+            // Creator resent — unlock the client flow
+            setRevisionSent(false)
+            setDeclined(false)
+          }
+          if (s === 'accepted') setAccepted(true)
+          if (s === 'rejected') setDeclined(true)
+          if (s === 'needs_revision') setRevisionSent(true)
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [token, fetchStatus, proposal?.id])
+
   // ── IntersectionObserver — per-section read time ───────────────────────────
   useEffect(() => {
     if (fetchStatus !== 'ok') return
@@ -836,7 +876,12 @@ export default function DealRoom() {
         p_signer_role:  clientDetails.signer_role,
       })
     }
-    await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
+    const { data: success } = await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
+    if (!success) {
+      // RPC returned false — 0 rows updated (proposal status wasn't sent/viewed — already accepted/rejected/etc.)
+      // Don't flip local state; the UI will reflect the real status on next load.
+      return
+    }
     setRevisionSent(true)
     // Notify Dashboard in same browser — creator sees status flip to needs_revision instantly
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'revision_requested', token }) } catch (_) {}
