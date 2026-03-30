@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
 import type { Proposal, ProposalInsert, ProposalUpdate } from '../types/proposal'
+import type { RealtimeChannel } from '@supabase/supabase-js'
+
+// Module-level channel reference — one subscription shared for the store lifetime.
+// Kept outside the store so it persists across Zustand store resets.
+let _realtimeChannel: RealtimeChannel | null = null
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -17,6 +22,8 @@ interface ProposalState {
   deleteProposal: (id: string) => Promise<void>
   duplicateProposal: (id: string) => Promise<Proposal | null>
   injectDemoProposal: () => Promise<void>
+  subscribeRealtime: (userId: string) => void
+  unsubscribeRealtime: () => void
   clearError: () => void
 }
 
@@ -220,6 +227,54 @@ export const useProposalStore = create<ProposalState>()(
 
         await get().createProposal(demoData)
         localStorage.setItem(STORAGE_KEY, '1')
+      },
+
+      // ── Supabase Realtime ─────────────────────────────────────────────────
+      // Listens for INSERT/UPDATE/DELETE on proposals rows owned by the current
+      // user. Keeps the store in sync when a client accepts in another tab/device
+      // without requiring a manual page refresh.
+      subscribeRealtime: (userId: string) => {
+        if (_realtimeChannel) return // already subscribed
+
+        _realtimeChannel = supabase
+          .channel(`proposals:owner:${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'proposals',
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              const { eventType, new: newRow, old: oldRow } = payload
+              if (eventType === 'UPDATE' && newRow) {
+                set(s => ({
+                  proposals: s.proposals.map(p =>
+                    p.id === (newRow as Proposal).id ? (newRow as Proposal) : p
+                  ),
+                }))
+              } else if (eventType === 'INSERT' && newRow) {
+                set(s => {
+                  const exists = s.proposals.some(p => p.id === (newRow as Proposal).id)
+                  if (exists) return s
+                  return { proposals: [newRow as Proposal, ...s.proposals] }
+                })
+              } else if (eventType === 'DELETE' && oldRow) {
+                set(s => ({
+                  proposals: s.proposals.filter(p => p.id !== (oldRow as { id: string }).id),
+                }))
+              }
+            }
+          )
+          .subscribe()
+      },
+
+      unsubscribeRealtime: () => {
+        if (_realtimeChannel) {
+          supabase.removeChannel(_realtimeChannel)
+          _realtimeChannel = null
+        }
       },
 
       clearError: () => set({ error: null }),

@@ -831,21 +831,25 @@ export default function DealRoom() {
       }
     }
 
-    const { error } = await supabase.rpc('accept_proposal', { p_token: token })
-    if (!error) {
-      setSigTimestamp(new Date())
-      freshSignedRef.current = true
-      setAccepted(true)
-      // Notify the Dashboard in the same browser tab/session immediately —
-      // faster than waiting for Supabase Realtime Postgres Changes to propagate
-      try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
-      // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
-      if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
-    } else {
+    const { data: accepted_result, error } = await supabase.rpc('accept_proposal', { p_token: token })
+    // Migration 14: accept_proposal now returns BOOLEAN.
+    // error = null + data = false  → 0 rows updated (already accepted, or token not found)
+    // error = null + data = true   → row was updated successfully
+    if (error || !accepted_result) {
       setAcceptError(locale === 'he'
-        ? 'שגיאה באישור ההצעה. אנא נסה שוב.'
-        : 'Failed to confirm the agreement. Please try again.')
+        ? 'שגיאה באישור ההצעה. ייתכן שההצעה כבר אושרה. אנא רענן את הדף.'
+        : 'Failed to confirm the agreement. The proposal may already be accepted. Please refresh.')
+      setAccepting(false)
+      return
     }
+    setSigTimestamp(new Date())
+    freshSignedRef.current = true
+    setAccepted(true)
+    // Notify the Dashboard in the same browser tab/session immediately —
+    // faster than waiting for Supabase Realtime Postgres Changes to propagate
+    try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
+    // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
+    if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
     setAccepting(false)
   }, [token, accepting, accepted, clientDetails, locale])
 

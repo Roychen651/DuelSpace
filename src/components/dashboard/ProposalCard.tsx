@@ -6,7 +6,8 @@ import { useProposalStore } from '../../stores/useProposalStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
 import type { Proposal } from '../../types/proposal'
-import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
+import { formatCurrency, STATUS_META } from '../../types/proposal'
+import { calculateFinancials, ISRAELI_VAT_RATE } from '../../lib/financialMath'
 import { generateProposalPdf } from '../../lib/pdfEngine'
 
 // ─── Magnetic tilt hook ───────────────────────────────────────────────────────
@@ -198,7 +199,8 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   // Live presence — fed by the single ProtectedLayout channel, no per-card subscription
   const clientViewing = Boolean(activeViewers[proposal.public_token])
 
-  const total = proposalTotal(proposal)
+  const vatRate = (() => { const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? ''); return isNaN(v) ? ISRAELI_VAT_RATE : v })()
+  const total = calculateFinancials(proposal, undefined, vatRate).grandTotal
   const formatted = formatCurrency(total, proposal.currency)
   const meta = STATUS_META[proposal.status]
   const date = new Date(proposal.created_at).toLocaleDateString(

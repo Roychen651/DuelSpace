@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, Clock, GripVertical, CheckCircle2, Send, FileText, AlertCircle, RotateCcw } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import type { Proposal, ProposalStatus } from '../../types/proposal'
-import { proposalTotal, formatCurrency, STATUS_META } from '../../types/proposal'
+import { formatCurrency, STATUS_META } from '../../types/proposal'
+import { calculateFinancials, ISRAELI_VAT_RATE } from '../../lib/financialMath'
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -51,7 +52,8 @@ interface KanbanCardProps {
 
 function KanbanCard({ proposal, locale, isDragging, onEdit, onDragStart, onDragEnd }: KanbanCardProps) {
   const isHe = locale === 'he'
-  const total = proposalTotal(proposal)
+  const vatRate = (() => { const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? ''); return isNaN(v) ? ISRAELI_VAT_RATE : v })()
+  const total = calculateFinancials(proposal, undefined, vatRate).grandTotal
   const meta = STATUS_META[proposal.status]
 
   return (

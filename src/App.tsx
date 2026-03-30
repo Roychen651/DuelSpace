@@ -2,6 +2,7 @@ import { useEffect, Component, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
+import { useProposalStore } from './stores/useProposalStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
 import { ProtectedLayout } from './components/layout/ProtectedLayout'
 import AuthPage from './pages/Auth'
@@ -121,8 +122,19 @@ function AnimatedRoutes() {
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 function AppInner() {
-  const { initialize } = useAuthStore()
+  const { initialize, user, status } = useAuthStore()
+  const { subscribeRealtime, unsubscribeRealtime } = useProposalStore()
   useEffect(() => { initialize() }, [initialize])
+
+  // Start/stop Supabase Realtime for proposals when auth state changes.
+  // This keeps the Zustand store in sync on any page (not just Dashboard).
+  useEffect(() => {
+    if (status === 'authenticated' && user?.id) {
+      subscribeRealtime(user.id)
+    } else if (status === 'unauthenticated') {
+      unsubscribeRealtime()
+    }
+  }, [status, user?.id, subscribeRealtime, unsubscribeRealtime])
 
   return (
     <BrowserRouter>

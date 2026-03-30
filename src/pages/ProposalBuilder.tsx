@@ -12,6 +12,7 @@ import { LivePreview } from '../components/builder/LivePreview'
 import { BottomSheet } from '../components/dashboard/BottomSheet'
 import type { Proposal, ProposalInsert } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
+import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -250,16 +251,15 @@ export default function ProposalBuilder() {
   useEffect(() => { proposalIdRef.current = proposalId }, [proposalId])
 
   // ── Mount: load existing ─────────────────────────────────────────────────────
-  // For NEW proposals (no id): do NOT touch Supabase. We stay in local state
-  // until the user actually types something (lazy creation via handleChange).
+  // Always re-fetch from DB when loading an existing proposal — never rely on the
+  // Zustand cache alone. The cache may be stale (e.g. client just accepted the
+  // deal, but the store still shows status='sent' from before the sign event).
   useEffect(() => {
     const init = async () => {
       if (id) {
-        let found = useProposalStore.getState().proposals.find(p => p.id === id)
-        if (!found) {
-          await fetchProposals()
-          found = useProposalStore.getState().proposals.find(p => p.id === id)
-        }
+        // Always fetch fresh from DB to avoid stale status in Zustand cache
+        await fetchProposals()
+        const found = useProposalStore.getState().proposals.find(p => p.id === id)
         if (found) {
           const {
             id: _id, user_id: _uid, public_token: _pt,
@@ -282,6 +282,23 @@ export default function ProposalBuilder() {
     init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── BroadcastChannel: refresh when client accepts in another tab ─────────────
+  useEffect(() => {
+    if (!id) return
+    let ch: BroadcastChannel
+    try {
+      ch = new BroadcastChannel('dealspace:proposals')
+      ch.onmessage = (e) => {
+        if (e.data?.type === 'accepted') {
+          // Re-fetch so the status badge updates instantly without manual refresh
+          fetchProposals()
+        }
+      }
+    } catch (_) { /* BroadcastChannel not supported */ }
+    return () => { try { ch?.close() } catch (_) {} }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   // ── Cleanup on unmount ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -426,11 +443,15 @@ export default function ProposalBuilder() {
   const handleDownloadSignedPdf = useCallback(async () => {
     if (!currentProposal || pdfGenerating) return
     setPdfGenerating(true)
+    const vatRate = (() => {
+      const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? '')
+      return isNaN(v) ? ISRAELI_VAT_RATE : v
+    })()
+    const fin = calculateFinancials(currentProposal, undefined, vatRate)
     const enabledIds = currentProposal.add_ons.filter(a => a.enabled).map(a => a.id)
-    const total = currentProposal.base_price + currentProposal.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
     await generateProposalPdf({
       proposal: currentProposal,
-      totalAmount: total,
+      totalAmount: fin.grandTotal,
       enabledAddOnIds: enabledIds,
       signatureDataUrl: '',
       locale,
