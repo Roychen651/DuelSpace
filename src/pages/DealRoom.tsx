@@ -979,8 +979,8 @@ export default function DealRoom() {
             <span className="text-sm font-bold tracking-tight text-white/60">DealSpace</span>
           </motion.div>
 
-          {/* Countdown */}
-          {proposal.expires_at && (
+          {/* Countdown — hidden once deal is signed */}
+          {proposal.expires_at && !accepted && (
             <motion.div variants={slideUp}>
               <CountdownBanner expiresAt={proposal.expires_at} locale={locale} />
             </motion.div>
@@ -1164,103 +1164,174 @@ export default function DealRoom() {
 
         {/* Legal consent is now inside CheckoutClimax, shown after signature is confirmed */}
 
-        {/* ── Trust signals ─────────────────────────────────────────────── */}
-        <motion.div
-          className="flex items-center justify-center gap-6 py-6 mt-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-        >
-          {[
-            { icon: '🔒', label: locale === 'he' ? 'SSL מאובטח' : 'SSL Secured' },
-            { icon: '✍️', label: locale === 'he' ? 'חתימה חוקית' : 'Legally Binding' },
-            { icon: '⚡', label: locale === 'he' ? 'אישור מיידי' : 'Instant Confirm' },
-          ].map(({ icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1">
-              <span className="text-lg">{icon}</span>
-              <span className="text-[10px] font-medium text-white/25">{label}</span>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* ── Legal terms box ───────────────────────────────────────────── */}
-        <motion.div
-          ref={contractSectionRef}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.8 }}
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}
-        >
-          <button
-            onClick={() => setLegalExpanded(v => !v)}
-            className="flex w-full items-center justify-between px-5 py-4"
+        {/* ── Trust signals — only before signing ───────────────────────── */}
+        {!accepted && (
+          <motion.div
+            className="flex items-center justify-center gap-6 py-6 mt-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
           >
-            <div className="flex items-center gap-2">
-              <Shield size={13} className="text-white/30" />
-              <span className="text-xs font-semibold text-white/40">
-                {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
-              </span>
-            </div>
-            {legalExpanded
-              ? <ChevronUp size={13} className="text-white/30" />
-              : <ChevronDown size={13} className="text-white/30" />}
-          </button>
+            {[
+              { icon: '🔒', label: locale === 'he' ? 'SSL מאובטח' : 'SSL Secured' },
+              { icon: '✍️', label: locale === 'he' ? 'חתימה חוקית' : 'Legally Binding' },
+              { icon: '⚡', label: locale === 'he' ? 'אישור מיידי' : 'Instant Confirm' },
+            ].map(({ icon, label }) => (
+              <div key={label} className="flex flex-col items-center gap-1">
+                <span className="text-lg">{icon}</span>
+                <span className="text-[10px] font-medium text-white/25">{label}</span>
+              </div>
+            ))}
+          </motion.div>
+        )}
 
-          <AnimatePresence>
-            {legalExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div
-                  className="px-5 pb-5 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-white/35 space-y-3"
-                  style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}
+        {/* ── Legal terms box — only before signing ─────────────────────── */}
+        {!accepted && (
+          <motion.div
+            ref={contractSectionRef}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
+            <button
+              onClick={() => setLegalExpanded(v => !v)}
+              className="flex w-full items-center justify-between px-5 py-4"
+            >
+              <div className="flex items-center gap-2">
+                <Shield size={13} className="text-white/30" />
+                <span className="text-xs font-semibold text-white/40">
+                  {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
+                </span>
+              </div>
+              {legalExpanded
+                ? <ChevronUp size={13} className="text-white/30" />
+                : <ChevronDown size={13} className="text-white/30" />}
+            </button>
+
+            <AnimatePresence>
+              {legalExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  style={{ overflow: 'hidden' }}
                 >
-                  <p>
-                    {locale === 'he'
-                      ? 'חתימה על הצעה זו מהווה הסכם מחייב בין הצדדים. תשלום יבוצע לפי לוח הזמנים המוסכם. ביטול לאחר חתימה כפוף לדמי ביטול.'
-                      : 'Signing this proposal constitutes a binding agreement between the parties. Payment will be made according to the agreed schedule. Cancellation after signing is subject to cancellation fees.'}
-                  </p>
-                  <p>
-                    {locale === 'he'
-                      ? 'בעל העסק ו-DealSpace אינם אחראים לעיכובים שנגרמו מגורמים חיצוניים. שינויים בהיקף העבודה ידרשו הסכמה בכתב של שני הצדדים.'
-                      : 'Neither the service provider nor DealSpace is liable for delays caused by external factors. Changes to scope require written agreement from both parties.'}
-                  </p>
-                  <p>
-                    {locale === 'he'
-                      ? 'חתימה אלקטרונית זו כפופה לחוק חתימה אלקטרונית, התשס״א-2001. DealSpace משמשת כמתווך טכנולוגי בלבד ואינה צד להסכם.'
-                      : 'This electronic signature is subject to applicable electronic signature laws. DealSpace serves solely as a technology intermediary and is not a party to this agreement.'}
-                  </p>
-                  <p>
-                    {locale === 'he'
-                      ? 'החוק החל על הסכם זה הוא דין מדינת ישראל. כל סכסוך יובא לפני בית המשפט המוסמך במחוז תל אביב-יפו.'
-                      : 'This agreement is governed by the laws of the State of Israel. Any dispute shall be resolved in the competent courts of Tel Aviv-Jaffa.'}
-                  </p>
-                  <p className="text-white/20">
-                    {locale === 'he'
-                      ? 'לתנאי שירות המלאים ומדיניות הפרטיות, בקר ב-dealspace.app/terms'
-                      : 'For full Terms of Service and Privacy Policy, visit dealspace.app/terms'}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                  <div
+                    className="px-5 pb-5 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-white/35 space-y-3"
+                    style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}
+                  >
+                    <p>
+                      {locale === 'he'
+                        ? 'חתימה על הצעה זו מהווה הסכם מחייב בין הצדדים. תשלום יבוצע לפי לוח הזמנים המוסכם. ביטול לאחר חתימה כפוף לדמי ביטול.'
+                        : 'Signing this proposal constitutes a binding agreement between the parties. Payment will be made according to the agreed schedule. Cancellation after signing is subject to cancellation fees.'}
+                    </p>
+                    <p>
+                      {locale === 'he'
+                        ? 'בעל העסק ו-DealSpace אינם אחראים לעיכובים שנגרמו מגורמים חיצוניים. שינויים בהיקף העבודה ידרשו הסכמה בכתב של שני הצדדים.'
+                        : 'Neither the service provider nor DealSpace is liable for delays caused by external factors. Changes to scope require written agreement from both parties.'}
+                    </p>
+                    <p>
+                      {locale === 'he'
+                        ? 'חתימה אלקטרונית זו כפופה לחוק חתימה אלקטרונית, התשס״א-2001. DealSpace משמשת כמתווך טכנולוגי בלבד ואינה צד להסכם.'
+                        : 'This electronic signature is subject to applicable electronic signature laws. DealSpace serves solely as a technology intermediary and is not a party to this agreement.'}
+                    </p>
+                    <p>
+                      {locale === 'he'
+                        ? 'החוק החל על הסכם זה הוא דין מדינת ישראל. כל סכסוך יובא לפני בית המשפט המוסמך במחוז תל אביב-יפו.'
+                        : 'This agreement is governed by the laws of the State of Israel. Any dispute shall be resolved in the competent courts of Tel Aviv-Jaffa.'}
+                    </p>
+                    <p className="text-white/20">
+                      {locale === 'he'
+                        ? 'לתנאי שירות המלאים ומדיניות הפרטיות, בקר ב-dealspace.app/terms'
+                        : 'For full Terms of Service and Privacy Policy, visit dealspace.app/terms'}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
-        {/* Spacer so sticky bar doesn't overlap content */}
-        <div className="h-44" />
+        {/* ── Sealed summary — replaces signing UI for already-accepted deals ─ */}
+        {accepted && !freshSignedRef.current && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.4 }}
+            className="mt-6 rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.07) 0%, rgba(16,185,129,0.04) 100%)',
+              border: '1px solid rgba(34,197,94,0.18)',
+              boxShadow: '0 0 40px rgba(34,197,94,0.06), inset 0 1px 0 rgba(34,197,94,0.1)',
+            }}
+          >
+            {/* Header row */}
+            <div className="flex items-center gap-3.5 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(34,197,94,0.1)' }}>
+              <div
+                className="flex-none flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}
+              >
+                <Check size={18} className="text-emerald-400" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black text-emerald-400">
+                  {locale === 'he' ? 'הסכם חתום ואושר' : 'Agreement Signed & Approved'}
+                </p>
+                <p className="text-[11px] text-white/35 mt-0.5">
+                  {proposal.client_name
+                    ? (locale === 'he'
+                        ? `נחתם על ידי ${proposal.client_name}`
+                        : `Signed by ${proposal.client_name}`)
+                    : (locale === 'he' ? 'ההסכם אושר' : 'Agreement confirmed')}
+                  {proposal.updated_at && ` · ${new Date(proposal.updated_at).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="px-5 py-4 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+                {locale === 'he' ? 'סה"כ מאושר' : 'Total Approved'}
+              </p>
+              <p
+                className="text-xl font-black tabular-nums"
+                style={{
+                  background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                {formatCurrency(grandTotal, proposal.currency)}
+              </p>
+            </div>
+
+            {/* DealSpace disclaimer */}
+            <div className="px-5 pb-4">
+              <p className="text-[10px] text-white/20 text-center leading-relaxed">
+                {locale === 'he'
+                  ? 'DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם זה, לאיכות השירותים, או לכל מחלוקת בין הצדדים.'
+                  : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Spacer — smaller when sticky bar is absent (accepted non-fresh) */}
+        <div className={accepted && !freshSignedRef.current ? 'h-10' : 'h-44'} />
       </div>
 
-      {/* ── Sticky checkout bar (hidden when expired or declined) ───────── */}
+      {/* ── Sticky checkout bar (hidden when expired, declined, or already sealed) */}
       {(() => {
+        // Already accepted before this session — inline summary is shown instead
+        if (accepted && !freshSignedRef.current) return null
+
         const isExpired = proposal.expires_at
           ? new Date(proposal.expires_at).getTime() < Date.now()
           : false
