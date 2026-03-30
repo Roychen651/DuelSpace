@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RefObject } from 'react'
 import { useParams } from 'react-router-dom'
 import confetti from 'canvas-confetti'
-import { motion, AnimatePresence, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useSpring, useMotionValue, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { calculateFinancials } from '../lib/financialMath'
@@ -122,6 +122,19 @@ function CountdownBanner({ expiresAt, locale }: { expiresAt: string; locale: str
   )
 }
 
+// ─── Animated counter (spring-physics number roll) ────────────────────────────
+
+function AnimatedCounter({ value, currency }: { value: number; currency: string }) {
+  const mv = useMotionValue(value)
+  const spring = useSpring(mv, { stiffness: 110, damping: 22, restDelta: 0.5 })
+  const [display, setDisplay] = useState(value)
+
+  useEffect(() => { mv.set(value) }, [value, mv])
+  useEffect(() => spring.on('change', v => setDisplay(Math.round(v))), [spring])
+
+  return <>{formatCurrency(display, currency)}</>
+}
+
 // ─── Aurora background ────────────────────────────────────────────────────────
 
 function DealRoomAurora() {
@@ -131,30 +144,51 @@ function DealRoomAurora() {
       <div
         className="absolute -top-1/4 -left-1/4 rounded-full"
         style={{
-          width: '60vw', height: '60vw',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 68%)',
-          filter: 'blur(60px)',
+          width: '70vw', height: '70vw',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%)',
+          filter: 'blur(80px)',
           animation: 'dr-float-a 22s ease-in-out infinite',
         }}
       />
       <div
         className="absolute -bottom-1/4 -right-1/4 rounded-full"
         style={{
-          width: '55vw', height: '55vw',
-          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 65%)',
-          filter: 'blur(70px)',
+          width: '60vw', height: '60vw',
+          background: 'radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 62%)',
+          filter: 'blur(90px)',
           animation: 'dr-float-b 28s ease-in-out infinite',
+        }}
+      />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: '40vw', height: '40vw',
+          background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'dr-float-a 34s ease-in-out infinite reverse',
         }}
       />
       {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.025]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
+            'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
+          backgroundSize: '52px 52px',
         }}
       />
+      {/* Cinematic film-grain noise — SVG feTurbulence overlay */}
+      <svg
+        className="absolute inset-0 h-full w-full"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ mixBlendMode: 'overlay', opacity: 0.1 }}
+      >
+        <filter id="dr-noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#dr-noise)" />
+      </svg>
     </div>
   )
 }
@@ -182,6 +216,18 @@ const pageKeyframes = `
   @keyframes dr-glow-ping {
     0%     { transform: scale(1); opacity: 0.8; }
     80%, 100% { transform: scale(2); opacity: 0; }
+  }
+  @keyframes checkout-shimmer {
+    0%   { transform: translateX(-150%) skewX(-18deg); }
+    100% { transform: translateX(400%) skewX(-18deg); }
+  }
+  @keyframes dr-sealed-glow {
+    0%, 100% { box-shadow: 0 0 40px rgba(34,197,94,0.06), inset 0 1px 0 rgba(34,197,94,0.1); }
+    50%       { box-shadow: 0 0 60px rgba(34,197,94,0.12), inset 0 1px 0 rgba(34,197,94,0.18); }
+  }
+  @keyframes dr-progress-glow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.75; }
   }
 
   /* TipTap rich-text description styles */
@@ -489,6 +535,13 @@ export default function DealRoom() {
   const [acceptError, setAcceptError] = useState<string | null>(null)
   const [declining, setDeclining] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
+
+  // ── Sprint 21: Scroll progress bar ────────────────────────────────────────
+  const { scrollYProgress } = useScroll()
+  const scrollBarScaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30, restDelta: 0.001 })
+
+  // ── Sprint 21: Spotlight flashlight on base package card ──────────────────
+  const [baseSpotlight, setBaseSpotlight] = useState({ x: 50, y: 50, active: false })
 
   // ── Derived status flags — single source of truth is proposal.status ──────
   // These are NEVER stored in state. They are always computed from the proposal
@@ -1092,6 +1145,17 @@ export default function DealRoom() {
       `}</style>
       <DealRoomAurora />
 
+      {/* ── Scroll progress bar ─────────────────────────────────────────── */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-50 h-[2px] origin-left"
+        style={{
+          scaleX: scrollBarScaleX,
+          background: `linear-gradient(90deg, ${brandColor}, #a855f7, #ec4899)`,
+          boxShadow: `0 0 12px ${brandColor}cc, 0 0 24px ${brandColor}66`,
+          animation: 'dr-progress-glow 2s ease-in-out infinite',
+        }}
+      />
+
       {/* ── Sticky FOMO urgency band (< 48 h) ───────────────────────────── */}
       {isWithin48h && !accepted && (
         <StickyFomoBand
@@ -1196,24 +1260,44 @@ export default function DealRoom() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="rounded-2xl p-5 mb-3"
+          whileHover={{ scale: 1.012, transition: { type: 'spring' as const, stiffness: 340, damping: 28 } }}
+          whileTap={{ scale: 0.984, transition: { type: 'spring' as const, stiffness: 500, damping: 18 } }}
+          className="relative rounded-2xl p-5 mb-3 overflow-hidden cursor-default"
           style={{
-            background:
-              'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
           }}
+          onMouseMove={e => {
+            const r = e.currentTarget.getBoundingClientRect()
+            setBaseSpotlight({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100, active: true })
+          }}
+          onMouseLeave={() => setBaseSpotlight(s => ({ ...s, active: false }))}
         >
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+          {/* Aceternity spotlight layer */}
+          <div
+            className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(320px circle at ${baseSpotlight.x}% ${baseSpotlight.y}%, rgba(255,255,255,0.06) 0%, transparent 70%)`,
+              opacity: baseSpotlight.active ? 1 : 0,
+            }}
+          />
+          <p className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
             {locale === 'he' ? 'חבילת בסיס' : 'Base Package'}
           </p>
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-xl"
-                style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.2)' }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl"
+                style={{
+                  background: `linear-gradient(135deg, ${brandColor}22, ${brandColor}0E)`,
+                  border: `1px solid ${brandColor}35`,
+                  boxShadow: `0 0 16px ${brandColor}18`,
+                }}
               >
-                <Check size={14} className="text-indigo-400" strokeWidth={2.5} />
+                <Check size={15} style={{ color: brandColor }} strokeWidth={2.5} />
               </div>
               <div>
                 <p className="text-[15px] font-semibold text-white/90">
@@ -1226,7 +1310,11 @@ export default function DealRoom() {
             </div>
             <p
               className="text-xl font-black tabular-nums"
-              style={{ color: '#c4b5fd' }}
+              style={{
+                background: `linear-gradient(135deg, ${brandColor}FF, #c4b5fd)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
               {formatCurrency(proposal.base_price, proposal.currency)}
             </p>
@@ -1419,29 +1507,42 @@ export default function DealRoom() {
         {/* ── Sealed summary — replaces signing UI for already-accepted deals ─ */}
         {accepted && !freshSignedRef.current && (
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.4 }}
-            className="mt-6 rounded-2xl overflow-hidden"
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.35, type: 'spring' as const, stiffness: 200, damping: 24 }}
+            className="mt-6 rounded-3xl overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(34,197,94,0.07) 0%, rgba(16,185,129,0.04) 100%)',
-              border: '1px solid rgba(34,197,94,0.18)',
-              boxShadow: '0 0 40px rgba(34,197,94,0.06), inset 0 1px 0 rgba(34,197,94,0.1)',
+              background: 'linear-gradient(160deg, rgba(34,197,94,0.09) 0%, rgba(16,185,129,0.04) 60%, rgba(5,5,10,0.8) 100%)',
+              border: '1px solid rgba(34,197,94,0.22)',
+              boxShadow: '0 0 0 1px rgba(34,197,94,0.08), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(34,197,94,0.18)',
+              backdropFilter: 'blur(40px)',
+              WebkitBackdropFilter: 'blur(40px)',
+              animation: 'dr-sealed-glow 4s ease-in-out infinite',
             }}
           >
             {/* Header row */}
-            <div className="flex items-center gap-3.5 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(34,197,94,0.1)' }}>
-              <div
-                className="flex-none flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}
+            <div
+              className="flex items-center gap-3.5 px-5 pt-5 pb-4"
+              style={{ borderBottom: '1px solid rgba(34,197,94,0.12)' }}
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring' as const, stiffness: 380, damping: 18, delay: 0.5 }}
+                className="flex-none flex h-11 w-11 items-center justify-center rounded-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.25), rgba(16,185,129,0.12))',
+                  border: '1px solid rgba(34,197,94,0.4)',
+                  boxShadow: '0 0 24px rgba(34,197,94,0.25)',
+                }}
               >
-                <Check size={18} className="text-emerald-400" strokeWidth={2.5} />
-              </div>
+                <Check size={19} className="text-emerald-400" strokeWidth={2.5} />
+              </motion.div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-emerald-400">
+                <p className="text-sm font-black text-emerald-400 tracking-tight">
                   {locale === 'he' ? 'הסכם חתום ואושר' : 'Agreement Signed & Approved'}
                 </p>
-                <p className="text-[11px] text-white/35 mt-0.5">
+                <p className="text-[11px] text-white/40 mt-0.5">
                   {proposal.client_name
                     ? (locale === 'he'
                         ? `נחתם על ידי ${proposal.client_name}`
@@ -1452,26 +1553,58 @@ export default function DealRoom() {
               </div>
             </div>
 
-            {/* Total */}
-            <div className="px-5 py-4 flex items-center justify-between">
+            {/* Total — spring-animated counter */}
+            <div className="px-5 py-5 flex items-center justify-between">
               <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">
                 {locale === 'he' ? 'סה"כ מאושר' : 'Total Approved'}
               </p>
               <p
-                className="text-xl font-black tabular-nums"
+                className="text-2xl font-black tabular-nums"
                 style={{
-                  background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+                  background: 'linear-gradient(135deg, #4ade80, #22c55e, #86efac)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 0 12px rgba(34,197,94,0.4))',
                 }}
               >
-                {formatCurrency(grandTotal, proposal.currency)}
+                <AnimatedCounter value={grandTotal} currency={proposal.currency} />
               </p>
             </div>
 
-            {/* DealSpace disclaimer */}
-            <div className="px-5 pb-4">
-              <p className="text-[10px] text-white/20 text-center leading-relaxed">
+            {/* Re-download PDF — always available for sealed deals */}
+            <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(34,197,94,0.08)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-3 pt-4">
+                {locale === 'he' ? 'חוזה חתום' : 'Signed Contract'}
+              </p>
+              <motion.button
+                onClick={handleDownloadPdf}
+                disabled={pdfGenerating}
+                className="relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl py-3.5 text-sm font-bold text-white transition disabled:opacity-60"
+                whileHover={{ scale: 1.02, transition: { type: 'spring' as const, stiffness: 340, damping: 24 } }}
+                whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(16,185,129,0.14) 100%)',
+                  border: '1px solid rgba(34,197,94,0.35)',
+                  boxShadow: '0 0 24px rgba(34,197,94,0.12), inset 0 1px 0 rgba(255,255,255,0.07)',
+                }}
+              >
+                {!pdfGenerating && (
+                  <span
+                    className="pointer-events-none absolute inset-y-0 w-1/3 bg-white/[0.06]"
+                    style={{ animation: 'checkout-shimmer 3s ease-out 0.5s infinite' }}
+                    aria-hidden
+                  />
+                )}
+                <span className="relative flex items-center gap-2">
+                  <FileDown size={15} className={pdfGenerating ? 'animate-bounce' : ''} />
+                  {pdfGenerating
+                    ? (locale === 'he' ? 'יוצר PDF…' : 'Generating PDF…')
+                    : (locale === 'he' ? '⬇ הורד חוזה חתום (PDF)' : '⬇ Download Signed Contract (PDF)')}
+                </span>
+              </motion.button>
+
+              {/* DealSpace disclaimer */}
+              <p className="text-[10px] text-white/18 text-center leading-relaxed mt-4">
                 {locale === 'he'
                   ? 'DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם זה, לאיכות השירותים, או לכל מחלוקת בין הצדדים.'
                   : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
