@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
@@ -10,24 +10,6 @@ import type { Proposal } from '../../types/proposal'
 import { formatCurrency, STATUS_META } from '../../types/proposal'
 import { calculateFinancials, ISRAELI_VAT_RATE } from '../../lib/financialMath'
 import { generateProposalPdf } from '../../lib/pdfEngine'
-
-// ─── Magnetic tilt hook ───────────────────────────────────────────────────────
-
-function useMagneticTilt() {
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-  const rotateX = useSpring(useTransform(y, [-60, 60], [4, -4]), { stiffness: 280, damping: 30 })
-  const rotateY = useSpring(useTransform(x, [-80, 80], [-4, 4]), { stiffness: 280, damping: 30 })
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    x.set(e.clientX - rect.left - rect.width / 2)
-    y.set(e.clientY - rect.top - rect.height / 2)
-  }
-  const handleMouseLeave = () => { x.set(0); y.set(0) }
-
-  return { rotateX, rotateY, handleMouseMove, handleMouseLeave }
-}
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
@@ -199,7 +181,7 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
   const [archiveError, setArchiveError] = useState<string | null>(null)
   const isArchived = proposal.is_archived
   const [pdfGenerating, setPdfGenerating] = useState(false)
-  const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
+  const [hovered, setHovered] = useState(false)
 
   // Live presence — fed by the single ProtectedLayout channel, no per-card subscription
   const clientViewing = Boolean(activeViewers[proposal.public_token])
@@ -263,9 +245,9 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
     <>
       <motion.div
         className="group relative rounded-2xl overflow-hidden cursor-pointer select-none"
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 1000 }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        style={{ padding: '1px', background: hovered ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         whileHover={{ scale: 1.02, y: -4 }}
         whileTap={{ scale: 0.98 }}
         animate={deleting ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
@@ -275,13 +257,39 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
           onEdit(proposal.id)
         }}
       >
+        {/* Desktop: spinning conic gradient border on hover */}
+        <div
+          className="pointer-events-none absolute inset-0 hidden sm:block"
+          style={{ borderRadius: 'inherit', overflow: 'hidden' }}
+        >
+          <div
+            className="absolute rounded-full"
+            style={{
+              inset: '-80%',
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+              background: `conic-gradient(from 0deg, transparent 30%, ${meta.color}88 45%, ${meta.color} 50%, ${meta.color}88 55%, transparent 70%)`,
+              animation: 'pc-border-spin 2.5s linear infinite',
+            }}
+          />
+        </div>
+
+        {/* Mobile: status-colored breathing border */}
+        <div
+          className="pointer-events-none absolute inset-0 sm:hidden"
+          style={{
+            border: `1px solid ${meta.color}`,
+            borderRadius: 'inherit',
+            animation: 'pc-mobile-breathe 3.5s ease-in-out infinite',
+          }}
+        />
+
         {/* Card background */}
         <div
           className="relative p-5 h-full"
           style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '1rem',
+            background: 'linear-gradient(135deg, #0e0e1c 0%, #07070f 100%)',
+            borderRadius: '0.9375rem',
             backdropFilter: 'blur(12px)',
           }}
         >
@@ -634,11 +642,19 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
           {/* Status timeline */}
           <StatusTimeline proposal={proposal} locale={locale} />
 
-          {/* Keyframes for live badge ping */}
+          {/* Keyframes */}
           <style>{`
             @keyframes card-ping {
               0%, 100% { transform: scale(1); opacity: 0.7; }
               50%       { transform: scale(2.2); opacity: 0; }
+            }
+            @keyframes pc-border-spin {
+              from { transform: rotate(0deg); }
+              to   { transform: rotate(360deg); }
+            }
+            @keyframes pc-mobile-breathe {
+              0%, 100% { opacity: 0.2; }
+              50%       { opacity: 0.65; }
             }
           `}</style>
         </div>
