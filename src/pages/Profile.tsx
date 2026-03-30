@@ -343,7 +343,7 @@ export default function Profile() {
     setTimeout(() => setPwSaved(false), 2500)
   }
 
-  // Keep biz state in sync if user metadata changes externally
+  // Keep biz state in sync if user metadata changes externally (e.g., after auth refresh)
   useEffect(() => {
     if (!user) return
     setBiz({
@@ -354,6 +354,9 @@ export default function Profile() {
       signatory_name: (user.user_metadata?.signatory_name  as string | undefined) ?? '',
     })
     setBrandColor((user.user_metadata?.brand_color as string | undefined) ?? '#6366f1')
+    // logo_url must also sync — useState initializes once on mount; if user loads after
+    // initial render (common on page refresh) the logo would show blank without this.
+    setLogoUrl((user.user_metadata?.logo_url as string | undefined) ?? '')
   }, [user])
 
   if (!user) return null

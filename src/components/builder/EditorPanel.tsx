@@ -154,7 +154,7 @@ function Field({
 }
 
 const inputClass = [
-  'w-full rounded-2xl border bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-white/20',
+  'w-full rounded-2xl border bg-white/[0.05] px-4 py-3.5 text-base text-white placeholder-white/20',
   'outline-none transition-all duration-300',
   'border-white/[0.1] focus:border-indigo-500/65 focus:bg-white/[0.07]',
   'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]',
@@ -216,36 +216,39 @@ function AddOnRow({
 
         {/* Fields */}
         <div className="flex-1 space-y-2 min-w-0">
-          <div className="flex gap-2">
+          {/* Name + price — stack vertically on narrow screens */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               className={inputClass + ' flex-1'}
               placeholder={isHe ? 'שם השירות' : 'Service name'}
               value={addOn.label}
               onChange={e => onChange({ ...addOn, label: e.target.value })}
             />
-            <div className="flex flex-col gap-0.5">
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                className={inputClass + ' w-24'}
-                placeholder="0"
-                value={addOn.price || ''}
-                onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
-                title={isHe ? 'מחיר לפני מע"מ' : 'Price before VAT'}
-              />
-              {showVat && addOn.price > 0 && (
-                <div
-                  className="rounded-lg px-2 py-0.5 text-[9px] text-center font-semibold tabular-nums"
-                  style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
-                >
-                  +{isHe ? 'מע"מ' : 'VAT'} = {formatCurrency(vatTotal, currency)}
-                </div>
-              )}
+            <div className="flex gap-2 items-start">
+              <div className="flex flex-col gap-0.5 flex-1 sm:flex-none">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  className={inputClass + ' sm:w-24'}
+                  placeholder="0"
+                  value={addOn.price || ''}
+                  onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
+                  title={isHe ? 'מחיר לפני מע"מ' : 'Price before VAT'}
+                />
+                {showVat && addOn.price > 0 && (
+                  <div
+                    className="rounded-lg px-2 py-0.5 text-[9px] text-center font-semibold tabular-nums"
+                    style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
+                  >
+                    +{isHe ? 'מע"מ' : 'VAT'} = {formatCurrency(vatTotal, currency)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <input
-            className={inputClass + ' text-xs'}
+            className={inputClass}
             placeholder={isHe ? 'תיאור קצר (אופציונלי)' : 'Short description (optional)'}
             value={addOn.description ?? ''}
             onChange={e => onChange({ ...addOn, description: e.target.value })}
@@ -295,18 +298,22 @@ function AddOnRow({
           >
             {addOn.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
           </button>
-          {/* Client-adjustable quantity toggle */}
+          {/* Client-adjustable quantity toggle — visible badge */}
           <button
             type="button"
             onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
-            className="transition-colors"
-            title={isHe
-              ? (addOn.clientAdjustable !== false ? 'לקוח יכול לשנות כמות — לחץ לנעילה' : 'כמות נעולה — לחץ לאפשר שינוי')
-              : (addOn.clientAdjustable !== false ? 'Client can adjust qty — click to lock' : 'Qty locked — click to allow')}
-            style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.18)' }}
-            aria-label="Toggle client quantity adjustment"
+            className="flex flex-col items-center gap-0.5 transition-all"
+            aria-label={isHe ? 'שינוי כמות על ידי לקוח' : 'Toggle client qty'}
           >
-            <SlidersHorizontal size={13} />
+            <SlidersHorizontal size={12} style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.22)' }} />
+            <span
+              className="text-[8px] font-bold uppercase leading-none"
+              style={{ color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.22)' }}
+            >
+              {addOn.clientAdjustable !== false
+                ? (isHe ? 'פתוח' : 'Free')
+                : (isHe ? 'נעול' : 'Lock')}
+            </span>
           </button>
           <button
             type="button"

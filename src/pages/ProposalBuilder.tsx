@@ -447,7 +447,7 @@ export default function ProposalBuilder() {
 
   const canSend = Boolean(draft.project_title?.trim()) || isNeedsRevision
 
-  // ── Download signed PDF (builder, accepted state) ────────────────────────────
+  // ── Download PDF (draft watermark for non-accepted, clean for accepted) ─────────
   const handleDownloadSignedPdf = useCallback(async () => {
     if (!currentProposal || pdfGenerating) return
     setPdfGenerating(true)
@@ -463,6 +463,7 @@ export default function ProposalBuilder() {
       enabledAddOnIds: enabledIds,
       signatureDataUrl: '',
       locale,
+      isDraft: currentProposal.status !== 'accepted',
     })
     setPdfGenerating(false)
   }, [currentProposal, pdfGenerating, locale])
@@ -601,16 +602,20 @@ export default function ProposalBuilder() {
             </div>
           )}
 
-          {/* Download signed PDF — icon on mobile, text on sm+ */}
-          {isAccepted && (
+          {/* Download PDF — always available; draft watermark for non-accepted */}
+          {currentProposal && (
             <motion.button
               onClick={handleDownloadSignedPdf}
               disabled={pdfGenerating}
               className="flex-none flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 h-9 text-xs font-bold transition disabled:opacity-50"
-              style={{
+              style={isAccepted ? {
                 background: 'rgba(34,197,94,0.12)',
                 border: '1px solid rgba(34,197,94,0.25)',
                 color: '#4ade80',
+              } : {
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.5)',
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
@@ -619,7 +624,9 @@ export default function ProposalBuilder() {
               <span className="hidden sm:inline whitespace-nowrap">
                 {pdfGenerating
                   ? (locale === 'he' ? 'יוצר…' : 'Generating…')
-                  : (locale === 'he' ? 'הורד PDF' : 'Download PDF')}
+                  : isAccepted
+                    ? (locale === 'he' ? 'הורד PDF' : 'Download PDF')
+                    : (locale === 'he' ? 'טיוטת PDF' : 'Draft PDF')}
               </span>
             </motion.button>
           )}

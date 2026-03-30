@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Check, Zap, Eye, Clock, ExternalLink, Lock } from 'lucide-react'
+import { Check, Zap, Eye, Clock, ExternalLink, Lock, FileText, Milestone } from 'lucide-react'
 import { DEFAULT_VAT_RATE, formatCurrency, STATUS_META } from '../../types/proposal'
 import type { Proposal } from '../../types/proposal'
 import { calculateFinancials } from '../../lib/financialMath'
@@ -406,6 +406,79 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                       />
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* ── Payment milestones ───────────────────────────────── */}
+              {proposal.payment_milestones && proposal.payment_milestones.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2 flex items-center gap-1.5">
+                    <Milestone size={10} className="text-indigo-400/60" />
+                    {locale === 'he' ? 'לוח תשלומים' : 'Payment Schedule'}
+                  </p>
+                  <div className="space-y-1.5">
+                    {proposal.payment_milestones.map((m, i) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between rounded-xl px-3.5 py-2.5"
+                        style={{
+                          background: 'rgba(99,102,241,0.06)',
+                          border: '1px solid rgba(99,102,241,0.1)',
+                        }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="flex h-5 w-5 flex-none items-center justify-center rounded-full text-[9px] font-black"
+                            style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}
+                          >
+                            {i + 1}
+                          </div>
+                          <span className="text-xs font-medium text-white/60">
+                            {m.name || (locale === 'he' ? `תשלום ${i + 1}` : `Payment ${i + 1}`)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-indigo-300 tabular-nums">
+                            {formatCurrency(Math.round(fin.grandTotal * m.percentage / 100), proposal.currency)}
+                          </span>
+                          <span
+                            className="text-[9px] font-semibold rounded-full px-1.5 py-0.5"
+                            style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}
+                          >
+                            {m.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Proposal extras: video + access protection ────────── */}
+              {(proposal.video_url || proposal.access_code) && (
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {proposal.video_url && (
+                    <div
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
+                      style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}
+                    >
+                      <FileText size={11} style={{ color: '#d4af37', flexShrink: 0 }} />
+                      <span className="text-[11px] font-medium" style={{ color: 'rgba(212,175,55,0.75)' }}>
+                        {locale === 'he' ? 'וידאו פיץ׳ מצורף' : 'Video pitch included'}
+                      </span>
+                    </div>
+                  )}
+                  {proposal.access_code && (
+                    <div
+                      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
+                      style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
+                    >
+                      <Lock size={11} style={{ color: '#818cf8', flexShrink: 0 }} />
+                      <span className="text-[11px] font-medium" style={{ color: 'rgba(129,140,248,0.85)' }}>
+                        {locale === 'he' ? 'מוגן בקוד גישה' : 'Access code protected'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
