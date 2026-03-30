@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, type Transition } from 'framer-motion'
-import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe, CheckCircle2, XCircle } from 'lucide-react'
+import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe, CheckCircle2, XCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
 import type { Locale } from '../lib/i18n'
@@ -41,6 +41,15 @@ function GlobalStyles() {
       }
       @keyframes ds-spin {
         to { transform: rotate(360deg); }
+      }
+      @keyframes ds-shake {
+        0%,100% { transform: translateX(0); }
+        15%     { transform: translateX(-6px); }
+        30%     { transform: translateX(6px); }
+        45%     { transform: translateX(-4px); }
+        60%     { transform: translateX(4px); }
+        75%     { transform: translateX(-2px); }
+        90%     { transform: translateX(2px); }
       }
     `}</style>
   )
@@ -393,10 +402,11 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
       <AnimatePresence>
         {error && (
           <motion.p
+            key={error}
             className="rounded-xl px-3 py-2.5 text-xs"
-            style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171' }}
+            style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171', animation: 'ds-shake 0.4s ease-out' }}
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
+            exit={{ opacity: 0, height: 0 }} transition={MODE_TRANSITION} role="alert">
             {t(error) || error}
           </motion.p>
         )}
@@ -636,30 +646,62 @@ function MagicLinkForm({ onBack }: { onBack: () => void }) {
 // ─── Forgot Password Form ─────────────────────────────────────────────────────
 
 function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
-  const { t } = useI18n()
-  const { sendPasswordResetEmail, error, clearError } = useAuthStore()
+  const { t, locale } = useI18n()
+  const { sendPasswordResetEmail, clearError } = useAuthStore()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const isHe = locale === 'he'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); clearError(); setLoading(true)
     await sendPasswordResetEmail(email)
     setLoading(false)
-    if (!error) setSent(true)
+    setSent(true) // Always show success — don't leak whether the email exists
   }
 
   if (sent) {
     return (
-      <div className="space-y-4 text-center" style={fadeUp(0)}>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{t('auth.action.resetPassword.sent')}</p>
-        <button type="button" onClick={onBack}
-          className="text-sm transition" style={{ color: 'rgba(99,102,241,0.7)' }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}>
-          {t('auth.action.backToSignIn')}
-        </button>
-      </div>
+      <motion.div
+        className="space-y-5"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' as const }}
+      >
+        {/* Green success banner */}
+        <div
+          className="rounded-2xl px-5 py-6 text-center"
+          style={{
+            background: 'rgba(34,197,94,0.07)',
+            border: '1px solid rgba(34,197,94,0.2)',
+            boxShadow: '0 0 40px rgba(34,197,94,0.06), inset 0 1px 0 rgba(34,197,94,0.1)',
+          }}
+        >
+          <div
+            className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
+            style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}
+          >
+            <MailCheck size={22} style={{ color: '#4ade80' }} />
+          </div>
+          <p className="font-bold text-white mb-1.5">
+            {isHe ? 'קישור נשלח!' : 'Recovery link sent!'}
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {isHe
+              ? 'שלחנו לך קישור לשחזור סיסמה למייל. אנא בדוק גם בתיקיית הספאם.'
+              : 'Please check your email — and your spam folder too.'}
+          </p>
+        </div>
+
+        <div className="text-center">
+          <button type="button" onClick={onBack}
+            className="text-sm transition" style={{ color: 'rgba(99,102,241,0.7)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}>
+            {t('auth.action.backToSignIn')}
+          </button>
+        </div>
+      </motion.div>
     )
   }
 
@@ -690,7 +732,7 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
 // ─── Main Auth Page ───────────────────────────────────────────────────────────
 
 export default function AuthPage() {
-  const { t, dir } = useI18n()
+  const { t, dir, locale } = useI18n()
   const [tab, setTab] = useState<'signin' | 'signup'>('signin')
   const [mode, setMode] = useState<AuthMode>('signin')
 
@@ -753,8 +795,12 @@ export default function AuthPage() {
               </h1>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 {showTabs
-                  ? (tab === 'signin' ? 'Welcome back' : 'Create your account')
-                  : (mode === 'forgot' ? 'Enter your email to reset' : 'Sign in without a password')}
+                  ? (tab === 'signin'
+                      ? (locale === 'he' ? 'ברוך שובך' : 'Welcome back')
+                      : (locale === 'he' ? 'יצירת חשבון חדש' : 'Create your account'))
+                  : (mode === 'forgot'
+                      ? (locale === 'he' ? 'אפס את הסיסמה שלך' : 'Reset your password')
+                      : (locale === 'he' ? 'כניסה ללא סיסמה' : 'Sign in without a password'))}
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Eye, Zap, Send, Copy, Check, X, ExternalLink, MessageCircle, Mail, ShieldCheck, RefreshCw, FileDown } from 'lucide-react'
+import { ArrowLeft, Eye, Zap, Send, ShieldCheck, RefreshCw, FileDown } from 'lucide-react'
 import { useProposalStore } from '../stores/useProposalStore'
 import { useAuthStore } from '../stores/useAuthStore'
 import { usePresenceStore } from '../stores/usePresenceStore'
@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { EditorPanel } from '../components/builder/EditorPanel'
 import { LivePreview } from '../components/builder/LivePreview'
+import { SendModal } from '../components/builder/SendModal'
 import { BottomSheet } from '../components/dashboard/BottomSheet'
 import type { Proposal, ProposalInsert } from '../types/proposal'
 import { generateProposalPdf } from '../lib/pdfEngine'
@@ -17,194 +18,6 @@ import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SaveStatus = 'idle' | 'saving' | 'saved'
-
-// ─── Send Modal ───────────────────────────────────────────────────────────────
-
-function SendModal({
-  open,
-  onClose,
-  shareUrl,
-  clientName,
-  clientEmail,
-  locale,
-}: {
-  open: boolean
-  onClose: () => void
-  shareUrl: string
-  clientName: string
-  clientEmail?: string
-  locale: string
-}) {
-  const [copied, setCopied] = useState(false)
-  const isHe = locale === 'he'
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(shareUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  }
-
-  const whatsappMsg = isHe
-    ? `שלום${clientName ? ` ${clientName}` : ''}! הכנתי עבורך הצעת מחיר. לצפייה ואישור: ${shareUrl}`
-    : `Hi${clientName ? ` ${clientName}` : ''}! I've prepared a proposal for you. View and approve here: ${shareUrl}`
-
-  const mailtoHref = `mailto:${clientEmail ?? ''}?subject=${encodeURIComponent(isHe ? 'הצעת מחיר עבורך' : 'Your Proposal')}&body=${encodeURIComponent(whatsappMsg)}`
-  const waHref = `https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-50"
-            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-
-          {/* Modal */}
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="relative w-full max-w-md rounded-3xl p-7"
-              style={{
-                background:
-                  'linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                backdropFilter: 'blur(40px)',
-                boxShadow:
-                  '0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1)',
-              }}
-              initial={{ scale: 0.88, y: 24, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.92, y: 12, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-              onClick={e => e.stopPropagation()}
-              dir={isHe ? 'rtl' : 'ltr'}
-            >
-              {/* Close */}
-              <button
-                onClick={onClose}
-                className="absolute top-4 end-4 flex h-7 w-7 items-center justify-center rounded-full text-white/30 transition hover:bg-white/10 hover:text-white/70"
-              >
-                <X size={14} />
-              </button>
-
-              {/* Success icon */}
-              <div className="flex justify-center mb-5">
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.12))',
-                    border: '1px solid rgba(99,102,241,0.3)',
-                    boxShadow: '0 0 30px rgba(99,102,241,0.2)',
-                  }}
-                >
-                  🚀
-                </div>
-              </div>
-
-              <h2 className="text-xl font-black text-white text-center mb-1">
-                {isHe ? 'חדר העסקה פעיל!' : 'Deal Room is Live!'}
-              </h2>
-              <p className="text-sm text-white/45 text-center mb-6">
-                {isHe
-                  ? `שתף את הקישור עם ${clientName || 'הלקוח'} — הם יוכלו לצפות ולאשר מיידית.`
-                  : `Share this link with ${clientName || 'your client'} — they can view and approve instantly.`}
-              </p>
-
-              {/* Link box */}
-              <div
-                className="flex items-center gap-2 rounded-xl p-3 mb-3"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <ExternalLink size={12} className="flex-none text-white/30" />
-                <p className="flex-1 text-xs font-mono text-white/50 truncate">
-                  {shareUrl}
-                </p>
-              </div>
-
-              {/* Copy button */}
-              <motion.button
-                onClick={handleCopy}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white mb-3"
-                style={{
-                  background: copied
-                    ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                    : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-                  boxShadow: copied
-                    ? '0 0 24px rgba(34,197,94,0.4)'
-                    : '0 0 24px rgba(99,102,241,0.4)',
-                  transition: 'background 0.3s, box-shadow 0.3s',
-                }}
-                whileTap={{ scale: 0.97 }}
-              >
-                {copied ? (
-                  <>
-                    <Check size={15} strokeWidth={3} />
-                    {isHe ? 'הועתק!' : 'Copied!'}
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    {isHe ? 'העתק קישור' : 'Copy Link'}
-                  </>
-                )}
-              </motion.button>
-
-              {/* Share via WhatsApp / Email */}
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={waHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition hover:opacity-90"
-                  style={{
-                    background: 'rgba(37,211,102,0.12)',
-                    border: '1px solid rgba(37,211,102,0.25)',
-                    color: '#25d366',
-                  }}
-                >
-                  <MessageCircle size={13} />
-                  WhatsApp
-                </a>
-                <a
-                  href={mailtoHref}
-                  className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition hover:opacity-90"
-                  style={{
-                    background: 'rgba(99,102,241,0.1)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    color: '#818cf8',
-                  }}
-                >
-                  <Mail size={13} />
-                  {isHe ? 'אימייל' : 'Email'}
-                </a>
-              </div>
-
-              <p className="mt-3 text-center text-[10px] text-white/20">
-                {isHe
-                  ? 'תראה כשהלקוח פתח את הקישור ואישר'
-                  : "You'll see when your client views and approves"}
-              </p>
-            </motion.div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  )
-}
 
 const BLANK_DRAFT: ProposalInsert = {
   client_name: '',
@@ -740,6 +553,7 @@ export default function ProposalBuilder() {
         shareUrl={shareUrl}
         clientName={draft.client_name}
         clientEmail={draft.client_email}
+        projectTitle={draft.project_title}
         locale={locale}
       />
     </div>
