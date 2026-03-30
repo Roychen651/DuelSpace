@@ -1403,6 +1403,7 @@ export default function DealRoom() {
                   currency={proposal.currency}
                   locale={locale}
                   adjustable={addOn.clientAdjustable !== false}
+                  sealed={accepted}
                   onToggle={() =>
                     setLineItems(prev => ({
                       ...prev,

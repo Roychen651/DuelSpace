@@ -14,13 +14,15 @@ interface PremiumSliderCardProps {
   adjustable: boolean
   onToggle: () => void
   onQuantityChange: (qty: number) => void
+  /** When true the contract is signed — all interactive controls are locked */
+  sealed?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PremiumSliderCard({
   addOn, quantity, enabled, currency, locale, adjustable,
-  onToggle, onQuantityChange,
+  onToggle, onQuantityChange, sealed = false,
 }: PremiumSliderCardProps) {
   const disc = addOn.discount_pct || 0
   const unitDiscounted = Math.round(addOn.price * (1 - disc / 100))
@@ -35,7 +37,7 @@ export function PremiumSliderCard({
         hidden: { opacity: 0, y: 28 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
       }}
-      whileHover={enabled ? { y: -4, transition: { duration: 0.2 } } : {}}
+      whileHover={enabled && !sealed ? { y: -4, transition: { duration: 0.2 } } : {}}
       layout
     >
       <div
@@ -66,10 +68,11 @@ export function PremiumSliderCard({
         {/* ── Row: Toggle + Label + Price ─────────────────────────────────── */}
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex items-start gap-3 min-w-0">
-            {/* Circle toggle */}
+            {/* Circle toggle — pointer-events disabled once contract is sealed */}
             <button
               type="button"
-              onClick={onToggle}
+              onClick={sealed ? undefined : onToggle}
+              disabled={sealed}
               className="mt-0.5 flex-none h-[22px] w-[22px] rounded-full flex items-center justify-center transition-all duration-200"
               style={{
                 background: enabled
@@ -77,6 +80,7 @@ export function PremiumSliderCard({
                   : 'rgba(255,255,255,0.07)',
                 border: enabled ? 'none' : '1px solid rgba(255,255,255,0.12)',
                 boxShadow: enabled ? '0 0 14px rgba(99,102,241,0.55)' : 'none',
+                cursor: sealed ? 'default' : 'pointer',
               }}
               aria-pressed={enabled}
               aria-label={
@@ -154,9 +158,9 @@ export function PremiumSliderCard({
           </div>
         </div>
 
-        {/* ── Quantity slider — only when enabled AND creator allows adjustment ── */}
+        {/* ── Quantity slider — only when enabled AND creator allows adjustment AND not sealed ── */}
         <AnimatePresence initial={false}>
-          {enabled && adjustable && (
+          {enabled && adjustable && !sealed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
