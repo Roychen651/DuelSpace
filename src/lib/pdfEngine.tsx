@@ -42,11 +42,6 @@ function getBrandColor(p: Proposal): string {
   return c && /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#6366f1'
 }
 
-/** Append a 2-hex-digit alpha to a 6-digit hex color, e.g. '#6366f1' + 0.15 → '#6366f126' */
-function alpha(hex: string, a: number): string {
-  return `${hex}${Math.round(a * 255).toString(16).padStart(2, '0')}`
-}
-
 function getInitials(name?: string | null): string {
   if (!name) return 'DS'
   return name.split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -54,9 +49,6 @@ function getInitials(name?: string | null): string {
 
 /**
  * Bidi-safe date formatter for react-pdf.
- * NEVER use toLocaleString('he-IL') inside the PDF engine — the Hebrew month
- * names mixed with Arabic numerals (e.g. "30 במרץ 2026") cause the Unicode
- * Bidi algorithm to scramble the string inside react-pdf's text shaper.
  * Always emit DD.MM.YYYY — pure digits + dots are direction-neutral.
  */
 function fmtDate(d: Date | string): string {
@@ -67,26 +59,20 @@ function fmtDate(d: Date | string): string {
   return `${dd}.${mm}.${yyyy}`
 }
 
-function fmtDateTime(d: Date): string {
-  const dd   = String(d.getDate()).padStart(2, '0')
-  const mm   = String(d.getMonth() + 1).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  const hh   = String(d.getHours()).padStart(2, '0')
-  const min  = String(d.getMinutes()).padStart(2, '0')
-  return `${dd}.${mm}.${yyyy}  ${hh}:${min}`
+/** Returns HH:MM — used as a SEPARATE Text node from the date to avoid Bidi scrambling. */
+function fmtTime(d: Date): string {
+  const hh  = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${min}`
 }
 
 /**
  * Bidi-safe currency formatter for react-pdf.
- * Intl.NumberFormat with he-IL locale injects Unicode RTL marks (U+200F) into
- * the output string. react-pdf's text shaper interprets these and flips digit
- * order, producing "138 ₪ -" instead of "- ₪138". Always use en-US number
- * formatting and append the symbol manually so the string contains no Bidi
- * control characters.
+ * Always use en-US number formatting and append the symbol manually.
  */
 function fmtCurrencyPdf(amount: number, currency: string): string {
   const n = Math.round(amount).toLocaleString('en-US')
-  if (currency === 'ILS') return `${n} \u20AA`   // ₪ is U+20AA — safe in all pdf fonts
+  if (currency === 'ILS') return `${n} \u20AA`
   if (currency === 'USD') return `$${n}`
   if (currency === 'EUR') return `\u20AC${n}`
   if (currency === 'GBP') return `\u00A3${n}`
@@ -94,19 +80,16 @@ function fmtCurrencyPdf(amount: number, currency: string): string {
 }
 
 /**
- * Formats a positive savings/discount amount with a leading minus.
- * The minus must be the very first character so the Bidi engine never
- * reorders it relative to the currency symbol or digits.
+ * Formats a savings/discount amount with a leading minus.
+ * Minus must be the first character so the Bidi engine never reorders it.
  */
 function fmtDiscountPdf(amount: number, currency: string): string {
   return `- ${fmtCurrencyPdf(amount, currency)}`
 }
 
 /**
- * Inject zero-width spaces (U+200B) after every slash, dot, hyphen, or
- * underscore so react-pdf can break long continuous strings (URLs, tokens)
- * that it cannot wrap otherwise. Safe to call on any string — ZWS is
- * invisible and does not change the visual text content.
+ * Inject zero-width spaces (U+200B) after slash, dot, hyphen, underscore, @
+ * so react-pdf can wrap long continuous strings (URLs, tokens).
  */
 function forceWrap(text: string): string {
   return text.replace(/([/.\-_@])/g, '$1\u200B')
@@ -129,13 +112,9 @@ function parseHtml(html: string): HtmlBlock[] {
      .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(parseInt(n, 10)))
 
   function inline(src: string): InlineFrag[] {
-    // Pre-clean: replace <a ...>inner</a> with just inner text, then strip
-    // any remaining unknown tags. Without this, the regex's [^<]+ alternative
-    // captures the raw attribute string "href=..." after the leading "<" is
-    // skipped, causing raw HTML to leak into the rendered PDF text.
     const cleaned = src
-      .replace(/<a(?:[^>]*)>([\s\S]*?)<\/a>/gi, '$1')           // <a> → inner text only
-      .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, ' ')      // strip all other unknown tags
+      .replace(/<a(?:[^>]*)>([\s\S]*?)<\/a>/gi, '$1')
+      .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, ' ')
 
     const frags: InlineFrag[] = []
     const re = /<(strong|b|em|i)(?:[^>]*)>([\s\S]*?)<\/\1>|([^<]+)/gi
@@ -174,27 +153,28 @@ function parseHtml(html: string): HtmlBlock[] {
   return blocks
 }
 
-// ─── Color palette ─────────────────────────────────────────────────────────────
+// ─── White Paper Color Palette ────────────────────────────────────────────────
+// Clean enterprise document: white backgrounds, dark gray text, light borders.
+// Brand color is used ONLY for the cover/cert hero strip, table header bg,
+// section title text, and accent elements. Zero dark/neon backgrounds.
 
 const C = {
-  bg:      '#070710',
-  surface: '#0E0E1C',
-  card:    '#111120',
-  border:  '#1C1C30',
-  text:    '#E8EAF0',
-  muted:   '#64748B',
-  dim:     '#374151',
-  white:   '#FFFFFF',
-  lavender:'#C4B5FD',
-  success: '#22C55E',
+  bg:         '#FFFFFF',
+  surface:    '#F9FAFB',   // alternate row / section bg
+  card:       '#F3F4F6',   // subtle card bg
+  border:     '#E5E7EB',   // standard light gray border
+  borderDark: '#D1D5DB',   // slightly stronger border
+  text:       '#111827',   // near-black body text
+  textSec:    '#1F2937',   // secondary dark text
+  muted:      '#6B7280',   // gray-500 — meta / labels
+  dim:        '#9CA3AF',   // gray-400 — footer / faint text
+  white:      '#FFFFFF',
+  successDark:'#15803D',   // green-700 — professional, not neon
 }
 
 // ─── Style factory (called once per render with resolved brand color) ──────────
 
 function makeStyles(brand: string) {
-  const bDim    = alpha(brand, 0.10)
-  const bBorder = alpha(brand, 0.25)
-
   return StyleSheet.create({
 
     // ── Page containers ───────────────────────────────────────────────────────
@@ -219,53 +199,52 @@ function makeStyles(brand: string) {
     coverHero: {
       backgroundColor: brand,
       paddingHorizontal: 36,
-      paddingTop: 42,
-      paddingBottom: 38,
+      paddingTop: 40,
+      paddingBottom: 36,
     },
-    coverInitialCircle: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: 'rgba(255,255,255,0.16)',
+    coverLogoBox: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      backgroundColor: 'rgba(255,255,255,0.20)',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 14,
     },
-    coverInitialText: { fontSize: 15, fontWeight: 900, color: C.white },
+    coverInitialText: { fontSize: 16, fontWeight: 900, color: C.white },
     coverCompany: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: 700,
-      color: 'rgba(255,255,255,0.92)',
-      letterSpacing: 0.6,
+      color: 'rgba(255,255,255,0.95)',
       textAlign: 'right',
-      marginBottom: 4,
+      marginBottom: 3,
     },
     coverDocLabel: {
       fontSize: 8,
       fontWeight: 400,
-      color: 'rgba(255,255,255,0.52)',
-      letterSpacing: 2.2,
+      color: 'rgba(255,255,255,0.60)',
+      letterSpacing: 2,
       textTransform: 'uppercase',
       textAlign: 'right',
     },
-    coverAccentBar: { height: 3, backgroundColor: alpha(brand, 0.45) },
+    coverAccentBar: { height: 4, backgroundColor: 'rgba(255,255,255,0.20)' },
     coverBody: {
       paddingHorizontal: 36,
-      paddingTop: 0,
+      paddingTop: 32,
       paddingBottom: 48,
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',   // vertically centers content within remaining page height
+      justifyContent: 'center',
     },
     coverTitle: {
-      fontSize: 34,               // grander — enterprise contract feel
+      fontSize: 32,
       fontWeight: 900,
-      color: C.white,
+      color: C.text,
       textAlign: 'right',
-      marginBottom: 32,
-      lineHeight: 1.25,
-      flexWrap: 'wrap',           // prevents long project titles from overflowing
+      marginBottom: 28,
+      lineHeight: 1.3,
+      flexWrap: 'wrap',
     },
     coverPreparedLabel: {
       fontSize: 7,
@@ -274,14 +253,14 @@ function makeStyles(brand: string) {
       letterSpacing: 2,
       textTransform: 'uppercase',
       textAlign: 'right',
-      marginBottom: 6,
+      marginBottom: 5,
     },
     coverClientName: {
       fontSize: 15,
       fontWeight: 700,
       color: C.text,
       textAlign: 'right',
-      marginBottom: 3,
+      marginBottom: 2,
     },
     coverClientCompany: {
       fontSize: 9.5,
@@ -291,8 +270,8 @@ function makeStyles(brand: string) {
     coverMetaRow: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      gap: 20,
-      marginTop: 28,
+      gap: 16,
+      marginTop: 24,
       paddingTop: 14,
       borderTop: `1px solid ${C.border}`,
     },
@@ -311,7 +290,7 @@ function makeStyles(brand: string) {
       borderBottom: `1px solid ${C.border}`,
     },
     pageHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    pageHeaderBar:  { width: 3, height: 13, backgroundColor: brand, borderRadius: 2 },
+    pageHeaderBar:  { width: 3, height: 14, backgroundColor: brand, borderRadius: 2 },
     pageHeaderCompany: { fontSize: 8, fontWeight: 700, color: C.text },
     pageHeaderDoc:     { fontSize: 7.5, color: C.muted },
     pageHeaderPage:    { fontSize: 7.5, color: C.muted },
@@ -326,12 +305,13 @@ function makeStyles(brand: string) {
       justifyContent: 'space-between',
       paddingHorizontal: 28,
       borderTop: `1px solid ${C.border}`,
+      backgroundColor: C.bg,
     },
     pageFooterBrand: { fontSize: 7, fontWeight: 700, color: brand },
     pageFooterText:  { fontSize: 7, color: C.dim },
 
     // ── Section chrome ─────────────────────────────────────────────────────────
-    section: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 12 },
+    section: { paddingHorizontal: 28, paddingTop: 16, paddingBottom: 10 },
     sectionTitle: {
       fontSize: 7.5,
       fontWeight: 700,
@@ -341,7 +321,7 @@ function makeStyles(brand: string) {
       textAlign: 'right',
       marginBottom: 10,
       paddingBottom: 6,
-      borderBottom: `1.5px solid ${bBorder}`,
+      borderBottom: `1.5px solid ${C.border}`,
     },
     sectionDivider: { height: 1, backgroundColor: C.border, marginHorizontal: 28 },
 
@@ -351,7 +331,7 @@ function makeStyles(brand: string) {
       flex: 1,
       borderRadius: 6,
       padding: 12,
-      backgroundColor: C.card,
+      backgroundColor: C.surface,
       border: `1px solid ${C.border}`,
     },
     partyLabel: {
@@ -363,41 +343,49 @@ function makeStyles(brand: string) {
       textAlign: 'right',
       marginBottom: 6,
       paddingBottom: 4,
-      borderBottom: `1px solid ${bBorder}`,
+      borderBottom: `1px solid ${C.border}`,
     },
-    partyName:  { fontSize: 10.5, fontWeight: 700, color: C.text,  textAlign: 'right', marginBottom: 3 },
-    partyMeta:  { fontSize: 8,    fontWeight: 400, color: C.muted, textAlign: 'right', marginBottom: 2, lineHeight: 1.45 },
+    partyName:  { fontSize: 10.5, fontWeight: 700, color: C.text,    textAlign: 'right', marginBottom: 3 },
+    partyMeta:  { fontSize: 8,    fontWeight: 400, color: C.muted,   textAlign: 'right', marginBottom: 2, lineHeight: 1.45 },
 
     // ── Description / HTML blocks ──────────────────────────────────────────────
-    descText:   { fontSize: 9, color: 'rgba(232,234,240,0.65)', lineHeight: 1.7, textAlign: 'right' },
+    descText:   { fontSize: 9, color: C.textSec, lineHeight: 1.7, textAlign: 'right' },
     htmlH1:     { fontSize: 13, fontWeight: 900, color: C.text,  textAlign: 'right', marginBottom: 5, marginTop: 10 },
     htmlH2:     { fontSize: 11, fontWeight: 700, color: C.text,  textAlign: 'right', marginBottom: 4, marginTop: 8 },
     htmlH3:     { fontSize: 10, fontWeight: 700, color: brand,   textAlign: 'right', marginBottom: 3, marginTop: 7 },
-    htmlP:      { fontSize: 8.5, color: 'rgba(232,234,240,0.70)', lineHeight: 1.65, textAlign: 'right', marginBottom: 5 },
-    htmlLi:     { fontSize: 8.5, color: 'rgba(232,234,240,0.70)', lineHeight: 1.65, textAlign: 'right', marginBottom: 3, paddingRight: 10 },
+    htmlP:      { fontSize: 8.5, color: C.textSec, lineHeight: 1.65, textAlign: 'right', marginBottom: 5 },
+    htmlLi:     { fontSize: 8.5, color: C.textSec, lineHeight: 1.65, textAlign: 'right', marginBottom: 3, paddingRight: 10 },
     htmlBold:   { fontWeight: 700, color: C.text },
 
     // ── Pricing table ──────────────────────────────────────────────────────────
-    // All rows use flexDirection: 'row-reverse' so that in react-pdf's LTR engine
+    // All rows use flexDirection: 'row-reverse' so in react-pdf's LTR engine
     // the first child (label) visually lands on the RIGHT and the second child
-    // (price) lands on the LEFT — correct RTL reading order without relying on
-    // justifyContent which react-pdf mishandles in mixed Bidi contexts.
+    // (price) lands on the LEFT — correct RTL reading order.
     tableHeader: {
       flexDirection: 'row-reverse',
       alignItems: 'center',
-      backgroundColor: C.surface,
+      backgroundColor: brand,
       borderRadius: 4,
       paddingHorizontal: 14,
       paddingVertical: 7,
-      marginBottom: 2,
+      marginBottom: 0,
     },
-    tableHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
+    tableHeaderCell: { fontSize: 7.5, fontWeight: 700, color: C.white, letterSpacing: 1, textTransform: 'uppercase' },
     tableRow: {
       flexDirection: 'row-reverse',
       alignItems: 'flex-start',
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderBottom: `1px solid ${C.border}`,
+      backgroundColor: C.bg,
+    },
+    tableRowAlt: {
+      flexDirection: 'row-reverse',
+      alignItems: 'flex-start',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottom: `1px solid ${C.border}`,
+      backgroundColor: C.surface,
     },
     tableRowHighlight: {
       flexDirection: 'row-reverse',
@@ -405,81 +393,90 @@ function makeStyles(brand: string) {
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderBottom: `1px solid ${C.border}`,
-      backgroundColor: bDim,
+      backgroundColor: C.surface,
     },
-    // tableLabel / tableLabelSub have no width — they live inside a 65%-wide wrapper View
+    // tableLabel / tableLabelSub live inside a 65%-wide wrapper View
     tableLabel:    { fontSize: 9.5, color: C.text,  textAlign: 'right' },
     tableLabelSub: { fontSize: 7.5, color: C.muted, textAlign: 'right', marginTop: 2 },
-    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, width: '35%', textAlign: 'left' },
+    tablePrice:    { fontSize: 10,  color: C.text,  fontWeight: 700, width: '35%', textAlign: 'left' },
 
-    // ── VAT box ────────────────────────────────────────────────────────────────
+    // ── VAT / discount box ─────────────────────────────────────────────────────
     vatBox: {
       marginHorizontal: 28,
       marginTop: 10,
       borderRadius: 6,
       padding: 12,
-      backgroundColor: bDim,
-      border: `1px solid ${bBorder}`,
+      backgroundColor: C.surface,
+      border: `1px solid ${C.border}`,
     },
     // row-reverse: label (first child) → RIGHT, value (second child) → LEFT
     vatRow:        { flexDirection: 'row-reverse', marginBottom: 4 },
-    vatLabel:      { fontSize: 8.5, color: 'rgba(232,234,240,0.50)', textAlign: 'right', width: '60%' },
-    vatValue:      { fontSize: 8.5, fontWeight: 700, color: 'rgba(232,234,240,0.50)', width: '40%', textAlign: 'left' },
+    vatLabel:      { fontSize: 8.5, color: C.muted,   textAlign: 'right', width: '60%' },
+    vatValue:      { fontSize: 8.5, fontWeight: 700, color: C.textSec,  width: '40%', textAlign: 'left' },
     vatDivider:    { height: 1, backgroundColor: C.border, marginVertical: 6 },
-    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text,     textAlign: 'right', width: '60%' },
-    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.lavender, width: '40%', textAlign: 'left' },
+    vatTotalLabel: { fontSize: 10, fontWeight: 700, color: C.text,    textAlign: 'right', width: '60%' },
+    vatTotalValue: { fontSize: 10, fontWeight: 700, color: C.text,    width: '40%', textAlign: 'left' },
 
-    // ── Grand total ────────────────────────────────────────────────────────────
+    // ── Grand total — enterprise invoice style ─────────────────────────────────
+    // White background + brand-color left accent bar
     totalBox: {
       marginHorizontal: 28,
       marginTop: 12,
-      borderRadius: 8,
+      borderRadius: 6,
       paddingHorizontal: 18,
       paddingVertical: 14,
-      backgroundColor: C.card,
-      border: `1.5px solid ${brand}`,
+      backgroundColor: C.surface,
+      border: `1.5px solid ${C.borderDark}`,
+      borderLeft: `4px solid ${brand}`,
       flexDirection: 'row-reverse',   // label → RIGHT, value → LEFT
       alignItems: 'center',
     },
     totalLabel: { fontSize: 11, fontWeight: 700, color: C.text, textAlign: 'right', width: '55%' },
-    totalValue: { fontSize: 20, fontWeight: 900, color: C.lavender, width: '45%', textAlign: 'left' },
+    totalValue: { fontSize: 22, fontWeight: 900, color: brand,  width: '45%', textAlign: 'left' },
 
     // ── Milestones ─────────────────────────────────────────────────────────────
     milestoneHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: C.surface,
+      backgroundColor: brand,
       borderRadius: 4,
       paddingHorizontal: 14,
       paddingVertical: 7,
-      marginBottom: 2,
+      marginBottom: 0,
     },
-    milestoneHeaderCell: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1, textTransform: 'uppercase' },
+    milestoneHeaderCell: { fontSize: 7.5, fontWeight: 700, color: C.white, letterSpacing: 1, textTransform: 'uppercase' },
     milestoneRow: {
-      flexDirection: 'row-reverse',   // badge → RIGHT, name → middle, pct + amt → LEFT
+      flexDirection: 'row-reverse',
       alignItems: 'center',
       paddingHorizontal: 14,
       paddingVertical: 8,
       borderBottom: `1px solid ${C.border}`,
     },
+    milestoneRowAlt: {
+      flexDirection: 'row-reverse',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottom: `1px solid ${C.border}`,
+      backgroundColor: C.surface,
+    },
     milestoneNumBadge: {
       width: 20, height: 20, borderRadius: 10,
-      backgroundColor: bDim,
-      border: `1px solid ${bBorder}`,
+      backgroundColor: brand,
       alignItems: 'center',
       justifyContent: 'center',
-      marginLeft: 10,   // in row-reverse, left margin = gap toward the name column
+      marginLeft: 10,
       flexShrink: 0,
     },
-    milestoneNumText: { fontSize: 7.5, fontWeight: 700, color: brand },
-    milestoneName:    { fontSize: 9.5, color: C.text,    textAlign: 'right', flex: 1 },
-    milestonePct:     { fontSize: 8.5, color: C.muted,   fontWeight: 700, width: 50, textAlign: 'center' },
-    milestoneAmt:     { fontSize: 10,  color: C.lavender, fontWeight: 700, width: 80, textAlign: 'left' },
+    milestoneNumText: { fontSize: 7.5, fontWeight: 700, color: C.white },
+    milestoneName:    { fontSize: 9.5, color: C.text,  textAlign: 'right', flex: 1 },
+    milestonePct:     { fontSize: 8.5, color: C.muted, fontWeight: 700, width: 50, textAlign: 'center' },
+    milestoneAmt:     { fontSize: 10,  color: C.text,  fontWeight: 700, width: 80, textAlign: 'left' },
     milestoneBarBg:   { height: 2, backgroundColor: C.border, borderRadius: 1, marginTop: 3 },
     milestoneBarFill: { height: 2, backgroundColor: brand,    borderRadius: 1 },
 
     // ── Terms ──────────────────────────────────────────────────────────────────
-    termsPara: { fontSize: 8, color: 'rgba(100,116,139,0.9)', lineHeight: 1.65, textAlign: 'right', marginBottom: 6 },
+    termsPara: { fontSize: 8, color: C.muted, lineHeight: 1.65, textAlign: 'right', marginBottom: 6 },
 
     // ── Signature Certificate page ─────────────────────────────────────────────
     certHero: {
@@ -491,69 +488,102 @@ function makeStyles(brand: string) {
       alignItems: 'center',
     },
     certHeroTitle: { fontSize: 16, fontWeight: 900, color: C.white, textAlign: 'right' },
-    certHeroSub:   { fontSize: 8.5, color: 'rgba(255,255,255,0.60)', textAlign: 'right', marginTop: 4 },
+    certHeroSub:   { fontSize: 8.5, color: 'rgba(255,255,255,0.70)', textAlign: 'right', marginTop: 4 },
     certCheckCircle: {
-      width: 42, height: 42, borderRadius: 21,
-      backgroundColor: 'rgba(255,255,255,0.18)',
+      width: 44, height: 44, borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.22)',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
     },
-    certCheckText: { fontSize: 18, fontWeight: 900, color: C.white },
-    certBody: { paddingHorizontal: 36, paddingTop: 26, paddingBottom: 36 },
+    certCheckText: { fontSize: 20, fontWeight: 900, color: C.white },
+    certBody: { paddingHorizontal: 36, paddingTop: 24, paddingBottom: 36 },
 
-    certSigRow: { flexDirection: 'row', gap: 20, marginBottom: 22 },
+    // Signature row: image box (left) + metadata (right) in RTL layout
+    certSigRow: { flexDirection: 'row', gap: 20, marginBottom: 20 },
     certSigBox: {
       width: 160, height: 80,
-      borderRadius: 8,
-      border: `1.5px solid ${C.success}`,
-      backgroundColor: C.card,
+      borderRadius: 6,
+      border: `1px solid ${C.borderDark}`,
+      backgroundColor: C.surface,
       overflow: 'hidden',
       flexShrink: 0,
     },
     certSigImage:  { width: '100%', height: '100%', objectFit: 'contain' },
     certSigMeta:   { flex: 1 },
-    certSigBadge:  { fontSize: 10, fontWeight: 700, color: C.success, marginBottom: 8, textAlign: 'right' },
-    certSigLine:   { fontSize: 8.5, color: C.muted,  textAlign: 'right', marginBottom: 3, lineHeight: 1.5 },
-    certSigValue:  { fontWeight: 700, color: C.text },
+    certSigBadge:  { fontSize: 9.5, fontWeight: 700, color: C.successDark, marginBottom: 8, textAlign: 'right' },
+
+    // Split-node sig meta rows: label + value in row-reverse View
+    certSigMetaRow: {
+      flexDirection: 'row-reverse',
+      alignItems: 'flex-start',
+      marginBottom: 3,
+      gap: 4,
+    },
+    certSigLabel: { fontSize: 8, color: C.muted, textAlign: 'right', width: '40%' },
+    certSigValue: { fontSize: 8, fontWeight: 700, color: C.text, textAlign: 'left', flex: 1 },
 
     certTokenBox: {
       borderRadius: 6,
-      border: `1px dashed ${bBorder}`,
-      backgroundColor: bDim,
+      border: `1px solid ${C.border}`,
+      backgroundColor: C.surface,
       paddingHorizontal: 14,
       paddingVertical: 10,
       marginBottom: 14,
     },
     certTokenLabel: { fontSize: 7, fontWeight: 700, color: brand, letterSpacing: 1.5, textTransform: 'uppercase', textAlign: 'right', marginBottom: 5 },
-    certTokenValue: { fontSize: 8, color: C.text, textAlign: 'right', letterSpacing: 0.5 },
+    certTokenValue: { fontSize: 8, color: C.textSec, textAlign: 'right', letterSpacing: 0.5 },
 
     certAuditBox: {
-      borderRadius: 8,
+      borderRadius: 6,
       border: `1px solid ${C.border}`,
-      backgroundColor: C.card,
-      padding: 14,
+      overflow: 'hidden',
       marginBottom: 14,
     },
     certAuditTitle: {
-      fontSize: 7.5, fontWeight: 700, color: brand,
+      fontSize: 7.5, fontWeight: 700, color: C.white,
       letterSpacing: 1.5, textTransform: 'uppercase',
-      textAlign: 'right', marginBottom: 10,
-      paddingBottom: 6, borderBottom: `1px solid ${C.border}`,
+      textAlign: 'right',
+      paddingHorizontal: 14, paddingVertical: 7,
+      backgroundColor: brand,
     },
     // Audit rows: row-reverse so label (first child) is on the RIGHT,
-    // value (second child) is on the LEFT. Explicit widths prevent overflow.
+    // value (second child) is on the LEFT. Alternating row bg for legibility.
     certAuditRow: {
       flexDirection: 'row-reverse',
-      paddingVertical: 4,
-      borderBottom: `1px solid rgba(28,28,48,0.6)`,
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      borderBottom: `1px solid ${C.border}`,
+      backgroundColor: C.bg,
+    },
+    certAuditRowAlt: {
+      flexDirection: 'row-reverse',
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      borderBottom: `1px solid ${C.border}`,
+      backgroundColor: C.surface,
     },
     certAuditRowLast: {
       flexDirection: 'row-reverse',
-      paddingVertical: 4,
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      backgroundColor: C.bg,
     },
-    certAuditLabel: { fontSize: 7.5, color: C.muted,      textAlign: 'right', width: '33%' },
-    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left',  width: '67%' },
+    certAuditRowLastAlt: {
+      flexDirection: 'row-reverse',
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      backgroundColor: C.surface,
+    },
+    certAuditLabel: { fontSize: 7.5, color: C.muted,   textAlign: 'right', width: '40%' },
+    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left',  width: '60%' },
+
+    // Split-node date+time inside audit trail value column
+    certAuditDateTime: {
+      flexDirection: 'row',
+      gap: 6,
+      width: '60%',
+    },
 
     certLegalNote: {
       fontSize: 7,
@@ -572,6 +602,7 @@ function makeStyles(brand: string) {
       justifyContent: 'space-between',
       paddingHorizontal: 36,
       borderTop: `1px solid ${C.border}`,
+      backgroundColor: C.bg,
     },
     certFooterBrand: { fontSize: 7, fontWeight: 700, color: brand },
     certFooterText:  { fontSize: 7, color: C.dim },
@@ -619,8 +650,6 @@ function ProposalDocument(opts: PdfOptions) {
     } catch { return DEFAULT_VAT_RATE }
   })()
 
-  // Build lineItems override from enabledAddOnIds so calculateFinancials
-  // honours the client's add-on selections at signing time.
   const lineItemsOverride: Record<string, { enabled: boolean; qty: number }> = {}
   proposal.add_ons.forEach(a => {
     lineItemsOverride[a.id] = { enabled: enabledAddOnIds.includes(a.id), qty: 1 }
@@ -632,13 +661,12 @@ function ProposalDocument(opts: PdfOptions) {
   const totalSavings = fin.totalSavings
 
   const creator       = proposal.creator_info
-  // Provider display: prefer company_name, fall back to full_name, then sentinel
   const providerName  = (creator?.company_name?.trim() || creator?.full_name?.trim() || 'DealSpace Creator')
   const companyName   = creator?.company_name?.trim() || 'DealSpace'
   const initials      = getInitials(creator?.company_name)
   const projectTitle  = proposal.project_title || (isHe ? 'הצעת מחיר' : 'Proposal')
   const dateStr       = fmtDate(sigTs)
-  const dateTimeStr   = fmtDateTime(sigTs)
+  const timeStr       = fmtTime(sigTs)
   const createdStr    = fmtDate(proposal.created_at)
 
   const descBlocks = proposal.description ? parseHtml(proposal.description) : []
@@ -657,7 +685,7 @@ function ProposalDocument(opts: PdfOptions) {
       ════════════════════════════════════════════════════════════════════ */}
       <Page size="A4" style={s.coverPage}>
 
-        {/* Draft watermark — diagonal, fixed across all pages */}
+        {/* Draft watermark */}
         {isDraft && (
           <View
             fixed
@@ -673,7 +701,7 @@ function ProposalDocument(opts: PdfOptions) {
               style={{
                 fontSize: 72,
                 fontWeight: 900,
-                color: 'rgba(220,38,38,0.07)',
+                color: 'rgba(220,38,38,0.06)',
                 transform: 'rotate(-45deg)',
                 letterSpacing: 8,
                 textTransform: 'uppercase',
@@ -684,18 +712,22 @@ function ProposalDocument(opts: PdfOptions) {
           </View>
         )}
 
-        {/* Brand hero strip */}
+        {/* Brand hero strip — brand color, white text */}
         <View style={s.coverHero}>
-          {/* Decorative circle top-right */}
-          <View style={{ position: 'absolute', top: -24, right: -24, width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(255,255,255,0.07)' }} />
-          {/* Decorative circle bottom-left */}
-          <View style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.10)' }} />
-
-          {/* Content right-aligned for RTL — alignItems flex-end pushes circle to right */}
           <View style={{ alignItems: 'flex-end' }}>
-            <View style={s.coverInitialCircle}>
-              <Text style={s.coverInitialText}>{initials}</Text>
-            </View>
+            {/* Company logo if available, otherwise initials box */}
+            {creator?.logo_url ? (
+              <View style={{ marginBottom: 12 }}>
+                <Image
+                  src={creator.logo_url}
+                  style={{ width: 100, height: 36, objectFit: 'contain' }}
+                />
+              </View>
+            ) : (
+              <View style={s.coverLogoBox}>
+                <Text style={s.coverInitialText}>{initials}</Text>
+              </View>
+            )}
             <Text style={s.coverCompany}>{companyName}</Text>
             <Text style={s.coverDocLabel}>
               {isHe ? 'הסכם התקשרות והצעת מחיר' : 'PROPOSAL & SERVICE AGREEMENT'}
@@ -706,21 +738,11 @@ function ProposalDocument(opts: PdfOptions) {
         {/* Thin accent divider */}
         <View style={s.coverAccentBar} />
 
-        {/* Body */}
+        {/* White body */}
         <View style={s.coverBody}>
-          {/* Company logo — shown only if the creator has uploaded one */}
-          {creator?.logo_url ? (
-            <View style={{ marginBottom: 28, alignItems: 'flex-end' }}>
-              <Image
-                src={creator.logo_url}
-                style={{ width: 120, height: 44, objectFit: 'contain' }}
-              />
-            </View>
-          ) : null}
-
           <Text style={s.coverTitle}>{projectTitle}</Text>
 
-          <View style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, marginBottom: 0 }}>
+          <View style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
             <Text style={s.coverPreparedLabel}>{isHe ? 'הוכן עבור' : 'PREPARED FOR'}</Text>
             <Text style={s.coverClientName}>
               {proposal.client_name || (isHe ? 'לקוח' : 'Client')}
@@ -745,7 +767,7 @@ function ProposalDocument(opts: PdfOptions) {
       ════════════════════════════════════════════════════════════════════ */}
       <Page size="A4" style={s.contentPage}>
 
-        {/* Fixed header — repeated on every content page */}
+        {/* Fixed header */}
         <View style={s.pageHeader} fixed>
           <View style={s.pageHeaderLeft}>
             <View style={s.pageHeaderBar} />
@@ -806,7 +828,7 @@ function ProposalDocument(opts: PdfOptions) {
         <View style={s.section}>
           <Text style={s.sectionTitle}>{isHe ? 'פירוט מחירים ושירותים' : 'SERVICES & PRICING'}</Text>
 
-          {/* Table header — row-reverse: label col RIGHT, price col LEFT */}
+          {/* Table header — brand bg, white text */}
           <View style={s.tableHeader}>
             <Text style={[s.tableHeaderCell, { width: '65%', textAlign: 'right' }]}>
               {isHe ? 'פריט / שירות' : 'ITEM / SERVICE'}
@@ -816,7 +838,7 @@ function ProposalDocument(opts: PdfOptions) {
             </Text>
           </View>
 
-          {/* Base row — wrapper View provides the 65% label column width */}
+          {/* Base row */}
           <View style={s.tableRowHighlight} wrap={false}>
             <View style={{ width: '65%' }}>
               <Text style={s.tableLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
@@ -824,9 +846,9 @@ function ProposalDocument(opts: PdfOptions) {
             <Text style={s.tablePrice}>{fmtCurrencyPdf(proposal.base_price, proposal.currency)}</Text>
           </View>
 
-          {/* Add-on rows — inner column View forces label+sub to stack vertically */}
-          {enabledAddOns.map(a => (
-            <View key={a.id} style={s.tableRow} wrap={false}>
+          {/* Add-on rows — alternating bg */}
+          {enabledAddOns.map((a, idx) => (
+            <View key={a.id} style={idx % 2 === 0 ? s.tableRow : s.tableRowAlt} wrap={false}>
               <View style={{ width: '65%', flexDirection: 'column' }}>
                 <Text style={s.tableLabel}>{a.label}</Text>
                 {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
@@ -840,7 +862,6 @@ function ProposalDocument(opts: PdfOptions) {
         {(totalSavings > 0 || proposal.include_vat) && (
           <View style={s.vatBox} wrap={false}>
 
-            {/* Discount row — legal paper trail */}
             {totalSavings > 0 && (
               <>
                 <View style={s.vatRow}>
@@ -848,9 +869,8 @@ function ProposalDocument(opts: PdfOptions) {
                   <Text style={s.vatValue}>{fmtCurrencyPdf(fin.originalGrandTotal, proposal.currency)}</Text>
                 </View>
                 <View style={s.vatRow}>
-                  <Text style={[s.vatLabel, { color: '#22c55e' }]}>{isHe ? 'הנחה' : 'Discount'}</Text>
-                  {/* fmtDiscountPdf forces "- N ₪" with minus first — prevents Bidi flip to "N ₪ -" */}
-                  <Text style={[s.vatValue, { color: '#22c55e' }]}>
+                  <Text style={[s.vatLabel, { color: C.successDark }]}>{isHe ? 'הנחה' : 'Discount'}</Text>
+                  <Text style={[s.vatValue, { color: C.successDark }]}>
                     {fmtDiscountPdf(totalSavings, proposal.currency)}
                   </Text>
                 </View>
@@ -858,7 +878,6 @@ function ProposalDocument(opts: PdfOptions) {
               </>
             )}
 
-            {/* VAT rows */}
             {proposal.include_vat && (
               <>
                 <View style={s.vatRow}>
@@ -879,7 +898,6 @@ function ProposalDocument(opts: PdfOptions) {
               </>
             )}
 
-            {/* After-discount total when no VAT */}
             {totalSavings > 0 && !proposal.include_vat && (
               <View style={s.vatRow}>
                 <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ לאחר הנחה' : 'Total after discount'}</Text>
@@ -889,7 +907,7 @@ function ProposalDocument(opts: PdfOptions) {
           </View>
         )}
 
-        {/* ── Grand total ──────────────────────────────────────────────────── */}
+        {/* ── Grand total — enterprise accent border style ──────────────────── */}
         <View style={s.totalBox} wrap={false}>
           <Text style={s.totalLabel}>
             {isHe
@@ -907,7 +925,6 @@ function ProposalDocument(opts: PdfOptions) {
                 {isHe ? 'לוח תשלומים — אבני דרך' : 'PAYMENT SCHEDULE — MILESTONES'}
               </Text>
 
-              {/* Header row */}
               <View style={s.milestoneHeader}>
                 <View style={{ width: 30 }} />
                 <Text style={[s.milestoneHeaderCell, { flex: 1, textAlign: 'right' }]}>
@@ -921,8 +938,9 @@ function ProposalDocument(opts: PdfOptions) {
 
               {milestones.map((m, i) => {
                 const amt = Math.round((m.percentage / 100) * displayTotal)
+                const rowStyle = i % 2 === 0 ? s.milestoneRow : s.milestoneRowAlt
                 return (
-                  <View key={m.id} style={s.milestoneRow} wrap={false}>
+                  <View key={m.id} style={rowStyle} wrap={false}>
                     <View style={s.milestoneNumBadge}>
                       <Text style={s.milestoneNumText}>{i + 1}</Text>
                     </View>
@@ -974,7 +992,7 @@ function ProposalDocument(opts: PdfOptions) {
           )}
         </View>
 
-        {/* Fixed footer — repeated on every content page */}
+        {/* Fixed footer */}
         <View style={s.pageFooter} fixed>
           <Text style={s.pageFooterBrand}>DealSpace</Text>
           <Text style={s.pageFooterText}>dealspace.app</Text>
@@ -989,7 +1007,6 @@ function ProposalDocument(opts: PdfOptions) {
       <Page size="A4" style={s.certPage}>
         {isDraft && (
           <>
-            {/* Draft notice — replaces the full certificate */}
             <View style={[s.certHero, { backgroundColor: '#7c3aed' }]}>
               <View>
                 <Text style={s.certHeroTitle}>
@@ -1006,8 +1023,8 @@ function ProposalDocument(opts: PdfOptions) {
               </View>
             </View>
             <View style={s.certBody}>
-              <View style={[s.certTokenBox, { marginBottom: 24, borderColor: alpha('#7c3aed', 0.4) }]}>
-                <Text style={[s.certTokenLabel, { color: '#a78bfa' }]}>
+              <View style={[s.certTokenBox, { marginBottom: 24 }]}>
+                <Text style={s.certTokenLabel}>
                   {isHe ? 'הודעה חשובה' : 'IMPORTANT NOTICE'}
                 </Text>
                 <Text style={[s.certTokenValue, { fontSize: 10, lineHeight: 1.7 }]}>
@@ -1025,13 +1042,26 @@ function ProposalDocument(opts: PdfOptions) {
                   [isHe ? 'נותן השירות' : 'Service Provider', providerName],
                   [isHe ? 'לקוח'        : 'Client',           proposal.client_name ?? '—'],
                   [isHe ? 'סכום הצעה'   : 'Proposal Value',   fmtCurrencyPdf(displayTotal, proposal.currency)],
-                  [isHe ? 'תאריך הפקה'  : 'Generated',        fmtDateTime(sigTs)],
-                ].map(([label, value], idx) => (
-                  <View key={idx} style={s.certAuditRow}>
+                ].map(([label, value], idx, arr) => (
+                  <View
+                    key={idx}
+                    style={idx === arr.length - 1
+                      ? (idx % 2 === 0 ? s.certAuditRowLast : s.certAuditRowLastAlt)
+                      : (idx % 2 === 0 ? s.certAuditRow    : s.certAuditRowAlt)
+                    }
+                  >
                     <Text style={s.certAuditLabel}>{label}</Text>
                     <Text style={s.certAuditValue}>{value}</Text>
                   </View>
                 ))}
+                {/* Date row — split-node: label | date | time in separate Text nodes */}
+                <View style={s.certAuditRowAlt}>
+                  <Text style={s.certAuditLabel}>{isHe ? 'תאריך הפקה' : 'Generated'}</Text>
+                  <View style={s.certAuditDateTime}>
+                    <Text style={s.certAuditValue}>{createdStr}</Text>
+                    <Text style={s.certAuditValue}>{timeStr}</Text>
+                  </View>
+                </View>
               </View>
               <Text style={s.certLegalNote}>
                 {isHe
@@ -1042,13 +1072,13 @@ function ProposalDocument(opts: PdfOptions) {
             <View style={s.certFooter}>
               <Text style={s.certFooterBrand}>DealSpace</Text>
               <Text style={s.certFooterText}>{isHe ? 'טיוטה — אין תוקף משפטי' : 'DRAFT — NOT LEGALLY BINDING'}</Text>
-              <Text style={s.certFooterText}>{fmtDate(sigTs)}</Text>
+              <Text style={s.certFooterText}>{dateStr}</Text>
             </View>
           </>
         )}
         {!isDraft && (<>
 
-        {/* Hero */}
+        {/* Hero — brand color strip */}
         <View style={s.certHero}>
           <View style={{ position: 'absolute', top: -18, right: -18, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.06)' }} />
           <View>
@@ -1068,7 +1098,10 @@ function ProposalDocument(opts: PdfOptions) {
 
         <View style={s.certBody}>
 
-          {/* Signature + metadata */}
+          {/* Signature + metadata
+              ── Split-node architecture: EVERY label and every data piece
+                 is in its own <Text> node inside a row-reverse View.
+                 NEVER concatenate Hebrew label + date/time in one <Text>. ── */}
           <View style={s.certSigRow} wrap={false}>
             <View style={s.certSigBox}>
               {signatureDataUrl?.startsWith('data:image')
@@ -1079,19 +1112,39 @@ function ProposalDocument(opts: PdfOptions) {
               <Text style={s.certSigBadge}>
                 {isHe ? '✓ אושר ונחתם אלקטרונית' : '✓ Electronically Approved & Signed'}
               </Text>
-              {proposal.client_name
-                ? <Text style={s.certSigLine}>{isHe ? 'שם: ' : 'Name: '}<Text style={s.certSigValue}>{proposal.client_name}</Text></Text>
-                : null}
-              {proposal.client_company_name
-                ? <Text style={s.certSigLine}>{isHe ? 'חברה: ' : 'Company: '}<Text style={s.certSigValue}>{proposal.client_company_name}</Text></Text>
-                : null}
-              {proposal.client_signer_role
-                ? <Text style={s.certSigLine}>{isHe ? 'תפקיד: ' : 'Role: '}<Text style={s.certSigValue}>{proposal.client_signer_role}</Text></Text>
-                : null}
-              {proposal.client_tax_id
-                ? <Text style={s.certSigLine}>{isHe ? 'ח.פ / ת.ז.: ' : 'Tax ID: '}<Text style={s.certSigValue}>{proposal.client_tax_id}</Text></Text>
-                : null}
-              <Text style={s.certSigLine}>{isHe ? 'תאריך חתימה: ' : 'Signed: '}<Text style={s.certSigValue}>{dateTimeStr}</Text></Text>
+
+              {proposal.client_name && (
+                <View style={s.certSigMetaRow}>
+                  <Text style={s.certSigLabel}>{isHe ? 'שם:' : 'Name:'}</Text>
+                  <Text style={s.certSigValue}>{proposal.client_name}</Text>
+                </View>
+              )}
+              {proposal.client_company_name && (
+                <View style={s.certSigMetaRow}>
+                  <Text style={s.certSigLabel}>{isHe ? 'חברה:' : 'Company:'}</Text>
+                  <Text style={s.certSigValue}>{proposal.client_company_name}</Text>
+                </View>
+              )}
+              {proposal.client_signer_role && (
+                <View style={s.certSigMetaRow}>
+                  <Text style={s.certSigLabel}>{isHe ? 'תפקיד:' : 'Role:'}</Text>
+                  <Text style={s.certSigValue}>{proposal.client_signer_role}</Text>
+                </View>
+              )}
+              {proposal.client_tax_id && (
+                <View style={s.certSigMetaRow}>
+                  <Text style={s.certSigLabel}>{isHe ? 'ח.פ / ת.ז.:' : 'Tax ID:'}</Text>
+                  <Text style={s.certSigValue}>{proposal.client_tax_id}</Text>
+                </View>
+              )}
+              {/* Date and time in separate Text nodes — Bidi-safe */}
+              <View style={s.certSigMetaRow}>
+                <Text style={s.certSigLabel}>{isHe ? 'תאריך חתימה:' : 'Signed:'}</Text>
+                <View style={{ flex: 1, flexDirection: 'row', gap: 5 }}>
+                  <Text style={s.certSigValue}>{dateStr}</Text>
+                  <Text style={s.certSigValue}>{timeStr}</Text>
+                </View>
+              </View>
             </View>
           </View>
 
@@ -1103,32 +1156,42 @@ function ProposalDocument(opts: PdfOptions) {
             <Text style={s.certTokenValue}>{forceWrap(proposal.public_token)}</Text>
           </View>
 
-          {/* Audit trail */}
+          {/* Audit trail — formal legal certificate with alternating rows */}
           <View style={s.certAuditBox} wrap={false}>
             <Text style={s.certAuditTitle}>
               {isHe ? 'רשומת ביקורת (Audit Trail)' : 'AUDIT TRAIL'}
             </Text>
 
+            {/* Plain text rows — label and value are already in separate Text nodes */}
             {[
-              [isHe ? 'שם הפרויקט'        : 'Project Title',        proposal.project_title],
-              [isHe ? 'נותן השירות'        : 'Service Provider',     providerName],
-              [isHe ? 'הלקוח'             : 'Client',               proposal.client_name ?? '—'],
-              [isHe ? 'סכום החוזה'         : 'Contract Value',       fmtCurrencyPdf(displayTotal, proposal.currency)],
-              [isHe ? 'תאריך יצירת המסמך' : 'Document Created',     createdStr],
-              [isHe ? 'תאריך ושעת חתימה'  : 'Signature Timestamp',  dateTimeStr],
-              [isHe ? 'פלטפורמה'           : 'Platform',             forceWrap('DealSpace — dealspace.app')],
-            ].map(([label, value], idx, arr) => (
-              <View key={idx} style={idx === arr.length - 1 ? s.certAuditRowLast : s.certAuditRow}>
-                <Text style={s.certAuditLabel}>{label}</Text>
-                <Text style={s.certAuditValue}>{value}</Text>
-              </View>
-            ))}
+              [isHe ? 'שם הפרויקט'        : 'Project Title',    proposal.project_title,                            false],
+              [isHe ? 'נותן השירות'        : 'Service Provider', providerName,                                      false],
+              [isHe ? 'הלקוח'             : 'Client',           proposal.client_name ?? '—',                       false],
+              [isHe ? 'סכום החוזה'         : 'Contract Value',   fmtCurrencyPdf(displayTotal, proposal.currency),  false],
+              [isHe ? 'תאריך יצירת המסמך' : 'Document Created', createdStr,                                        true ],
+              [isHe ? 'פלטפורמה'           : 'Platform',         forceWrap('DealSpace — dealspace.app'),            false],
+              [isHe ? 'תוקף חוקי'          : 'Legal Framework',  isHe ? 'חוק חתימה אלקטרונית, התשס״א-2001' : 'Electronic Signature Law, 5761-2001 (Israel)', false],
+            ].map(([label, value, _isDate], idx, arr) => {
+              const isLast = idx === arr.length - 1
+              const isAlt  = idx % 2 !== 0
+              const style  = isLast
+                ? (isAlt ? s.certAuditRowLastAlt : s.certAuditRowLast)
+                : (isAlt ? s.certAuditRowAlt     : s.certAuditRow)
+              return (
+                <View key={idx} style={style}>
+                  <Text style={s.certAuditLabel}>{label as string}</Text>
+                  <Text style={s.certAuditValue}>{value as string}</Text>
+                </View>
+              )
+            })}
 
-            <View style={s.certAuditRow}>
-              <Text style={s.certAuditLabel}>{isHe ? 'תוקף חוקי' : 'Legal Framework'}</Text>
-              <Text style={s.certAuditValue}>
-                {isHe ? 'חוק חתימה אלקטרונית, התשס״א-2001' : 'Electronic Signature Law, 5761-2001 (Israel)'}
-              </Text>
+            {/* Signature timestamp row — split date + time into separate Text nodes */}
+            <View style={s.certAuditRowAlt}>
+              <Text style={s.certAuditLabel}>{isHe ? 'תאריך ושעת חתימה' : 'Signature Timestamp'}</Text>
+              <View style={s.certAuditDateTime}>
+                <Text style={s.certAuditValue}>{dateStr}</Text>
+                <Text style={s.certAuditValue}>{timeStr}</Text>
+              </View>
             </View>
           </View>
 
