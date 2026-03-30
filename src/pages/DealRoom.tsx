@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RefObject } from 'react'
 import { useParams } from 'react-router-dom'
+import confetti from 'canvas-confetti'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -440,6 +441,28 @@ function StickyFomoBand({
   )
 }
 
+// ─── Automation Handshake Stub ────────────────────────────────────────────────
+// Sprint 18: Documented hook for post-signature integrations.
+// Sprint 19 will wire real webhook endpoints here (Make.com, Invoice4u, etc.).
+async function triggerPostSignatureAutomations(proposal: Proposal): Promise<void> {
+  // 1. Create a draft invoice in Invoice4u / QuickBooks / FreshBooks
+  // 2. Send a confirmation email via SendGrid / Postmark
+  // 3. Add the client to your CRM (HubSpot / monday.com / Pipedrive)
+  // 4. Notify the creator via WhatsApp Business API or Slack
+  // 5. Trigger a Make.com scenario for the full automation pipeline
+  console.log('[Automation] Deal Signed. Triggering Invoice4u / Make.com Webhooks...')
+  console.log('[Automation] Payload:', {
+    proposal_id:   proposal.id,
+    project_title: proposal.project_title,
+    client_name:   proposal.client_name,
+    client_email:  proposal.client_email,
+    total:         proposal.base_price,
+    currency:      proposal.currency,
+    public_token:  proposal.public_token,
+    signed_at:     new Date().toISOString(),
+  })
+}
+
 // ─── Main DealRoom page ───────────────────────────────────────────────────────
 
 export default function DealRoom() {
@@ -467,6 +490,27 @@ export default function DealRoom() {
   const [declining, setDeclining] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const [legalExpanded, setLegalExpanded] = useState(false)
+
+  // ── Confetti burst on fresh signature ─────────────────────────────────────
+  // Fires only when accepted transitions to true AND freshSignedRef.current is true.
+  // When page loads with an already-accepted proposal, setAccepted(true) runs but
+  // freshSignedRef.current remains false — so no confetti on revisit.
+  useEffect(() => {
+    if (!accepted || !freshSignedRef.current || !proposal) return
+    const brand = proposal.brand_color ?? '#6366f1'
+    // Central burst
+    confetti({ particleCount: 110, spread: 80, origin: { y: 0.68 }, colors: [brand, '#6366f1', '#a855f7', '#22c55e', '#ffffff', '#ffd700'] })
+    // Side cannons
+    const t1 = setTimeout(() => {
+      confetti({ particleCount: 65, angle: 58, spread: 68, origin: { x: 0, y: 0.72 }, colors: [brand, '#a855f7', '#ffd700'] })
+      confetti({ particleCount: 65, angle: 122, spread: 68, origin: { x: 1, y: 0.72 }, colors: [brand, '#6366f1', '#22c55e'] })
+    }, 220)
+    // Trailing sparkle
+    const t2 = setTimeout(() => {
+      confetti({ particleCount: 45, spread: 130, origin: { y: 0.6 }, gravity: 0.55, scalar: 0.75, colors: ['#ffffff', '#ffd700', brand] })
+    }, 580)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [accepted]) // eslint-disable-line react-hooks/exhaustive-deps
   const [clientDetails, setClientDetails] = useState<ClientCapturedDetails | null>(null)
   const [legalConsent, setLegalConsent] = useState(false)
 
@@ -710,6 +754,8 @@ export default function DealRoom() {
       setSigTimestamp(new Date())
       freshSignedRef.current = true
       setAccepted(true)
+      // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
+      if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
     } else {
       setAcceptError(locale === 'he'
         ? 'שגיאה באישור ההצעה. אנא נסה שוב.'
@@ -1462,13 +1508,13 @@ export default function DealRoom() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Confetti-style aurora behind the card */}
+            {/* Aurora behind the card — brand_color + emerald */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div
                 className="absolute top-1/4 left-1/4 rounded-full"
                 style={{
-                  width: '50vw', height: '50vw',
-                  background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 65%)',
+                  width: '55vw', height: '55vw',
+                  background: `radial-gradient(circle, ${brandColor}20 0%, transparent 65%)`,
                   filter: 'blur(60px)',
                   animation: 'dr-float-a 8s ease-in-out infinite',
                 }}
@@ -1476,10 +1522,19 @@ export default function DealRoom() {
               <div
                 className="absolute bottom-1/4 right-1/4 rounded-full"
                 style={{
-                  width: '40vw', height: '40vw',
-                  background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)',
+                  width: '45vw', height: '45vw',
+                  background: 'radial-gradient(circle, rgba(34,197,94,0.14) 0%, transparent 65%)',
                   filter: 'blur(50px)',
                   animation: 'dr-float-b 10s ease-in-out infinite',
+                }}
+              />
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: '30vw', height: '30vw',
+                  background: `radial-gradient(circle, ${brandColor}15 0%, transparent 70%)`,
+                  filter: 'blur(40px)',
+                  animation: 'dr-float-a 12s ease-in-out infinite reverse',
                 }}
               />
             </div>
@@ -1490,9 +1545,9 @@ export default function DealRoom() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.12 }}
               style={{
-                background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(34,197,94,0.2)',
-                boxShadow: '0 0 80px rgba(34,197,94,0.12), 0 40px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+                background: 'linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.02) 100%)',
+                border: `1px solid ${brandColor}35`,
+                boxShadow: `0 0 80px ${brandColor}18, 0 0 40px rgba(34,197,94,0.1), 0 40px 80px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.09)`,
               }}
             >
               {/* Success icon */}
@@ -1502,9 +1557,9 @@ export default function DealRoom() {
                 transition={{ type: 'spring', stiffness: 350, damping: 18, delay: 0.3 }}
                 className="flex h-20 w-20 items-center justify-center rounded-full text-4xl"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.1))',
-                  border: '2px solid rgba(34,197,94,0.35)',
-                  boxShadow: '0 0 40px rgba(34,197,94,0.25)',
+                  background: `linear-gradient(135deg, ${brandColor}28, ${brandColor}12)`,
+                  border: `2px solid ${brandColor}50`,
+                  boxShadow: `0 0 40px ${brandColor}35, 0 0 80px ${brandColor}18`,
                 }}
               >
                 🎉
@@ -1554,25 +1609,35 @@ export default function DealRoom() {
                 </p>
               </motion.div>
 
-              {/* Download signed PDF */}
+              {/* Download signed PDF — branded button */}
               <motion.button
                 onClick={handleDownloadPdf}
                 disabled={pdfGenerating}
-                className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-4 text-sm font-bold text-white transition disabled:opacity-60"
+                className="relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl py-4 text-sm font-bold text-white transition disabled:opacity-60"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.65 }}
                 whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
-                  boxShadow: '0 0 30px rgba(99,102,241,0.45)',
+                  background: `linear-gradient(135deg, ${brandColor} 0%, ${brandColor}cc 60%, #a855f7 100%)`,
+                  boxShadow: `0 0 32px ${brandColor}55, 0 4px 24px rgba(0,0,0,0.3)`,
                 }}
               >
-                <FileDown size={16} className={pdfGenerating ? 'animate-bounce' : ''} />
-                {pdfGenerating
-                  ? (locale === 'he' ? 'יוצר PDF…' : 'Generating PDF…')
-                  : (locale === 'he' ? '⬇ הורד חוזה חתום (PDF)' : '⬇ Download Signed Contract (PDF)')}
+                {/* Shimmer sweep */}
+                {!pdfGenerating && (
+                  <span
+                    className="pointer-events-none absolute inset-y-0 w-1/3 bg-white/12"
+                    style={{ animation: 'checkout-shimmer 2.4s ease-out 1s infinite' }}
+                    aria-hidden
+                  />
+                )}
+                <span className="relative flex items-center gap-2.5">
+                  <FileDown size={16} className={pdfGenerating ? 'animate-bounce' : ''} />
+                  {pdfGenerating
+                    ? (locale === 'he' ? 'יוצר PDF…' : 'Generating PDF…')
+                    : (locale === 'he' ? '⬇ הורד חוזה חתום (PDF)' : '⬇ Download Signed Contract (PDF)')}
+                </span>
               </motion.button>
 
               <motion.p

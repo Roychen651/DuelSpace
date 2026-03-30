@@ -336,14 +336,21 @@ export default function Dashboard() {
     }
   }, [loading])
 
-  // ── KPI calculations ──────────────────────────────────────────────────────
-  const sentProposals = proposals.filter(p => p.status !== 'draft')
-  const accepted = proposals.filter(p => p.status === 'accepted')
-  const winRate = sentProposals.length > 0 ? Math.round((accepted.length / sentProposals.length) * 100) : 0
-  const pendingProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
-  const revenuePending = pendingProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
+  // ── CRM KPI calculations ──────────────────────────────────────────────────
+  // Pipeline Value: active proposals not yet resolved
+  const pipelineProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
+  const acceptedProposals = proposals.filter(p => p.status === 'accepted')
+  const rejectedProposals = proposals.filter(p => p.status === 'rejected')
+
+  const pipelineValue = pipelineProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
+  // Closed Won: total revenue from all accepted proposals
+  const closedWon = acceptedProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
+  // Win Rate: accepted / (accepted + rejected) — excludes pending from denominator
+  const resolvedCount = acceptedProposals.length + rejectedProposals.length
+  const winRate = resolvedCount > 0 ? Math.round((acceptedProposals.length / resolvedCount) * 100) : 0
+
   const kpiCurrencyPrefix = (() => {
-    const cur = pendingProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
+    const cur = pipelineProposals[0]?.currency ?? acceptedProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
     return cur === 'ILS' ? '₪' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : cur
   })()
 
@@ -443,25 +450,26 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <KPICard
             icon={<TrendingUp size={16} />}
-            label={locale === 'he' ? 'הכנסה בהמתנה' : 'Revenue Pending'}
-            tooltip={locale === 'he' ? 'סך ההכנסות הצפויות מהצעות שנשלחו ועדיין לא אושרו' : 'Expected revenue from proposals sent but not yet accepted'}
-            value={revenuePending}
+            label={locale === 'he' ? 'פייפליין פעיל' : 'Pipeline Value'}
+            tooltip={locale === 'he' ? 'סך הכנסות פוטנציאליות מהצעות שנשלחו, נצפו, או בתיקון' : 'Total potential revenue from sent, viewed, and revision-pending proposals'}
+            value={pipelineValue}
             prefix={kpiCurrencyPrefix}
             color="#d4af37"
             delay={0.1}
           />
           <KPICard
             icon={<Send size={16} />}
-            label={locale === 'he' ? 'הצעות שנשלחו' : 'Proposals Sent'}
-            tooltip={locale === 'he' ? 'מספר הצעות המחיר שנשלחו ללקוחות — לא כולל טיוטות' : 'Number of proposals sent to clients, excluding drafts'}
-            value={sentProposals.length}
+            label={locale === 'he' ? 'עסקאות שנסגרו' : 'Closed Won'}
+            tooltip={locale === 'he' ? 'סך ההכנסות שנגבו מהצעות שאושרו וחתמו — הכנסה בפועל' : 'Total revenue from accepted and signed proposals — actual earned income'}
+            value={closedWon}
+            prefix={kpiCurrencyPrefix}
             color="#6366f1"
             delay={0.18}
           />
           <KPICard
             icon={<Trophy size={16} />}
             label={locale === 'he' ? 'אחוז הצלחה' : 'Win Rate'}
-            tooltip={locale === 'he' ? 'אחוז ההצעות שאושרו מתוך כלל ההצעות שנשלחו ונחתמו' : 'Percentage of sent proposals that were accepted and signed'}
+            tooltip={locale === 'he' ? 'הצעות שאושרו מתוך כלל ההצעות שנסגרו (אושרו + נדחו)' : 'Accepted proposals out of all resolved deals (accepted + rejected)'}
             value={winRate}
             suffix="%"
             color="#22c55e"
