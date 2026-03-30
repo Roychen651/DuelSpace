@@ -523,7 +523,7 @@ export default function ProposalBuilder() {
             >
               <Zap size={13} className="text-white" />
             </div>
-            <span className="text-sm font-semibold text-white/80 truncate max-w-[180px]">
+            <span className="text-sm font-semibold text-white/80 truncate max-w-[90px] sm:max-w-[200px]">
               {draft.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
             </span>
           </div>
@@ -548,12 +548,12 @@ export default function ProposalBuilder() {
           )}
         </AnimatePresence>
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-2">
-          {/* Live presence badge — visible when client is viewing the deal room */}
+        {/* Right: actions — all buttons h-9, icon-only on mobile, text on sm+ */}
+        <div className="flex items-center gap-1.5">
+          {/* Live presence badge — desktop only */}
           {currentProposal?.public_token && activeViewers[currentProposal.public_token] && (
             <div
-              className="hidden sm:flex items-center gap-1.5 rounded-xl px-2.5 py-1.5"
+              className="hidden sm:flex items-center gap-1.5 rounded-xl px-2.5 h-9"
               style={{
                 background: 'rgba(34,197,94,0.08)',
                 border: '1px solid rgba(34,197,94,0.22)',
@@ -566,28 +566,28 @@ export default function ProposalBuilder() {
                 />
                 <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#22c55e' }} />
               </span>
-              <span className="text-[11px] font-semibold" style={{ color: '#4ade80' }}>
+              <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: '#4ade80' }}>
                 {locale === 'he' ? 'לקוח צופה עכשיו' : 'Client viewing now'}
               </span>
             </div>
           )}
 
-          {/* Download signed PDF — only when accepted */}
+          {/* Download signed PDF — icon on mobile, text on sm+ */}
           {isAccepted && (
             <motion.button
               onClick={handleDownloadSignedPdf}
               disabled={pdfGenerating}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white transition disabled:opacity-50"
+              className="flex-none flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 h-9 text-xs font-bold transition disabled:opacity-50"
               style={{
                 background: 'rgba(34,197,94,0.12)',
                 border: '1px solid rgba(34,197,94,0.25)',
                 color: '#4ade80',
               }}
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
             >
               <FileDown size={14} className={pdfGenerating ? 'animate-bounce' : ''} />
-              <span>
+              <span className="hidden sm:inline whitespace-nowrap">
                 {pdfGenerating
                   ? (locale === 'he' ? 'יוצר…' : 'Generating…')
                   : (locale === 'he' ? 'הורד PDF' : 'Download PDF')}
@@ -595,20 +595,27 @@ export default function ProposalBuilder() {
             </motion.button>
           )}
 
-          {/* Mobile: preview toggle — with text label for clarity */}
+          {/* Preview — icon on mobile, text on sm+ */}
           <button
             onClick={() => setPreviewOpen(true)}
-            className="lg:hidden flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-400 transition hover:bg-indigo-500/20"
+            className="lg:hidden flex-none flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 h-9 text-xs font-semibold transition"
+            style={{
+              border: '1px solid rgba(99,102,241,0.3)',
+              background: 'rgba(99,102,241,0.08)',
+              color: '#818cf8',
+            }}
           >
-            <Eye size={13} />
-            <span>{locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}</span>
+            <Eye size={14} />
+            <span className="hidden sm:inline whitespace-nowrap">
+              {locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}
+            </span>
           </button>
 
-          {/* Send / Status button — adapts to proposal status */}
+          {/* Send / Status — icon + short text on mobile, full label on sm+ */}
           <motion.button
             onClick={handleSend}
             disabled={!canSend && !isAccepted && !isAlreadySent}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-35"
+            className="flex-none flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 h-9 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-35"
             style={{
               background: isAccepted
                 ? 'linear-gradient(135deg, #22c55e, #16a34a)'
@@ -630,27 +637,27 @@ export default function ProposalBuilder() {
                       : 'none',
               border: isAlreadySent && !isAccepted && !isNeedsRevision ? '1px solid rgba(99,102,241,0.4)' : 'none',
             }}
-            whileHover={canSend || isAccepted || isAlreadySent || isNeedsRevision ? { scale: 1.03 } : {}}
+            whileHover={canSend || isAccepted || isAlreadySent || isNeedsRevision ? { scale: 1.02 } : {}}
             whileTap={canSend || isAccepted || isAlreadySent || isNeedsRevision ? { scale: 0.96 } : {}}
           >
             {isAccepted
-              ? <ShieldCheck size={12} />
+              ? <ShieldCheck size={13} />
               : isNeedsRevision
-                ? <RefreshCw size={12} />
+                ? <RefreshCw size={13} />
                 : isAlreadySent
-                  ? <RefreshCw size={12} />
-                  : <Send size={12} />}
-            <span className="hidden sm:inline">
+                  ? <RefreshCw size={13} />
+                  : <Send size={13} />}
+            <span className="sm:hidden whitespace-nowrap">
+              {isAccepted ? '✓' : isNeedsRevision ? (locale === 'he' ? 'עדכן' : 'Update') : (locale === 'he' ? 'שלח' : 'Send')}
+            </span>
+            <span className="hidden sm:inline whitespace-nowrap">
               {isAccepted
                 ? (locale === 'he' ? '✓ חתום ואושר' : '✓ Signed & Accepted')
                 : isNeedsRevision
-                  ? (locale === 'he' ? '↑ עדכן ושלח חזרה' : '↑ Update & Resend')
+                  ? (locale === 'he' ? 'עדכן ושלח חזרה' : 'Update & Resend')
                   : isAlreadySent
                     ? (locale === 'he' ? 'שלח שוב' : 'Resend Link')
                     : (locale === 'he' ? 'שלח ללקוח' : 'Send to Client')}
-            </span>
-            <span className="sm:hidden">
-              {isAccepted ? '✓' : isNeedsRevision ? '↑' : isAlreadySent ? (locale === 'he' ? 'שלח' : 'Resend') : (locale === 'he' ? 'שלח' : 'Send')}
             </span>
           </motion.button>
         </div>
