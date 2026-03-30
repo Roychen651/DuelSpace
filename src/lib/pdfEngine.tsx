@@ -2,7 +2,7 @@ import {
   Document, Page, Text, View, Image,
   StyleSheet, Font, pdf,
 } from '@react-pdf/renderer'
-import { formatCurrency, DEFAULT_VAT_RATE } from '../types/proposal'
+import { DEFAULT_VAT_RATE } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
 import { calculateFinancials } from './financialMath'
 
@@ -47,17 +47,54 @@ function getInitials(name?: string | null): string {
   return name.split(' ').map(n => n[0] ?? '').join('').slice(0, 2).toUpperCase()
 }
 
-function fmtDate(d: Date | string, locale: 'he' | 'en'): string {
-  return new Date(d).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+/**
+ * Bidi-safe date formatter for react-pdf.
+ * NEVER use toLocaleString('he-IL') inside the PDF engine — the Hebrew month
+ * names mixed with Arabic numerals (e.g. "30 במרץ 2026") cause the Unicode
+ * Bidi algorithm to scramble the string inside react-pdf's text shaper.
+ * Always emit DD.MM.YYYY — pure digits + dots are direction-neutral.
+ */
+function fmtDate(d: Date | string): string {
+  const dt = new Date(d)
+  const dd   = String(dt.getDate()).padStart(2, '0')
+  const mm   = String(dt.getMonth() + 1).padStart(2, '0')
+  const yyyy = dt.getFullYear()
+  return `${dd}.${mm}.${yyyy}`
 }
 
-function fmtDateTime(d: Date, locale: 'he' | 'en'): string {
-  return d.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+function fmtDateTime(d: Date): string {
+  const dd   = String(d.getDate()).padStart(2, '0')
+  const mm   = String(d.getMonth() + 1).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  const hh   = String(d.getHours()).padStart(2, '0')
+  const min  = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}.${mm}.${yyyy}  ${hh}:${min}`
+}
+
+/**
+ * Bidi-safe currency formatter for react-pdf.
+ * Intl.NumberFormat with he-IL locale injects Unicode RTL marks (U+200F) into
+ * the output string. react-pdf's text shaper interprets these and flips digit
+ * order, producing "138 ₪ -" instead of "- ₪138". Always use en-US number
+ * formatting and append the symbol manually so the string contains no Bidi
+ * control characters.
+ */
+function fmtCurrencyPdf(amount: number, currency: string): string {
+  const n = Math.round(amount).toLocaleString('en-US')
+  if (currency === 'ILS') return `${n} \u20AA`   // ₪ is U+20AA — safe in all pdf fonts
+  if (currency === 'USD') return `$${n}`
+  if (currency === 'EUR') return `\u20AC${n}`
+  if (currency === 'GBP') return `\u00A3${n}`
+  return `${n} ${currency}`
+}
+
+/**
+ * Formats a positive savings/discount amount with a leading minus.
+ * The minus must be the very first character so the Bidi engine never
+ * reorders it relative to the currency symbol or digits.
+ */
+function fmtDiscountPdf(amount: number, currency: string): string {
+  return `- ${fmtCurrencyPdf(amount, currency)}`
 }
 
 // ─── TipTap HTML → PDF block parser ───────────────────────────────────────────
@@ -189,16 +226,18 @@ function makeStyles(brand: string) {
     coverAccentBar: { height: 3, backgroundColor: alpha(brand, 0.45) },
     coverBody: {
       paddingHorizontal: 36,
-      paddingTop: 38,
+      paddingVertical: 0,
       flex: 1,
+      justifyContent: 'center',   // vertically centers content — eliminates empty void
+      paddingBottom: 60,          // leave breathing room above page bottom
     },
     coverTitle: {
-      fontSize: 26,
+      fontSize: 34,               // grander — enterprise contract feel
       fontWeight: 900,
       color: C.white,
       textAlign: 'right',
-      marginBottom: 28,
-      lineHeight: 1.3,
+      marginBottom: 32,
+      lineHeight: 1.25,
     },
     coverPreparedLabel: {
       fontSize: 7,
@@ -225,8 +264,8 @@ function makeStyles(brand: string) {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       gap: 20,
-      marginTop: 36,
-      paddingTop: 16,
+      marginTop: 28,
+      paddingTop: 14,
       borderTop: `1px solid ${C.border}`,
     },
     coverMetaText: { fontSize: 8, color: C.muted },
@@ -566,9 +605,9 @@ function ProposalDocument(opts: PdfOptions) {
   const companyName   = creator?.company_name ?? 'DealSpace'
   const initials      = getInitials(creator?.company_name)
   const projectTitle  = proposal.project_title || (isHe ? 'הצעת מחיר' : 'Proposal')
-  const dateStr       = fmtDate(sigTs, locale)
-  const dateTimeStr   = fmtDateTime(sigTs, locale)
-  const createdStr    = fmtDate(proposal.created_at, locale)
+  const dateStr       = fmtDate(sigTs)
+  const dateTimeStr   = fmtDateTime(sigTs)
+  const createdStr    = fmtDate(proposal.created_at)
 
   const descBlocks = proposal.description ? parseHtml(proposal.description) : []
 
@@ -710,7 +749,7 @@ function ProposalDocument(opts: PdfOptions) {
           {/* Base row */}
           <View style={s.tableRowHighlight} wrap={false}>
             <Text style={s.tableLabel}>{isHe ? 'חבילת בסיס' : 'Base Package'}</Text>
-            <Text style={s.tablePrice}>{formatCurrency(proposal.base_price, proposal.currency)}</Text>
+            <Text style={s.tablePrice}>{fmtCurrencyPdf(proposal.base_price, proposal.currency)}</Text>
           </View>
 
           {/* Add-on rows */}
@@ -720,7 +759,7 @@ function ProposalDocument(opts: PdfOptions) {
                 <Text style={s.tableLabel}>{a.label}</Text>
                 {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
               </View>
-              <Text style={s.tablePrice}>{formatCurrency(a.price, proposal.currency)}</Text>
+              <Text style={s.tablePrice}>{fmtCurrencyPdf(a.price, proposal.currency)}</Text>
             </View>
           ))}
         </View>
@@ -734,12 +773,13 @@ function ProposalDocument(opts: PdfOptions) {
               <>
                 <View style={s.vatRow}>
                   <Text style={s.vatLabel}>{isHe ? 'מחיר מלא' : 'Full Price'}</Text>
-                  <Text style={s.vatValue}>{formatCurrency(fin.originalGrandTotal, proposal.currency)}</Text>
+                  <Text style={s.vatValue}>{fmtCurrencyPdf(fin.originalGrandTotal, proposal.currency)}</Text>
                 </View>
                 <View style={s.vatRow}>
                   <Text style={[s.vatLabel, { color: '#22c55e' }]}>{isHe ? 'הנחה' : 'Discount'}</Text>
+                  {/* fmtDiscountPdf forces "- N ₪" with minus first — prevents Bidi flip to "N ₪ -" */}
                   <Text style={[s.vatValue, { color: '#22c55e' }]}>
-                    {isHe ? `- ${formatCurrency(totalSavings, proposal.currency)}` : `- ${formatCurrency(totalSavings, proposal.currency)}`}
+                    {fmtDiscountPdf(totalSavings, proposal.currency)}
                   </Text>
                 </View>
                 {!proposal.include_vat && <View style={s.vatDivider} />}
@@ -751,18 +791,18 @@ function ProposalDocument(opts: PdfOptions) {
               <>
                 <View style={s.vatRow}>
                   <Text style={s.vatLabel}>{isHe ? 'סה״כ לפני מע״מ' : 'Subtotal (ex. VAT)'}</Text>
-                  <Text style={s.vatValue}>{formatCurrency(fin.beforeVat, proposal.currency)}</Text>
+                  <Text style={s.vatValue}>{fmtCurrencyPdf(fin.beforeVat, proposal.currency)}</Text>
                 </View>
                 <View style={s.vatRow}>
                   <Text style={s.vatLabel}>
-                    {isHe ? `מע״מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}
+                    {isHe ? `${Math.round(vatRate * 100)}% מע״מ` : `VAT ${Math.round(vatRate * 100)}%`}
                   </Text>
-                  <Text style={s.vatValue}>{formatCurrency(vatAmt, proposal.currency)}</Text>
+                  <Text style={s.vatValue}>{fmtCurrencyPdf(vatAmt, proposal.currency)}</Text>
                 </View>
                 <View style={s.vatDivider} />
                 <View style={s.vatRow}>
                   <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
-                  <Text style={s.vatTotalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
+                  <Text style={s.vatTotalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
                 </View>
               </>
             )}
@@ -771,7 +811,7 @@ function ProposalDocument(opts: PdfOptions) {
             {totalSavings > 0 && !proposal.include_vat && (
               <View style={s.vatRow}>
                 <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ לאחר הנחה' : 'Total after discount'}</Text>
-                <Text style={s.vatTotalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
+                <Text style={s.vatTotalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
               </View>
             )}
           </View>
@@ -784,7 +824,7 @@ function ProposalDocument(opts: PdfOptions) {
               ? (proposal.include_vat ? 'סה״כ לתשלום (כולל מע״מ)' : 'סה״כ להשקעה')
               : (proposal.include_vat ? 'Grand Total (incl. VAT)' : 'Total Investment')}
           </Text>
-          <Text style={s.totalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
+          <Text style={s.totalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
         </View>
 
         {/* ── Payment milestones ───────────────────────────────────────────── */}
@@ -823,7 +863,7 @@ function ProposalDocument(opts: PdfOptions) {
                       </View>
                     </View>
                     <Text style={s.milestonePct}>{m.percentage}%</Text>
-                    <Text style={s.milestoneAmt}>{formatCurrency(amt, proposal.currency)}</Text>
+                    <Text style={s.milestoneAmt}>{fmtCurrencyPdf(amt, proposal.currency)}</Text>
                   </View>
                 )
               })}
@@ -941,7 +981,7 @@ function ProposalDocument(opts: PdfOptions) {
               [isHe ? 'שם הפרויקט'        : 'Project Title',        proposal.project_title],
               [isHe ? 'נותן השירות'        : 'Service Provider',     creator?.company_name ?? creator?.full_name ?? '—'],
               [isHe ? 'הלקוח'             : 'Client',               proposal.client_name ?? '—'],
-              [isHe ? 'סכום החוזה'         : 'Contract Value',       formatCurrency(displayTotal, proposal.currency)],
+              [isHe ? 'סכום החוזה'         : 'Contract Value',       fmtCurrencyPdf(displayTotal, proposal.currency)],
               [isHe ? 'תאריך יצירת המסמך' : 'Document Created',     createdStr],
               [isHe ? 'תאריך ושעת חתימה'  : 'Signature Timestamp',  dateTimeStr],
               [isHe ? 'פלטפורמה'           : 'Platform',             'DealSpace — dealspace.app'],
