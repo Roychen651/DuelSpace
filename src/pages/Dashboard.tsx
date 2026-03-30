@@ -265,6 +265,27 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
   )
 }
 
+// ─── Tier Badge ───────────────────────────────────────────────────────────────
+
+function TierBadge({ tier, locale }: { tier: 'pro' | 'unlimited'; locale: string }) {
+  const isHe = locale === 'he'
+  const cfg = tier === 'pro'
+    ? { symbol: '⚡', labelHe: 'פרו', labelEn: 'Pro', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.28)', glow: 'rgba(99,102,241,0.18)' }
+    : { symbol: '∞',  labelHe: 'ללא הגבלה', labelEn: 'Unlimited', color: '#d4af37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.28)', glow: 'rgba(212,175,55,0.15)' }
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.8, x: isHe ? 8 : -8 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
+      transition={{ duration: 0.35, delay: 0.25, ease: 'easeOut' as const }}
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black tracking-wide"
+      style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, boxShadow: `0 0 14px ${cfg.glow}` }}
+    >
+      <span style={{ fontSize: 13, lineHeight: 1 }}>{cfg.symbol}</span>
+      {isHe ? cfg.labelHe : cfg.labelEn}
+    </motion.span>
+  )
+}
+
 // ─── Aurora background ─────────────────────────────────────────────────────────
 
 function DashboardAurora() {
@@ -475,11 +496,14 @@ export default function Dashboard() {
 
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
-          <h1 className="text-2xl font-bold text-white mb-1">
-            {locale === 'he'
-              ? `שלום${firstName ? `, ${firstName}` : ''}`
-              : `Hello${firstName ? `, ${firstName}` : ''}`}
-          </h1>
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h1 className="text-2xl font-bold text-white">
+              {locale === 'he'
+                ? `שלום${firstName ? `, ${firstName}` : ''}`
+                : `Hello${firstName ? `, ${firstName}` : ''}`}
+            </h1>
+            {tier !== 'free' && <TierBadge tier={tier} locale={locale} />}
+          </div>
           <p className="text-sm text-white/35">
             {locale === 'he' ? 'כל הצעות המחיר שלך במקום אחד.' : 'All your proposals in one place.'}
           </p>
