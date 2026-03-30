@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, Filter, List, ArrowUp, ArrowDown, FileDown } from 'lucide-react'
+import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, Filter, List, ArrowUp, ArrowDown, FileDown, Archive } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -298,6 +298,7 @@ export default function Dashboard() {
   const [sortField, setSortField] = useState<SortField>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [pdfGenerating, setPdfGenerating] = useState<string | null>(null)
+  const [viewArchive, setViewArchive] = useState(false)
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -338,7 +339,7 @@ export default function Dashboard() {
     if (!loading && proposals.length === 0) {
       injectDemoProposal()
     }
-  }, [loading, proposals.length, injectDemoProposal])
+  }, [loading, proposals.length, injectDemoProposal]) // proposals.length counts all including archived — correct for demo gate
 
   // Show tour once for new users after a short delay
   useEffect(() => {
@@ -348,11 +349,15 @@ export default function Dashboard() {
     }
   }, [loading])
 
-  // ── CRM KPI calculations ──────────────────────────────────────────────────
+  // ── Active vs archived split ──────────────────────────────────────────────
+  const activeProposals  = proposals.filter(p => !p.is_archived)
+  const archivedProposals = proposals.filter(p => p.is_archived)
+
+  // ── CRM KPI calculations (always based on active proposals only) ──────────
   // Pipeline Value: active proposals not yet resolved
-  const pipelineProposals = proposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
-  const acceptedProposals = proposals.filter(p => p.status === 'accepted')
-  const rejectedProposals = proposals.filter(p => p.status === 'rejected')
+  const pipelineProposals = activeProposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
+  const acceptedProposals = activeProposals.filter(p => p.status === 'accepted')
+  const rejectedProposals = activeProposals.filter(p => p.status === 'rejected')
 
   const pipelineValue = pipelineProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
   // Closed Won: total revenue from all accepted proposals
@@ -362,13 +367,14 @@ export default function Dashboard() {
   const winRate = resolvedCount > 0 ? Math.round((acceptedProposals.length / resolvedCount) * 100) : 0
 
   const kpiCurrencyPrefix = (() => {
-    const cur = pipelineProposals[0]?.currency ?? acceptedProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
+    const cur = pipelineProposals[0]?.currency ?? acceptedProposals[0]?.currency ?? activeProposals[0]?.currency ?? 'ILS'
     return cur === 'ILS' ? '₪' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : cur
   })()
 
   // ── Filtered + sorted proposals ──────────────────────────────────────────
   const filteredProposals = useMemo(() => {
-    let list = [...proposals]
+    // Base list depends on active/archive toggle
+    let list = viewArchive ? [...archivedProposals] : [...activeProposals]
     if (filterStatus !== 'all') list = list.filter(p => p.status === filterStatus)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -377,11 +383,13 @@ export default function Dashboard() {
         p.client_name.toLowerCase().includes(q)
       )
     }
-    // Pin needs_revision to the top regardless of sort order
+    // Pin needs_revision to the top regardless of sort order (active view only)
     list.sort((a, b) => {
-      const aNR = a.status === 'needs_revision' ? 0 : 1
-      const bNR = b.status === 'needs_revision' ? 0 : 1
-      if (aNR !== bNR) return aNR - bNR
+      if (!viewArchive) {
+        const aNR = a.status === 'needs_revision' ? 0 : 1
+        const bNR = b.status === 'needs_revision' ? 0 : 1
+        if (aNR !== bNR) return aNR - bNR
+      }
       let cmp = 0
       if (sortField === 'date') {
         cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -391,7 +399,7 @@ export default function Dashboard() {
       return sortDir === 'desc' ? -cmp : cmp
     })
     return list
-  }, [proposals, filterStatus, search, sortField, sortDir])
+  }, [proposals, filterStatus, search, sortField, sortDir, viewArchive]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = () => {
     navigate('/proposals/new')
@@ -494,6 +502,56 @@ export default function Dashboard() {
           className="mb-4 space-y-3"
           style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}
         >
+          {/* Active / Archive toggle */}
+          <div
+            className="flex items-center rounded-xl p-0.5 w-fit"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <button
+              onClick={() => setViewArchive(false)}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+              style={{
+                background: !viewArchive ? 'rgba(99,102,241,0.2)' : 'transparent',
+                color: !viewArchive ? '#818cf8' : 'rgba(255,255,255,0.35)',
+                border: !viewArchive ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+              }}
+            >
+              {locale === 'he' ? 'פעיל' : 'Active'}
+              {activeProposals.length > 0 && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full text-[9px] font-black px-1.5 h-4 min-w-[16px]"
+                  style={{ background: !viewArchive ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.08)', color: !viewArchive ? '#c4b5fd' : 'rgba(255,255,255,0.4)' }}
+                >
+                  {activeProposals.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setViewArchive(true)
+                // Kanban is not suitable for archive view — fall back to grid
+                if (viewMode === 'kanban') { setViewMode('grid'); localStorage.setItem('dealspace:view-mode', 'grid') }
+              }}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+              style={{
+                background: viewArchive ? 'rgba(245,158,11,0.15)' : 'transparent',
+                color: viewArchive ? '#fbbf24' : 'rgba(255,255,255,0.35)',
+                border: viewArchive ? '1px solid rgba(245,158,11,0.28)' : '1px solid transparent',
+              }}
+            >
+              <Archive size={11} />
+              {locale === 'he' ? 'ארכיון' : 'Archive'}
+              {archivedProposals.length > 0 && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full text-[9px] font-black px-1.5 h-4 min-w-[16px]"
+                  style={{ background: viewArchive ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.08)', color: viewArchive ? '#fbbf24' : 'rgba(255,255,255,0.4)' }}
+                >
+                  {archivedProposals.length}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Search + view toggle row */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search */}
@@ -543,7 +601,8 @@ export default function Dashboard() {
               {([
                 { mode: 'grid' as ViewMode, icon: <LayoutGrid size={13} />, label: locale === 'he' ? 'רשת' : 'Grid' },
                 { mode: 'list' as ViewMode, icon: <List size={13} />, label: locale === 'he' ? 'רשימה' : 'List' },
-                { mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: locale === 'he' ? 'לוח קנבן' : 'Kanban' },
+                // Kanban is only available in active view — not appropriate for archive
+                ...(!viewArchive ? [{ mode: 'kanban' as ViewMode, icon: <Columns size={13} />, label: locale === 'he' ? 'לוח קנבן' : 'Kanban' }] : []),
               ]).map(({ mode, icon, label }) => (
                 <button
                   key={mode}
@@ -594,9 +653,13 @@ export default function Dashboard() {
             ))}
 
             <span className="ms-auto text-[10px] text-white/25">
-              {filteredProposals.length !== proposals.length
-                ? `${filteredProposals.length} / ${proposals.length}`
-                : `${proposals.length} ${locale === 'he' ? 'הצעות' : 'proposals'}`}
+              {(() => {
+                const base = viewArchive ? archivedProposals.length : activeProposals.length
+                const total = proposals.length
+                if (filteredProposals.length !== base)
+                  return `${filteredProposals.length} / ${base}`
+                return `${base}${base !== total ? ` / ${total}` : ''} ${locale === 'he' ? 'הצעות' : 'proposals'}`
+              })()}
             </span>
           </div>
         </div>
@@ -606,7 +669,7 @@ export default function Dashboard() {
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <ProposalCardSkeleton key={i} />)}
           </div>
-        ) : proposals.length === 0 ? (
+        ) : !viewArchive && activeProposals.length === 0 ? (
           <EmptyState onCreate={handleCreate} locale={locale} />
         ) : filteredProposals.length === 0 ? (
           <motion.div

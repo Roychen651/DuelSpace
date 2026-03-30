@@ -19,7 +19,7 @@ interface ProposalState {
   fetchProposals: () => Promise<void>
   createProposal: (data: ProposalInsert) => Promise<Proposal | null>
   updateProposal: (id: string, data: ProposalUpdate) => Promise<void>
-  deleteProposal: (id: string) => Promise<void>
+  archiveProposal: (id: string) => Promise<void>
   duplicateProposal: (id: string) => Promise<Proposal | null>
   injectDemoProposal: () => Promise<void>
   subscribeRealtime: (userId: string) => void
@@ -80,6 +80,7 @@ export const useProposalStore = create<ProposalState>()(
           public_token: crypto.randomUUID(),
           view_count: 0,
           time_spent_seconds: 0,
+          is_archived: false,
           created_at: now,
           updated_at: now,
         }
@@ -130,26 +131,28 @@ export const useProposalStore = create<ProposalState>()(
         }
       },
 
-      // ── Delete ────────────────────────────────────────────────────────────
-      deleteProposal: async (id) => {
-        const previous = get().proposals
-        const snapshot = previous.find(p => p.id === id)
+      // ── Archive (soft delete) ─────────────────────────────────────────────
+      // Signed contracts must never be destructively deleted from the database.
+      // Archiving sets is_archived = true, hiding the proposal from active views
+      // while preserving the full row forever.
+      archiveProposal: async (id) => {
+        const snapshot = get().proposals.find(p => p.id === id)
         if (!snapshot) return
 
-        // Optimistic delete
-        set(s => ({ proposals: s.proposals.filter(p => p.id !== id) }))
+        // Optimistic update — mark archived locally
+        set(s => ({
+          proposals: s.proposals.map(p => p.id === id ? { ...p, is_archived: true } : p),
+        }))
 
         const { error } = await supabase
           .from('proposals')
-          .delete()
+          .update({ is_archived: true })
           .eq('id', id)
 
         if (error) {
-          // Rollback
+          // Rollback — restore original proposal
           set(s => ({
-            proposals: [snapshot, ...s.proposals].sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            ),
+            proposals: s.proposals.map(p => p.id === id ? snapshot : p),
             error: error.message,
           }))
         }

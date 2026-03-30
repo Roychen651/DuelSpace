@@ -289,6 +289,7 @@ export default function ProposalBuilder() {
     public_token: '',
     view_count: 0,
     time_spent_seconds: 0,
+    is_archived: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }

@@ -84,12 +84,19 @@ export interface Proposal {
   sent_at?: string | null
   /** Timestamp of when the client accepted/signed the proposal */
   accepted_at?: string | null
+  /**
+   * Soft-delete flag — Sprint 29 Archive Engine.
+   * When true the proposal is hidden from the active view but NEVER removed from the DB.
+   * Signed contracts must not be destructively deleted; archiving is the only allowed action.
+   */
+  is_archived: boolean
   created_at: string
   updated_at: string
 }
 
 export type ProposalInsert = Omit<Proposal,
-  'id' | 'user_id' | 'public_token' | 'view_count' | 'time_spent_seconds' | 'section_time' | 'created_at' | 'updated_at'
+  | 'id' | 'user_id' | 'public_token' | 'view_count' | 'time_spent_seconds'
+  | 'section_time' | 'is_archived' | 'created_at' | 'updated_at'
 >
 
 /** Default Israeli VAT rate — configurable per account in Profile */
