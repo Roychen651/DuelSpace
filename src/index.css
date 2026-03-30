@@ -173,6 +173,14 @@ body {
   background: rgba(255,255,255,0.08);
 }
 
+/* ── iOS auto-zoom prevention ────────────────────────────────────────────── */
+/* iOS Safari zooms in when input font-size < 16px. font-size: max(16px, 1em)
+   keeps the visual size unchanged on desktop (inherits 1em = 14–16px from
+   parent text-sm) but floors at 16px on mobile, preventing the zoom. */
+input, textarea, select {
+  font-size: max(16px, 1em);
+}
+
 /* ── Number input — hide native spinners globally ────────────────────────── */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
