@@ -289,26 +289,42 @@ export default function Profile() {
     if (!file.type.startsWith('image/')) return
     setLogoUploading(true)
     setLogoError(null)
-    // Path stays inside the `avatars/` subfolder — matching the bucket policy
-    // used by avatar uploads. Using a fixed name (no extension) means upsert
-    // always overwrites the same file regardless of format chosen.
-    const path = `avatars/logo-${user?.id ?? 'unknown'}`
+
+    const uid = user?.id
+    if (!uid) {
+      setLogoError(isHe ? 'משתמש לא מחובר' : 'Not authenticated')
+      setLogoUploading(false)
+      return
+    }
+
+    // Use {uid}/{filename} path — the most universally compatible format with
+    // Supabase Storage RLS policies. The most common policy checks:
+    //   auth.uid()::text = (storage.foldername(name))[1]
+    // meaning the FIRST folder segment must equal the user's UUID.
+    // Paths like `avatars/logo-{uid}` fail this check (foldername[1] = 'avatars').
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
+    const path = `${uid}/logo.${ext}`
+
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, file, { upsert: true, contentType: file.type })
+      .upload(path, file, { upsert: true })
+
     if (uploadError) {
-      setLogoError(isHe ? 'שגיאה בהעלאה — נסה שנית' : 'Upload failed — please try again')
+      // Show the real Supabase error so it's debuggable
+      setLogoError(uploadError.message || (isHe ? 'שגיאה בהעלאה' : 'Upload failed'))
       console.error('[logo upload]', uploadError)
       setLogoUploading(false)
       return
     }
+
     const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-    // Bust the CDN cache by appending a timestamp so the browser reloads the new image
+    // Append timestamp to bust CDN cache so the browser reloads the new image
     const url = `${data.publicUrl}?t=${Date.now()}`
     setLogoUrl(url)
+
     const { error: saveError } = await supabase.auth.updateUser({ data: { logo_url: url } })
     if (saveError) {
-      setLogoError(isHe ? 'שגיאה בשמירה — נסה שנית' : 'Save failed — please try again')
+      setLogoError(saveError.message || (isHe ? 'שגיאה בשמירה' : 'Save failed'))
       console.error('[logo save]', saveError)
     } else {
       setLogoSaved(true)
