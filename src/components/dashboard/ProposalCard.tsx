@@ -31,19 +31,39 @@ function useMagneticTilt() {
 
 function StatusBadge({ status, locale }: { status: Proposal['status']; locale: string }) {
   const meta = STATUS_META[status]
+  const isActionable = status === 'needs_revision'
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-      style={{
-        color: meta.color,
-        background: meta.glow.replace('0.4', '0.12').replace('0.3', '0.1'),
-        border: `1px solid ${meta.color}30`,
-        boxShadow: `0 0 8px ${meta.glow}`,
-      }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
-      {locale === 'he' ? meta.label_he : meta.label_en}
-    </span>
+    <>
+      {isActionable && (
+        <style>{`
+          @keyframes pc-badge-pulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(245,158,11,0.35), 0 0 0 0 rgba(245,158,11,0.0); }
+            50%       { box-shadow: 0 0 18px rgba(245,158,11,0.65), 0 0 0 3px rgba(245,158,11,0.12); }
+          }
+          @keyframes pc-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+        `}</style>
+      )}
+      <span
+        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+        style={{
+          color: meta.color,
+          background: isActionable
+            ? 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.12) 100%)'
+            : meta.glow.replace('0.4', '0.12').replace('0.3', '0.1'),
+          border: `1px solid ${meta.color}${isActionable ? '50' : '30'}`,
+          animation: isActionable ? 'pc-badge-pulse 2.2s ease-in-out infinite' : undefined,
+        }}
+      >
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{
+            background: meta.color,
+            animation: isActionable ? 'pc-dot-pulse 1.1s ease-in-out infinite' : undefined,
+          }}
+        />
+        {locale === 'he' ? meta.label_he : meta.label_en}
+      </span>
+    </>
   )
 }
 

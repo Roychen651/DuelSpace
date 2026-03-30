@@ -777,6 +777,8 @@ export default function DealRoom() {
   const handleRequestRevision = useCallback(async (notes: string) => {
     if (!token) return
     await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
+    // Notify Dashboard in same browser — creator sees status flip to needs_revision instantly
+    try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'revision_requested', token }) } catch (_) {}
   }, [token])
 
   // ── Handle decline ─────────────────────────────────────────────────────────
