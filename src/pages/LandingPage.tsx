@@ -1,10 +1,15 @@
-import { type Variants, motion, AnimatePresence } from 'framer-motion'
+import {
+  type Variants,
+  motion, AnimatePresence,
+  useScroll, useSpring, useTransform, useMotionValue, useMotionValueEvent, useInView,
+} from 'framer-motion'
 import {
   ArrowRight, Zap, Check, X, Star, Globe,
   Sparkles, Eye, Layers, FileSignature, ChevronRight,
   FileText, Download, Clock, Shield,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { ReactLenis } from 'lenis/react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
@@ -210,6 +215,39 @@ const sectionReveal: Variants = {
   visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 110, damping: 16, mass: 0.8 } },
 }
 
+// ─── Gyroscope Hook (mobile tilt) ─────────────────────────────────────────────
+// Returns spring-smoothed rotateX/Y driven by DeviceOrientationEvent.
+// On desktop these stay at 0 — mouse events handle tilt in Tilt3D.
+// iOS 13+ requires a user-gesture permission; we skip auto-registration there
+// and fall back to static (the mouse path works on desktop anyway).
+
+function useGyroscope(strength = 1) {
+  const rotX = useMotionValue(0)
+  const rotY = useMotionValue(0)
+  const springX = useSpring(rotX, { stiffness: 90, damping: 18, restDelta: 0.001 })
+  const springY = useSpring(rotY, { stiffness: 90, damping: 18, restDelta: 0.001 })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!window.matchMedia('(pointer: coarse)').matches) return
+
+    // iOS 13+ DeviceOrientationEvent.requestPermission guard
+    const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+    if (typeof DOE.requestPermission === 'function') return // needs gesture — skip
+
+    function handler(e: DeviceOrientationEvent) {
+      const b = Math.max(-12, Math.min(12, (e.beta  ?? 45) - 45)) // front-back
+      const g = Math.max(-12, Math.min(12, e.gamma ?? 0))          // left-right
+      rotX.set(b * 0.45 * strength)
+      rotY.set(g * 0.65 * strength)
+    }
+    window.addEventListener('deviceorientation', handler, { passive: true })
+    return () => window.removeEventListener('deviceorientation', handler)
+  }, [rotX, rotY, strength])
+
+  return { springX, springY }
+}
+
 // ─── Hero Aurora Background ────────────────────────────────────────────────────
 
 const PARTICLES = [
@@ -277,28 +315,32 @@ function HeroAurora() {
 // ─── 3-D Magnetic Tilt Card ────────────────────────────────────────────────────
 
 function Tilt3D({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const springX = useSpring(mouseX, { stiffness: 150, damping: 20, restDelta: 0.001 })
+  const springY = useSpring(mouseY, { stiffness: 150, damping: 20, restDelta: 0.001 })
+  const { springX: gyroX, springY: gyroY } = useGyroscope()
+
+  // Combine desktop mouse + mobile gyro into final rotate values
+  const rotateX = useTransform([springX, gyroX] as const, ([m, g]: number[]) => m + g)
+  const rotateY = useTransform([springY, gyroY] as const, ([m, g]: number[]) => m + g)
+
   function onMove(e: React.MouseEvent<HTMLDivElement>) {
-    const el = e.currentTarget
-    const r = el.getBoundingClientRect()
-    const x = (e.clientX - r.left) / r.width  - 0.5
-    const y = (e.clientY - r.top)  / r.height - 0.5
-    el.style.transition = 'none'
-    el.style.transform = `perspective(900px) rotateX(${y * -11}deg) rotateY(${x * 11}deg) translateZ(6px) scale(1.018)`
+    const r = e.currentTarget.getBoundingClientRect()
+    mouseY.set(((e.clientX - r.left) / r.width  - 0.5) * 11)
+    mouseX.set(((e.clientY - r.top)  / r.height - 0.5) * -11)
   }
-  function onLeave(e: React.MouseEvent<HTMLDivElement>) {
-    const el = e.currentTarget
-    el.style.transition = 'transform 0.7s cubic-bezier(0.23, 1, 0.32, 1)'
-    el.style.transform = ''
-  }
+  function onLeave() { mouseX.set(0); mouseY.set(0) }
+
   return (
-    <div
+    <motion.div
       className={className}
-      style={{ ...style, willChange: 'transform', transformStyle: 'preserve-3d' }}
+      style={{ ...style, willChange: 'transform', transformStyle: 'preserve-3d', rotateX, rotateY, perspective: 900 }}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
     >
       {children}
-    </div>
+    </motion.div>
   )
 }
 
@@ -358,13 +400,18 @@ function LiveToastStack({ toasts }: { toasts: typeof copy['he']['toast'] }) {
 
 function DealRoomMockup({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
   const prices = ['₪6,900', '₪3,300', '₪5,100', '₪4,200', '₪6,900']
+  const { springX: gyroX, springY: gyroY } = useGyroscope()
+  // Static base tilt + gyro offset — the float CSS animation runs independently on the wrapper
+  const rotateX = useTransform(gyroX, (v) => 8  + v)
+  const rotateY = useTransform(gyroY, (v) => -4 + v)
+
   return (
     <div style={{ perspective: 1400, animation: 'lp-float-mockup 7s ease-in-out infinite' }}>
       <motion.div
         whileHover={{ rotateX: 4, rotateY: -2, scale: 1.015 }}
         style={{
-          rotateX: 8,
-          rotateY: -4,
+          rotateX,
+          rotateY,
           transformStyle: 'preserve-3d',
           borderRadius: 20,
           overflow: 'hidden',
@@ -599,8 +646,19 @@ function HowItWorksSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean })
 // ─── Problem vs Solution ───────────────────────────────────────────────────────
 
 function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
+  const sectionRef = useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start 0.9', 'center center'],
+  })
+  // Top line draws first, then VS badge, then bottom line
+  const topLine    = useSpring(useTransform(scrollYProgress, [0.05, 0.45], [0, 1]), { stiffness: 60, damping: 16 })
+  const vsScale    = useTransform(scrollYProgress, [0.40, 0.65], [0, 1])
+  const vsRotate   = useTransform(scrollYProgress, [0.40, 0.65], [-180, 0])
+  const bottomLine = useSpring(useTransform(scrollYProgress, [0.60, 0.90], [0, 1]), { stiffness: 60, damping: 16 })
+
   return (
-    <section className="relative py-16 sm:py-24 px-6">
+    <section ref={sectionRef} className="relative py-16 sm:py-24 px-6">
       <div className="max-w-5xl mx-auto">
         <motion.div
           className="text-center mb-16"
@@ -653,23 +711,46 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
             </ul>
           </motion.div>
 
-          {/* VS Divider */}
+          {/* VS Divider — scroll-linked drawing */}
           <div className="flex lg:flex-col items-center justify-center py-2 lg:py-0 lg:px-5">
-            <div className="flex-1 h-px lg:h-auto lg:w-px" style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)' }} />
+            {/* Top line — draws downward as section enters viewport */}
+            <motion.div
+              className="flex-1 h-px lg:h-auto lg:w-px"
+              style={{
+                background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)',
+                scaleY: topLine,
+                transformOrigin: 'top center',
+              }}
+            />
+            {/* VS badge — springs in after top line completes */}
             <div className="relative flex-none mx-4 lg:mx-0 lg:my-5">
               <div className="absolute inset-0 rounded-full" style={{ background: 'rgba(99,102,241,0.25)', animation: 'lp-ping-ring 2.8s ease-out infinite' }} />
               <div className="absolute -inset-3 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)', filter: 'blur(10px)' }} />
               <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                whileInView={{ scale: 1, rotate: 0 }}
-                viewport={{ once: true }}
-                transition={{ type: 'spring' as const, stiffness: 260, damping: 16, delay: 0.35 }}
-                style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7)', boxShadow: '0 0 0 1px rgba(255,255,255,0.15), 0 0 32px rgba(99,102,241,0.7), inset 0 1px 0 rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-accent)', fontSize: 13, fontWeight: 900, color: 'white', letterSpacing: '0.08em', position: 'relative', zIndex: 1, textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}
+                style={{
+                  scale: vsScale,
+                  rotate: vsRotate,
+                  width: 54, height: 54, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.15), 0 0 32px rgba(99,102,241,0.7), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-accent)', fontSize: 13, fontWeight: 900,
+                  color: 'white', letterSpacing: '0.08em', position: 'relative', zIndex: 1,
+                  textShadow: '0 1px 8px rgba(0,0,0,0.4)',
+                }}
               >
                 VS
               </motion.div>
             </div>
-            <div className="flex-1 h-px lg:h-auto lg:w-px" style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)' }} />
+            {/* Bottom line — draws downward after badge */}
+            <motion.div
+              className="flex-1 h-px lg:h-auto lg:w-px"
+              style={{
+                background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)',
+                scaleY: bottomLine,
+                transformOrigin: 'top center',
+              }}
+            />
           </div>
 
           {/* DealSpace Way */}
@@ -929,6 +1010,65 @@ function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) 
   )
 }
 
+// ─── Scramble Counter ─────────────────────────────────────────────────────────
+// Rapidly cycles random digits before locking into the real value (slot-machine).
+
+const SCRAMBLE_CHARS = '0123456789'
+
+function ScrambleCounter({ value, inView }: { value: string; inView: boolean }) {
+  const [display, setDisplay] = useState(value)
+  const hasRun = useRef(false)
+
+  useEffect(() => {
+    if (!inView || hasRun.current) return
+    hasRun.current = true
+    let frame = 0
+    const total = 18
+    const id = setInterval(() => {
+      frame++
+      if (frame >= total) {
+        setDisplay(value)
+        clearInterval(id)
+      } else {
+        setDisplay(value.replace(/\d/g, () => SCRAMBLE_CHARS[Math.floor(Math.random() * 10)]))
+      }
+    }, 48)
+    return () => clearInterval(id)
+  }, [inView, value])
+
+  return <>{display}</>
+}
+
+// Per-stat wrapper — owns its own inView ref
+function AnimatedStat({ s, i, isHe }: { s: typeof PROOF_STATS[0]; i: number; isHe: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-40px' })
+
+  return (
+    <motion.div ref={ref} variants={itemFade} className="flex flex-col items-center text-center">
+      <span
+        className="text-4xl sm:text-5xl font-black tracking-tight mb-3 tabular-nums"
+        style={{
+          background: [
+            'linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%)',
+            'linear-gradient(135deg, #a5b4fc 0%, #c084fc 100%)',
+            'linear-gradient(135deg, #c084fc 0%, #a5b4fc 100%)',
+            'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)',
+          ][i],
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
+        <ScrambleCounter value={s.value} inView={inView} />
+      </span>
+      <div className="w-8 h-0.5 rounded-full mb-2.5" style={{ background: 'rgba(99,102,241,0.35)' }} />
+      <span className="text-[12px] text-white/38 font-semibold uppercase tracking-[0.12em]">
+        {isHe ? s.label_he : s.label_en}
+      </span>
+    </motion.div>
+  )
+}
+
 // ─── Social Proof Numbers ─────────────────────────────────────────────────────
 
 const PROOF_STATS = [
@@ -951,22 +1091,7 @@ function SocialProofNumbers({ isHe }: { isHe: boolean }) {
           viewport={{ once: true, margin: '-60px' }}
         >
           {PROOF_STATS.map((s, i) => (
-            <motion.div key={s.value} variants={itemFade} className="flex flex-col items-center text-center">
-              <span
-                className="text-4xl sm:text-5xl font-black tracking-tight mb-3 tabular-nums"
-                style={{
-                  background: ['linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%)', 'linear-gradient(135deg, #a5b4fc 0%, #c084fc 100%)', 'linear-gradient(135deg, #c084fc 0%, #a5b4fc 100%)', 'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)'][i],
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                {s.value}
-              </span>
-              <div className="w-8 h-0.5 rounded-full mb-2.5" style={{ background: 'rgba(99,102,241,0.35)' }} />
-              <span className="text-[12px] text-white/38 font-semibold uppercase tracking-[0.12em]">
-                {isHe ? s.label_he : s.label_en}
-              </span>
-            </motion.div>
+            <AnimatedStat key={s.value} s={s} i={i} isHe={isHe} />
           ))}
         </motion.div>
       </div>
@@ -1096,7 +1221,7 @@ function FinalCTASection({ c, isHe, onCta }: { c: typeof copy['he']; isHe: boole
             <motion.button
               onClick={onCta}
               whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
               className="relative px-8 py-4 rounded-2xl text-[15px] font-bold text-white"
               style={{ background: 'linear-gradient(105deg, #6366f1 0%, #7c3aed 38%, rgba(200,190,255,0.55) 50%, #7c3aed 62%, #6366f1 100%)', backgroundSize: '220% 100%', animation: 'lp-shimmer 3s linear infinite', boxShadow: '0 0 40px rgba(99,102,241,0.5), 0 8px 24px rgba(0,0,0,0.4)' }}
             >
@@ -1135,57 +1260,125 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang }: {
   onCta: () => void
   onToggleLang: () => void
 }) {
-  return (
-    <nav
-      className="sticky top-0 z-40 flex items-center justify-between px-6 py-3"
-      style={{
-        background: 'rgba(3,3,5,0.92)',
-        backdropFilter: 'blur(32px) saturate(180%)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 1px 0 rgba(99,102,241,0.14), 0 8px 48px rgba(0,0,0,0.28)',
-      }}
+  const { scrollY } = useScroll()
+  const [isPill, setIsPill] = useState(false)
+  useMotionValueEvent(scrollY, 'change', (v) => setIsPill(v > 80))
+
+  const logoMark = (size: number, radius: number) => (
+    <div
+      className="flex items-center justify-center flex-none text-white"
+      style={{ width: size, height: size, borderRadius: radius, background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 18px rgba(99,102,241,0.5)' }}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 40%, rgba(168,85,247,0.4) 60%, transparent 100%)' }} />
+      <Zap size={Math.round(size * 0.58)} />
+    </div>
+  )
 
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 22px rgba(99,102,241,0.55), 0 0 0 1px rgba(255,255,255,0.08)' }}>
-          <Zap size={15} className="text-white" />
-        </div>
-        <span className="text-[15px] font-bold tracking-tight" style={{ background: 'linear-gradient(135deg, #ffffff 30%, #c4b5fd 80%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          DealSpace
-        </span>
-      </div>
+  return (
+    // Fixed wrapper — out of flow; sibling spacer div handles the layout gap
+    <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none" style={{ paddingTop: isPill ? 10 : 0 }}>
+      <AnimatePresence mode="wait">
+        {/* ── PILL STATE ── */}
+        {isPill ? (
+          <motion.nav
+            key="pill"
+            className="pointer-events-auto mx-auto w-fit"
+            initial={{ opacity: 0, y: -18, scale: 0.93 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            transition={{ type: 'spring' as const, stiffness: 320, damping: 28 }}
+          >
+            <div
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full"
+              style={{
+                background: 'rgba(8,8,18,0.88)',
+                backdropFilter: 'blur(44px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.11)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(99,102,241,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
+              }}
+            >
+              {logoMark(26, 8)}
+              <span
+                className="text-[13px] font-bold tracking-tight"
+                style={{ background: 'linear-gradient(135deg, #ffffff, #c4b5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+              >
+                DealSpace
+              </span>
+              <div className="h-3 w-px mx-0.5" style={{ background: 'rgba(255,255,255,0.12)' }} />
+              <button
+                onClick={onToggleLang}
+                className="text-[11px] text-white/35 hover:text-white/65 transition-colors px-1"
+              >
+                {isHe ? 'EN' : 'עב'}
+              </button>
+              <motion.button
+                onClick={onCta}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
+              >
+                {c.navCta}
+              </motion.button>
+            </div>
+          </motion.nav>
+        ) : (
+          /* ── FULL NAVBAR STATE ── */
+          <motion.nav
+            key="full"
+            className="pointer-events-auto flex items-center justify-between px-6 py-3"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+            style={{
+              background: 'rgba(3,3,5,0.92)',
+              backdropFilter: 'blur(32px) saturate(180%)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              boxShadow: '0 1px 0 rgba(99,102,241,0.14), 0 8px 48px rgba(0,0,0,0.28)',
+            }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 40%, rgba(168,85,247,0.4) 60%, transparent 100%)' }} />
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleLang}
-          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] text-white/40 transition-colors hover:text-white/70"
-          style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}
-        >
-          <Globe size={11} />
-          {isHe ? 'EN' : 'עב'}
-        </button>
+            <div className="flex items-center gap-2.5">
+              {logoMark(32, 10)}
+              <span className="text-[15px] font-bold tracking-tight" style={{ background: 'linear-gradient(135deg, #ffffff 30%, #c4b5fd 80%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                DealSpace
+              </span>
+            </div>
 
-        <button
-          onClick={onLogin}
-          className="hidden sm:flex items-center px-4 py-2 rounded-xl text-[13px] font-semibold text-white/60 transition-all hover:text-white/90 hover:bg-white/5"
-          style={{ border: '1px solid rgba(255,255,255,0.12)' }}
-        >
-          {c.navLogin}
-        </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onToggleLang}
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] text-white/40 transition-colors hover:text-white/70"
+                style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}
+              >
+                <Globe size={11} />
+                {isHe ? 'EN' : 'עב'}
+              </button>
 
-        <motion.button
-          onClick={onCta}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #7c3aed, #a855f7)', boxShadow: '0 0 22px rgba(99,102,241,0.45), 0 2px 10px rgba(0,0,0,0.3)' }}
-        >
-          {c.navCta}
-          <ChevronRight size={13} />
-        </motion.button>
-      </div>
-    </nav>
+              <button
+                onClick={onLogin}
+                className="hidden sm:flex items-center px-4 py-2 rounded-xl text-[13px] font-semibold text-white/60 transition-all hover:text-white/90 hover:bg-white/5"
+                style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+              >
+                {c.navLogin}
+              </button>
+
+              <motion.button
+                onClick={onCta}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #7c3aed, #a855f7)', boxShadow: '0 0 22px rgba(99,102,241,0.45), 0 2px 10px rgba(0,0,0,0.3)' }}
+              >
+                {c.navCta}
+                <ChevronRight size={13} />
+              </motion.button>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -1270,7 +1463,7 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
                 <motion.button
                   onClick={onCta}
                   whileHover={{ scale: 1.04, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
                   className="relative flex items-center gap-2 px-7 py-3.5 rounded-2xl text-[15px] font-bold text-white"
                   style={{ background: 'linear-gradient(105deg, #6366f1 0%, #7c3aed 38%, rgba(200,190,255,0.5) 50%, #7c3aed 62%, #6366f1 100%)', backgroundSize: '220% 100%', animation: 'lp-shimmer 3s linear infinite', boxShadow: '0 0 36px rgba(99,102,241,0.45), 0 8px 24px rgba(0,0,0,0.35)' }}
                 >
@@ -1282,7 +1475,7 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
               <motion.button
                 onClick={onDemo}
                 whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.06)' }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
                 className="flex items-center gap-2 px-6 py-3.5 rounded-2xl text-[15px] font-semibold text-white/60 transition-colors"
                 style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'transparent' }}
               >
@@ -1330,27 +1523,32 @@ export default function LandingPage() {
   const goDemo   = () => navigate('/deal/abc123')
 
   return (
-    <div
-      className="relative min-h-dvh flex flex-col"
-      dir={isHe ? 'rtl' : 'ltr'}
-      style={{ background: '#030305', color: '#f0f0f8' }}
-    >
-      <Navbar c={c} isHe={isHe} onLogin={goAuth} onCta={goSignup} onToggleLang={() => setLocale(isHe ? 'en' : 'he')} />
+    <ReactLenis root options={{ lerp: 0.085, duration: 1.4, syncTouch: true }}>
+      <div
+        className="relative min-h-dvh flex flex-col"
+        dir={isHe ? 'rtl' : 'ltr'}
+        style={{ background: '#030305', color: '#f0f0f8' }}
+      >
+        {/* Navbar is fixed — this spacer holds its layout slot */}
+        <div className="h-[52px] flex-none" aria-hidden />
 
-      {/* key={locale} → clean remount on language switch, re-plays CSS animations,
-          resets FM whileInView state so scroll reveals replay correctly in new locale */}
-      <main className="flex-1" key={locale}>
-        <HeroSection       c={c} isHe={isHe} onCta={goSignup} onDemo={goDemo} />
-        <MarqueeBand       items={c.marqueeItems} isRTL={isHe} />
-        <HowItWorksSection c={c} isHe={isHe} />
-        <ProblemSolutionSection c={c} isHe={isHe} />
-        <BentoGridSection  c={c} isHe={isHe} />
-        <SocialProofNumbers isHe={isHe} />
-        <TestimonialsSection c={c} />
-        <FinalCTASection   c={c} isHe={isHe} onCta={goSignup} />
-      </main>
+        <Navbar c={c} isHe={isHe} onLogin={goAuth} onCta={goSignup} onToggleLang={() => setLocale(isHe ? 'en' : 'he')} />
 
-      <GlobalFooter />
-    </div>
+        {/* key={locale} → clean remount on language switch, re-plays CSS animations,
+            resets FM whileInView state so scroll reveals replay correctly in new locale */}
+        <main className="flex-1" key={locale}>
+          <HeroSection       c={c} isHe={isHe} onCta={goSignup} onDemo={goDemo} />
+          <MarqueeBand       items={c.marqueeItems} isRTL={isHe} />
+          <HowItWorksSection c={c} isHe={isHe} />
+          <ProblemSolutionSection c={c} isHe={isHe} />
+          <BentoGridSection  c={c} isHe={isHe} />
+          <SocialProofNumbers isHe={isHe} />
+          <TestimonialsSection c={c} />
+          <FinalCTASection   c={c} isHe={isHe} onCta={goSignup} />
+        </main>
+
+        <GlobalFooter />
+      </div>
+    </ReactLenis>
   )
 }
