@@ -1244,15 +1244,30 @@ export default function DealRoom() {
             </motion.div>
           )}
 
-          {/* Creator logo */}
-          {proposal.creator_info?.logo_url && (
-            <motion.div variants={slideUp} className="mb-6">
-              <img
-                src={proposal.creator_info.logo_url}
-                alt="company logo"
-                className="max-h-12 max-w-[180px] object-contain"
-                style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}
-              />
+          {/* Creator identity — logo + company name */}
+          {(proposal.creator_info?.logo_url || proposal.creator_info?.company_name) && (
+            <motion.div variants={slideUp} className="mb-6 flex flex-col items-center gap-2">
+              {proposal.creator_info.logo_url && (
+                <div
+                  className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <img
+                    src={proposal.creator_info.logo_url}
+                    alt={proposal.creator_info.company_name || 'company logo'}
+                    className="max-h-10 max-w-[160px] object-contain"
+                  />
+                </div>
+              )}
+              {proposal.creator_info.company_name && !proposal.creator_info.logo_url && (
+                <p className="text-sm font-bold text-white/60 tracking-tight">
+                  {proposal.creator_info.company_name}
+                </p>
+              )}
             </motion.div>
           )}
 
