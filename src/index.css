@@ -174,11 +174,12 @@ body {
 }
 
 /* ── iOS auto-zoom prevention ────────────────────────────────────────────── */
-/* iOS Safari zooms in when input font-size < 16px. font-size: max(16px, 1em)
-   keeps the visual size unchanged on desktop (inherits 1em = 14–16px from
-   parent text-sm) but floors at 16px on mobile, preventing the zoom. */
+/* iOS Safari zooms when input font-size < 16px. Tailwind's .text-sm (0.875rem
+   = 14px) has higher specificity than a type selector and was winning.
+   !important overrides all utility classes — body is 16px so desktop is
+   unchanged; mobile stays at 16px and Safari no longer zooms. */
 input, textarea, select {
-  font-size: max(16px, 1em);
+  font-size: 16px !important;
 }
 
 /* ── Number input — hide native spinners globally ────────────────────────── */
