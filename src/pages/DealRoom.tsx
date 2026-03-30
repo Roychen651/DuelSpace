@@ -460,6 +460,7 @@ export default function DealRoom() {
   const [signature, setSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const freshSignedRef = useRef(false) // true only when signed in this session
   const [sigTimestamp, setSigTimestamp] = useState<Date>(new Date())
   const [acceptError, setAcceptError] = useState<string | null>(null)
   const [declined, setDeclined] = useState(false)
@@ -484,7 +485,7 @@ export default function DealRoom() {
 
   // Locale toggle (public page — no auth context)
   const [locale, setLocale] = useState<'he' | 'en'>(() => {
-    const stored = localStorage.getItem('dealspace-locale')
+    const stored = localStorage.getItem('dealspace:locale')
     if (stored === 'he' || stored === 'en') return stored
     return navigator.language.startsWith('he') ? 'he' : 'en'
   })
@@ -707,6 +708,7 @@ export default function DealRoom() {
     const { error } = await supabase.rpc('accept_proposal', { p_token: token })
     if (!error) {
       setSigTimestamp(new Date())
+      freshSignedRef.current = true
       setAccepted(true)
     } else {
       setAcceptError(locale === 'he'
@@ -753,7 +755,7 @@ export default function DealRoom() {
   const toggleLocale = () => {
     const next = locale === 'he' ? 'en' : 'he'
     setLocale(next)
-    localStorage.setItem('dealspace-locale', next)
+    localStorage.setItem('dealspace:locale', next)
   }
 
   // ── Render: loading ────────────────────────────────────────────────────────
@@ -1379,9 +1381,9 @@ export default function DealRoom() {
         )
       })()}
 
-      {/* ── Post-signature success overlay ───────────────────────────────── */}
+      {/* ── Post-signature success overlay (only for fresh signs, not revisits) */}
       <AnimatePresence>
-        {accepted && (
+        {accepted && freshSignedRef.current && (
           <motion.div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
             style={{ background: 'rgba(3,3,5,0.92)', backdropFilter: 'blur(24px)' }}

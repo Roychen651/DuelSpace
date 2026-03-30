@@ -577,7 +577,7 @@ export default function ProposalBuilder() {
             <motion.button
               onClick={handleDownloadSignedPdf}
               disabled={pdfGenerating}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-white transition disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white transition disabled:opacity-50"
               style={{
                 background: 'rgba(34,197,94,0.12)',
                 border: '1px solid rgba(34,197,94,0.25)',
@@ -586,8 +586,8 @@ export default function ProposalBuilder() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
             >
-              <FileDown size={13} className={pdfGenerating ? 'animate-bounce' : ''} />
-              <span className="hidden sm:inline">
+              <FileDown size={14} className={pdfGenerating ? 'animate-bounce' : ''} />
+              <span>
                 {pdfGenerating
                   ? (locale === 'he' ? 'יוצר…' : 'Generating…')
                   : (locale === 'he' ? 'הורד PDF' : 'Download PDF')}
