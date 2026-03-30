@@ -1235,6 +1235,18 @@ export default function DealRoom() {
             </motion.div>
           )}
 
+          {/* Creator logo */}
+          {proposal.creator_info?.logo_url && (
+            <motion.div variants={slideUp} className="mb-6">
+              <img
+                src={proposal.creator_info.logo_url}
+                alt="company logo"
+                className="max-h-12 max-w-[180px] object-contain"
+                style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}
+              />
+            </motion.div>
+          )}
+
           {/* Client greeting */}
           {proposal.client_name && (
             <motion.p

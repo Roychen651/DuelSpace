@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette } from 'lucide-react'
+import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
@@ -276,6 +276,32 @@ export default function Profile() {
     if (!error) { setColorSaved(true); setTimeout(() => setColorSaved(false), 2500) }
   }
 
+  // ── Company logo ──────────────────────────────────────────────────────────
+  const [logoUrl, setLogoUrl] = useState<string>(
+    (user?.user_metadata?.logo_url as string | undefined) ?? ''
+  )
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoSaved, setLogoSaved] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
+  const handleLogoFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) return
+    setLogoUploading(true)
+    const ext = file.name.split('.').pop() ?? 'png'
+    const path = `logos/${user?.id ?? 'unknown'}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true })
+    if (!uploadError) {
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      const url = data.publicUrl
+      setLogoUrl(url)
+      const { error: saveError } = await supabase.auth.updateUser({ data: { logo_url: url } })
+      if (!saveError) { setLogoSaved(true); setTimeout(() => setLogoSaved(false), 2500) }
+    }
+    setLogoUploading(false)
+  }, [user?.id])
+
   // ── VAT rate ──────────────────────────────────────────────────────────────
   const [vatRateInput, setVatRateInput] = useState(() => {
     const stored = localStorage.getItem('dealspace:vat-rate')
@@ -507,6 +533,73 @@ export default function Profile() {
                 </div>
               </div>
             </form>
+          </Card>
+        </motion.div>
+
+        {/* ── Company Logo ────────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card
+            title={isHe ? 'לוגו החברה' : 'Company Logo'}
+            icon={<ImageIcon size={16} />}
+          >
+            <p className="text-xs text-white/35 -mt-2 mb-5 leading-relaxed">
+              {isHe
+                ? 'הלוגו יופיע בחדר הדיל ובעמוד השער של קובץ ה-PDF.'
+                : 'Your logo appears in the Deal Room and on the PDF cover page.'}
+            </p>
+            <div className="flex items-center gap-5">
+              {/* Preview box */}
+              <div
+                className="flex h-20 w-36 flex-none items-center justify-center rounded-2xl overflow-hidden"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                {logoUrl
+                  ? <img src={logoUrl} alt="logo" className="max-h-full max-w-full object-contain p-2" />
+                  : <ImageIcon size={22} style={{ color: 'rgba(255,255,255,0.15)' }} />
+                }
+              </div>
+              {/* Controls */}
+              <div className="flex-1 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition"
+                  style={{
+                    background: 'rgba(99,102,241,0.12)',
+                    border: '1px solid rgba(99,102,241,0.22)',
+                    color: '#818cf8',
+                    opacity: logoUploading ? 0.6 : 1,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.18)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.12)' }}
+                >
+                  {logoUploading
+                    ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} />
+                    : <Camera size={12} />
+                  }
+                  {isHe ? (logoUploading ? 'מעלה...' : 'העלה לוגו') : (logoUploading ? 'Uploading...' : 'Upload Logo')}
+                </button>
+                {logoSaved && (
+                  <p className="text-[11px] font-semibold text-emerald-400">
+                    {isHe ? 'הלוגו נשמר ✓' : 'Logo saved ✓'}
+                  </p>
+                )}
+                <p className="text-[10px] text-white/25">
+                  {isHe ? 'PNG, SVG, או JPG — מומלץ רקע שקוף' : 'PNG, SVG, or JPG — transparent background recommended'}
+                </p>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoFile(f) }}
+                />
+              </div>
+            </div>
           </Card>
         </motion.div>
 

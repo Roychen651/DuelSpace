@@ -35,6 +35,7 @@ export interface CreatorInfo {
   address?: string
   phone?: string
   signatory_name?: string
+  logo_url?: string
 }
 
 export interface Proposal {

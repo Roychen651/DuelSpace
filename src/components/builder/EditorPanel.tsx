@@ -528,6 +528,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
       address:        m['address']        ?? '',
       phone:          m['phone']          ?? '',
       signatory_name: m['signatory_name'] ?? '',
+      logo_url:       m['logo_url']       ?? '',
     }
     const brandColor = m['brand_color'] ?? null
     onChange({ creator_info: info, brand_color: brandColor })

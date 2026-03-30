@@ -102,6 +102,16 @@ function fmtDiscountPdf(amount: number, currency: string): string {
   return `- ${fmtCurrencyPdf(amount, currency)}`
 }
 
+/**
+ * Inject zero-width spaces (U+200B) after every slash, dot, hyphen, or
+ * underscore so react-pdf can break long continuous strings (URLs, tokens)
+ * that it cannot wrap otherwise. Safe to call on any string — ZWS is
+ * invisible and does not change the visual text content.
+ */
+function forceWrap(text: string): string {
+  return text.replace(/([/.\-_@])/g, '$1\u200B')
+}
+
 // ─── TipTap HTML → PDF block parser ───────────────────────────────────────────
 
 interface InlineFrag { text: string; bold: boolean; italic: boolean }
@@ -191,6 +201,8 @@ function makeStyles(brand: string) {
     coverPage: {
       fontFamily: 'Heebo',
       backgroundColor: C.bg,
+      display: 'flex',
+      flexDirection: 'column',
     },
     contentPage: {
       fontFamily: 'Heebo',
@@ -239,10 +251,12 @@ function makeStyles(brand: string) {
     coverAccentBar: { height: 3, backgroundColor: alpha(brand, 0.45) },
     coverBody: {
       paddingHorizontal: 36,
-      paddingVertical: 0,
+      paddingTop: 0,
+      paddingBottom: 48,
       flex: 1,
-      justifyContent: 'center',   // vertically centers content — eliminates empty void
-      paddingBottom: 60,          // leave breathing room above page bottom
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',   // vertically centers content within remaining page height
     },
     coverTitle: {
       fontSize: 34,               // grander — enterprise contract feel
@@ -536,8 +550,8 @@ function makeStyles(brand: string) {
       justifyContent: 'space-between',
       paddingVertical: 4,
     },
-    certAuditLabel: { fontSize: 7.5, color: C.muted, textAlign: 'right' },
-    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, maxWidth: 260, textAlign: 'left' },
+    certAuditLabel: { fontSize: 7.5, color: C.muted, textAlign: 'right', width: '33%' },
+    certAuditValue: { fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left', width: '65%' },
 
     certLegalNote: {
       fontSize: 7,
@@ -689,6 +703,16 @@ function ProposalDocument(opts: PdfOptions) {
 
         {/* Body */}
         <View style={s.coverBody}>
+          {/* Company logo — shown only if the creator has uploaded one */}
+          {creator?.logo_url ? (
+            <View style={{ marginBottom: 28, alignItems: 'flex-end' }}>
+              <Image
+                src={creator.logo_url}
+                style={{ width: 120, height: 44, objectFit: 'contain' }}
+              />
+            </View>
+          ) : null}
+
           <Text style={s.coverTitle}>{projectTitle}</Text>
 
           <View style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, marginBottom: 0 }}>
@@ -1069,7 +1093,7 @@ function ProposalDocument(opts: PdfOptions) {
             <Text style={s.certTokenLabel}>
               {isHe ? 'מזהה מסמך ייחודי (Document Token)' : 'UNIQUE DOCUMENT TOKEN'}
             </Text>
-            <Text style={s.certTokenValue}>{proposal.public_token}</Text>
+            <Text style={s.certTokenValue}>{forceWrap(proposal.public_token)}</Text>
           </View>
 
           {/* Audit trail */}
@@ -1085,7 +1109,7 @@ function ProposalDocument(opts: PdfOptions) {
               [isHe ? 'סכום החוזה'         : 'Contract Value',       fmtCurrencyPdf(displayTotal, proposal.currency)],
               [isHe ? 'תאריך יצירת המסמך' : 'Document Created',     createdStr],
               [isHe ? 'תאריך ושעת חתימה'  : 'Signature Timestamp',  dateTimeStr],
-              [isHe ? 'פלטפורמה'           : 'Platform',             'DealSpace — dealspace.app'],
+              [isHe ? 'פלטפורמה'           : 'Platform',             forceWrap('DealSpace — dealspace.app')],
             ].map(([label, value], idx, arr) => (
               <View key={idx} style={idx === arr.length - 1 ? s.certAuditRowLast : s.certAuditRow}>
                 <Text style={s.certAuditLabel}>{label}</Text>
