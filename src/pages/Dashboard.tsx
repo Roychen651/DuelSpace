@@ -353,21 +353,22 @@ export default function Dashboard() {
   const activeProposals  = proposals.filter(p => !p.is_archived)
   const archivedProposals = proposals.filter(p => p.is_archived)
 
-  // ── CRM KPI calculations (always based on active proposals only) ──────────
-  // Pipeline Value: active proposals not yet resolved
+  // ── CRM KPI calculations ──────────────────────────────────────────────────
+  // Pipeline Value — active opportunities only (archived = no longer pursuing)
   const pipelineProposals = activeProposals.filter(p => p.status === 'sent' || p.status === 'viewed' || p.status === 'needs_revision')
-  const acceptedProposals = activeProposals.filter(p => p.status === 'accepted')
-  const rejectedProposals = activeProposals.filter(p => p.status === 'rejected')
+  // Closed Won — ALL accepted proposals including archived (money already earned, archiving doesn't erase revenue)
+  const acceptedProposals = proposals.filter(p => p.status === 'accepted')
+  // Win Rate — ALL resolved proposals including archived (true historical conversion rate)
+  const rejectedProposals = proposals.filter(p => p.status === 'rejected')
 
   const pipelineValue = pipelineProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
-  // Closed Won: total revenue from all accepted proposals
   const closedWon = acceptedProposals.reduce((sum, p) => sum + proposalTotal(p), 0)
   // Win Rate: accepted / (accepted + rejected) — excludes pending from denominator
   const resolvedCount = acceptedProposals.length + rejectedProposals.length
   const winRate = resolvedCount > 0 ? Math.round((acceptedProposals.length / resolvedCount) * 100) : 0
 
   const kpiCurrencyPrefix = (() => {
-    const cur = pipelineProposals[0]?.currency ?? acceptedProposals[0]?.currency ?? activeProposals[0]?.currency ?? 'ILS'
+    const cur = pipelineProposals[0]?.currency ?? acceptedProposals[0]?.currency ?? proposals[0]?.currency ?? 'ILS'
     return cur === 'ILS' ? '₪' : cur === 'USD' ? '$' : cur === 'EUR' ? '€' : cur
   })()
 

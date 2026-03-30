@@ -60,7 +60,14 @@ export const useProposalStore = create<ProposalState>()(
           return
         }
 
-        set({ proposals: (data ?? []) as Proposal[], loading: false })
+        // Normalize is_archived — if the column is missing from the DB response
+        // (e.g. migration not yet applied), treat it as false rather than undefined,
+        // which would cause !p.is_archived to be true and show all proposals as active.
+        const normalized = (data ?? []).map(row => ({
+          ...row,
+          is_archived: (row as Record<string, unknown>).is_archived === true,
+        })) as Proposal[]
+        set({ proposals: normalized, loading: false })
       },
 
       // ── Create ────────────────────────────────────────────────────────────
@@ -155,6 +162,10 @@ export const useProposalStore = create<ProposalState>()(
             proposals: s.proposals.map(p => p.id === id ? snapshot : p),
             error: error.message,
           }))
+        } else {
+          // Re-fetch authoritative DB state — guards against any race where
+          // a Realtime fetchProposals() call happened before our UPDATE committed.
+          get().fetchProposals()
         }
       },
 
