@@ -225,6 +225,7 @@ function AddOnRow({
             <div className="flex flex-col gap-0.5">
               <input
                 type="number"
+                inputMode="decimal"
                 min={0}
                 className={inputClass + ' w-24'}
                 placeholder="0"
@@ -863,6 +864,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           <Field label={isHe ? 'מחיר בסיס' : 'Base Price'} required>
             <input
               type="number"
+              inputMode="decimal"
               min={0}
               className={inputClass}
               placeholder="0"
@@ -1163,6 +1165,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                     <div className="relative flex-none w-16">
                       <input
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         max={100}
                         className={inputClass + ' py-2 text-xs text-center pe-5'}

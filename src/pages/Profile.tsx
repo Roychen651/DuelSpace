@@ -581,7 +581,7 @@ export default function Profile() {
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
                   <input
-                    type="number" min={0} max={100} step={0.1}
+                    type="number" inputMode="decimal" min={0} max={100} step={0.1}
                     value={vatRateInput}
                     onChange={e => setVatRateInput(e.target.value)}
                     className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"

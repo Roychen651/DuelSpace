@@ -22,7 +22,7 @@ interface ClientDetailsFormProps {
 // ─── Input ────────────────────────────────────────────────────────────────────
 
 function FormInput({
-  label, value, onChange, placeholder, icon, required,
+  label, value, onChange, placeholder, icon, required, inputMode,
 }: {
   label: string
   value: string
@@ -30,6 +30,7 @@ function FormInput({
   placeholder: string
   icon: React.ReactNode
   required?: boolean
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
 }) {
   return (
     <div className="space-y-1.5">
@@ -42,6 +43,7 @@ function FormInput({
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
+        inputMode={inputMode}
         className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-300"
         style={{
           background: 'rgba(255,255,255,0.05)',
@@ -155,6 +157,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete }: Clie
               placeholder={isHe ? '123456789' : '123456789'}
               icon={<Hash size={10} />}
               required
+              inputMode="numeric"
             />
             {taxIdTouched && !taxIdValid && (
               <p className="text-[10px] font-semibold" style={{ color: '#f87171' }}>
