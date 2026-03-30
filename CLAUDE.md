@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–18.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–25.
 
 ---
 
@@ -117,7 +117,7 @@ src/
 │   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
-│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, VAT
+│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT
 │   ├── ServicesLibrary.tsx  # /services — reusable service definitions
 │   ├── ContractLibrary.tsx  # /contracts — contract template management
 │   ├── Legal.tsx            # /security — security policy page
@@ -159,14 +159,14 @@ src/
 ├── lib/
 │   ├── supabase.ts            # Supabase client singleton
 │   ├── i18n.ts                # Zustand i18n store, He/En translations, dir/lang on <html>
-│   ├── pdfEngine.tsx          # @react-pdf/renderer v4 — 3-page enterprise PDF (Cover + Content + Cert)
+│   ├── pdfEngine.tsx          # @react-pdf/renderer v4 — 3-page enterprise White Paper PDF (Cover + Content + Cert), Iron Grid architecture
 │   ├── contractTemplates.ts   # Built-in contract template definitions
 │   ├── successTemplates.ts    # Post-signature success screen template definitions
 │   ├── financialMath.ts       # VAT, rounding, milestone math helpers
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo,
+│   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo (incl. logo_url),
 │                            #   proposalTotal(), applyVat(), formatCurrency(), milestonesValid(), STATUS_META
 │
 └── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, ErrorBoundary
@@ -255,6 +255,28 @@ injectDemoProposal()             // Inserts a rich demo proposal (localStorage g
 ```
 
 `ProposalInsert` = `Proposal` minus server-managed fields: `id, user_id, public_token, view_count, time_spent_seconds, created_at, updated_at`.
+
+### Realtime subscription — UPDATE events
+
+`subscribeRealtime()` listens to `postgres_changes` on the `proposals` table. On `UPDATE` events, **always call `get().fetchProposals()`** — never do an optimistic in-place replace with `newRow`. The Realtime payload sends a partial row that omits JSONB columns (`add_ons`, `payment_milestones`, `creator_info`), so replacing the full proposal with `newRow` silently wipes those fields.
+
+```ts
+// ❌ BROKEN — newRow is partial, wipes JSONB fields
+if (eventType === 'UPDATE' && newRow) {
+  set(s => ({ proposals: s.proposals.map(p =>
+    p.id === (newRow as Proposal).id ? (newRow as Proposal) : p
+  )}))
+}
+
+// ✅ Correct — always re-fetch complete data
+if (eventType === 'UPDATE') {
+  get().fetchProposals()
+}
+```
+
+### BroadcastChannel sync
+
+`ProposalBuilder` uses `BroadcastChannel('dealspace:proposals')` for instant same-browser sync (e.g., client signs in one tab, builder in another tab sees the status change). The handler calls `fetchProposals()` on any message — not just `'accepted'` events. ProposalBuilder also has a `visibilitychange` listener that re-fetches when the tab becomes visible again.
 
 ---
 
@@ -637,14 +659,15 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 
 ## 15. Profile Page
 
-`/profile` (ProtectedRoute) — six sections:
+`/profile` (ProtectedRoute) — seven sections:
 
 1. **Avatar** — upload to Supabase Storage, `updateProfile({ avatar_url })`
 2. **Display Name** — `updateProfile({ full_name })`
 3. **Password** — strength meter (evaluatePassword), `updatePassword(newPassword)`
 4. **Business Identity** (Building2 icon) — company_name, tax_id, phone, address, signatory_name — saved directly via `supabase.auth.updateUser({ data: biz })` (not through auth store)
 5. **Brand Color** (Palette icon) — 12 preset swatches + custom hex input + native `<input type="color">` (sr-only) + live preview chip — saved via `supabase.auth.updateUser({ data: { brand_color } })`
-6. **VAT Rate** (Percent icon) — decimal input persisted to `localStorage('dealspace:vat-rate')`, default `0.18`
+6. **Company Logo** (ImageIcon) — upload to Supabase Storage bucket `avatars/logos/${user.id}.ext`, saves URL to `user_metadata.logo_url`. Displayed in Deal Room above project title (white filter for dark bg) and on PDF cover page. Section sits between Brand Color and Password.
+7. **VAT Rate** (Percent icon) — decimal input persisted to `localStorage('dealspace:vat-rate')`, default `0.18`
 
 ### user_metadata fields (auth.users)
 These live in `user.user_metadata` and are read by EditorPanel to populate `creator_info`:
@@ -656,12 +679,20 @@ These live in `user.user_metadata` and are read by EditorPanel to populate `crea
 - `phone`
 - `signatory_name` — printed name for contract signature block
 - `brand_color` — hex string, e.g. `#6366f1`
+- `logo_url` — company logo URL (uploaded to Supabase Storage)
 
 ---
 
 ## 16. PDF Engine (`src/lib/pdfEngine.tsx`)
 
-Sprint 13.9 complete overhaul. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) 3-page enterprise PDF.
+Sprints 23–25 complete overhaul. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) 3-page enterprise **White Paper** PDF.
+
+### Design philosophy — White Paper
+- **Backgrounds:** white `#FFFFFF`, surface `#F9FAFB`, never dark/neon
+- **Text:** `#111827` body, `#6B7280` muted labels, `#9CA3AF` dim footer
+- **Borders:** `#E5E7EB` standard, `#D1D5DB` stronger
+- **Brand color** used ONLY for: cover hero strip, cert hero strip, table header backgrounds (white text), section title text, grand total left accent bar, milestone number badges
+- **Alternating rows** on add-ons, milestones, and audit trail for legibility
 
 ### Font
 Heebo TTF from Google Fonts CDN v28 (CORS-enabled). Weights: 400, 700, 900. `Font.registerHyphenationCallback(word => [word])` prevents hyphenation of Hebrew.
@@ -669,32 +700,97 @@ Heebo TTF from Google Fonts CDN v28 (CORS-enabled). Weights: 400, 700, 900. `Fon
 ### Helpers
 ```ts
 function getBrandColor(proposal: Proposal): string  // validates hex, falls back to #6366f1
-function alpha(hex: string, a: number): string      // appends 2-char alpha to hex (#6366f1 + 0.15 → #6366f126)
-function makeStyles(brand: string): StyleSheet      // factory called per render
-function parseHtml(html: string): HtmlBlock[]       // TipTap HTML → typed block array
+function getInitials(name?: string): string         // first letters of each word, max 2 chars
+function fmtDate(d: Date | string): string          // DD.MM.YYYY — direction-neutral
+function fmtTime(d: Date): string                   // HH:MM — ALWAYS a separate Text node from date
+function fmtCurrencyPdf(amount, currency): string   // en-US number + manual symbol (no Bidi control chars)
+function forceWrap(text): string                    // injects U+200B after /.-_@ for URL line-breaking
+function makeStyles(brand): StyleSheet              // factory called once per render with resolved brand
+function parseHtml(html): HtmlBlock[]               // TipTap HTML → typed block array
+```
+
+### Iron Grid Architecture (Sprint 25 — mandatory for all rows)
+
+react-pdf renders in LTR context. RTL layout is achieved through `flexDirection: 'row-reverse'` with **strictly sized Views** wrapping each label and value. This is the only reliable approach — `justifyContent: 'space-between'` and bare `<Text>` nodes both fail in mixed Bidi contexts.
+
+```tsx
+// EVERY label/value pair (audit trail, sig metadata, party fields) uses this pattern:
+<View style={{ flexDirection: 'row-reverse' }}>
+  {/* Label — always RIGHT side, fixed width, pure Hebrew text */}
+  <View style={{ width: '40%' }}>
+    <Text style={{ textAlign: 'right', color: '#6B7280' }}>{label}</Text>
+  </View>
+  {/* Value — always LEFT side, fixed width */}
+  <View style={{ width: '60%' }}>
+    <Text style={{ textAlign: 'left', color: '#111827', fontWeight: 700 }}>{value}</Text>
+  </View>
+</View>
+```
+
+**Why fixed Views instead of Text widths:** A `<Text style={{ width: '40%' }}>` still has Bidi applied to its content. A `<View style={{ width: '40%' }}>` creates a hard layout boundary — the Bidi algorithm cannot affect positioning outside the View.
+
+### Bidi rules — NEVER violate these
+
+1. **No colon concatenation with Hebrew.** `שם:` in a `<Text>` node causes the `:` to migrate to the wrong visual side. Labels are plain Hebrew words without colons. Visual separation is provided by color contrast and alignment.
+2. **No Hebrew + date/time in one Text node.** `fmtTime()` returns HH:MM as a separate string from `fmtDate()`. Date and time are always rendered as separate `<Text>` nodes inside a `flexDirection: 'row'` sub-View.
+3. **No `toLocaleString('he-IL')`** — Hebrew month names cause Bidi scrambling. Always use `fmtDate()` which outputs `DD.MM.YYYY` (digits + dots, direction-neutral).
+4. **No Intl.NumberFormat with `he-IL`** — injects Unicode RTL marks (U+200F) that flip digit order. Always use `fmtCurrencyPdf()`.
+
+```tsx
+// ❌ BROKEN — colon migrates, date scrambles
+<Text>שם: {proposal.client_name}</Text>
+<Text>תאריך חתימה: {fmtDate(sigTs)}  {fmtTime(sigTs)}</Text>
+
+// ✅ Correct — Iron Grid + split nodes
+<View style={{ flexDirection: 'row-reverse' }}>
+  <View style={{ width: '38%' }}><Text style={{ textAlign: 'right' }}>שם</Text></View>
+  <View style={{ width: '62%' }}><Text style={{ textAlign: 'left' }}>{proposal.client_name}</Text></View>
+</View>
+
+<View style={{ flexDirection: 'row-reverse' }}>
+  <View style={{ width: '38%' }}><Text style={{ textAlign: 'right' }}>תאריך חתימה</Text></View>
+  <View style={{ width: '62%', flexDirection: 'row', gap: 6 }}>
+    <Text>{fmtDate(sigTs)}</Text>
+    <Text>{fmtTime(sigTs)}</Text>
+  </View>
+</View>
+```
+
+### Internal helper components (module-level)
+
+These are defined inside `ProposalDocument` as nested functions to access the outer scope. They are stable per render:
+
+```ts
+AuditRow({ label, value, idx, total })       // alternating-bg audit trail row
+AuditDateRow({ label, date, time, idx, total }) // date + time as separate Text nodes
+SigMetaRow({ label, value })                 // 38/62 split for sig metadata
+PartyField({ label, value })                 // Iron Grid row inside party box
 ```
 
 ### TipTap HTML parser
-`parseHtml()` handles `<h1–h3>`, `<p>`, `<li>`, `<strong>`, `<b>`, `<em>`, `<i>` via regex with full HTML entity decoding. Returns `HtmlBlock[]` rendered as nested `@react-pdf/renderer` `<Text>` nodes. Falls back to plain-text strip if no block tags found.
+`parseHtml()` handles `<h1–h3>`, `<p>`, `<li>`, `<strong>`, `<b>`, `<em>`, `<i>` via regex with full HTML entity decoding. Returns `HtmlBlock[]` rendered as nested `<Text>` nodes. Falls back to plain-text strip if no block tags found.
 
 ### 3-page document structure
 
-**Page 1 — Cover (`coverPage`)**
-- Brand-color hero strip (solid brand bg) with company initials badge + decorative overlay circles
-- Project title (26pt bold), "Prepared For" client block, document ID + date
+**Page 1 — Cover**
+- Brand-color hero strip: company logo (if `creator_info.logo_url` exists) OR initials badge, company name, doc type label — all center-aligned
+- White body: project title (centered, 30pt), divider, "הוכן עבור" / "PREPARED FOR", client name, document ID + date
+- Content is vertically centered in the white area via `justifyContent: 'center'` + `alignItems: 'center'`
 
-**Pages 2+ — Main Content (`contentPage`, auto-paginates)**
+**Pages 2+ — Main Content (auto-paginates)**
 - `paddingTop: 48` / `paddingBottom: 40` to clear fixed header/footer
-- **Fixed header** (`position: absolute, top: 0, fixed`): brand accent bar | company | project | page X/Y
-- **Fixed footer** (`position: absolute, bottom: 0, fixed`): DealSpace | dealspace.app | token
-- Sections: Parties (Side A/B), Description (HTML-parsed), Services & Pricing table, VAT box, Grand Total, Milestones table, Terms
-- All critical rows use `wrap={false}` — pricing rows, milestone rows, total box never split across pages
+- **Fixed header**: brand accent bar | company | project | page X/Y
+- **Fixed footer**: DealSpace | dealspace.app | token
+- Sections: Parties (Iron Grid fields), Description (HTML-parsed), Services & Pricing (brand-header table, alternating rows), VAT box, Grand Total (brand left accent bar), Milestones (brand header, alternating rows), Terms
+- All critical rows use `wrap={false}`
 
-**Last Page — Signature Certificate (`certPage`)**
-- Brand hero with ✓ checkmark circle
-- Signature image in green-bordered box + full signer metadata (name, company, ח.פ/ת.ז, role, timestamp)
-- Unique Document Token block (dashed border)
-- 8-row Audit Trail table (project, provider, client, value, created, signed, platform, legal framework)
+**Last Page — Signature Certificate**
+- Brand-color hero with ✓ checkmark circle
+- Signature image in `border: '1px solid #D1D5DB', background: '#F9FAFB'` box (no neon glow)
+- Signer metadata as Iron Grid rows (no colons in Hebrew labels)
+- Date and time split across two separate `<Text>` nodes
+- Document Token box (light gray border)
+- 8-row Audit Trail (brand header, Iron Grid rows, alternating backgrounds)
 - e-Signature Law 5761-2001 legal disclaimer
 
 ### PdfOptions
@@ -703,9 +799,10 @@ export interface PdfOptions {
   proposal: Proposal
   totalAmount: number
   enabledAddOnIds: string[]
-  signatureDataUrl: string
+  signatureDataUrl: string       // data:image/png — rendered directly in sig box
   locale: 'he' | 'en'
-  signatureTimestamp?: Date   // captured at accept_proposal() success in DealRoom
+  signatureTimestamp?: Date      // captured at accept_proposal() success in DealRoom
+  isDraft?: boolean              // adds diagonal watermark + replaces cert with draft notice
 }
 ```
 
@@ -818,8 +915,19 @@ Both are `jsonb` columns — always update the whole array (not individual eleme
 ### Brand color in public Deal Room
 DealRoom is fully public (no auth) — it cannot read `user_metadata`. Solution: EditorPanel auto-injects `brand_color` from `user.user_metadata` into the proposal record on every save via `onChange({ brand_color })` in a `useEffect`. DealRoom reads it from the fetched proposal.
 
-### Creator info in PDF from public context
-Same problem as brand color. Solution: `creator_info` is stored as jsonb in the proposal record, auto-populated by EditorPanel's useEffect whenever `user` changes. The anon PDF download has full creator identity because it's embedded in the proposal.
+### Creator info + logo in public contexts
+Same problem as brand color. Solution: `creator_info` (including `logo_url`) is stored as jsonb in the proposal record, auto-populated by EditorPanel's useEffect whenever `user` changes. Both DealRoom and the PDF engine read them from the fetched proposal — no auth required.
+
+```ts
+// EditorPanel useEffect — runs on mount and whenever user changes
+const info: CreatorInfo = {
+  full_name: m['full_name'] ?? '', company_name: m['company_name'] ?? '',
+  tax_id: m['tax_id'] ?? '', address: m['address'] ?? '',
+  phone: m['phone'] ?? '', signatory_name: m['signatory_name'] ?? '',
+  logo_url: m['logo_url'] ?? '',   // ← injected here, read by DealRoom + PDF
+}
+onChange({ creator_info: info, brand_color: m['brand_color'] ?? '' })
+```
 
 ### `useMotionValueEvent` state guard
 When subscribing to a `MotionValue` (e.g., scroll position) to drive a boolean React state, always gate the `setState` call with a ref to prevent unnecessary re-renders on every tick:
@@ -1013,6 +1121,38 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - Hover: left `2px` accent bar in status color + subtle background
 - Actions (edit, download) visible on `group-hover:opacity-100`
 
+### Company logo in public contexts (Deal Room + PDF)
+`creator_info.logo_url` follows the same pattern as `brand_color`: EditorPanel reads it from `user.user_metadata.logo_url` in a `useEffect` and calls `onChange({ creator_info: { ...info, logo_url } })` on every save. Both Deal Room and the PDF engine read it from the saved proposal record — no auth required.
+
+- **Deal Room display:** `<img>` above the project title with `filter: brightness(0) invert(1)` for white rendering on dark backgrounds
+- **PDF cover:** `<Image src={logo_url} style={{ width: 100, height: 36, objectFit: 'contain' }} />` inside the brand hero strip; falls back to initials box when `logo_url` is falsy
+
+### Supabase Realtime UPDATE — always re-fetch
+
+The Realtime `postgres_changes` payload for UPDATE events is **partial** — it omits JSONB columns (`add_ons`, `payment_milestones`, `creator_info`). Never do an optimistic in-place replace with `newRow`. Always call `get().fetchProposals()` to get the complete record.
+
+```ts
+// In subscribeRealtime():
+if (eventType === 'UPDATE') {
+  get().fetchProposals()  // ← correct
+}
+```
+
+This bug recurred multiple times ("שוב ושוב"). The root cause is always the same: `newRow` is partial. Never replace a stored Proposal with it directly.
+
+### ProposalBuilder cross-device sync
+Three mechanisms work together to ensure the builder always shows current status:
+1. **Realtime subscription** — `subscribeRealtime()` calls `fetchProposals()` on every UPDATE
+2. **BroadcastChannel** — `ch.onmessage = () => fetchProposals()` — fires on any event (not just accepted); handles same-browser multi-tab sync
+3. **visibilitychange** — `document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchProposals() })` — handles tab switching after client signs on mobile
+
+### PremiumSliderCard sealed state
+When the proposal is accepted, all interactive controls in `PremiumSliderCard` must be locked. Pass `sealed={accepted}` from DealRoom. The `sealed` prop:
+- Sets `disabled={sealed}` on the toggle button
+- Sets `cursor: sealed ? 'default' : 'pointer'` on the toggle
+- Removes the `whileHover` lift effect
+- Hides the entire quantity slider section: `{enabled && adjustable && !sealed && (`
+
 ### Confetti on deal sign (`canvas-confetti`)
 Fire confetti only for the client who just signed — never for a creator revisiting an already-accepted deal link. Gate with `freshSignedRef.current`:
 
@@ -1114,3 +1254,11 @@ All numeric fields also carry the appropriate `inputMode`:
 - **Do not put `triggerPostSignatureAutomations` inside the React component** — it is a module-level async function that takes `Proposal` as input. Placing it inside the component gains nothing and creates a new function reference on every render.
 - **Do not use `accepted / all-non-draft` for Win Rate** — drafts and pending proposals dilute the metric incorrectly. The denominator must be `accepted + rejected` only (resolved deals).
 - **Do not remove `!important` from `input { font-size: 16px }` in `index.css`** — Tailwind class selectors have higher specificity than element selectors. Without `!important`, the rule is silently overridden by `text-sm` and iOS zoom returns on all inputs.
+- **Do not do optimistic in-place replace with Realtime `newRow` for UPDATE events** — the Supabase Realtime payload is partial and omits JSONB columns. Always call `fetchProposals()` on UPDATE. This bug has recurred multiple times.
+- **Do not concatenate Hebrew labels with colons in react-pdf `<Text>` nodes** — the colon `:` is a Bidi-neutral character. In react-pdf's LTR rendering context, a trailing colon on Hebrew text migrates to the wrong visual position (renders as `שם :` with space before colon). Hebrew labels in the PDF engine must be plain words without colons; visual separation is provided by color contrast and alignment.
+- **Do not concatenate Hebrew text + date + time in a single react-pdf `<Text>` node** — the Bidi algorithm scrambles the output. Always use `fmtDate()` and `fmtTime()` as separate `<Text>` nodes inside a `flexDirection: 'row'` View.
+- **Do not use bare `<Text>` nodes for label/value pairs in react-pdf** — use the Iron Grid pattern: each label and value wrapped in its own `<View>` with an explicit percentage width and `textAlign`. Fixed-width Views create hard layout boundaries that the Bidi algorithm cannot cross.
+- **Do not use `toLocaleString('he-IL')` inside the PDF engine** — Hebrew locale strings contain Unicode Bidi control characters that cause react-pdf to reorder digits. Use `fmtDate()` (DD.MM.YYYY) and `fmtCurrencyPdf()` (en-US number + manual symbol).
+- **Do not use dark/neon backgrounds in the PDF** — the PDF engine uses white paper aesthetics. Brand color is restricted to: cover/cert hero strips, table header backgrounds (white text), section title text, grand total left accent bar, milestone badges. No dark backgrounds, no neon glow, no `rgba(0,0,0,0.x)` card fills.
+- **Do not rely on `justifyContent: 'space-between'` in react-pdf for RTL rows** — it behaves unreliably in mixed Bidi contexts. Use `flexDirection: 'row-reverse'` with explicit child widths instead.
+- **Do not skip `sealed={accepted}` on `PremiumSliderCard` in DealRoom** — once a proposal is accepted, all slider/toggle controls must be locked. The `sealed` prop disables the toggle, hides the quantity slider, and removes hover effects.
