@@ -37,10 +37,11 @@ interface EditorPanelProps {
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
 function Tip({ content, children }: { content: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
   return (
     <Tooltip.Provider delayDuration={200} skipDelayDuration={0}>
-      <Tooltip.Root>
-        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Root open={open} onOpenChange={setOpen}>
+        <Tooltip.Trigger asChild onClick={() => setOpen(o => !o)}>{children}</Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
             sideOffset={6}
@@ -903,8 +904,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                   ? `הדלק אם אתה עוסק מורשה. המערכת תוסיף ${Math.round(vatRate * 100)}% אוטומטית לסכום הכולל ותציג פירוט מלא בחדר הדיל ובחוזה. ניתן לשנות את השיעור בפרופיל.`
                   : `Enable if you are a registered VAT business. The system auto-adds ${Math.round(vatRate * 100)}% to the total and shows a full breakdown in the Deal Room and contract. Change the rate in Profile.`
                 }>
-                  <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-0.5" tabIndex={-1}>
-                    <Info size={10} />
+                  <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+                    <Info size={14} />
                   </button>
                 </Tip>
               </div>
@@ -974,8 +975,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               ? 'טיפ: השתמש בסליידר (🟢) לכמויות כמו שעות עבודה, ובמתג הדלקה/כיבוי לשירותי כן/לא. הלקוח יכול להתאים בחדר הדיל.'
               : 'Tip: Use the slider (🟢) for quantities like hours, and the on/off toggle for yes/no services. The client can adjust in the Deal Room.'
             }>
-              <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-0.5" tabIndex={-1}>
-                <Info size={12} />
+              <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+                <Info size={14} />
               </button>
             </Tip>
           </div>
@@ -1050,8 +1051,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             ? 'חלוקת תשלומים מפחיתה סיכון לשני הצדדים. למשל: 30% מקדמה בחתימה, 40% באמצע הפרויקט, 30% במסירה הסופית. הלקוח רואה את לוח התשלומים בחדר הדיל.'
             : 'Splitting payments reduces risk for both parties. Example: 30% deposit at signing, 40% mid-project, 30% at final delivery. The client sees the schedule in the Deal Room.'
           }>
-            <button type="button" className="flex-none text-white/20 hover:text-white/50 transition-colors p-0.5 mt-0.5" tabIndex={-1}>
-              <Info size={12} />
+            <button type="button" className="flex-none text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+              <Info size={14} />
             </button>
           </Tip>
         </div>

@@ -36,6 +36,7 @@ function KPICard({
   icon: React.ReactNode; label: string; tooltip: string; value: number
   prefix?: string; suffix?: string; color: string; delay: number
 }) {
+  const [tipOpen, setTipOpen] = useState(false)
   return (
     <div
       className="group relative overflow-hidden rounded-2xl p-5 cursor-default"
@@ -90,11 +91,14 @@ function KPICard({
 
         {/* Label with tooltip */}
         <Tooltip.Provider delayDuration={150} skipDelayDuration={0}>
-          <Tooltip.Root>
+          <Tooltip.Root open={tipOpen} onOpenChange={setTipOpen}>
             <Tooltip.Trigger asChild>
-              <p className="flex items-center gap-1 text-xs text-white/40 font-medium w-fit select-none">
+              <p
+                className="flex items-center gap-1 text-xs text-white/40 font-medium w-fit select-none cursor-pointer"
+                onClick={() => setTipOpen(o => !o)}
+              >
                 {label}
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45, flexShrink: 0 }}>
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M12 16v-4m0-4h.01"/>
                 </svg>
