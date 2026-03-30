@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–16.2 + post-sprint UX fixes.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–18.
 
 ---
 
@@ -31,6 +31,7 @@ Read this before touching any file. Everything here reflects the live codebase a
 | Icons | Lucide React | ^1.7 |
 | PDF | @react-pdf/renderer | ^4.3 |
 | Rich Text | TipTap | ^2.x |
+| Confetti | canvas-confetti | ^1.x |
 
 **Removed:** `react-signature-canvas` — replaced with a native canvas implementation using pointer events and `quadraticCurveTo` for smooth strokes.
 
@@ -1012,6 +1013,74 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - Hover: left `2px` accent bar in status color + subtle background
 - Actions (edit, download) visible on `group-hover:opacity-100`
 
+### Confetti on deal sign (`canvas-confetti`)
+Fire confetti only for the client who just signed — never for a creator revisiting an already-accepted deal link. Gate with `freshSignedRef.current`:
+
+```tsx
+useEffect(() => {
+  if (!accepted || !freshSignedRef.current || !proposal) return
+  const brand = proposal.brand_color ?? '#6366f1'
+  confetti({ particleCount: 110, spread: 80, origin: { y: 0.68 }, colors: [brand, '#6366f1', '#a855f7', '#22c55e', '#ffffff', '#ffd700'] })
+  const t1 = setTimeout(() => {
+    confetti({ particleCount: 65, angle: 58, spread: 68, origin: { x: 0, y: 0.72 }, colors: [brand, '#a855f7', '#ffd700'] })
+    confetti({ particleCount: 65, angle: 122, spread: 68, origin: { x: 1, y: 0.72 }, colors: [brand, '#6366f1', '#22c55e'] })
+  }, 220)
+  const t2 = setTimeout(() => {
+    confetti({ particleCount: 45, spread: 130, origin: { y: 0.6 }, gravity: 0.55, scalar: 0.75, colors: ['#ffffff', '#ffd700', brand] })
+  }, 580)
+  return () => { clearTimeout(t1); clearTimeout(t2) }
+}, [accepted]) // freshSignedRef is a ref — not a dep, but read safely inside effect
+```
+
+When the page loads for an already-accepted proposal, `setAccepted(true)` runs but `freshSignedRef.current` is still `false` — so the effect guard prevents confetti on revisit.
+
+### Automation Handshake Stub (`triggerPostSignatureAutomations`)
+`DealRoom.tsx` exports an async stub called immediately after `accept_proposal` RPC succeeds:
+
+```ts
+// Called in handleAccept after: freshSignedRef.current = true; setAccepted(true)
+if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
+```
+
+The stub lives **outside the component** (module level) and takes `Proposal` as its argument. It logs a structured payload to the console. Sprint 19 will replace the log with real webhook calls (Make.com, Invoice4u, SendGrid, WhatsApp Business API). Do not move this into the component — it has no dependency on React state.
+
+### Dashboard CRM KPIs — correct formulas
+Three KPI cards with real business intelligence:
+
+| Card | Metric | Formula |
+|---|---|---|
+| Pipeline Value | Active deal value | `sum(proposalTotal(p))` for `sent + viewed + needs_revision` |
+| Closed Won | Actual revenue | `sum(proposalTotal(p))` for `accepted` only |
+| Win Rate | Conversion rate | `accepted / (accepted + rejected) * 100` — **not** `accepted / all-non-draft` |
+
+Win Rate uses only **resolved** proposals as denominator — pending proposals are excluded because they haven't been decided yet. Division-by-zero returns `0`.
+
+The `AnimatedNumber` component (uses `useSpring` + `useTransform`) is already in place — just feed the new values in.
+
+### iOS input zoom prevention
+iOS Safari zooms in when an input's `font-size < 16px`. Tailwind's `text-sm` (14px) class selector has higher specificity than a bare element selector, overriding `font-size: max(16px, 1em)` without `!important`. The global fix in `index.css`:
+
+```css
+input, textarea, select {
+  font-size: 16px !important;
+}
+```
+
+This overrides all utility classes. The body is already 16px, so desktop inputs look identical. **Never remove the `!important`** — doing so silently re-enables iOS zoom.
+
+### Number input spinner removal (global)
+Browser-native up/down spinners on `input[type=number]` are hidden globally in `index.css`:
+
+```css
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+```
+
+All numeric fields also carry the appropriate `inputMode`:
+- `inputMode="decimal"` — price/amount fields (allows decimal point)
+- `inputMode="numeric"` — percentage, tax ID, integer-only fields
+
 ---
 
 ## 24. What NOT To Do
@@ -1041,3 +1110,7 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - **Do not use `'dealspace-locale'` as the localStorage key** — the correct key is `'dealspace:locale'` (with a colon, matching the i18n store). Using the wrong key silently falls back to `navigator.language` on mobile.
 - **Do not use `py-*` padding alone for button height uniformity** — padding scales with content; if text wraps, the button grows taller than siblings. Always use explicit `h-*` (e.g., `h-9`) on action buttons alongside `whitespace-nowrap` on text spans.
 - **Do not omit `whitespace-nowrap` on button text spans** — without it, long labels like "הורד PDF" will wrap to two lines inside a flex button, inflating its height and breaking visual uniformity. Use `whitespace-nowrap` on every `<span>` inside a button, and `hidden sm:inline` to hide text entirely on mobile if space is tight.
+- **Do not fire confetti without checking `freshSignedRef.current`** — `setAccepted(true)` also runs on page load for already-accepted proposals. The ref guard is the only thing preventing confetti from playing when a creator or client revisits a sealed deal link.
+- **Do not put `triggerPostSignatureAutomations` inside the React component** — it is a module-level async function that takes `Proposal` as input. Placing it inside the component gains nothing and creates a new function reference on every render.
+- **Do not use `accepted / all-non-draft` for Win Rate** — drafts and pending proposals dilute the metric incorrectly. The denominator must be `accepted + rejected` only (resolved deals).
+- **Do not remove `!important` from `input { font-size: 16px }` in `index.css`** — Tailwind class selectors have higher specificity than element selectors. Without `!important`, the rule is silently overridden by `text-sm` and iOS zoom returns on all inputs.
