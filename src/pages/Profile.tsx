@@ -6,10 +6,11 @@ import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
+import { InfoTip } from '../components/ui/InfoTip'
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
-function Card({ children, title, icon }: { children: React.ReactNode; title: string; icon: React.ReactNode }) {
+function Card({ children, title, icon, tip }: { children: React.ReactNode; title: string; icon: React.ReactNode; tip?: React.ReactNode }) {
   return (
     <div
       className="rounded-3xl p-7"
@@ -27,6 +28,7 @@ function Card({ children, title, icon }: { children: React.ReactNode; title: str
           {icon}
         </div>
         <h2 className="text-sm font-bold text-white/80 uppercase tracking-widest">{title}</h2>
+        {tip}
       </div>
       {children}
     </div>
@@ -425,7 +427,11 @@ export default function Profile() {
 
         {/* ── Brand Color ────────────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20, duration: 0.5, ease: 'easeOut' as const }}>
-          <Card title={isHe ? 'צבע מותג' : 'Brand Color'} icon={<Palette size={16} />}>
+          <Card
+            title={isHe ? 'צבע מותג' : 'Brand Color'}
+            icon={<Palette size={16} />}
+            tip={<InfoTip content={isHe ? 'הצבע שיעטוף את חדר העסקאות שלכם וייצור חוויה ממותגת אישית.' : 'The color that themes your entire Deal Room — button, sliders, and glow effects.'} />}
+          >
             <p className="text-xs text-white/35 -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'הצבע יופיע בחדר הדיל של הלקוח — כפתור האישור, הסליידרים ואפקטי הגלו.'
@@ -561,7 +567,11 @@ export default function Profile() {
 
         {/* ── VAT Rate ───────────────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34, duration: 0.5, ease: 'easeOut' as const }}>
-          <Card title={isHe ? 'שיעור מע"מ' : 'VAT Rate'} icon={<Percent size={16} />}>
+          <Card
+            title={isHe ? 'שיעור מע"מ' : 'VAT Rate'}
+            icon={<Percent size={16} />}
+            tip={<InfoTip content={isHe ? 'שיעור המע״מ המוגדר כאן ישמש בכל ההצעות שבהן תפעיל את הטוגל. ניתן לשנות בכל עת.' : 'The VAT rate set here is used in all proposals where you enable the VAT toggle. Change anytime.'} />}
+          >
             <form onSubmit={handleSaveVat} className="space-y-4">
               <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 {isHe
