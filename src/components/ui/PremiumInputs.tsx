@@ -56,7 +56,7 @@ export function PremiumSlider({
         </SliderPrimitive.Track>
 
         <SliderPrimitive.Thumb
-          className="block h-5 w-5 rounded-full border-2 outline-none transition-all focus-visible:ring-2"
+          className="block h-5 w-5 rounded-full border-2 outline-none transition-all duration-200 hover:scale-110 focus-visible:ring-2"
           style={{
             background: '#fff',
             borderColor: color,
@@ -145,7 +145,7 @@ export function PremiumDatePicker({
         <Popover.Trigger asChild>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition-all outline-none"
+            className="flex w-full items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition-all duration-300 outline-none"
             style={{
               background: 'rgba(255,255,255,0.05)',
               border: open ? '1px solid rgba(99,102,241,0.55)' : '1px solid rgba(255,255,255,0.1)',
@@ -188,7 +188,7 @@ export function PremiumDatePicker({
               <button
                 type="button"
                 onClick={() => setViewMonth(m => subMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/8 hover:text-white/80"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-all duration-200 hover:bg-white/8 hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
               </button>
@@ -200,7 +200,7 @@ export function PremiumDatePicker({
               <button
                 type="button"
                 onClick={() => setViewMonth(m => addMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/8 hover:text-white/80"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-all duration-200 hover:bg-white/8 hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>

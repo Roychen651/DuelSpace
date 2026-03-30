@@ -244,7 +244,7 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
             boxShadow: '0 0 32px rgba(99,102,241,0.45)',
           }}
           whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
+          whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
         >
           {/* Shimmer sweep */}
           <span
@@ -259,28 +259,6 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
         </motion.button>
       </div>
 
-      <style>{`
-        @keyframes ds-float {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-12px); }
-        }
-        @keyframes ds-fade-up {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes ds-pulse {
-          0%, 100% { opacity: 0.45; }
-          50%       { opacity: 1; }
-        }
-        @keyframes ds-spin-slow {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-        @keyframes ds-shimmer {
-          0%        { transform: translateX(-120%); }
-          60%, 100% { transform: translateX(120%); }
-        }
-      `}</style>
     </motion.div>
   )
 }
@@ -434,6 +412,14 @@ export default function Dashboard() {
         @keyframes ds-pulse {
           0%, 100% { opacity: 0.5; }
           50%       { opacity: 1; }
+        }
+        @keyframes ds-spin-slow {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes ds-shimmer {
+          0%        { transform: translateX(-120%); }
+          60%, 100% { transform: translateX(120%); }
         }
       `}</style>
 

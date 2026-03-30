@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FileText, ChevronDown, ChevronUp,
-  Copy, Check, Edit3, Save, X as CloseIcon, Eye, EyeOff,
+  Copy, Check, Edit3, Save, X as CloseIcon, Eye, EyeOff, ScrollText,
 } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
@@ -376,15 +376,70 @@ export default function ContractLibrary() {
 
         {/* Contract list */}
         <div className="space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.15s both' }}>
-          {templates.map(template => (
-            <ContractCard
-              key={template.id}
-              template={template}
-              defaults={allDefaults[template.id] ?? {}}
-              onSaveDefaults={vals => handleSaveDefaults(template.id, vals)}
-              locale={locale}
-            />
-          ))}
+          {templates.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' as const }}
+              className="flex flex-col items-center gap-5 py-20 text-center"
+            >
+              <div
+                className="relative flex h-20 w-20 items-center justify-center rounded-3xl"
+                style={{
+                  background: 'linear-gradient(145deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.07) 100%)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  boxShadow: '0 0 40px rgba(99,102,241,0.12)',
+                }}
+              >
+                <ScrollText size={32} className="text-indigo-400/70" />
+                {/* Corner glow */}
+                <div
+                  className="pointer-events-none absolute -top-4 -right-4 h-16 w-16 rounded-full"
+                  style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)', filter: 'blur(12px)' }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <h3
+                  className="text-base font-black text-white/80 tracking-tight"
+                  dir={isHe ? 'rtl' : 'ltr'}
+                >
+                  {isHe ? 'אין חוזים בקטגוריה זו' : 'No contracts in this category'}
+                </h3>
+                <p
+                  className="text-sm text-white/30 max-w-xs leading-relaxed"
+                  dir={isHe ? 'rtl' : 'ltr'}
+                >
+                  {isHe
+                    ? 'נסה לבחור קטגוריה אחרת או הצג את כל החוזים'
+                    : 'Try selecting a different category or view all contracts'}
+                </p>
+              </div>
+              <motion.button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(168,85,247,0.14))',
+                  border: '1px solid rgba(99,102,241,0.3)',
+                }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+              >
+                <FileText size={13} />
+                {isHe ? 'הצג את כל החוזים' : 'Show all contracts'}
+              </motion.button>
+            </motion.div>
+          ) : (
+            templates.map(template => (
+              <ContractCard
+                key={template.id}
+                template={template}
+                defaults={allDefaults[template.id] ?? {}}
+                onSaveDefaults={vals => handleSaveDefaults(template.id, vals)}
+                locale={locale}
+              />
+            ))
+          )}
         </div>
       </main>
       <GlobalFooter />

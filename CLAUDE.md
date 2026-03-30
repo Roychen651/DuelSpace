@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–16.2.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–16.2 + post-sprint UX fixes.
 
 ---
 
@@ -833,6 +833,107 @@ useMotionValueEvent(motionValue, 'change', (v) => {
 })
 ```
 
+### Radix Tooltip — mobile (touch) support
+Radix `Tooltip` is hover/focus only by default. On touch devices, `mouseenter` never fires and `tabIndex={-1}` on the trigger removes focus-based fallback too. Fix: use **controlled open state** with an `onClick` toggle on every Tooltip that must work on mobile.
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Tooltip.Root open={open} onOpenChange={setOpen}>
+  <Tooltip.Trigger asChild>
+    <button
+      tabIndex={0}                          // was -1 — must be 0 for focus fallback
+      className="touch-manipulation rounded-lg p-1.5"
+      onClick={() => setOpen(o => !o)}
+    >
+      <Info size={14} />
+    </button>
+  </Tooltip.Trigger>
+  <Tooltip.Content>...</Tooltip.Content>
+</Tooltip.Root>
+```
+
+Apply this pattern to every `(i)` info icon and any other Tooltip that a mobile user needs to access.
+
+### DealRoom locale key
+The app-wide i18n store persists the locale under `'dealspace:locale'` (with a colon). DealRoom must use the exact same key when reading/writing `localStorage`. Using `'dealspace-locale'` (hyphen, no colon) causes a key mismatch — mobile users with their device set to English will fall back to `navigator.language` instead of the app's stored preference, showing the wrong language.
+
+```ts
+// ✅ Correct — matches i18n store
+const saved = localStorage.getItem('dealspace:locale')
+localStorage.setItem('dealspace:locale', newLocale)
+
+// ❌ Wrong — silently misses the stored preference
+localStorage.getItem('dealspace-locale')
+```
+
+### DealRoom two-audience problem — `freshSignedRef`
+`/deal/:token` serves two distinct audiences: (1) the **client** in the process of signing, and (2) the **business owner** (or client) revisiting an already-accepted deal. These two states need completely different UI.
+
+Solution: `const freshSignedRef = useRef(false)`. Set `freshSignedRef.current = true` inside `handleAccept()` immediately before `setAccepted(true)`. This distinguishes "just signed in this session" from "proposal was already accepted before this page load".
+
+```ts
+// In handleAccept, after accept_proposal RPC succeeds:
+freshSignedRef.current = true
+setAccepted(true)
+```
+
+Use this flag to gate the two modes:
+- `accepted && freshSignedRef.current` → show the full-screen **client success overlay** (confetti, "We'll be in touch", download CTA)
+- `accepted && !freshSignedRef.current` → show a neutral **sealed summary card** (green completion badge, project + client + total, DealSpace disclaimer) — no conversion UX, no trust signals, no sticky checkout bar
+
+### DealRoom sealed state — what to hide when `accepted && !freshSignedRef.current`
+When a business owner (or anyone) visits an already-accepted deal link, suppress all conversion-oriented UI:
+- **Countdown timer** — `{proposal.expires_at && !accepted && (` — never count down on a done deal
+- **Trust signals** (`Zap`, `Shield`, `Clock` badges) — wrapped in `{!accepted && (`
+- **Legal consent checkbox + legal terms box** — wrapped in `{!accepted && (`
+- **Sticky checkout bar** (`CheckoutClimax`) — return `null` when `accepted && !freshSignedRef.current`
+
+Replace the checkout bar with an inline sealed summary card:
+```tsx
+{accepted && !freshSignedRef.current && (
+  <motion.div
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.45, delay: 0.4 }}
+    className="mt-6 rounded-2xl overflow-hidden"
+    style={{
+      background: 'linear-gradient(135deg, rgba(34,197,94,0.07) 0%, rgba(16,185,129,0.04) 100%)',
+      border: '1px solid rgba(34,197,94,0.18)',
+      boxShadow: '0 0 40px rgba(34,197,94,0.06), inset 0 1px 0 rgba(34,197,94,0.1)',
+    }}
+  >
+    {/* CheckCircle2 icon + "הסכם חתום ואושר" / "Agreement Signed" */}
+    {/* Client name + signing date */}
+    {/* Total row */}
+    {/* DealSpace disclaimer */}
+  </motion.div>
+)}
+```
+Bottom spacer: `<div className={accepted && !freshSignedRef.current ? 'h-10' : 'h-44'} />`
+
+### ProposalBuilder header — button uniformity system
+All action buttons in the ProposalBuilder header use a strict sizing system to ensure Apple-level visual uniformity regardless of content or screen width:
+
+```tsx
+// Every button in the header right section:
+className="flex-none flex items-center gap-1.5 rounded-xl px-2.5 sm:px-3 h-9 ..."
+
+// Text labels — hidden on mobile, always nowrap:
+<span className="hidden sm:inline whitespace-nowrap">הורד PDF</span>
+
+// Short labels for sm breakpoint only (Send button):
+<span className="sm:hidden whitespace-nowrap">{shortLabel}</span>
+<span className="hidden sm:inline whitespace-nowrap">{fullLabel}</span>
+```
+
+Key rules:
+- `h-9` explicit height on every button — never rely on padding alone (content height varies with text wrapping)
+- `flex-none` — prevents buttons from shrinking in flex containers
+- `whitespace-nowrap` on all `<span>` text — prevents text from wrapping and inflating button height
+- Icon-only on mobile (`hidden sm:inline` on text) — preserves space in narrow header
+- Title: `max-w-[90px] sm:max-w-[200px]` — clamps truncation on mobile to avoid consuming header space
+
 ### Vercel retry vs fresh deploy
 When a Vercel deployment fails, the "Redeploy" button in the dashboard replays the **same commit** — it does not pick up newer pushes to `main`. If you've pushed a fix but Vercel is still failing on the old commit, push an empty commit to force a fresh webhook:
 ```bash
@@ -935,3 +1036,8 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - **Do not put a trailing period directly after a Latin word in Hebrew text** (e.g., `'שלחו PDF.'`) — the period adjacent to the Latin characters takes LTR direction and renders at the wrong visual position. Remove the period or restructure the sentence.
 - **Do not call `setState` inside `useMotionValueEvent` without a ref guard** — it fires on every animation tick (60fps) and causes constant unnecessary re-renders. Always compare against a ref before calling `setState`.
 - **Do not fire `DeviceOrientationEvent` handlers without a `requestAnimationFrame` throttle** — the event fires faster than 60fps on some devices. Gate with a single `rAF` per tick.
+- **Do not use `tabIndex={-1}` on Radix Tooltip triggers** — it removes the element from the focus order, blocking the only non-hover interaction path on touch devices. Use `tabIndex={0}` and add a controlled `open` + `onClick` toggle.
+- **Do not rely on Radix Tooltip's default hover/focus behavior for touch targets** — `mouseenter` never fires on mobile. Every Tooltip that must be accessible on touch must use controlled `open` state with an `onClick` toggle (see §21 Radix Tooltip pattern).
+- **Do not use `'dealspace-locale'` as the localStorage key** — the correct key is `'dealspace:locale'` (with a colon, matching the i18n store). Using the wrong key silently falls back to `navigator.language` on mobile.
+- **Do not use `py-*` padding alone for button height uniformity** — padding scales with content; if text wraps, the button grows taller than siblings. Always use explicit `h-*` (e.g., `h-9`) on action buttons alongside `whitespace-nowrap` on text spans.
+- **Do not omit `whitespace-nowrap` on button text spans** — without it, long labels like "הורד PDF" will wrap to two lines inside a flex button, inflating its height and breaking visual uniformity. Use `whitespace-nowrap` on every `<span>` inside a button, and `hidden sm:inline` to hide text entirely on mobile if space is tight.

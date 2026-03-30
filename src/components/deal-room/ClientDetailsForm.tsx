@@ -42,18 +42,20 @@ function FormInput({
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
+        className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-300"
         style={{
           background: 'rgba(255,255,255,0.05)',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
         onFocus={e => {
-          e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)'
+          e.currentTarget.style.border = '1px solid rgba(99,102,241,0.65)'
+          e.currentTarget.style.background = 'rgba(255,255,255,0.07)'
+          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
         }}
         onBlur={e => {
           e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'
+          e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
           e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)'
         }}
       />
@@ -191,8 +193,8 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete }: Clie
             opacity: canSubmit ? 1 : 0.5,
             transition: 'opacity 0.2s, background 0.3s',
           }}
-          whileHover={canSubmit ? { scale: 1.01 } : {}}
-          whileTap={canSubmit ? { scale: 0.98 } : {}}
+          whileHover={canSubmit ? { scale: 1.02 } : {}}
+          whileTap={canSubmit ? { scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } } : {}}
         >
           <span>{isHe ? 'המשך לחתימה' : 'Continue to Signature'}</span>
           <ChevronRight size={15} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Edit3, Save, Percent } from 'lucide-react'
+import { Plus, Trash2, Edit3, Save, Percent, Layers } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../types/proposal'
@@ -329,29 +329,110 @@ export default function ServicesLibrary() {
         <div className="space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.1s both' }}>
           {services.length === 0 && !showForm && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center gap-4 py-16 text-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: 'easeOut' as const }}
+              className="flex flex-col items-center gap-6 py-20 text-center"
             >
-              <div className="text-4xl">📦</div>
-              <div>
-                <p className="text-sm font-semibold text-white/40 mb-1">
-                  {isHe ? 'אין שירותים שמורים' : 'No saved services'}
-                </p>
-                <p className="text-xs text-white/25">
+              {/* Icon orb */}
+              <div className="relative">
+                <div
+                  className="relative flex h-24 w-24 items-center justify-center rounded-3xl"
+                  style={{
+                    background: 'linear-gradient(145deg, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.07) 100%)',
+                    border: '1px solid rgba(212,175,55,0.25)',
+                    boxShadow: '0 0 48px rgba(212,175,55,0.12)',
+                    animation: 'svc-float 5s ease-in-out infinite',
+                  }}
+                >
+                  <Layers size={36} className="text-amber-400/70" />
+                </div>
+                {/* Orbiting dot */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 8, height: 8,
+                    top: -4, left: '50%', marginLeft: -4,
+                    background: '#d4af37',
+                    boxShadow: '0 0 10px #d4af37',
+                    animation: 'svc-orbit 8s linear infinite',
+                    transformOrigin: '4px 56px',
+                  }}
+                />
+                {/* Glow halo */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-3xl"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 50%, rgba(212,175,55,0.18) 0%, transparent 65%)',
+                    filter: 'blur(16px)',
+                    transform: 'scale(1.4)',
+                  }}
+                />
+              </div>
+
+              {/* Copy */}
+              <div className="space-y-2">
+                <h3
+                  className="text-xl font-black tracking-tight"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                  dir={isHe ? 'rtl' : 'ltr'}
+                >
+                  {isHe ? 'הקטלוג שלך מחכה' : 'Your catalog awaits'}
+                </h3>
+                <p
+                  className="text-sm text-white/35 max-w-xs mx-auto leading-relaxed"
+                  dir={isHe ? 'rtl' : 'ltr'}
+                >
                   {isHe
-                    ? 'שמור שירותים שאתה מוסיף לעתים קרובות להצעות המחיר'
-                    : 'Save services you frequently add to proposals'}
+                    ? 'שמור שירותים חוזרים פעם אחת — הוסף אותם להצעות בלחיצה אחת. חסוך זמן, שמור על אחידות.'
+                    : 'Save recurring services once — add them to proposals in one click. Save time, stay consistent.'}
                 </p>
               </div>
-              <button
+
+              {/* CTA */}
+              <motion.button
                 onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #d4af37, #f59e0b)' }}
+                className="relative flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #d4af37, #f59e0b)',
+                  boxShadow: '0 0 28px rgba(212,175,55,0.35)',
+                }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
               >
-                <Plus size={13} />
-                {isHe ? 'הוסף שירות ראשון' : 'Add first service'}
-              </button>
+                {/* Shimmer */}
+                <span
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: 'linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.2) 50%, transparent 62%)',
+                    animation: 'svc-shimmer 3s ease-in-out infinite',
+                  }}
+                />
+                <Plus size={15} />
+                <span className="whitespace-nowrap">
+                  {isHe ? 'הוסף שירות ראשון' : 'Add first service'}
+                </span>
+              </motion.button>
+
+              <style>{`
+                @keyframes svc-float {
+                  0%, 100% { transform: translateY(0); }
+                  50%       { transform: translateY(-10px); }
+                }
+                @keyframes svc-orbit {
+                  from { transform: rotate(0deg); }
+                  to   { transform: rotate(360deg); }
+                }
+                @keyframes svc-shimmer {
+                  0%        { transform: translateX(-140%); }
+                  60%, 100% { transform: translateX(140%); }
+                }
+              `}</style>
             </motion.div>
           )}
 

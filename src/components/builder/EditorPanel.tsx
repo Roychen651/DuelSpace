@@ -154,9 +154,9 @@ function Field({
 
 const inputClass = [
   'w-full rounded-2xl border bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-white/20',
-  'outline-none transition-all duration-200',
-  'border-white/[0.1] focus:border-indigo-400/60',
-  'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'outline-none transition-all duration-300',
+  'border-white/[0.1] focus:border-indigo-500/65 focus:bg-white/[0.07]',
+  'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]',
   'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
 ].join(' ')
 
@@ -1024,8 +1024,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             onClick={handleAddNew}
             className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
             style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
           >
             <Plus size={13} />
             {isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}
@@ -1069,7 +1069,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               { label: isHe ? '33 / 33 / 34' : '33 / 33 / 34', splits: [33, 33, 34], names: isHe ? ['שלב א׳', 'שלב ב׳', 'סיום'] : ['Phase 1', 'Phase 2', 'Final'] },
               { label: isHe ? '25 / 25 / 50' : '25 / 25 / 50', splits: [25, 25, 50], names: isHe ? ['פתיחה', 'אמצע', 'סיום'] : ['Kickoff', 'Midpoint', 'Final'] },
             ].map(preset => (
-              <button
+              <motion.button
                 key={preset.label}
                 type="button"
                 onClick={() => onChange({
@@ -1081,9 +1081,11 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                 })}
                 className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
                 style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc' }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
               >
                 {preset.label}
-              </button>
+              </motion.button>
             ))}
           </div>
         )}
@@ -1215,8 +1217,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           onClick={addMilestone}
           className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
           style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
         >
           <Plus size={13} />
           {isHe ? 'הוסף אבן דרך' : 'Add Milestone'}
