@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
@@ -377,6 +377,52 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
               {proposal.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
             </h3>
           </div>
+
+          {/* ── Revision request panel — instantly actionable ──────────── */}
+          {proposal.status === 'needs_revision' && (
+            <div
+              className="mt-3 mb-1 rounded-xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(217,119,6,0.06) 100%)',
+                border: '1px solid rgba(245,158,11,0.25)',
+              }}
+            >
+              <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+                <MessageSquarePlus size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
+                  {locale === 'he' ? 'הלקוח ביקש שינויים' : 'Client Requested Changes'}
+                </span>
+              </div>
+              {proposal.revision_notes ? (
+                <p
+                  className="px-3 pb-2 text-[11px] leading-relaxed"
+                  style={{
+                    color: 'rgba(245,158,11,0.7)',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {proposal.revision_notes}
+                </p>
+              ) : (
+                <p className="px-3 pb-2 text-[11px] italic" style={{ color: 'rgba(245,158,11,0.4)' }}>
+                  {locale === 'he' ? 'ללא הערות' : 'No notes provided'}
+                </p>
+              )}
+              <button
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold transition-colors"
+                style={{ borderTop: '1px solid rgba(245,158,11,0.15)', color: '#f59e0b', background: 'transparent' }}
+                onClick={e => { e.stopPropagation(); onEdit(proposal.id) }}
+                onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.08)' }}
+                onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              >
+                <Edit3 size={11} />
+                {locale === 'he' ? 'ערוך ושלח שוב' : 'Edit & Resend'}
+              </button>
+            </div>
+          )}
 
           {/* Footer: price + meta */}
           <div className="flex items-end justify-between">

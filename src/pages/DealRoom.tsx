@@ -579,6 +579,18 @@ export default function DealRoom() {
       }
       setLineItems(init)
 
+      // Pre-fill client details if already captured in a previous session or round
+      // Covers: revisit after revision request, revisit after creator resends
+      if (p.client_company_name || p.client_tax_id || p.client_address || p.client_signer_role) {
+        setClientDetails({
+          full_name:       p.client_name          || '',
+          company_name:    p.client_company_name  || '',
+          tax_id:          p.client_tax_id        || '',
+          billing_address: p.client_address       || '',
+          signer_role:     p.client_signer_role   || '',
+        })
+      }
+
       // Only mark as viewed for active statuses — terminal/pending-revision proposals
       // must not bump updated_at (it would corrupt StatusTimeline timestamps or revert status)
       if (p.status !== 'accepted' && p.status !== 'rejected' && p.status !== 'needs_revision') {
@@ -604,6 +616,15 @@ export default function DealRoom() {
         init[a.id] = { enabled: a.enabled, qty: 1 }
       }
       setLineItems(init)
+      if (pending.client_company_name || pending.client_tax_id || pending.client_address || pending.client_signer_role) {
+        setClientDetails({
+          full_name:       pending.client_name          || '',
+          company_name:    pending.client_company_name  || '',
+          tax_id:          pending.client_tax_id        || '',
+          billing_address: pending.client_address       || '',
+          signer_role:     pending.client_signer_role   || '',
+        })
+      }
       if (pending.status !== 'accepted' && pending.status !== 'rejected' && pending.status !== 'needs_revision') {
         supabase.rpc('mark_proposal_viewed', { p_token: token }).then(() => {})
       }
@@ -779,11 +800,24 @@ export default function DealRoom() {
   // ── Handle revision request ────────────────────────────────────────────────
   const handleRequestRevision = useCallback(async (notes: string) => {
     if (!token) return
+    // Persist client identity to DB *before* flipping status — save_client_details only runs
+    // when status ∈ {sent, viewed}; after request_proposal_revision it becomes needs_revision.
+    // This means client details survive when the creator fixes and resends the proposal.
+    if (clientDetails) {
+      await supabase.rpc('save_client_details', {
+        p_token:        token,
+        p_full_name:    clientDetails.full_name,
+        p_company_name: clientDetails.company_name,
+        p_tax_id:       clientDetails.tax_id,
+        p_address:      clientDetails.billing_address,
+        p_signer_role:  clientDetails.signer_role,
+      })
+    }
     await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
     setRevisionSent(true)
     // Notify Dashboard in same browser — creator sees status flip to needs_revision instantly
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'revision_requested', token }) } catch (_) {}
-  }, [token])
+  }, [token, clientDetails])
 
   // ── Handle decline ─────────────────────────────────────────────────────────
   const handleDecline = useCallback(async () => {
