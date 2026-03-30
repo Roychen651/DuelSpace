@@ -1,8 +1,9 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Zap, Star, Infinity } from 'lucide-react'
+import { X, Zap, Star, Infinity as InfinityIcon, Check } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
 import { FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
+import type { PlanTier } from '../../stores/useAuthStore'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ interface UpgradeModalProps {
   open: boolean
   onClose: () => void
   activeCount: number
+  currentTier: PlanTier
 }
 
 // ─── Plan definitions ─────────────────────────────────────────────────────────
@@ -18,16 +20,18 @@ interface PlanDef {
   id: 'free' | 'pro' | 'premium'
   nameEn: string
   nameHe: string
-  price: number | null       // null = free
+  price: number | null
   periodEn: string
   periodHe: string
   featuresEn: string[]
   featuresHe: string[]
-  ctaEn: string
-  ctaHe: string
+  ctaUpgradeEn: string
+  ctaUpgradeHe: string
   popular: boolean
   accent: string
 }
+
+const PLAN_RANK: Record<PlanDef['id'], number> = { free: 0, pro: 1, premium: 2 }
 
 const PLANS: PlanDef[] = [
   {
@@ -46,7 +50,7 @@ const PLANS: PlanDef[] = [
       'ייצוא PDF מקצועי',
       'אנליטיקות צפייה ומעורבות',
     ],
-    ctaEn: 'Current plan', ctaHe: 'תוכנית נוכחית',
+    ctaUpgradeEn: 'Downgrade to Free', ctaUpgradeHe: 'שנמך לחינם',
     popular: false,
     accent: '#6b7280',
   },
@@ -66,7 +70,7 @@ const PLANS: PlanDef[] = [
       'תמיכה ישירה בדוא"ל',
       'גישה מוקדמת לפיצ׳רים חדשים',
     ],
-    ctaEn: 'Upgrade to Pro', ctaHe: 'שדרג לפרו',
+    ctaUpgradeEn: 'Upgrade to Pro', ctaUpgradeHe: 'שדרג לפרו',
     popular: false,
     accent: '#6366f1',
   },
@@ -86,7 +90,7 @@ const PLANS: PlanDef[] = [
       'תמיכה בעדיפות גבוהה',
       'השפעה על מפת הדרכים',
     ],
-    ctaEn: 'Upgrade to Premium', ctaHe: 'שדרג לפרימיום',
+    ctaUpgradeEn: 'Upgrade to Premium', ctaUpgradeHe: 'שדרג לפרימיום',
     popular: true,
     accent: '#a855f7',
   },
@@ -95,14 +99,18 @@ const PLANS: PlanDef[] = [
 const PLAN_ICONS: Record<PlanDef['id'], React.ReactNode> = {
   free:    <Star size={15} />,
   pro:     <Zap size={15} />,
-  premium: <Infinity size={15} />,
+  premium: <InfinityIcon size={15} />,
 }
 
 // ─── UpgradeModal ─────────────────────────────────────────────────────────────
 
-export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) {
+export function UpgradeModal({ open, onClose, activeCount, currentTier }: UpgradeModalProps) {
   const { locale } = useI18n()
   const isHe = locale === 'he'
+
+  // Map tier → plan id ('unlimited' maps to 'premium')
+  const currentPlanId: PlanDef['id'] = currentTier === 'unlimited' ? 'premium' : currentTier
+  const isManagedView = currentTier !== 'free'
 
   return (
     <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose() }}>
@@ -143,8 +151,16 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
                     50%       { box-shadow: 0 0 0 2px #a855f7, 0 0 60px #a855f730; }
                   }
                   @keyframes um-badge-float {
-                    0%, 100% { transform: translateY(0); }
-                    50%       { transform: translateY(-2px); }
+                    0%, 100% { transform: translateY(0) translateX(-50%); }
+                    50%       { transform: translateY(-2px) translateX(-50%); }
+                  }
+                  @keyframes um-scan {
+                    0%   { transform: translateX(-100%); }
+                    100% { transform: translateX(280%); }
+                  }
+                  @keyframes um-check-draw {
+                    from { stroke-dashoffset: 20; }
+                    to   { stroke-dashoffset: 0; }
                   }
                 `}</style>
 
@@ -179,12 +195,11 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
 
                   {/* Header */}
                   <div className="px-6 pt-8 pb-6 text-center relative">
-                    {/* Emoji icon */}
                     <div
                       className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 text-2xl"
                       style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))', border: '1px solid rgba(99,102,241,0.3)' }}
                     >
-                      🚀
+                      {isManagedView ? '✦' : '🚀'}
                     </div>
 
                     <Dialog.Title asChild>
@@ -195,15 +210,19 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
                           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                         }}
                       >
-                        {isHe ? 'העסק שלך צומח!' : 'Your business is growing!'}
+                        {isManagedView
+                          ? (isHe ? 'ניהול המנוי שלך' : 'Manage your subscription')
+                          : (isHe ? 'העסק שלך צומח!' : 'Your business is growing!')}
                       </h2>
                     </Dialog.Title>
 
                     <Dialog.Description asChild>
                       <p className="text-sm text-white/45 max-w-md mx-auto leading-relaxed">
-                        {isHe
-                          ? `הגעת ל-${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות פעילות בתוכנית החינמית. שדרג כדי להמשיך לסגור עסקאות ללא הגבלה.`
-                          : `You've used ${activeCount} of ${FREE_PROPOSAL_LIMIT} active proposals on the free plan. Upgrade to keep closing deals without limits.`}
+                        {isManagedView
+                          ? (isHe ? 'בחר את התוכנית המתאימה לקצב הצמיחה שלך.' : 'Choose the plan that fits your growth pace.')
+                          : (isHe
+                            ? `הגעת ל-${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות פעילות בתוכנית החינמית. שדרג כדי להמשיך לסגור עסקאות ללא הגבלה.`
+                            : `You've used ${activeCount} of ${FREE_PROPOSAL_LIMIT} active proposals on the free plan. Upgrade to keep closing deals without limits.`)}
                       </p>
                     </Dialog.Description>
                   </div>
@@ -216,7 +235,7 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
                         plan={plan}
                         isHe={isHe}
                         delay={idx * 0.06}
-                        onClose={onClose}
+                        currentPlanId={currentPlanId}
                       />
                     ))}
                   </div>
@@ -239,15 +258,26 @@ export function UpgradeModal({ open, onClose, activeCount }: UpgradeModalProps) 
 
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, isHe, delay, onClose }: {
-  plan: PlanDef; isHe: boolean; delay: number; onClose: () => void
+function PlanCard({ plan, isHe, delay, currentPlanId }: {
+  plan: PlanDef
+  isHe: boolean
+  delay: number
+  currentPlanId: PlanDef['id']
 }) {
-  const isFree = plan.id === 'free'
+  const currentRank = PLAN_RANK[currentPlanId]
+  const planRank    = PLAN_RANK[plan.id]
+  const isCurrent   = plan.id === currentPlanId
+  const isUpgrade   = planRank > currentRank
+  // isDowngrade = planRank < currentRank
 
   const handleCta = () => {
-    if (isFree) { onClose(); return }
-    console.log('Initiate Stripe Checkout:', plan.id, plan.price)
-    // TODO Sprint 31: replace with real Stripe checkout session
+    if (isCurrent) return
+    if (isUpgrade) {
+      console.log('Initiate Stripe Checkout:', plan.id, plan.price)
+      // TODO Sprint 31: replace with real Stripe checkout session
+      return
+    }
+    // Downgrade — TODO Sprint 32 (Stripe portal)
   }
 
   return (
@@ -257,16 +287,34 @@ function PlanCard({ plan, isHe, delay, onClose }: {
       transition={{ duration: 0.35, delay, ease: 'easeOut' as const }}
       className="relative flex flex-col rounded-2xl p-5 overflow-hidden"
       style={{
-        background: plan.popular
-          ? 'linear-gradient(160deg, rgba(168,85,247,0.12) 0%, rgba(99,102,241,0.07) 100%)'
-          : 'rgba(255,255,255,0.035)',
-        border: plan.popular ? 'none' : '1px solid rgba(255,255,255,0.07)',
-        animation: plan.popular ? 'um-glow-pulse 3s ease-in-out infinite' : undefined,
+        background: isCurrent
+          ? `linear-gradient(160deg, ${plan.accent}18 0%, ${plan.accent}08 100%)`
+          : plan.popular
+            ? 'linear-gradient(160deg, rgba(168,85,247,0.12) 0%, rgba(99,102,241,0.07) 100%)'
+            : 'rgba(255,255,255,0.035)',
+        border: isCurrent
+          ? `1px solid ${plan.accent}45`
+          : plan.popular
+            ? 'none'
+            : '1px solid rgba(255,255,255,0.07)',
+        animation: (!isCurrent && plan.popular) ? 'um-glow-pulse 3s ease-in-out infinite' : undefined,
         transform: plan.popular ? 'scale(1.025)' : undefined,
       }}
     >
-      {/* "Most Popular" badge */}
-      {plan.popular && (
+      {/* Scan line — only on current plan */}
+      {isCurrent && (
+        <div className="absolute bottom-0 start-0 end-0 h-[2px] overflow-hidden rounded-b-2xl">
+          <motion.div
+            className="absolute inset-y-0 w-[40%]"
+            style={{ background: `linear-gradient(90deg, transparent, ${plan.accent}, transparent)` }}
+            animate={{ x: ['-100%', '350%'] }}
+            transition={{ duration: 2.8, ease: 'easeInOut' as const, repeat: Infinity, repeatDelay: 1.4 }}
+          />
+        </div>
+      )}
+
+      {/* "Most Popular" badge — only when not current plan */}
+      {plan.popular && !isCurrent && (
         <div
           className="absolute -top-px start-1/2 -translate-x-1/2 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest"
           style={{
@@ -279,6 +327,23 @@ function PlanCard({ plan, isHe, delay, onClose }: {
         </div>
       )}
 
+      {/* "Active Plan" badge — current plan */}
+      {isCurrent && (
+        <div
+          className="absolute -top-px start-1/2 -translate-x-1/2 flex items-center gap-1 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest whitespace-nowrap"
+          style={{
+            background: `linear-gradient(90deg, ${plan.accent}cc, ${plan.accent})`,
+            color: '#fff',
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ strokeDasharray: 20, strokeDashoffset: 0, animation: 'um-check-draw 0.4s ease-out 0.3s both' }}>
+            <polyline points="2,6 5,9 10,3" />
+          </svg>
+          {isHe ? 'תוכנית פעילה' : 'Active Plan'}
+        </div>
+      )}
+
       {/* Plan header */}
       <div className="flex items-center gap-2 mb-4 mt-2">
         <div
@@ -287,17 +352,13 @@ function PlanCard({ plan, isHe, delay, onClose }: {
         >
           {PLAN_ICONS[plan.id]}
         </div>
-        <div>
-          <p className="text-sm font-black text-white/90">{isHe ? plan.nameHe : plan.nameEn}</p>
-        </div>
+        <p className="text-sm font-black text-white/90">{isHe ? plan.nameHe : plan.nameEn}</p>
       </div>
 
       {/* Price */}
       <div className="mb-5">
         {plan.price === 0 ? (
-          <p className="text-3xl font-black text-white/80">
-            {isHe ? 'חינם' : 'Free'}
-          </p>
+          <p className="text-3xl font-black text-white/80">{isHe ? 'חינם' : 'Free'}</p>
         ) : (
           <div className="flex items-end gap-1">
             <span className="text-3xl font-black text-white">₪{plan.price}</span>
@@ -319,39 +380,54 @@ function PlanCard({ plan, isHe, delay, onClose }: {
       </ul>
 
       {/* CTA */}
-      <motion.button
-        onClick={handleCta}
-        disabled={isFree}
-        whileTap={isFree ? undefined : { scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-        className="relative w-full rounded-xl py-2.5 text-[13px] font-bold overflow-hidden transition-all"
-        style={
-          isFree
-            ? { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', cursor: 'default', border: '1px solid rgba(255,255,255,0.07)' }
-            : plan.popular
+      {isCurrent ? (
+        // ── Current plan — visual indicator, not interactive ──
+        <div
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2"
+          style={{ background: `${plan.accent}12`, color: plan.accent, border: `1px solid ${plan.accent}30` }}
+        >
+          <Check size={13} strokeWidth={2.5} />
+          {isHe ? 'תוכנית פעילה' : 'Active Plan'}
+        </div>
+      ) : isUpgrade ? (
+        // ── Upgrade path ──
+        <motion.button
+          onClick={handleCta}
+          whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold overflow-hidden transition-all"
+          style={
+            plan.popular
               ? { background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff', boxShadow: '0 4px 24px rgba(99,102,241,0.4)' }
               : { background: `${plan.accent}20`, color: plan.accent, border: `1px solid ${plan.accent}35` }
-        }
-        onPointerEnter={e => {
-          if (isFree) return
-          if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}35`
-        }}
-        onPointerLeave={e => {
-          if (isFree) return
-          if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}20`
-        }}
-      >
-        {/* Shimmer on popular CTA */}
-        {plan.popular && (
-          <span
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.2) 50%, transparent 65%)',
-              animation: 'um-shimmer 3s ease-in-out infinite',
-            }}
-          />
-        )}
-        {isHe ? plan.ctaHe : plan.ctaEn}
-      </motion.button>
+          }
+          onPointerEnter={e => {
+            if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}35`
+          }}
+          onPointerLeave={e => {
+            if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}20`
+          }}
+        >
+          {plan.popular && (
+            <span
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.2) 50%, transparent 65%)',
+                animation: 'um-shimmer 3s ease-in-out infinite',
+              }}
+            />
+          )}
+          {isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn}
+        </motion.button>
+      ) : (
+        // ── Downgrade path — disabled until Sprint 32 ──
+        <div
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2"
+          style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'not-allowed' }}
+          title={isHe ? 'שינוי תוכנית יהיה זמין בקרוב' : 'Plan changes coming soon'}
+        >
+          {isHe ? 'שנמך · בקרוב' : 'Downgrade · Soon'}
+        </div>
+      )}
     </motion.div>
   )
 }
