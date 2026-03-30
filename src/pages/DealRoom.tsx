@@ -486,10 +486,17 @@ export default function DealRoom() {
   const freshSignedRef = useRef(false) // true only when signed in this session
   const [sigTimestamp, setSigTimestamp] = useState<Date>(new Date())
   const [acceptError, setAcceptError] = useState<string | null>(null)
-  const [declined, setDeclined] = useState(false)
   const [declining, setDeclining] = useState(false)
-  const [revisionSent, setRevisionSent] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
+
+  // ── Derived status flags — single source of truth is proposal.status ──────
+  // These are NEVER stored in state. They are always computed from the proposal
+  // object, which is the single source of truth (loaded from DB, kept in sync
+  // via Realtime). This eliminates the entire class of "state drift" bugs where
+  // local state diverged from the DB — new tabs, refreshes, and cross-device
+  // updates all automatically show the correct state with zero extra code.
+  const revisionSent = proposal?.status === 'needs_revision'
+  const declined     = proposal?.status === 'rejected'
   const [legalExpanded, setLegalExpanded] = useState(false)
 
   // ── Confetti burst on fresh signature ─────────────────────────────────────
@@ -570,8 +577,6 @@ export default function DealRoom() {
       setProposal(p)
       setFetchStatus('ok')
       if (p.status === 'accepted') setAccepted(true)
-      if (p.status === 'rejected') setDeclined(true)
-      if (p.status === 'needs_revision') setRevisionSent(true)
 
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of p.add_ons) {
@@ -609,8 +614,6 @@ export default function DealRoom() {
       setProposal(pending)
       setFetchStatus('ok')
       if (pending.status === 'accepted') setAccepted(true)
-      if (pending.status === 'rejected') setDeclined(true)
-      if (pending.status === 'needs_revision') setRevisionSent(true)
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of pending.add_ons) {
         init[a.id] = { enabled: a.enabled, qty: 1 }
@@ -725,19 +728,11 @@ export default function DealRoom() {
         },
         (payload) => {
           const updated = payload.new as typeof proposal
-          // Refresh proposal in state (picks up new base_price, add_ons, global_discount_pct, etc.)
+          // setProposal is the only call needed — revisionSent and declined are
+          // derived from proposal.status, so they update automatically.
           setProposal(updated)
-
-          // Reconcile UI flags with the new status
-          const s = updated.status
-          if (s === 'sent' || s === 'viewed') {
-            // Creator resent — unlock the client flow
-            setRevisionSent(false)
-            setDeclined(false)
-          }
-          if (s === 'accepted') setAccepted(true)
-          if (s === 'rejected') setDeclined(true)
-          if (s === 'needs_revision') setRevisionSent(true)
+          // accepted still needs explicit state (freshSignedRef session tracking)
+          if (updated?.status === 'accepted') setAccepted(true)
         }
       )
       .subscribe()
@@ -878,23 +873,24 @@ export default function DealRoom() {
     }
     const { data: success } = await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
     if (!success) {
-      // RPC returned false — 0 rows updated (proposal status wasn't sent/viewed — already accepted/rejected/etc.)
-      // Don't flip local state; the UI will reflect the real status on next load.
+      // RPC returned false — 0 rows updated (proposal was already accepted/rejected/etc.)
+      // No local state to flip — the derived revisionSent will already reflect reality.
       return
     }
-    setRevisionSent(true)
+    // Update local proposal status immediately (optimistic — Realtime will confirm shortly)
+    setProposal(prev => prev ? { ...prev, status: 'needs_revision' as const, revision_notes: notes } : prev)
     // Notify Dashboard in same browser — creator sees status flip to needs_revision instantly
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'revision_requested', token }) } catch (_) {}
   }, [token, clientDetails])
 
   // ── Handle decline ─────────────────────────────────────────────────────────
   const handleDecline = useCallback(async () => {
-    if (!token || declining || declined) return
+    if (!token || declining || proposal?.status === 'rejected') return
     setDeclining(true)
     const { error } = await supabase.rpc('decline_proposal', { p_token: token })
-    if (!error) setDeclined(true)
+    if (!error) setProposal(prev => prev ? { ...prev, status: 'rejected' as const } : prev)
     setDeclining(false)
-  }, [token, declining, declined])
+  }, [token, declining, proposal?.status])
 
   // ── PDF download ───────────────────────────────────────────────────────────
   const handleDownloadPdf = useCallback(async () => {
