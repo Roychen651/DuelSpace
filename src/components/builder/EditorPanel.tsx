@@ -94,13 +94,18 @@ function Section({
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
+        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors rounded-2xl"
       >
-        <div className="flex items-center gap-2.5">
-          <span className="text-indigo-400/80">{icon}</span>
-          <span className="text-sm font-semibold text-white/80">{title}</span>
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.18)' }}
+          >
+            <span className="text-indigo-400">{icon}</span>
+          </div>
+          <span className="text-[15px] font-semibold text-white/90">{title}</span>
           {badge && (
-            <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
+            <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">
               {badge}
             </span>
           )}
@@ -110,7 +115,7 @@ function Section({
           transition={{ duration: 0.2 }}
           className="text-white/30"
         >
-          <ChevronDown size={15} />
+          <ChevronDown size={16} />
         </motion.span>
       </button>
 
@@ -123,7 +128,7 @@ function Section({
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="px-5 pb-6 space-y-5">{children}</div>
+            <div className="px-5 pb-6 space-y-6">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -142,11 +147,11 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'rgba(255,255,255,0.72)' }}>
-        {icon && <span>{icon}</span>}
+    <div className="space-y-2">
+      <label className="flex items-center gap-1.5 text-sm font-semibold text-white/90">
+        {icon && <span className="text-white/50">{icon}</span>}
         {label}
-        {required && <span className="text-indigo-400/60">*</span>}
+        {required && <span className="text-indigo-400">*</span>}
       </label>
       {children}
     </div>
@@ -154,11 +159,9 @@ function Field({
 }
 
 const inputClass = [
-  'w-full rounded-2xl border bg-white/[0.05] px-4 py-3.5 text-base text-white placeholder-white/20',
-  'outline-none transition-all duration-300',
-  'border-white/[0.1] focus:border-indigo-500/65 focus:bg-white/[0.07]',
-  'focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]',
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
+  'w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-base text-white placeholder-white/30',
+  'outline-none transition-all duration-200',
+  'focus:bg-white/[0.06] focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/[0.08]',
 ].join(' ')
 
 
@@ -238,7 +241,7 @@ function AddOnRow({
                 />
                 {showVat && addOn.price > 0 && (
                   <div
-                    className="rounded-lg px-2 py-0.5 text-[9px] text-center font-semibold tabular-nums"
+                    className="rounded-lg px-2 py-0.5 text-[11px] text-center font-semibold tabular-nums"
                     style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
                   >
                     +{isHe ? 'מע"מ' : 'VAT'} = {formatCurrency(vatTotal, currency)}
@@ -255,8 +258,8 @@ function AddOnRow({
           />
           {/* Per-item discount row */}
           <div className="flex items-center gap-2">
-            <Tag size={10} className="text-emerald-400/60 flex-none" />
-            <span className="text-[10px] font-semibold text-white/30 flex-none">
+            <Tag size={11} className="text-emerald-400/60 flex-none" />
+            <span className="text-xs font-semibold text-white/40 flex-none">
               {isHe ? 'הנחה' : 'Discount'}
             </span>
             <div className="relative flex-none">
@@ -280,7 +283,7 @@ function AddOnRow({
             </div>
             <span className="text-[10px] text-white/30">%</span>
             {(addOn.discount_pct ?? 0) > 0 && addOn.price > 0 && (
-              <span className="text-[10px] font-semibold text-emerald-400">
+              <span className="text-xs font-semibold text-emerald-400">
                 → {formatCurrency(Math.round(addOn.price * (1 - (addOn.discount_pct ?? 0) / 100)), currency)}
               </span>
             )}
@@ -608,10 +611,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             <ShieldCheck size={16} className="text-emerald-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">
+            <p className="text-sm font-bold text-emerald-400">
               {isHe ? '🔒 הסכם חתום — נעול' : '🔒 Signed Agreement — Locked'}
             </p>
-            <p className="text-[10px] text-emerald-400/60 mt-0.5">
+            <p className="text-xs text-emerald-400/60 mt-1">
               {isHe
                 ? 'לא ניתן לערוך הצעה חתומה. לשינויים, יש לשכפל ולצור טיוטה חדשה.'
                 : 'Signed proposals are immutable. To make changes, duplicate and create a new draft.'}
@@ -635,20 +638,20 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         >
           {/* Header bar */}
           <div
-            className="flex items-center gap-2.5 px-4 py-3"
+            className="flex items-center gap-3 px-5 py-4"
             style={{ borderBottom: '1px solid rgba(245,158,11,0.15)' }}
           >
             <div
-              className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
-              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}
+              className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
+              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}
             >
-              <MessageSquarePlus size={13} />
+              <MessageSquarePlus size={15} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
+              <p className="text-sm font-bold" style={{ color: '#f59e0b' }}>
                 {isHe ? '🔔 הלקוח ביקש שינויים' : '🔔 Client Requested Changes'}
               </p>
-              <p className="text-[10px] text-amber-400/50 mt-0.5">
+              <p className="text-xs text-amber-400/55 mt-0.5">
                 {isHe
                   ? 'ערוך את ההצעה לפי הבקשה ולחץ "עדכן ושלח חזרה"'
                   : 'Edit the proposal based on the request, then click "Update & Resend"'}
@@ -657,10 +660,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </div>
 
           {/* Notes body */}
-          <div className="px-4 py-3.5">
+          <div className="px-5 py-4">
             <p
-              className="text-[13px] leading-relaxed"
-              style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap' }}
+              className="text-sm leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.80)', whiteSpace: 'pre-wrap' }}
             >
               {revisionNotes}
             </p>
@@ -726,7 +729,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               </div>
             )}
           </div>
-          <p className="text-[10px] text-white/25 mt-1">
+          <p className="text-xs text-white/40 mt-1.5">
             {isHe
               ? 'אם מוגדר, הלקוח יצטרך להזין קוד זה לפני צפייה בהצעה'
               : 'If set, the client must enter this code before viewing the proposal'}
@@ -774,7 +777,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             value={draft.video_url ?? ''}
             onChange={e => onChange({ video_url: e.target.value || null })}
           />
-          <p className="text-[10px] text-white/25 mt-1">
+          <p className="text-xs text-white/40 mt-1.5">
             {isHe
               ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
               : 'Displayed cinematically to the client before pricing'}
@@ -784,11 +787,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         {/* Testimonials */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: 'rgba(255,255,255,0.45)' }}
-            >
-              <Quote size={10} />
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-white/90">
+              <Quote size={13} className="text-white/50" />
               {isHe ? 'המלצות לקוחות' : 'Testimonials'}
             </label>
             {(draft.testimonials?.length ?? 0) < 3 && (
@@ -811,7 +811,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </div>
 
           {(draft.testimonials ?? []).length === 0 && (
-            <p className="text-[10px] text-white/22 leading-relaxed">
+            <p className="text-xs text-white/40 leading-relaxed">
               {isHe
                 ? 'הוסף 1-3 המלצות — תוצגנה ללקוח לפני לוח התמחור להגברת אמון'
                 : 'Add 1-3 testimonials — shown before pricing to build client trust'}
@@ -934,10 +934,12 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
 
         {/* VAT toggle */}
         <div
-          className="flex items-center justify-between rounded-xl px-4 py-3"
+          className="flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-300"
           style={{
-            background: showVat ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.03)',
-            border: showVat ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(255,255,255,0.07)',
+            background: showVat
+              ? 'linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(168,85,247,0.06) 100%)'
+              : 'rgba(255,255,255,0.03)',
+            border: showVat ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.08)',
           }}
         >
           <div className="flex items-center gap-2">
@@ -957,7 +959,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                 </Tip>
               </div>
               {showVat && draft.base_price > 0 && (
-                <p className="text-[10px] text-indigo-400/70">
+                <p className="text-xs text-indigo-400/70 mt-0.5">
                   {isHe
                     ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`
                     : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`}
@@ -989,7 +991,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Percent size={12} style={{ color: globalDisc > 0 ? '#22c55e' : 'rgba(255,255,255,0.3)' }} />
-                <span className="text-[11px] font-semibold" style={{ color: globalDisc > 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)' }}>
+                <span className="text-sm font-semibold" style={{ color: globalDisc > 0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)' }}>
                   {isHe ? 'הנחה גלובלית' : 'Global Discount'}
                 </span>
                 <Tip content={isHe
@@ -1030,10 +1032,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             />
             {globalDisc > 0 && totalSavings > 0 && (
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-emerald-400/70">
+                <span className="text-xs font-semibold text-emerald-400/70">
                   {isHe ? 'חיסכון ללקוח' : 'Client saves'}
                 </span>
-                <span className="text-[11px] font-black text-emerald-400 tabular-nums">
+                <span className="text-sm font-black text-emerald-400 tabular-nums">
                   {formatCurrency(totalSavings, draft.currency)}
                 </span>
               </div>
@@ -1047,16 +1049,16 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             className="rounded-xl px-4 py-3 space-y-1.5"
             style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
-            <div className="flex items-center justify-between text-xs text-white/50">
+            <div className="flex items-center justify-between text-sm text-white/55">
               <span>{isHe ? 'לפני מע"מ' : 'Before VAT'}</span>
               <span className="tabular-nums font-semibold">{formatCurrency(fin.beforeVat, draft.currency)}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-indigo-400/70">
+            <div className="flex items-center justify-between text-sm text-indigo-400/80">
               <span>{isHe ? `מע"מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}</span>
               <span className="tabular-nums">{formatCurrency(fin.vatAmount, draft.currency)}</span>
             </div>
             <div className="h-px bg-white/[0.06]" />
-            <div className="flex items-center justify-between text-sm font-bold text-white/90">
+            <div className="flex items-center justify-between text-base font-bold text-white/95">
               <span>{isHe ? 'סה"כ לתשלום' : 'Total (incl. VAT)'}</span>
               <span className="tabular-nums" style={{ color: '#818cf8' }}>{formatCurrency(grandTotal, draft.currency)}</span>
             </div>
@@ -1073,14 +1075,19 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         }}
       >
-        <div className="flex items-center justify-between px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-indigo-400/80"><Plus size={15} /></span>
-            <span className="text-sm font-semibold text-white/80">
+        <div className="flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+              style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.18)' }}
+            >
+              <span className="text-indigo-400"><Plus size={15} /></span>
+            </div>
+            <span className="text-[15px] font-semibold text-white/90">
               {isHe ? 'תוספות ושדרוגים' : 'Add-ons & Upgrades'}
             </span>
             {draft.add_ons.length > 0 && (
-              <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-400">
+              <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">
                 {draft.add_ons.filter(a => a.enabled).length}/{draft.add_ons.length}
               </span>
             )}
@@ -1094,13 +1101,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             </Tip>
           </div>
           {showVat && (
-            <span className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-wider">
-              {isHe ? 'מחיר לפני מע"מ' : 'Prices ex. VAT'}
+            <span className="text-xs font-semibold text-indigo-400/60">
+              {isHe ? 'לפני מע"מ' : 'ex. VAT'}
             </span>
           )}
         </div>
 
-        <div className="px-5 pb-5 space-y-3">
+        <div className="px-5 pb-6 space-y-4">
           <Reorder.Group
             axis="y"
             values={draft.add_ons}
@@ -1125,7 +1132,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </Reorder.Group>
 
           {draft.add_ons.length === 0 && (
-            <p className="text-center text-xs text-white/25 py-4">
+            <p className="text-center text-sm text-white/35 py-5">
               {isHe
                 ? 'אין תוספות עדיין — הוסף שירותים אופציונליים ללקוח'
                 : 'No add-ons yet — add optional services for your client'}
@@ -1172,7 +1179,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
       >
         {/* Explanation */}
         <div className="flex items-start gap-2">
-          <p className="text-[11px] text-white/35 leading-relaxed flex-1">
+          <p className="text-sm text-white/45 leading-relaxed flex-1">
             {isHe
               ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
               : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
@@ -1190,7 +1197,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         {/* Quick presets — only shown when no milestones yet */}
         {milestones.length === 0 && (
           <div className="flex flex-wrap gap-2">
-            <p className="w-full text-[10px] font-bold uppercase tracking-widest text-white/20">
+            <p className="w-full text-xs font-bold uppercase tracking-widest text-white/35">
               {isHe ? 'תבניות מהירות' : 'Quick presets'}
             </p>
             {[
@@ -1286,7 +1293,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                     />
                     {/* Amount preview */}
                     {milestoneAmt > 0 && (
-                      <span className="text-[10px] tabular-nums text-white/30 flex-none">
+                      <span className="text-xs tabular-nums text-white/45 flex-none font-medium">
                         {formatCurrency(milestoneAmt, draft.currency)}
                       </span>
                     )}
@@ -1330,10 +1337,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               border: `1px solid ${milestonesOk ? 'rgba(34,197,94,0.2)' : milestoneSum > 100 ? 'rgba(239,68,68,0.2)' : 'rgba(212,175,55,0.2)'}`,
             }}
           >
-            <span className="text-[11px] font-bold tabular-nums" style={{ color: milestonesOk ? '#22c55e' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
+            <span className="text-sm font-bold tabular-nums" style={{ color: milestonesOk ? '#22c55e' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
               {milestoneSum}% / 100%
             </span>
-            <span className="text-[10px]" style={{ color: milestonesOk ? 'rgba(34,197,94,0.7)' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
+            <span className="text-xs font-medium" style={{ color: milestonesOk ? 'rgba(34,197,94,0.7)' : milestoneSum > 100 ? '#f87171' : '#d4af37' }}>
               {milestonesOk
                 ? (isHe ? '✓ מאוזן — מוכן לשליחה' : '✓ Balanced — ready to send')
                 : milestoneSum > 100
@@ -1371,7 +1378,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           ? (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_he ?? '')
           : (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_en ?? '')}
       >
-        <p className="text-[11px] text-white/35 leading-relaxed mb-2">
+        <p className="text-sm text-white/45 leading-relaxed mb-3">
           {isHe
             ? 'בחר את ההודעה שתוצג ללקוח לאחר החתימה.'
             : 'Choose the message shown to the client after they sign.'}
@@ -1404,8 +1411,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] leading-relaxed line-clamp-2"
-                  style={{ color: selected ? 'rgba(196,181,253,0.55)' : 'rgba(255,255,255,0.28)' }}
+                <p className="text-xs leading-relaxed line-clamp-2"
+                  style={{ color: selected ? 'rgba(196,181,253,0.6)' : 'rgba(255,255,255,0.35)' }}
                 >
                   {isHe ? tmpl.message_he : tmpl.message_en}
                 </p>
