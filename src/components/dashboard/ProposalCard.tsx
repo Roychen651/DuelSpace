@@ -193,6 +193,7 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
   const { activeViewers } = usePresenceStore()
   const [deleting, setDeleting] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [archiveError, setArchiveError] = useState<string | null>(null)
   const [pdfGenerating, setPdfGenerating] = useState(false)
   const { rotateX, rotateY, handleMouseMove, handleMouseLeave } = useMagneticTilt()
 
@@ -220,7 +221,14 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
 
   const handleDelete = async () => {
     setDeleting(true)
-    await archiveProposal(proposal.id)
+    setArchiveError(null)
+    const result = await archiveProposal(proposal.id)
+    if (!result.ok) {
+      setDeleting(false)
+      setArchiveError(result.message)
+      // Auto-clear after 6 seconds
+      setTimeout(() => setArchiveError(null), 6000)
+    }
   }
 
   const handleDownloadPdf = async () => {
@@ -475,6 +483,33 @@ export function ProposalCard({ proposal, onEdit }: ProposalCardProps) {
                 : <FileDown size={12} />}
               {locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
             </button>
+          )}
+
+          {/* Archive error banner — shown when DB update fails */}
+          {archiveError && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mt-3 rounded-xl px-3 py-2.5 overflow-hidden"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.3)',
+              }}
+            >
+              <p className="text-[11px] font-bold mb-0.5" style={{ color: '#f87171' }}>
+                {locale === 'he' ? 'שגיאה בהעברה לארכיון' : 'Archive failed'}
+              </p>
+              <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(239,68,68,0.7)' }}>
+                {archiveError}
+              </p>
+              <p className="text-[9px] mt-1" style={{ color: 'rgba(239,68,68,0.45)' }}>
+                {locale === 'he'
+                  ? 'פתח את כלי המפתח (F12) → Console לפרטים נוספים'
+                  : 'Open DevTools (F12) → Console for full details'}
+              </p>
+            </motion.div>
           )}
 
           {/* Inline delete confirmation — prevents accidental destructive actions */}

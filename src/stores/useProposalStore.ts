@@ -19,7 +19,7 @@ interface ProposalState {
   fetchProposals: () => Promise<void>
   createProposal: (data: ProposalInsert) => Promise<Proposal | null>
   updateProposal: (id: string, data: ProposalUpdate) => Promise<void>
-  archiveProposal: (id: string) => Promise<void>
+  archiveProposal: (id: string) => Promise<{ ok: true } | { ok: false; message: string }>
   duplicateProposal: (id: string) => Promise<Proposal | null>
   injectDemoProposal: () => Promise<void>
   subscribeRealtime: (userId: string) => void
@@ -144,7 +144,7 @@ export const useProposalStore = create<ProposalState>()(
       // while preserving the full row forever.
       archiveProposal: async (id) => {
         const snapshot = get().proposals.find(p => p.id === id)
-        if (!snapshot) return
+        if (!snapshot) return { ok: false, message: 'Proposal not found in local state' }
 
         // Optimistic update — mark archived locally
         set(s => ({
@@ -157,16 +157,26 @@ export const useProposalStore = create<ProposalState>()(
           .eq('id', id)
 
         if (error) {
-          // Rollback — restore original proposal
+          // Log the full PostgREST error so we can diagnose column-missing / RLS issues
+          console.error('[archiveProposal] Supabase UPDATE failed:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            proposalId: id,
+          })
+          // Rollback — restore original proposal in UI
           set(s => ({
             proposals: s.proposals.map(p => p.id === id ? snapshot : p),
             error: error.message,
           }))
-        } else {
-          // Re-fetch authoritative DB state — guards against any race where
-          // a Realtime fetchProposals() call happened before our UPDATE committed.
-          get().fetchProposals()
+          return { ok: false, message: error.message }
         }
+
+        // Re-fetch authoritative DB state — guards against any race where
+        // a Realtime fetchProposals() call happened before our UPDATE committed.
+        get().fetchProposals()
+        return { ok: true }
       },
 
       // ── Duplicate ─────────────────────────────────────────────────────────
