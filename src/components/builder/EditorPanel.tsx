@@ -8,7 +8,8 @@ import {
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
-import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
+import { DEFAULT_VAT_RATE, applyVat, formatCurrency, milestonesValid } from '../../types/proposal'
+import { calculateFinancials } from '../../lib/financialMath'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { PremiumDatePicker, PremiumSlider } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
@@ -490,23 +491,11 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
   const vatRate = getVatRate()
   const showVat = draft.include_vat
 
-  // Discount-aware totals
-  const baseVat = showVat ? applyVat(draft.base_price, vatRate) : draft.base_price
-  const totalAddOnsDiscounted = draft.add_ons
-    .filter(a => a.enabled)
-    .reduce((s, a) => s + Math.round(a.price * (1 - (a.discount_pct || 0) / 100)), 0)
-  const subtotalNet = Math.round(draft.base_price) + totalAddOnsDiscounted
-  const globalDisc = draft.global_discount_pct || 0
-  const totalNet = Math.round(subtotalNet * (1 - globalDisc / 100))
-  const totalVat = showVat ? vatAmount(totalNet, vatRate) : 0
-  const grandTotal = totalNet + totalVat
-
-  // Original (undiscounted) for savings display
-  const totalAddOnsOriginal = draft.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
-  const originalNet = Math.round(draft.base_price) + totalAddOnsOriginal
-  const originalVat = showVat ? vatAmount(originalNet, vatRate) : 0
-  const originalTotal = originalNet + originalVat
-  const totalSavings = Math.max(0, originalTotal - grandTotal)
+  // Discount-aware totals via unified engine
+  const fin         = calculateFinancials(draft as Parameters<typeof calculateFinancials>[0], undefined, vatRate)
+  const grandTotal  = fin.grandTotal
+  const totalSavings = fin.totalSavings
+  const globalDisc  = draft.global_discount_pct || 0
 
   // ── Add-on helpers ──────────────────────────────────────────────────────────
   const handleAddOnChange = (index: number, updated: AddOn) => {
@@ -957,8 +946,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               {showVat && draft.base_price > 0 && (
                 <p className="text-[10px] text-indigo-400/70">
                   {isHe
-                    ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(baseVat, draft.currency)}`
-                    : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(baseVat, draft.currency)}`}
+                    ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`
+                    : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`}
                 </p>
               )}
             </div>
@@ -1040,18 +1029,18 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         </div>
 
         {/* VAT summary when enabled */}
-        {showVat && totalNet > 0 && (
+        {showVat && fin.beforeVat > 0 && (
           <div
             className="rounded-xl px-4 py-3 space-y-1.5"
             style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
             <div className="flex items-center justify-between text-xs text-white/50">
               <span>{isHe ? 'לפני מע"מ' : 'Before VAT'}</span>
-              <span className="tabular-nums font-semibold">{formatCurrency(totalNet, draft.currency)}</span>
+              <span className="tabular-nums font-semibold">{formatCurrency(fin.beforeVat, draft.currency)}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-indigo-400/70">
               <span>{isHe ? `מע"מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}</span>
-              <span className="tabular-nums">{formatCurrency(totalVat, draft.currency)}</span>
+              <span className="tabular-nums">{formatCurrency(fin.vatAmount, draft.currency)}</span>
             </div>
             <div className="h-px bg-white/[0.06]" />
             <div className="flex items-center justify-between text-sm font-bold text-white/90">

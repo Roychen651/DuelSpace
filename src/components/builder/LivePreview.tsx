@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { Check, Zap, Eye, Clock, ExternalLink, Lock } from 'lucide-react'
-import { proposalTotal, applyVat, DEFAULT_VAT_RATE, formatCurrency, STATUS_META } from '../../types/proposal'
+import { DEFAULT_VAT_RATE, formatCurrency, STATUS_META } from '../../types/proposal'
 import type { Proposal } from '../../types/proposal'
+import { calculateFinancials } from '../../lib/financialMath'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -182,13 +183,14 @@ function AddOnPreviewCard({
 // ─── Main LivePreview ─────────────────────────────────────────────────────────
 
 export function LivePreview({ proposal, locale, compact = false }: LivePreviewProps) {
-  const subtotal = proposalTotal(proposal)
   const vatRate = (() => {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('dealspace:vat-rate') : null
     const v = stored ? parseFloat(stored) : DEFAULT_VAT_RATE
     return isNaN(v) ? DEFAULT_VAT_RATE : v
   })()
-  const total = proposal.include_vat ? applyVat(subtotal, vatRate) : subtotal
+  const fin = calculateFinancials(proposal, undefined, vatRate)
+  const total        = fin.grandTotal
+  const totalSavings = fin.totalSavings
   const meta = STATUS_META[proposal.status]
 
   const isEmpty =
@@ -416,27 +418,50 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-1">
                     {locale === 'he' ? 'סה״כ לתשלום' : 'Total Investment'}
                   </p>
+
+                  {/* Strikethrough anchor price */}
+                  {totalSavings > 0 && (
+                    <p
+                      className="text-sm font-bold tabular-nums line-through leading-none mb-0.5"
+                      style={{ color: 'rgba(255,255,255,0.22)' }}
+                    >
+                      {formatCurrency(fin.originalGrandTotal, proposal.currency)}
+                    </p>
+                  )}
+
                   <p
                     className={[
                       'font-black leading-none',
                       compact ? 'text-3xl' : 'text-4xl',
                     ].join(' ')}
                     style={{
-                      color: meta.color,
-                      textShadow: `0 0 40px ${meta.glow}, 0 0 80px ${meta.glow}`,
+                      color: totalSavings > 0 ? '#4ade80' : meta.color,
+                      textShadow: totalSavings > 0
+                        ? '0 0 40px rgba(74,222,128,0.5), 0 0 80px rgba(74,222,128,0.2)'
+                        : `0 0 40px ${meta.glow}, 0 0 80px ${meta.glow}`,
                     }}
                   >
                     <AnimatedPrice total={total} currency={proposal.currency} />
                   </p>
-                  <p className="mt-1 text-[11px] text-white/25">
-                    {proposal.include_vat
-                      ? (locale === 'he' ? `כולל מע"מ ${Math.round(vatRate * 100)}%` : `Incl. VAT ${Math.round(vatRate * 100)}%`)
-                      : proposal.add_ons.filter(a => a.enabled).length > 0
-                        ? (locale === 'he'
-                            ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
-                            : `Includes ${proposal.add_ons.filter(a => a.enabled).length} add-on${proposal.add_ons.filter(a => a.enabled).length !== 1 ? 's' : ''}`)
-                        : null}
-                  </p>
+
+                  {/* Savings label */}
+                  {totalSavings > 0 ? (
+                    <p className="mt-1 text-[11px] font-bold" style={{ color: '#4ade80' }}>
+                      {locale === 'he'
+                        ? `חיסכון: ${formatCurrency(totalSavings, proposal.currency)}`
+                        : `Saves: ${formatCurrency(totalSavings, proposal.currency)}`}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-white/25">
+                      {proposal.include_vat
+                        ? (locale === 'he' ? `כולל מע"מ ${Math.round(vatRate * 100)}%` : `Incl. VAT ${Math.round(vatRate * 100)}%`)
+                        : proposal.add_ons.filter(a => a.enabled).length > 0
+                          ? (locale === 'he'
+                              ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
+                              : `Includes ${proposal.add_ons.filter(a => a.enabled).length} add-on${proposal.add_ons.filter(a => a.enabled).length !== 1 ? 's' : ''}`)
+                          : null}
+                    </p>
+                  )}
                 </div>
 
                 {/* Meta info */}

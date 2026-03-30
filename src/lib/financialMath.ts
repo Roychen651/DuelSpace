@@ -159,6 +159,92 @@ export function calcSavings(originalTotal: number, discountedTotal: number): num
   return Math.max(0, originalTotal - discountedTotal)
 }
 
+// ─── Unified financial breakdown ─────────────────────────────────────────────
+
+export interface Financials {
+  /** Full price of all enabled add-ons + base, zero discounts, before VAT */
+  originalSubtotal: number
+  /** originalSubtotal + VAT on original (for strikethrough display) */
+  originalGrandTotal: number
+  /** Savings from per-item discount_pct fields */
+  itemSavings: number
+  /** Savings from the global_discount_pct slider */
+  globalSavings: number
+  /** Total money the client saves = itemSavings + globalSavings */
+  totalSavings: number
+  /** After per-item discounts, before global discount */
+  discountedSubtotal: number
+  /** After all discounts, before VAT */
+  beforeVat: number
+  /** VAT component (0 when include_vat is false) */
+  vatAmount: number
+  /** The actual amount the client pays */
+  grandTotal: number
+}
+
+/**
+ * Single source of truth for all financial calculations.
+ *
+ * @param proposal   - needs base_price, add_ons (with id), global_discount_pct, include_vat
+ * @param lineItems  - optional DealRoom client overrides { [addOnId]: { enabled, qty } }
+ * @param vatRate    - decimal (default ISRAELI_VAT_RATE = 0.18)
+ */
+export function calculateFinancials(
+  proposal: {
+    base_price: number
+    add_ons: Array<{ id: string; price: number; enabled: boolean; discount_pct?: number }>
+    global_discount_pct?: number | null
+    include_vat?: boolean
+  },
+  lineItems?: Record<string, { enabled: boolean; qty: number }>,
+  vatRate = ISRAELI_VAT_RATE,
+): Financials {
+  const globalDiscountPct = proposal.global_discount_pct || 0
+
+  // Resolve active add-ons with optional client overrides
+  const resolved = proposal.add_ons.map(a => ({
+    price:        a.price,
+    enabled:      lineItems ? (lineItems[a.id]?.enabled ?? a.enabled) : a.enabled,
+    qty:          lineItems ? (lineItems[a.id]?.qty ?? 1) : 1,
+    discount_pct: a.discount_pct,
+  }))
+
+  // ── Step 1: original (no discounts) ────────────────────────────────────────
+  const addOnsOriginal = resolved
+    .filter(a => a.enabled)
+    .reduce((sum, a) => sum + a.price * a.qty, 0)
+  const originalSubtotal = roundILS(proposal.base_price + addOnsOriginal)
+  const originalVat = proposal.include_vat ? vatOnNet(originalSubtotal, vatRate) : 0
+  const originalGrandTotal = roundILS(originalSubtotal + originalVat)
+
+  // ── Step 2: per-item discounts ─────────────────────────────────────────────
+  const addOnsItemDiscounted = resolved
+    .filter(a => a.enabled)
+    .reduce((sum, a) => sum + itemDiscountedPrice(a.price, a.discount_pct) * a.qty, 0)
+  const discountedSubtotal = roundILS(proposal.base_price + addOnsItemDiscounted)
+  const itemSavings = roundILS(originalSubtotal - discountedSubtotal)
+
+  // ── Step 3: global discount ────────────────────────────────────────────────
+  const beforeVat = applyGlobalDiscount(discountedSubtotal, globalDiscountPct)
+  const globalSavings = roundILS(discountedSubtotal - beforeVat)
+
+  // ── Step 4: VAT ────────────────────────────────────────────────────────────
+  const vatAmount = proposal.include_vat ? vatOnNet(beforeVat, vatRate) : 0
+  const grandTotal = roundILS(beforeVat + vatAmount)
+
+  return {
+    originalSubtotal,
+    originalGrandTotal,
+    itemSavings,
+    globalSavings,
+    totalSavings: roundILS(itemSavings + globalSavings),
+    discountedSubtotal,
+    beforeVat,
+    vatAmount,
+    grandTotal,
+  }
+}
+
 // ─── Currency formatting ──────────────────────────────────────────────────────
 
 /**

@@ -28,8 +28,10 @@ interface CheckoutClimaxProps {
   onRequestRevision?: (notes: string) => Promise<void>
   /** True when a revision request was submitted (persists across page refresh via DB status) */
   revisionSent?: boolean
-  /** Absolute currency savings = originalTotal − discountedTotal. Shows "You Saved" badge when > 0. */
+  /** Absolute currency savings = originalTotal − grandTotal. Shows "You Saved" badge when > 0. */
   totalSavings?: number
+  /** Full undiscounted grand total (incl. VAT if applicable) — shown as strikethrough anchor price */
+  originalTotal?: number
   /** Must be true before signature is unlocked — gates the entire sign flow */
   clientDetailsConfirmed?: boolean
   /** Called when user taps "fill details first" locked state — scrolls form into view */
@@ -58,7 +60,8 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
-  onRequestRevision, revisionSent = false, totalSavings = 0, clientDetailsConfirmed = false, onScrollToDetails,
+  onRequestRevision, revisionSent = false, totalSavings = 0, originalTotal = 0,
+  clientDetailsConfirmed = false, onScrollToDetails,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -153,6 +156,16 @@ export function CheckoutClimax({
                     ? (includeVat ? 'סה״כ כולל מע״מ' : 'סה״כ להשקעה')
                     : (includeVat ? 'Total incl. VAT' : 'Total Investment')}
                 </p>
+                {/* Strikethrough anchor price — shown only when there are savings */}
+                {totalSavings > 0 && originalTotal > 0 && originalTotal !== displayTotal && (
+                  <p
+                    className="text-sm font-bold tabular-nums line-through mb-0.5 leading-none"
+                    style={{ color: 'rgba(255,255,255,0.22)' }}
+                    aria-label={isHe ? 'מחיר מקורי' : 'Original price'}
+                  >
+                    {formatCurrency(originalTotal, currency)}
+                  </p>
+                )}
                 <p className="text-3xl font-black leading-none"
                   style={{
                     background: 'linear-gradient(135deg, #c4b5fd 0%, #e879f9 100%)',
@@ -179,8 +192,8 @@ export function CheckoutClimax({
               </div>
             </div>
 
-            {/* ── VAT breakdown ───────────────────────────────────────────── */}
-            {includeVat && (
+            {/* ── Receipt breakdown — discount row + optional VAT ──────────── */}
+            {(totalSavings > 0 || includeVat) && (
               <div
                 className="mb-3 rounded-xl px-3 py-2.5 space-y-1"
                 style={{
@@ -188,21 +201,52 @@ export function CheckoutClimax({
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                <div className="flex justify-between text-[11px] text-white/35">
-                  <span>{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
-                  <span className="tabular-nums">{formatCurrency(total, currency)}</span>
-                </div>
-                <div className="flex justify-between text-[11px] text-white/35">
-                  <span>{isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}</span>
-                  <span className="tabular-nums">{formatCurrency(vatAmt, currency)}</span>
-                </div>
-                <div
-                  className="flex justify-between text-[11px] font-bold text-white/60 pt-1"
-                  style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <span>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</span>
-                  <span className="tabular-nums">{formatCurrency(totalWithVat, currency)}</span>
-                </div>
+                {/* Original subtotal line — anchors the discount row */}
+                {totalSavings > 0 && (
+                  <>
+                    <div className="flex justify-between text-[11px] text-white/30">
+                      <span>{isHe ? 'מחיר מקורי' : 'Original price'}</span>
+                      <span className="tabular-nums">{formatCurrency(originalTotal, currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-semibold"
+                      style={{ color: '#4ade80' }}>
+                      <span>{isHe ? '🎁 הנחה' : '🎁 Discount'}</span>
+                      <span className="tabular-nums">
+                        − {formatCurrency(totalSavings, currency)}
+                      </span>
+                    </div>
+                    {!includeVat && (
+                      <div
+                        className="flex justify-between text-[11px] font-bold text-white/55 pt-1"
+                        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                      >
+                        <span>{isHe ? 'לאחר הנחה' : 'After discount'}</span>
+                        <span className="tabular-nums">{formatCurrency(total, currency)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {/* VAT rows */}
+                {includeVat && (
+                  <>
+                    {totalSavings > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />}
+                    <div className="flex justify-between text-[11px] text-white/35">
+                      <span>{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
+                      <span className="tabular-nums">{formatCurrency(total, currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-white/35">
+                      <span>{isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}</span>
+                      <span className="tabular-nums">{formatCurrency(vatAmt, currency)}</span>
+                    </div>
+                    <div
+                      className="flex justify-between text-[11px] font-bold text-white/60 pt-1"
+                      style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                    >
+                      <span>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</span>
+                      <span className="tabular-nums">{formatCurrency(totalWithVat, currency)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

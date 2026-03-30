@@ -4,6 +4,7 @@ import {
 } from '@react-pdf/renderer'
 import { formatCurrency, DEFAULT_VAT_RATE } from '../types/proposal'
 import type { Proposal } from '../types/proposal'
+import { calculateFinancials } from './financialMath'
 
 // ─── Font registration ─────────────────────────────────────────────────────────
 
@@ -533,7 +534,7 @@ function HtmlBlocks({ blocks, s }: { blocks: HtmlBlock[]; s: ReturnType<typeof m
 // ─── PDF Document ──────────────────────────────────────────────────────────────
 
 function ProposalDocument(opts: PdfOptions) {
-  const { proposal, totalAmount, enabledAddOnIds, signatureDataUrl, locale } = opts
+  const { proposal, enabledAddOnIds, signatureDataUrl, locale } = opts
   const sigTs     = opts.signatureTimestamp ?? new Date()
   const isHe      = locale === 'he'
   const brand     = getBrandColor(proposal)
@@ -549,9 +550,17 @@ function ProposalDocument(opts: PdfOptions) {
     } catch { return DEFAULT_VAT_RATE }
   })()
 
-  const vatAmt       = proposal.include_vat ? Math.round(totalAmount * vatRate) : 0
-  const totalWithVat = totalAmount + vatAmt
-  const displayTotal = proposal.include_vat ? totalWithVat : totalAmount
+  // Build lineItems override from enabledAddOnIds so calculateFinancials
+  // honours the client's add-on selections at signing time.
+  const lineItemsOverride: Record<string, { enabled: boolean; qty: number }> = {}
+  proposal.add_ons.forEach(a => {
+    lineItemsOverride[a.id] = { enabled: enabledAddOnIds.includes(a.id), qty: 1 }
+  })
+
+  const fin          = calculateFinancials(proposal, lineItemsOverride, vatRate)
+  const vatAmt       = fin.vatAmount
+  const displayTotal = fin.grandTotal
+  const totalSavings = fin.totalSavings
 
   const creator       = proposal.creator_info
   const companyName   = creator?.company_name ?? 'DealSpace'
@@ -716,24 +725,55 @@ function ProposalDocument(opts: PdfOptions) {
           ))}
         </View>
 
-        {/* ── VAT breakdown ────────────────────────────────────────────────── */}
-        {proposal.include_vat && (
+        {/* ── Discount + VAT breakdown ─────────────────────────────────────── */}
+        {(totalSavings > 0 || proposal.include_vat) && (
           <View style={s.vatBox} wrap={false}>
-            <View style={s.vatRow}>
-              <Text style={s.vatLabel}>{isHe ? 'סה״כ לפני מע״מ' : 'Subtotal (ex. VAT)'}</Text>
-              <Text style={s.vatValue}>{formatCurrency(totalAmount, proposal.currency)}</Text>
-            </View>
-            <View style={s.vatRow}>
-              <Text style={s.vatLabel}>
-                {isHe ? `מע״מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}
-              </Text>
-              <Text style={s.vatValue}>{formatCurrency(vatAmt, proposal.currency)}</Text>
-            </View>
-            <View style={s.vatDivider} />
-            <View style={s.vatRow}>
-              <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
-              <Text style={s.vatTotalValue}>{formatCurrency(totalWithVat, proposal.currency)}</Text>
-            </View>
+
+            {/* Discount row — legal paper trail */}
+            {totalSavings > 0 && (
+              <>
+                <View style={s.vatRow}>
+                  <Text style={s.vatLabel}>{isHe ? 'מחיר מלא' : 'Full Price'}</Text>
+                  <Text style={s.vatValue}>{formatCurrency(fin.originalGrandTotal, proposal.currency)}</Text>
+                </View>
+                <View style={s.vatRow}>
+                  <Text style={[s.vatLabel, { color: '#22c55e' }]}>{isHe ? 'הנחה' : 'Discount'}</Text>
+                  <Text style={[s.vatValue, { color: '#22c55e' }]}>
+                    {isHe ? `- ${formatCurrency(totalSavings, proposal.currency)}` : `- ${formatCurrency(totalSavings, proposal.currency)}`}
+                  </Text>
+                </View>
+                {!proposal.include_vat && <View style={s.vatDivider} />}
+              </>
+            )}
+
+            {/* VAT rows */}
+            {proposal.include_vat && (
+              <>
+                <View style={s.vatRow}>
+                  <Text style={s.vatLabel}>{isHe ? 'סה״כ לפני מע״מ' : 'Subtotal (ex. VAT)'}</Text>
+                  <Text style={s.vatValue}>{formatCurrency(fin.beforeVat, proposal.currency)}</Text>
+                </View>
+                <View style={s.vatRow}>
+                  <Text style={s.vatLabel}>
+                    {isHe ? `מע״מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}
+                  </Text>
+                  <Text style={s.vatValue}>{formatCurrency(vatAmt, proposal.currency)}</Text>
+                </View>
+                <View style={s.vatDivider} />
+                <View style={s.vatRow}>
+                  <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
+                  <Text style={s.vatTotalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
+                </View>
+              </>
+            )}
+
+            {/* After-discount total when no VAT */}
+            {totalSavings > 0 && !proposal.include_vat && (
+              <View style={s.vatRow}>
+                <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ לאחר הנחה' : 'Total after discount'}</Text>
+                <Text style={s.vatTotalValue}>{formatCurrency(displayTotal, proposal.currency)}</Text>
+              </View>
+            )}
           </View>
         )}
 

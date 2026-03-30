@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { calculateFinancials } from '../lib/financialMath'
 import { PremiumSliderCard } from '../components/deal-room/PremiumSliderCard'
 import { CheckoutClimax } from '../components/deal-room/CheckoutClimax'
 import { formatCurrency } from '../types/proposal'
@@ -779,36 +780,13 @@ export default function DealRoom() {
     return () => observers.forEach(obs => obs.disconnect())
   }, [fetchStatus])
 
-  // ── Grand total calculation (discount-aware) ───────────────────────────────
-  // Order: item discounts → subtotal → global discount → VAT
-  const grandTotal = proposal
-    ? (() => {
-        const addOns = proposal.add_ons.filter(a => lineItems[a.id]?.enabled ?? a.enabled)
-        const addOnsTotal = addOns.reduce((sum, a) => {
-          const disc = a.discount_pct || 0
-          const unitPrice = Math.round(a.price * (1 - disc / 100))
-          return sum + unitPrice * (lineItems[a.id]?.qty ?? 1)
-        }, 0)
-        const subtotal = proposal.base_price + addOnsTotal
-        const globalDisc = proposal.global_discount_pct || 0
-        const beforeVat = Math.round(subtotal * (1 - globalDisc / 100))
-        const vat = proposal.include_vat ? Math.round(beforeVat * vatRate) : 0
-        return beforeVat + vat
-      })()
-    : 0
-
-  // Undiscounted total for strikethrough / "You Saved" psychology
-  const originalTotal = proposal
-    ? (() => {
-        const addOns = proposal.add_ons.filter(a => lineItems[a.id]?.enabled ?? a.enabled)
-        const addOnsTotal = addOns.reduce((sum, a) => sum + a.price * (lineItems[a.id]?.qty ?? 1), 0)
-        const subtotal = proposal.base_price + addOnsTotal
-        const vat = proposal.include_vat ? Math.round(subtotal * vatRate) : 0
-        return subtotal + vat
-      })()
-    : 0
-
-  const totalSavings = Math.max(0, originalTotal - grandTotal)
+  // ── Grand total — single source of truth via calculateFinancials ───────────
+  const financials = proposal
+    ? calculateFinancials(proposal, lineItems, vatRate)
+    : null
+  const grandTotal         = financials?.grandTotal         ?? 0
+  const originalGrandTotal = financials?.originalGrandTotal ?? 0
+  const totalSavings       = financials?.totalSavings       ?? 0
 
   // ── Handle accept ──────────────────────────────────────────────────────────
   const handleAccept = useCallback(async () => {
@@ -1574,6 +1552,7 @@ export default function DealRoom() {
                 onRequestRevision={handleRequestRevision}
                 revisionSent={revisionSent}
                 totalSavings={totalSavings}
+                originalTotal={originalGrandTotal}
                 clientDetailsConfirmed={!!clientDetails}
                 onScrollToDetails={() =>
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
