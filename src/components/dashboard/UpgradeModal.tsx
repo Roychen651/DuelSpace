@@ -316,7 +316,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId }: {
       {/* "Most Popular" badge — only when not current plan */}
       {plan.popular && !isCurrent && (
         <div
-          className="absolute -top-px start-1/2 -translate-x-1/2 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest"
+          className="absolute -top-px left-1/2 -translate-x-1/2 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest"
           style={{
             background: 'linear-gradient(90deg, #6366f1, #a855f7)',
             color: '#fff',
@@ -330,7 +330,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId }: {
       {/* "Active Plan" badge — current plan */}
       {isCurrent && (
         <div
-          className="absolute -top-px start-1/2 -translate-x-1/2 flex items-center gap-1 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest whitespace-nowrap"
+          className="absolute -top-px left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-b-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest whitespace-nowrap"
           style={{
             background: `linear-gradient(90deg, ${plan.accent}cc, ${plan.accent})`,
             color: '#fff',
