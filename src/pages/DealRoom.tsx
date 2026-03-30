@@ -970,6 +970,25 @@ export default function DealRoom() {
     setPdfGenerating(false)
   }, [proposal, pdfGenerating, lineItems, grandTotal, signature, locale, sigTimestamp])
 
+  // ── Draft PDF download (before acceptance) ────────────────────────────────
+  const [draftGenerating, setDraftGenerating] = useState(false)
+  const handleDownloadDraft = useCallback(async () => {
+    if (!proposal || draftGenerating) return
+    setDraftGenerating(true)
+    const enabledIds = proposal.add_ons
+      .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
+      .map(a => a.id)
+    await generateProposalPdf({
+      proposal,
+      totalAmount: grandTotal,
+      enabledAddOnIds: enabledIds,
+      signatureDataUrl: '',
+      locale,
+      isDraft: true,
+    })
+    setDraftGenerating(false)
+  }, [proposal, draftGenerating, lineItems, grandTotal, locale])
+
   // ── Toggle locale ──────────────────────────────────────────────────────────
   const toggleLocale = () => {
     const next = locale === 'he' ? 'en' : 'he'
@@ -1440,6 +1459,38 @@ export default function DealRoom() {
 
         {/* Checkout scroll anchor — scrolled to after client details form submission */}
         <div ref={checkoutScrollTargetRef} />
+
+        {/* ── Draft PDF download — only before signing ──────────────────── */}
+        {!accepted && !revisionSent && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={handleDownloadDraft}
+              disabled={draftGenerating}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+              style={{
+                color: 'rgba(255,255,255,0.32)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'
+                e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'rgba(255,255,255,0.32)'
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+              }}
+            >
+              <FileDown size={12} />
+              {draftGenerating
+                ? (locale === 'he' ? 'יוצר טיוטה…' : 'Generating…')
+                : (locale === 'he' ? 'הורד טיוטה (PDF)' : 'Download Draft (PDF)')}
+            </button>
+          </div>
+        )}
 
         {/* ── Trust signals — only before signing ───────────────────────── */}
         {!accepted && !revisionSent && (

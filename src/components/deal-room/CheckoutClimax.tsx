@@ -494,6 +494,21 @@ export function CheckoutClimax({
                         className="mb-3"
                         style={{ overflow: 'hidden' }}
                       >
+                        {/* Clarity micro-copy above signature pad */}
+                        <div
+                          className="mb-2.5 rounded-xl px-3.5 py-2.5 flex items-start gap-2"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(168,85,247,0.04) 100%)',
+                            border: '1px solid rgba(99,102,241,0.18)',
+                          }}
+                        >
+                          <span className="text-base leading-none mt-px select-none flex-none">🚀</span>
+                          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                            {isHe
+                              ? 'רגע לפני שיוצאים לדרך — החתימה שלך כאן מאשרת את פרטי הפרויקט והתמחור.'
+                              : 'Almost there — your signature confirms the project details and pricing above.'}
+                          </p>
+                        </div>
                         <SignaturePad
                           locale={locale}
                           onConfirm={dataUrl => onSignatureChange(dataUrl)}
@@ -767,16 +782,41 @@ export function CheckoutClimax({
               )}
             </AnimatePresence>
 
-            {/* DealSpace legal disclaimer — always visible */}
+            {/* Israeli-law legal armor — always visible */}
             <div
-              className="mt-3 rounded-xl px-3 py-2 text-center"
+              className="mt-3 rounded-xl px-3.5 py-3 space-y-1.5"
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
             >
-              <p className="text-[9px] leading-relaxed text-white/18">
-                {isHe
-                  ? 'DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם זה, לאיכות השירות הניתן, או לכל מחלוקת בין הצדדים.'
-                  : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
-              </p>
+              {isHe ? (
+                <>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }} dir="rtl">
+                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>תוקף מחייב: </span>
+                    חתימה דיגיטלית על הצעה זו מהווה קיבול כדין ויוצרת הסכם מחייב בין הצדדים, בהתאם לחוק החוזים (חלק כללי), תשל&quot;ג-1973.
+                  </p>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }} dir="rtl">
+                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>חתימה אלקטרונית: </span>
+                    חתימה זו קבילה ותקפה בהתאם לחוק חתימה אלקטרונית, התשס&quot;א-2001.
+                  </p>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.18)' }} dir="rtl">
+                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.28)' }}>הגבלת אחריות: </span>
+                    DealSpace משמשת ככלי טכנולוגי בלבד ואינה צד להסכם. סמכות שיפוט בלעדית: בתי משפט מוסמכים בישראל.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>Binding Agreement: </span>
+                    Signing constitutes a legally binding agreement per the Contracts Law (General Part), 5733-1973.
+                  </p>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }}>
+                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>E-Signature: </span>
+                    Valid under the Electronic Signature Law, 5761-2001. Exclusive jurisdiction: competent courts in Israel.
+                  </p>
+                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.18)' }}>
+                    DealSpace provides technology infrastructure only and is not a party to this agreement or any dispute between the parties.
+                  </p>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

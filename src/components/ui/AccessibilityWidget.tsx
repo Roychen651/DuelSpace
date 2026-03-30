@@ -304,7 +304,10 @@ export function AccessibilityWidget() {
             </div>
 
             {/* Scrollable content */}
-            <div className="px-3 py-3 space-y-2.5 overflow-y-auto flex-1 min-h-0">
+            <div
+              className="px-3 py-3 space-y-2.5 overflow-y-auto flex-1 min-h-0"
+              onPointerDownCapture={e => e.stopPropagation()}
+            >
 
               {/* ── Vision ────────────────────────────────────── */}
               <SectionLabel he="ראייה" en="Vision" />

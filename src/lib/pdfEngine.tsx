@@ -28,6 +28,11 @@ export interface PdfOptions {
   locale: 'he' | 'en'
   /** Exact moment the signature was captured; defaults to now() */
   signatureTimestamp?: Date
+  /**
+   * When true: adds a diagonal DRAFT watermark on every page and replaces the
+   * signature certificate with a "not legally binding" notice page.
+   */
+  isDraft?: boolean
 }
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
@@ -114,10 +119,18 @@ function parseHtml(html: string): HtmlBlock[] {
      .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(parseInt(n, 10)))
 
   function inline(src: string): InlineFrag[] {
+    // Pre-clean: replace <a ...>inner</a> with just inner text, then strip
+    // any remaining unknown tags. Without this, the regex's [^<]+ alternative
+    // captures the raw attribute string "href=..." after the leading "<" is
+    // skipped, causing raw HTML to leak into the rendered PDF text.
+    const cleaned = src
+      .replace(/<a(?:[^>]*)>([\s\S]*?)<\/a>/gi, '$1')           // <a> → inner text only
+      .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, ' ')      // strip all other unknown tags
+
     const frags: InlineFrag[] = []
     const re = /<(strong|b|em|i)(?:[^>]*)>([\s\S]*?)<\/\1>|([^<]+)/gi
     let m: RegExpExecArray | null
-    while ((m = re.exec(decode(src))) !== null) {
+    while ((m = re.exec(decode(cleaned))) !== null) {
       if (m[1]) {
         const tag = m[1].toLowerCase()
         const t   = m[2].replace(/<[^>]+>/g, '').trim()
@@ -127,7 +140,7 @@ function parseHtml(html: string): HtmlBlock[] {
       }
     }
     if (frags.length === 0) {
-      const plain = decode(src.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
+      const plain = decode(cleaned.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
       if (plain) frags.push({ text: plain, bold: false, italic: false })
     }
     return frags
@@ -238,6 +251,7 @@ function makeStyles(brand: string) {
       textAlign: 'right',
       marginBottom: 32,
       lineHeight: 1.25,
+      flexWrap: 'wrap',           // prevents long project titles from overflowing
     },
     coverPreparedLabel: {
       fontSize: 7,
@@ -378,9 +392,9 @@ function makeStyles(brand: string) {
       borderBottom: `1px solid ${C.border}`,
       backgroundColor: bDim,
     },
-    tableLabel:    { fontSize: 9.5, color: C.text,  flex: 1, textAlign: 'right' },
-    tableLabelSub: { fontSize: 7.5, color: C.muted, flex: 1, textAlign: 'right', marginTop: 1 },
-    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, minWidth: 80, textAlign: 'left' },
+    tableLabel:    { fontSize: 9.5, color: C.text,  flex: 1, textAlign: 'right', flexWrap: 'wrap' },
+    tableLabelSub: { fontSize: 7.5, color: C.muted, flex: 1, textAlign: 'right', marginTop: 1, flexWrap: 'wrap' },
+    tablePrice:    { fontSize: 10,  color: C.lavender, fontWeight: 700, width: 90, textAlign: 'left', flexShrink: 0 },
 
     // ── VAT box ────────────────────────────────────────────────────────────────
     vatBox: {
@@ -573,7 +587,7 @@ function HtmlBlocks({ blocks, s }: { blocks: HtmlBlock[]; s: ReturnType<typeof m
 // ─── PDF Document ──────────────────────────────────────────────────────────────
 
 function ProposalDocument(opts: PdfOptions) {
-  const { proposal, enabledAddOnIds, signatureDataUrl, locale } = opts
+  const { proposal, enabledAddOnIds, signatureDataUrl, locale, isDraft = false } = opts
   const sigTs     = opts.signatureTimestamp ?? new Date()
   const isHe      = locale === 'he'
   const brand     = getBrandColor(proposal)
@@ -624,6 +638,33 @@ function ProposalDocument(opts: PdfOptions) {
           PAGE 1 — COVER
       ════════════════════════════════════════════════════════════════════ */}
       <Page size="A4" style={s.coverPage}>
+
+        {/* Draft watermark — diagonal, fixed across all pages */}
+        {isDraft && (
+          <View
+            fixed
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 999,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 72,
+                fontWeight: 900,
+                color: 'rgba(220,38,38,0.07)',
+                transform: 'rotate(-45deg)',
+                letterSpacing: 8,
+                textTransform: 'uppercase',
+              }}
+            >
+              {isHe ? 'טיוטה' : 'DRAFT'}
+            </Text>
+          </View>
+        )}
 
         {/* Brand hero strip */}
         <View style={s.coverHero}>
@@ -912,9 +953,69 @@ function ProposalDocument(opts: PdfOptions) {
       </Page>
 
       {/* ════════════════════════════════════════════════════════════════════
-          LAST PAGE — DIGITAL SIGNATURE CERTIFICATE
+          LAST PAGE — DIGITAL SIGNATURE CERTIFICATE  (or draft notice)
       ════════════════════════════════════════════════════════════════════ */}
       <Page size="A4" style={s.certPage}>
+        {isDraft && (
+          <>
+            {/* Draft notice — replaces the full certificate */}
+            <View style={[s.certHero, { backgroundColor: '#7c3aed' }]}>
+              <View>
+                <Text style={s.certHeroTitle}>
+                  {isHe ? 'טיוטה — לא לתוקף משפטי' : 'DRAFT — NOT LEGALLY BINDING'}
+                </Text>
+                <Text style={s.certHeroSub}>
+                  {isHe
+                    ? 'מסמך זה הינו טיוטה לצורכי בדיקה בלבד'
+                    : 'This document is a preview for review purposes only'}
+                </Text>
+              </View>
+              <View style={s.certCheckCircle}>
+                <Text style={s.certCheckText}>✎</Text>
+              </View>
+            </View>
+            <View style={s.certBody}>
+              <View style={[s.certTokenBox, { marginBottom: 24, borderColor: alpha('#7c3aed', 0.4) }]}>
+                <Text style={[s.certTokenLabel, { color: '#a78bfa' }]}>
+                  {isHe ? 'הודעה חשובה' : 'IMPORTANT NOTICE'}
+                </Text>
+                <Text style={[s.certTokenValue, { fontSize: 10, lineHeight: 1.7 }]}>
+                  {isHe
+                    ? 'המסמך יקבל תוקף משפטי רק לאחר חתימה דיגיטלית של הלקוח במערכת DealSpace. טיוטה זו אינה מחייבת אף אחד מהצדדים.'
+                    : 'This document will become legally binding only after the client\'s digital signature via DealSpace. This draft does not obligate either party.'}
+                </Text>
+              </View>
+              <View style={s.certAuditBox}>
+                <Text style={s.certAuditTitle}>
+                  {isHe ? 'פרטי הטיוטה' : 'DRAFT DETAILS'}
+                </Text>
+                {[
+                  [isHe ? 'שם הפרויקט'  : 'Project Title',   proposal.project_title],
+                  [isHe ? 'נותן השירות' : 'Service Provider', creator?.company_name ?? creator?.full_name ?? '—'],
+                  [isHe ? 'לקוח'        : 'Client',           proposal.client_name ?? '—'],
+                  [isHe ? 'סכום הצעה'   : 'Proposal Value',   fmtCurrencyPdf(displayTotal, proposal.currency)],
+                  [isHe ? 'תאריך הפקה'  : 'Generated',        fmtDateTime(sigTs)],
+                ].map(([label, value], idx) => (
+                  <View key={idx} style={s.certAuditRow}>
+                    <Text style={s.certAuditLabel}>{label}</Text>
+                    <Text style={s.certAuditValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={s.certLegalNote}>
+                {isHe
+                  ? 'מסמך זה הופק על ידי DealSpace לצורכי תצוגה מוקדמת בלבד. הוא אינו מהווה הסכם חתום ואינו מחייב משפטית. לחתימה ואישור מחייבים, יש להשתמש בממשק DealSpace הרשמי.'
+                  : 'This document was generated by DealSpace for preview purposes only. It does not constitute a signed agreement and is not legally binding. For binding execution, use the official DealSpace signing interface.'}
+              </Text>
+            </View>
+            <View style={s.certFooter}>
+              <Text style={s.certFooterBrand}>DealSpace</Text>
+              <Text style={s.certFooterText}>{isHe ? 'טיוטה — אין תוקף משפטי' : 'DRAFT — NOT LEGALLY BINDING'}</Text>
+              <Text style={s.certFooterText}>{fmtDate(sigTs)}</Text>
+            </View>
+          </>
+        )}
+        {!isDraft && (<>
 
         {/* Hero */}
         <View style={s.certHero}>
@@ -1016,6 +1117,7 @@ function ProposalDocument(opts: PdfOptions) {
           </Text>
           <Text style={s.certFooterText}>{proposal.public_token.slice(0, 16)}…</Text>
         </View>
+        </>)}
 
       </Page>
     </Document>
