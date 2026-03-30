@@ -86,6 +86,79 @@ export function calcSubtotal(basePrice: number, items: LineItem[]): number {
   return roundILS(basePrice + addOnsTotal)
 }
 
+// ─── Discount engine ──────────────────────────────────────────────────────────
+
+/** Discounted price for a single line item after applying its per-item discount */
+export function itemDiscountedPrice(price: number, discountPct = 0): number {
+  return roundILS(price * (1 - discountPct / 100))
+}
+
+export interface DiscountLineItem {
+  price: number
+  enabled: boolean
+  qty?: number
+  discount_pct?: number
+}
+
+/**
+ * Subtotal = base_price + SUM(enabled add-ons at their discounted price × qty)
+ * Step 1 of the canonical discount calculation order.
+ */
+export function calcDiscountedSubtotal(basePrice: number, items: DiscountLineItem[]): number {
+  const addOnsTotal = items
+    .filter(i => i.enabled)
+    .reduce((sum, i) => sum + itemDiscountedPrice(i.price, i.discount_pct) * (i.qty ?? 1), 0)
+  return roundILS(basePrice + addOnsTotal)
+}
+
+/**
+ * Total Before VAT = Subtotal × (1 − global_discount_pct / 100)
+ * Step 2 of the canonical discount calculation order.
+ */
+export function applyGlobalDiscount(subtotal: number, globalDiscountPct = 0): number {
+  return roundILS(subtotal * (1 - globalDiscountPct / 100))
+}
+
+/**
+ * Grand Total = Total Before VAT + optional VAT
+ * Canonical entry point — use this everywhere instead of ad-hoc math.
+ */
+export function calcGrandTotal(
+  basePrice: number,
+  items: DiscountLineItem[],
+  globalDiscountPct = 0,
+  includeVat = false,
+  vatRate = ISRAELI_VAT_RATE,
+): number {
+  const subtotal = calcDiscountedSubtotal(basePrice, items)
+  const beforeVat = applyGlobalDiscount(subtotal, globalDiscountPct)
+  const vat = includeVat ? vatOnNet(beforeVat, vatRate) : 0
+  return roundILS(beforeVat + vat)
+}
+
+/**
+ * Undiscounted total — all items at full price, no global discount.
+ * Used for the strikethrough "original price" display.
+ */
+export function calcOriginalTotal(
+  basePrice: number,
+  items: DiscountLineItem[],
+  includeVat = false,
+  vatRate = ISRAELI_VAT_RATE,
+): number {
+  const addOnsTotal = items
+    .filter(i => i.enabled)
+    .reduce((sum, i) => sum + i.price * (i.qty ?? 1), 0)
+  const subtotal = roundILS(basePrice + addOnsTotal)
+  const vat = includeVat ? vatOnNet(subtotal, vatRate) : 0
+  return roundILS(subtotal + vat)
+}
+
+/** Absolute savings = original total − discounted total. Always ≥ 0. */
+export function calcSavings(originalTotal: number, discountedTotal: number): number {
+  return Math.max(0, originalTotal - discountedTotal)
+}
+
 // ─── Currency formatting ──────────────────────────────────────────────────────
 
 /**

@@ -4,13 +4,13 @@ import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
-  Film, Quote, MessageSquarePlus,
+  Film, Quote, MessageSquarePlus, Percent, Tag,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
 import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency, milestonesValid } from '../../types/proposal'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { PremiumDatePicker } from '../ui/PremiumInputs'
+import { PremiumDatePicker, PremiumSlider } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
 import { AIGhostwriter } from './AIGhostwriter'
 import { RichTextEditor } from './RichTextEditor'
@@ -249,6 +249,38 @@ function AddOnRow({
             value={addOn.description ?? ''}
             onChange={e => onChange({ ...addOn, description: e.target.value })}
           />
+          {/* Per-item discount row */}
+          <div className="flex items-center gap-2">
+            <Tag size={10} className="text-emerald-400/60 flex-none" />
+            <span className="text-[10px] font-semibold text-white/30 flex-none">
+              {isHe ? 'הנחה' : 'Discount'}
+            </span>
+            <div className="relative flex-none">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100}
+                className="w-14 rounded-lg border bg-white/[0.05] px-2 py-1 text-[11px] text-center text-white placeholder-white/20 outline-none transition-all duration-200"
+                style={{
+                  border: (addOn.discount_pct ?? 0) > 0 ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                  color: (addOn.discount_pct ?? 0) > 0 ? '#4ade80' : undefined,
+                }}
+                placeholder="0"
+                value={addOn.discount_pct || ''}
+                onChange={e => {
+                  const v = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                  onChange({ ...addOn, discount_pct: v || undefined })
+                }}
+              />
+            </div>
+            <span className="text-[10px] text-white/30">%</span>
+            {(addOn.discount_pct ?? 0) > 0 && addOn.price > 0 && (
+              <span className="text-[10px] font-semibold text-emerald-400">
+                → {formatCurrency(Math.round(addOn.price * (1 - (addOn.discount_pct ?? 0) / 100)), currency)}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Controls */}
@@ -458,12 +490,23 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
   const vatRate = getVatRate()
   const showVat = draft.include_vat
 
-  // Totals with VAT
+  // Discount-aware totals
   const baseVat = showVat ? applyVat(draft.base_price, vatRate) : draft.base_price
-  const totalAddOns = draft.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
-  const totalNet = draft.base_price + totalAddOns
+  const totalAddOnsDiscounted = draft.add_ons
+    .filter(a => a.enabled)
+    .reduce((s, a) => s + Math.round(a.price * (1 - (a.discount_pct || 0) / 100)), 0)
+  const subtotalNet = Math.round(draft.base_price) + totalAddOnsDiscounted
+  const globalDisc = draft.global_discount_pct || 0
+  const totalNet = Math.round(subtotalNet * (1 - globalDisc / 100))
   const totalVat = showVat ? vatAmount(totalNet, vatRate) : 0
   const grandTotal = totalNet + totalVat
+
+  // Original (undiscounted) for savings display
+  const totalAddOnsOriginal = draft.add_ons.filter(a => a.enabled).reduce((s, a) => s + a.price, 0)
+  const originalNet = Math.round(draft.base_price) + totalAddOnsOriginal
+  const originalVat = showVat ? vatAmount(originalNet, vatRate) : 0
+  const originalTotal = originalNet + originalVat
+  const totalSavings = Math.max(0, originalTotal - grandTotal)
 
   // ── Add-on helpers ──────────────────────────────────────────────────────────
   const handleAddOnChange = (index: number, updated: AddOn) => {
@@ -928,6 +971,72 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           >
             {showVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
           </button>
+        </div>
+
+        {/* Global Discount slider */}
+        <div
+          className="rounded-xl overflow-hidden transition-all duration-300"
+          style={{
+            background: globalDisc > 0
+              ? 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(16,185,129,0.05) 100%)'
+              : 'rgba(255,255,255,0.025)',
+            border: globalDisc > 0 ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Percent size={12} style={{ color: globalDisc > 0 ? '#22c55e' : 'rgba(255,255,255,0.3)' }} />
+                <span className="text-[11px] font-semibold" style={{ color: globalDisc > 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)' }}>
+                  {isHe ? 'הנחה גלובלית' : 'Global Discount'}
+                </span>
+                <Tip content={isHe
+                  ? 'הנחה שמוחלת על הסכום הכולל לאחר הנחות פריטים. כלי עוצמתי לסגירת עסקה בעקבות בקשת ניהול משא ומתן.'
+                  : 'Discount applied to the full subtotal after per-item discounts. A powerful deal-closer after a negotiation request.'
+                }>
+                  <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-1 rounded-lg touch-manipulation" tabIndex={0}>
+                    <Info size={12} />
+                  </button>
+                </Tip>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={50}
+                  className="w-12 rounded-lg px-2 py-1 text-[12px] text-center font-bold outline-none transition-all"
+                  style={{
+                    background: globalDisc > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+                    border: globalDisc > 0 ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                    color: globalDisc > 0 ? '#4ade80' : 'rgba(255,255,255,0.6)',
+                  }}
+                  value={globalDisc || ''}
+                  placeholder="0"
+                  onChange={e => onChange({ global_discount_pct: Math.min(50, Math.max(0, Number(e.target.value) || 0)) })}
+                />
+                <span className="text-[11px] font-bold" style={{ color: globalDisc > 0 ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>%</span>
+              </div>
+            </div>
+            <PremiumSlider
+              value={globalDisc}
+              min={0}
+              max={50}
+              step={1}
+              onChange={v => onChange({ global_discount_pct: v })}
+              color={globalDisc > 0 ? '#22c55e' : '#6366f1'}
+            />
+            {globalDisc > 0 && totalSavings > 0 && (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-emerald-400/70">
+                  {isHe ? 'חיסכון ללקוח' : 'Client saves'}
+                </span>
+                <span className="text-[11px] font-black text-emerald-400 tabular-nums">
+                  {formatCurrency(totalSavings, draft.currency)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* VAT summary when enabled */}

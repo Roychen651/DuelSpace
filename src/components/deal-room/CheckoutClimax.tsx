@@ -28,6 +28,8 @@ interface CheckoutClimaxProps {
   onRequestRevision?: (notes: string) => Promise<void>
   /** True when a revision request was submitted (persists across page refresh via DB status) */
   revisionSent?: boolean
+  /** Absolute currency savings = originalTotal − discountedTotal. Shows "You Saved" badge when > 0. */
+  totalSavings?: number
   /** Must be true before signature is unlocked — gates the entire sign flow */
   clientDetailsConfirmed?: boolean
   /** Called when user taps "fill details first" locked state — scrolls form into view */
@@ -56,7 +58,7 @@ export function CheckoutClimax({
   total, currency, signature,
   onSignatureChange, onAccept, accepting, accepted, locale,
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
-  onRequestRevision, revisionSent = false, clientDetailsConfirmed = false, onScrollToDetails,
+  onRequestRevision, revisionSent = false, totalSavings = 0, clientDetailsConfirmed = false, onScrollToDetails,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -97,6 +99,10 @@ export function CheckoutClimax({
         @keyframes checkout-revision-glow {
           0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.25), inset 0 1px 0 rgba(245,158,11,0.12); }
           50%       { box-shadow: 0 0 44px rgba(245,158,11,0.45), inset 0 1px 0 rgba(245,158,11,0.18); }
+        }
+        @keyframes checkout-savings-pulse {
+          0%, 100% { box-shadow: 0 0 16px rgba(34,197,94,0.3), 0 0 0 0 rgba(34,197,94,0); }
+          50%       { box-shadow: 0 0 28px rgba(34,197,94,0.55), 0 0 0 4px rgba(34,197,94,0.08); }
         }
       `}</style>
 
@@ -198,6 +204,37 @@ export function CheckoutClimax({
                   <span className="tabular-nums">{formatCurrency(totalWithVat, currency)}</span>
                 </div>
               </div>
+            )}
+
+            {/* ── "You Saved" badge — appears when any discount is applied ──── */}
+            {totalSavings > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 26, delay: 0.15 }}
+                className="mb-3 flex items-center justify-between rounded-xl px-4 py-2.5"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(16,185,129,0.06) 100%)',
+                  border: '1px solid rgba(34,197,94,0.25)',
+                  animation: 'checkout-savings-pulse 2.4s ease-in-out infinite',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-base leading-none select-none">🎉</span>
+                  <span className="text-[12px] font-bold" style={{ color: '#4ade80' }}>
+                    {isHe ? 'חסכת' : 'You Saved'}
+                  </span>
+                </div>
+                <span
+                  className="text-[15px] font-black tabular-nums"
+                  style={{
+                    color: '#4ade80',
+                    textShadow: '0 0 20px rgba(34,197,94,0.5)',
+                  }}
+                >
+                  {formatCurrency(totalSavings, currency)}
+                </span>
+              </motion.div>
             )}
 
             {/* ── Revision done: replace entire signing flow with success state ─ */}

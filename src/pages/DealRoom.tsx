@@ -744,13 +744,36 @@ export default function DealRoom() {
     return () => observers.forEach(obs => obs.disconnect())
   }, [fetchStatus])
 
-  // ── Grand total calculation ────────────────────────────────────────────────
+  // ── Grand total calculation (discount-aware) ───────────────────────────────
+  // Order: item discounts → subtotal → global discount → VAT
   const grandTotal = proposal
-    ? proposal.base_price +
-      proposal.add_ons
-        .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
-        .reduce((sum, a) => sum + a.price * (lineItems[a.id]?.qty ?? 1), 0)
+    ? (() => {
+        const addOns = proposal.add_ons.filter(a => lineItems[a.id]?.enabled ?? a.enabled)
+        const addOnsTotal = addOns.reduce((sum, a) => {
+          const disc = a.discount_pct || 0
+          const unitPrice = Math.round(a.price * (1 - disc / 100))
+          return sum + unitPrice * (lineItems[a.id]?.qty ?? 1)
+        }, 0)
+        const subtotal = proposal.base_price + addOnsTotal
+        const globalDisc = proposal.global_discount_pct || 0
+        const beforeVat = Math.round(subtotal * (1 - globalDisc / 100))
+        const vat = proposal.include_vat ? Math.round(beforeVat * vatRate) : 0
+        return beforeVat + vat
+      })()
     : 0
+
+  // Undiscounted total for strikethrough / "You Saved" psychology
+  const originalTotal = proposal
+    ? (() => {
+        const addOns = proposal.add_ons.filter(a => lineItems[a.id]?.enabled ?? a.enabled)
+        const addOnsTotal = addOns.reduce((sum, a) => sum + a.price * (lineItems[a.id]?.qty ?? 1), 0)
+        const subtotal = proposal.base_price + addOnsTotal
+        const vat = proposal.include_vat ? Math.round(subtotal * vatRate) : 0
+        return subtotal + vat
+      })()
+    : 0
+
+  const totalSavings = Math.max(0, originalTotal - grandTotal)
 
   // ── Handle accept ──────────────────────────────────────────────────────────
   const handleAccept = useCallback(async () => {
@@ -1509,6 +1532,7 @@ export default function DealRoom() {
                 onLegalConsentChange={setLegalConsent}
                 onRequestRevision={handleRequestRevision}
                 revisionSent={revisionSent}
+                totalSavings={totalSavings}
                 clientDetailsConfirmed={!!clientDetails}
                 onScrollToDetails={() =>
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })

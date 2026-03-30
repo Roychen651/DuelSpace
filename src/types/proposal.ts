@@ -8,6 +8,8 @@ export interface AddOn {
   description?: string
   price: number
   enabled: boolean
+  /** Per-item discount percentage (0–100). Applied before global discount. */
+  discount_pct?: number
   /** When false, the client cannot adjust quantity in the Deal Room (qty is fixed at 1). Default: true */
   clientAdjustable?: boolean
 }
@@ -75,6 +77,8 @@ export interface Proposal {
   video_url?: string | null
   /** Social proof testimonials shown in the Deal Room before pricing */
   testimonials?: Testimonial[] | null
+  /** Global discount applied to the subtotal, after per-item discounts (0–100) */
+  global_discount_pct?: number | null
   /** Timestamp of first status transition away from 'draft' (when the proposal was sent) */
   sent_at?: string | null
   /** Timestamp of when the client accepted/signed the proposal */
@@ -100,13 +104,27 @@ export function vatAmount(amount: number, vatRate = DEFAULT_VAT_RATE): number {
 
 export type ProposalUpdate = Partial<ProposalInsert>
 
-/** Computed total price including enabled add-ons.
- *  Uses integer-safe rounding to avoid floating-point accumulation (e.g. 0.1+0.2). */
+/** Computed total price including enabled add-ons, per-item discounts and global discount.
+ *  Does NOT include VAT — callers apply VAT separately.
+ *  Uses integer-safe rounding to avoid floating-point accumulation. */
 export function proposalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
-    .reduce((sum, a) => sum + Math.round(a.price * 100), 0)
-  return Math.round((Math.round(p.base_price * 100) + addOnsTotal)) / 100
+    .reduce((sum, a) => {
+      const disc = a.discount_pct || 0
+      return sum + Math.round(a.price * (1 - disc / 100))
+    }, 0)
+  const subtotal = Math.round(p.base_price) + addOnsTotal
+  const globalDisc = p.global_discount_pct || 0
+  return Math.round(subtotal * (1 - globalDisc / 100))
+}
+
+/** Undiscounted total — used for strikethrough / savings calculation */
+export function proposalOriginalTotal(p: Proposal): number {
+  const addOnsTotal = p.add_ons
+    .filter(a => a.enabled)
+    .reduce((sum, a) => sum + Math.round(a.price), 0)
+  return Math.round(p.base_price) + addOnsTotal
 }
 
 export function formatCurrency(amount: number, currency = 'ILS'): string {

@@ -22,7 +22,11 @@ export function PremiumSliderCard({
   addOn, quantity, enabled, currency, locale, adjustable,
   onToggle, onQuantityChange,
 }: PremiumSliderCardProps) {
-  const lineTotal = addOn.price * quantity
+  const disc = addOn.discount_pct || 0
+  const unitDiscounted = Math.round(addOn.price * (1 - disc / 100))
+  const lineTotal = unitDiscounted * quantity
+  const lineTotalOriginal = addOn.price * quantity
+  const isDiscounted = disc > 0
   const fillPct = ((quantity - 1) / 9) * 100
 
   return (
@@ -111,20 +115,40 @@ export function PremiumSliderCard({
             </div>
           </div>
 
-          {/* Price */}
+          {/* Price — with optional discount strikethrough */}
           <div className="flex-none text-end">
+            {/* Strikethrough original price */}
+            {isDiscounted && enabled && (
+              <p className="text-[11px] tabular-nums leading-none text-end line-through"
+                style={{ color: 'rgba(255,255,255,0.25)' }}>
+                {formatCurrency(lineTotalOriginal, currency)}
+              </p>
+            )}
             <motion.p
               className="text-lg font-black tabular-nums leading-none transition-colors duration-200"
-              style={{ color: enabled ? '#c4b5fd' : 'rgba(255,255,255,0.18)' }}
+              style={{ color: enabled ? (isDiscounted ? '#4ade80' : '#c4b5fd') : 'rgba(255,255,255,0.18)' }}
               animate={{ scale: [1, 1.06, 1] }}
               key={lineTotal}
               transition={{ duration: 0.25 }}
             >
               {enabled ? formatCurrency(lineTotal, currency) : `+${formatCurrency(addOn.price, currency)}`}
             </motion.p>
+            {/* Discount badge */}
+            {isDiscounted && enabled && (
+              <span
+                className="inline-block mt-0.5 rounded-full px-1.5 py-px text-[9px] font-black tabular-nums"
+                style={{
+                  background: 'rgba(34,197,94,0.15)',
+                  border: '1px solid rgba(34,197,94,0.3)',
+                  color: '#4ade80',
+                }}
+              >
+                -{disc}%
+              </span>
+            )}
             {quantity > 1 && enabled && (
               <p className="text-[10px] text-white/30 mt-0.5 tabular-nums">
-                {quantity}× {formatCurrency(addOn.price, currency)}
+                {quantity}× {formatCurrency(unitDiscounted, currency)}
               </p>
             )}
           </div>
