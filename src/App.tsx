@@ -19,6 +19,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import AccessibilityStatement from './pages/AccessibilityStatement'
 import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
+import Integrations from './pages/Integrations'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ function AnimatedRoutes() {
             <Route path="/profile" element={<ProtectedRoute><ProtectedLayout><Profile /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><ProtectedLayout><ContractLibrary /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/services" element={<ProtectedRoute><ProtectedLayout><ServicesLibrary /></ProtectedLayout></ProtectedRoute>} />
+            <Route path="/integrations" element={<ProtectedRoute><ProtectedLayout><Integrations /></ProtectedLayout></ProtectedRoute>} />
 
             {/* Protected — ProposalBuilder has its own header, no shared layout */}
             <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />

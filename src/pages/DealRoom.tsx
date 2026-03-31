@@ -16,6 +16,7 @@ import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
 import type { ClientCapturedDetails } from '../components/deal-room/ClientDetailsForm'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../lib/successTemplates'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
+import { triggerPostSignatureAutomations } from '../lib/automations'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -486,28 +487,6 @@ function StickyFomoBand({
       </div>
     </div>
   )
-}
-
-// ─── Automation Handshake Stub ────────────────────────────────────────────────
-// Sprint 18: Documented hook for post-signature integrations.
-// Sprint 19 will wire real webhook endpoints here (Make.com, Invoice4u, etc.).
-async function triggerPostSignatureAutomations(proposal: Proposal): Promise<void> {
-  // 1. Create a draft invoice in Invoice4u / QuickBooks / FreshBooks
-  // 2. Send a confirmation email via SendGrid / Postmark
-  // 3. Add the client to your CRM (HubSpot / monday.com / Pipedrive)
-  // 4. Notify the creator via WhatsApp Business API or Slack
-  // 5. Trigger a Make.com scenario for the full automation pipeline
-  console.log('[Automation] Deal Signed. Triggering Invoice4u / Make.com Webhooks...')
-  console.log('[Automation] Payload:', {
-    proposal_id:   proposal.id,
-    project_title: proposal.project_title,
-    client_name:   proposal.client_name,
-    client_email:  proposal.client_email,
-    total:         proposal.base_price,
-    currency:      proposal.currency,
-    public_token:  proposal.public_token,
-    signed_at:     new Date().toISOString(),
-  })
 }
 
 // ─── Main DealRoom page ───────────────────────────────────────────────────────

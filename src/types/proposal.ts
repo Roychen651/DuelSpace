@@ -36,6 +36,8 @@ export interface CreatorInfo {
   phone?: string
   signatory_name?: string
   logo_url?: string
+  /** Webhook URL for post-signature automations — injected from user_metadata by EditorPanel */
+  webhook_url?: string
 }
 
 export interface Proposal {

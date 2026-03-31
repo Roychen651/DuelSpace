@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight, Webhook } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
@@ -272,6 +272,9 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     </button>
                     <button onClick={() => navigate('/contracts')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
                       <FileText size={13} className="flex-none" />{isHe ? 'ספריית חוזים' : 'Contracts'}
+                    </button>
+                    <button onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                      <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
                   </div>
 
