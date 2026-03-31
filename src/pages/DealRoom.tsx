@@ -896,11 +896,21 @@ export default function DealRoom() {
     } catch (_) {}
     const signerUa = navigator.userAgent
 
+    // Capture signature data BEFORE the RPC call — snapshot the canvas output now
+    const sigDataUrl = signatureRef.current || signature
+    // Debug: log signature length so we can verify data is being captured
+    if (!sigDataUrl || sigDataUrl.length < 100) {
+      console.error('[DealSpace] WARNING: signature data is empty or suspiciously short', {
+        refLen: signatureRef.current?.length ?? 0,
+        stateLen: signature?.length ?? 0,
+      })
+    }
+
     const { data: accepted_result, error } = await supabase.rpc('accept_proposal', {
       p_token: token,
       p_ip:    signerIp,
       p_ua:    signerUa,
-      p_sig:   signatureRef.current || signature,
+      p_sig:   sigDataUrl,
     })
     // Migration 14: accept_proposal now returns BOOLEAN.
     // error = null + data = false  → 0 rows updated (already accepted, or token not found)
@@ -912,11 +922,15 @@ export default function DealRoom() {
       setAccepting(false)
       return
     }
+
+    // Belt-and-suspenders: save signature via a dedicated RPC to guarantee persistence.
+    // accept_proposal should already save it, but this ensures it's never lost.
+    if (sigDataUrl && sigDataUrl.length > 100) {
+      void supabase.rpc('save_proposal_signature', { p_token: token, p_sig: sigDataUrl })
+    }
+
     setSigTimestamp(new Date())
     freshSignedRef.current = true
-    // Capture the best available signature dataUrl at the exact moment signing succeeds.
-    // Priority: ref (freshest) → state → empty fallback.
-    const sigDataUrl = signatureRef.current || signature
     setAcceptedSignature(sigDataUrl)
     // Patch proposal state so handleDownloadPdf reads the correct signature_data_url
     // immediately — without this the in-memory proposal still has null for the field
