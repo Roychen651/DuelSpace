@@ -206,15 +206,10 @@ export const useProposalStore = create<ProposalState>()(
         }
       },
 
-      // ── Permanent delete (only for non-accepted archived proposals) ──────
+      // ── Permanent delete (archived proposals) ────────────────────────────
       deleteProposal: async (id) => {
         const snapshot = get().proposals.find(p => p.id === id)
         if (!snapshot) return { ok: false, message: 'Proposal not found in local state' }
-
-        // Hard guard — signed contracts are immutable and must never be destroyed
-        if (snapshot.status === 'accepted') {
-          return { ok: false, message: 'Signed contracts cannot be permanently deleted. Archive only.' }
-        }
 
         // Optimistic remove
         set(s => ({ proposals: s.proposals.filter(p => p.id !== id) }))

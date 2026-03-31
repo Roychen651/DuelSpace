@@ -606,7 +606,9 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
                 style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
               >
                 <p className="text-[11px] font-bold mb-0.5" style={{ color: '#f87171' }}>
-                  {locale === 'he' ? 'שגיאה בהעברה לארכיון' : 'Archive failed'}
+                  {isArchived
+                    ? (locale === 'he' ? 'שגיאה במחיקה' : 'Delete failed')
+                    : (locale === 'he' ? 'שגיאה בהעברה לארכיון' : 'Archive failed')}
                 </p>
                 <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(239,68,68,0.7)' }}>{archiveError}</p>
                 <p className="text-[9px] mt-1" style={{ color: 'rgba(239,68,68,0.45)' }}>
