@@ -285,7 +285,7 @@ export default function ProposalBuilder() {
       proposal: currentProposal,
       totalAmount: fin.grandTotal,
       enabledAddOnIds: enabledIds,
-      signatureDataUrl: '',
+      signatureDataUrl: currentProposal.signature_data_url ?? '',
       locale,
       isDraft: currentProposal.status !== 'accepted',
     })
