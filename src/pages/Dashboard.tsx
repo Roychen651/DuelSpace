@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText } from 'lucide-react'
+import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useTier, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
@@ -206,6 +206,8 @@ export default function Dashboard() {
   const [pdfGenerating, setPdfGenerating] = useState<string | null>(null)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   const [csvFlash, setCsvFlash] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
+  const sortRef = useRef<HTMLDivElement>(null)
   const tier = useTier()
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
@@ -245,6 +247,15 @@ export default function Dashboard() {
       return () => clearTimeout(t)
     }
   }, [loading])
+
+  useEffect(() => {
+    if (!sortOpen) return
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [sortOpen])
 
   // ── Proposal slices ───────────────────────────────────────────────────────
   const activeProposals = proposals.filter(p => !p.is_archived)
@@ -545,37 +556,148 @@ export default function Dashboard() {
             )
           })()}
 
-          {/* ── Search + Sort + View toggles + CSV ────────────────────── */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* ── Search ────────────────────────────────────────────────── */}
+          <div className="relative group">
+            <div className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center z-10">
+              <Search size={13} className="transition-colors duration-200 group-focus-within:text-indigo-400/60" style={{ color: 'rgba(255,255,255,0.28)' }} />
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={isHe ? 'חפש לפי לקוח, פרויקט, או אימייל…' : 'Search by client, project, or email…'}
+              className="w-full h-11 rounded-2xl ps-9 pe-10 text-[13px] font-medium text-white placeholder-white/25 outline-none transition-all duration-200"
+              style={{
+                background: '#0a0a0a',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              }}
+              onFocus={e => {
+                e.currentTarget.style.background = '#0d0d1a'
+                e.currentTarget.style.border = '1px solid rgba(99,102,241,0.45)'
+                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)'
+              }}
+              onBlur={e => {
+                e.currentTarget.style.background = '#0a0a0a'
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)'
+                e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)'
+              }}
+            />
+            <AnimatePresence>
+              {search && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.12 }}
+                  onClick={() => setSearch('')}
+                  className="absolute inset-y-0 end-3 flex items-center justify-center w-6 h-full"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  whileHover={{ opacity: 0.8 }}
+                >
+                  <X size={13} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-2 flex-1 min-w-[160px] rounded-xl px-3 py-2"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <Search size={12} className="flex-none text-white/30" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={isHe ? 'חפש לפי לקוח, פרויקט, או אימייל…' : 'Search by client, project, or email…'}
-                className="flex-1 bg-transparent text-xs text-white placeholder-white/25 outline-none"
-              />
+          {/* ── Controls row: Sort · Views · CSV · Count ──────────────── */}
+          <div className="flex items-center gap-2">
+
+            {/* Custom Sort Dropdown */}
+            <div className="relative flex-none" ref={sortRef}>
+              <motion.button
+                onClick={() => setSortOpen(o => !o)}
+                className="flex items-center gap-2 h-9 rounded-xl px-3 text-[12px] font-semibold outline-none flex-none"
+                style={{
+                  background: sortOpen ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${sortOpen ? 'rgba(99,102,241,0.38)' : 'rgba(255,255,255,0.09)'}`,
+                  color: sortOpen ? '#a5b4fc' : 'rgba(255,255,255,0.55)',
+                  boxShadow: sortOpen ? '0 0 18px rgba(99,102,241,0.14)' : 'none',
+                  transition: 'background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s',
+                }}
+                whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+              >
+                <SlidersHorizontal size={12} className="flex-none" />
+                <span className="whitespace-nowrap">
+                  {sortBy === 'newest'
+                    ? (isHe ? 'הכי חדש' : 'Newest')
+                    : sortBy === 'oldest'
+                      ? (isHe ? 'הכי ישן' : 'Oldest')
+                      : (isHe ? 'סכום גבוה' : 'Highest Value')}
+                </span>
+                <motion.span
+                  animate={{ rotate: sortOpen ? 180 : 0 }}
+                  transition={{ type: 'spring' as const, stiffness: 380, damping: 26 }}
+                  style={{ display: 'flex', opacity: 0.6 }}
+                >
+                  <ChevronDown size={11} />
+                </motion.span>
+              </motion.button>
+
+              <AnimatePresence>
+                {sortOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.94, y: isHe ? -8 : -8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.94, y: -8 }}
+                    transition={{ type: 'spring' as const, stiffness: 480, damping: 30 }}
+                    className="absolute top-[calc(100%+6px)] start-0 z-50 min-w-[168px] rounded-2xl overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(160deg, rgba(16,16,26,0.98) 0%, rgba(8,8,16,0.98) 100%)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: '0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                      backdropFilter: 'blur(32px)',
+                    }}
+                  >
+                    <div className="p-1.5 space-y-0.5">
+                      {([
+                        { value: 'newest' as SortBy, label_en: 'Newest First',   label_he: 'הכי חדש',   glyph: '↓' },
+                        { value: 'oldest' as SortBy, label_en: 'Oldest First',   label_he: 'הכי ישן',   glyph: '↑' },
+                        { value: 'value'  as SortBy, label_en: 'Highest Value',  label_he: 'סכום גבוה', glyph: '◈' },
+                      ]).map(opt => {
+                        const isActive = sortBy === opt.value
+                        return (
+                          <motion.button
+                            key={opt.value}
+                            onClick={() => { setSortBy(opt.value); setSortOpen(false) }}
+                            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[12px] font-semibold text-start outline-none"
+                            style={{
+                              background: isActive ? 'rgba(99,102,241,0.16)' : 'transparent',
+                              color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.52)',
+                              transition: 'background 0.1s, color 0.1s',
+                            }}
+                            whileHover={{ opacity: 0.9 }}
+                          >
+                            <span style={{ fontSize: 10, opacity: 0.5, fontFamily: 'monospace', lineHeight: 1 }}>{opt.glyph}</span>
+                            <span>{isHe ? opt.label_he : opt.label_en}</span>
+                            <AnimatePresence>
+                              {isActive && (
+                                <motion.span
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="ms-auto flex-none"
+                                >
+                                  <Check size={11} style={{ color: '#818cf8' }} />
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </motion.button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Sort dropdown */}
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as SortBy)}
-              className="h-9 rounded-xl px-3 text-[11px] font-semibold outline-none cursor-pointer flex-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }}
-            >
-              <option value="newest" style={{ background: '#0f0f1a' }}>{isHe ? 'הכי חדש' : 'Newest First'}</option>
-              <option value="oldest" style={{ background: '#0f0f1a' }}>{isHe ? 'הכי ישן' : 'Oldest First'}</option>
-              <option value="value"  style={{ background: '#0f0f1a' }}>{isHe ? 'סכום גבוה' : 'Highest Value'}</option>
-            </select>
-
             {/* View toggle */}
-            <div className="flex items-center rounded-xl p-0.5 flex-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div
+              className="flex items-center rounded-xl p-0.5 flex-none"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
               {([
                 { mode: 'grid'   as ViewMode, icon: <LayoutGrid size={13} />, label_en: 'Grid',   label_he: 'רשת' },
                 { mode: 'list'   as ViewMode, icon: <List size={13} />,       label_en: 'List',   label_he: 'רשימה' },
@@ -584,11 +706,11 @@ export default function Dashboard() {
                 <button
                   key={mode}
                   onClick={() => { setViewMode(mode); localStorage.setItem('dealspace:view-mode', mode) }}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
+                  className="flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-150 whitespace-nowrap"
                   style={{
-                    background: viewMode === mode ? 'rgba(99,102,241,0.2)' : 'transparent',
-                    color:      viewMode === mode ? '#818cf8' : 'rgba(255,255,255,0.35)',
-                    border:     viewMode === mode ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+                    background: viewMode === mode ? 'rgba(99,102,241,0.18)' : 'transparent',
+                    color:      viewMode === mode ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                    boxShadow:  viewMode === mode ? '0 0 12px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
                   }}
                   title={isHe ? label_he : label_en}
                 >
@@ -602,22 +724,23 @@ export default function Dashboard() {
             <motion.button
               onClick={handleCsvExport}
               disabled={filteredProposals.length === 0}
-              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all"
+              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all duration-150 outline-none"
               style={{
-                background: csvFlash ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${csvFlash ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                color: csvFlash ? '#4ade80' : 'rgba(255,255,255,0.4)',
-                opacity: filteredProposals.length === 0 ? 0.35 : 1,
+                background: csvFlash ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${csvFlash ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                color: csvFlash ? '#4ade80' : 'rgba(255,255,255,0.35)',
+                opacity: filteredProposals.length === 0 ? 0.28 : 1,
                 cursor: filteredProposals.length === 0 ? 'default' : 'pointer',
+                boxShadow: csvFlash ? '0 0 18px rgba(74,222,128,0.18)' : 'none',
               }}
-              whileTap={filteredProposals.length > 0 ? { scale: 0.94 } : {}}
+              whileTap={filteredProposals.length > 0 ? { scale: 0.94, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } } : {}}
             >
               <FileDown size={12} />
               <span className="hidden sm:inline whitespace-nowrap">{isHe ? 'ייצוא CSV' : 'Export CSV'}</span>
             </motion.button>
 
-            {/* Count indicator */}
-            <span className="ms-auto text-[10px] text-white/25 whitespace-nowrap">
+            {/* Count */}
+            <span className="ms-auto text-[10px] font-semibold text-white/22 whitespace-nowrap tabular-nums">
               {filteredProposals.length !== tabPool.length
                 ? `${filteredProposals.length} / ${tabPool.length}`
                 : `${tabPool.length} ${isHe ? 'הצעות' : 'proposals'}`}
