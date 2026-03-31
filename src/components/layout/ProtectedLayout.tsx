@@ -184,6 +184,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
 
           {/* Help Center */}
           <button
+            data-tour="help-btn"
             onClick={() => setHelpOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:text-white/75"
             style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}

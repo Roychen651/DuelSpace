@@ -29,18 +29,19 @@ function injectDarkStyles() {
         inset 0 1px 0 rgba(255,255,255,0.06) !important;
       font-family: 'Plus Jakarta Sans', 'Rubik', system-ui, sans-serif !important;
       padding: 22px 24px 18px !important;
-      min-width: 280px !important;
-      max-width: 340px !important;
+      min-width: 300px !important;
+      max-width: 360px !important;
       backdrop-filter: blur(32px) !important;
     }
 
-    /* Title */
+    /* Title — pad end to make room for the X button (physical right) */
     .driver-popover-title {
       font-size: 15px !important;
       font-weight: 800 !important;
       color: #ffffff !important;
       margin-bottom: 8px !important;
       letter-spacing: -0.01em !important;
+      padding-right: 28px !important;
     }
 
     /* Description */
@@ -75,10 +76,9 @@ function injectDarkStyles() {
       gap: 6px !important;
     }
 
-    /* All buttons */
+    /* All nav buttons */
     .driver-popover-prev-btn,
-    .driver-popover-next-btn,
-    .driver-popover-close-btn {
+    .driver-popover-next-btn {
       background: rgba(255,255,255,0.06) !important;
       border: 1px solid rgba(255,255,255,0.1) !important;
       border-radius: 10px !important;
@@ -92,8 +92,7 @@ function injectDarkStyles() {
       text-shadow: none !important;
     }
 
-    .driver-popover-prev-btn:hover,
-    .driver-popover-close-btn:hover {
+    .driver-popover-prev-btn:hover {
       background: rgba(255,255,255,0.1) !important;
       color: rgba(255,255,255,0.85) !important;
       border-color: rgba(255,255,255,0.18) !important;
@@ -112,16 +111,25 @@ function injectDarkStyles() {
       box-shadow: 0 0 24px rgba(99,102,241,0.55) !important;
     }
 
-    /* Close × button */
+    /* Close × button — ALWAYS physical top-right, regardless of dir */
     .driver-popover-close-btn {
       position: absolute !important;
       top: 14px !important;
-      inset-inline-end: 14px !important;
-      padding: 4px 8px !important;
+      right: 14px !important;
+      left: unset !important;
+      inset-inline-end: unset !important;
+      inset-inline-start: unset !important;
+      padding: 4px 7px !important;
       opacity: 0.45 !important;
       border: none !important;
       background: transparent !important;
-      font-size: 16px !important;
+      font-size: 15px !important;
+      font-weight: 400 !important;
+      color: rgba(255,255,255,0.6) !important;
+      cursor: pointer !important;
+      line-height: 1 !important;
+      border-radius: 6px !important;
+      transition: opacity 0.15s, background 0.15s !important;
     }
 
     .driver-popover-close-btn:hover {
@@ -159,34 +167,67 @@ export function startDashboardTour(locale: 'he' | 'en'): void {
     {
       element: '[data-tour="new-proposal"]',
       popover: {
-        title: isHe ? '🚀 צור את ההצעה הראשונה שלך' : '🚀 Create Your First Proposal',
+        title: isHe ? '🚀 יצירת הצעת מחיר' : '🚀 Create a Proposal',
         description: isHe
-          ? 'לחץ כאן לפתיחת בונה ההצעות. הגדר מחיר, הוסף שירותים, ושלח חדר דיל אינטראקטיבי ללקוח שלך — הוא יכול לחתום ישירות מהדפדפן.'
-          : 'Click here to open the Proposal Builder. Set your price, add services, and send an interactive Deal Room to your client — they can sign directly from the browser.',
+          ? 'לחץ כאן לפתיחת בונה ההצעות. הגדר שם פרויקט, מחיר בסיס, תוספות אופציונליות, חוזה ואבני דרך לתשלום. לאחר השמירה — קבל קישור ייחודי לשיתוף ישיר עם הלקוח ב-WhatsApp, מייל, או SMS.'
+          : 'Open the Proposal Builder. Set a project name, base price, optional add-ons, contract, and payment milestones. After saving — get a unique shareable link to send directly to your client via WhatsApp, email, or SMS.',
         side: 'bottom',
         align: 'start',
       },
     },
     {
-      element: '[data-tour="services-link"]',
+      element: '[data-tour="kpi-grid"]',
       popover: {
-        title: isHe ? '📋 ספריית שירותים' : '📋 Services Library',
+        title: isHe ? '📊 מדדי ביצועים חיים' : '📊 Live Performance Metrics',
         description: isHe
-          ? 'שמור שירותים חוזרים עם מחירים קבועים. בהצעה הבאה — הכנס אותם בלחיצה אחת. חוסך זמן, מונע טעויות תמחור.'
-          : 'Save reusable services with fixed prices. In your next proposal — insert them in one click. Saves time, prevents pricing mistakes.',
-        side: 'right',
+          ? 'שלושה KPI קריטיים: פייפליין פעיל — שווי כל ההצעות שנשלחו ובתהליך. עסקאות שנסגרו — הכנסה בפועל מהצעות חתומות. אחוז הצלחה — מחושב רק מעסקאות שנסגרו (זכו + הפסידו), לא מכלל ההצעות. מתעדכן בזמן אמת.'
+          : 'Three critical KPIs: Active Pipeline — value of all in-progress deals. Closed Won — actual revenue from signed proposals. Win Rate — calculated only from resolved deals (won + lost), not all proposals. Updates in real time with every signature.',
+        side: 'bottom',
+        align: 'center',
+      },
+    },
+    {
+      element: '[data-tour="pipeline-tabs"]',
+      popover: {
+        title: isHe ? '🗂️ ניהול פייפליין' : '🗂️ Pipeline Management',
+        description: isHe
+          ? 'סנן הצעות לפי שלב: הכל, טיוטות, ממתין לחתימה, זכו, ואבד/ארכיון. הספירה ליד כל טאב מתעדכנת אוטומטית. לחץ "ממתין" לראות רק הצעות ששלחת — אלה הן העסקאות שצריכות מעקב.'
+          : 'Filter proposals by stage: All, Drafts, Pending signature, Won, and Lost/Archive. Counts auto-update. Click "Pending" to see only proposals you sent — those are the deals that need follow-up.',
+        side: 'bottom',
         align: 'start',
       },
     },
     {
-      element: '[data-tour="integrations-link"]',
+      element: '[data-tour="crm-toolbar"]',
       popover: {
-        title: isHe ? '⚡ חבר את הכלים שלך' : '⚡ Connect Your Tools',
+        title: isHe ? '🔍 חיפוש, סינון וייצוא' : '🔍 Search, Filter & Export',
         description: isHe
-          ? 'הגדר webhook URL אחד וכל חתימה תפעיל אוטומטית תרחיש ב-Make.com, Zapier, או CRM שלך. ללא קידוד.'
-          : 'Set one webhook URL and every signature automatically triggers a Make.com scenario, Zapier flow, or your CRM. Zero coding.',
-        side: 'right',
+          ? 'חפש לפי שם לקוח, פרויקט, או מייל. מיין לפי חדש, ישן, או ערך גבוה. עבור בין תצוגת רשת, רשימה, וקנבן — כל אחת מראה את אותם נתונים בפורמט אחר. ייצוא CSV לאקסל בלחיצה.'
+          : 'Search by client name, project, or email. Sort by newest, oldest, or highest value. Toggle between Grid, List, and Kanban views. One-click CSV export to Excel — all your deal data in a spreadsheet.',
+        side: 'bottom',
         align: 'start',
+      },
+    },
+    {
+      element: '[data-tour="proposals-list"]',
+      popover: {
+        title: isHe ? '📋 כרטיסי ההצעות שלך' : '📋 Your Proposal Cards',
+        description: isHe
+          ? 'כל כרטיס מציג: סטטוס בזמן אמת, מחיר סופי, מספר צפיות, זמן שהייה, ותג "נפתח" אם הלקוח פתח את המייל. לחץ על הכרטיס לעריכה. תפריט הנקודות (⋯) פותח: שכפול, שיתוף קישור, הורדת PDF, וארכיון.'
+          : 'Each card shows: real-time status, final price, view count, time spent, and an "Opened" badge if the client opened the email. Click the card to edit. The dots menu (⋯) unlocks: duplicate, share link, download PDF, and archive.',
+        side: 'top',
+        align: 'center',
+      },
+    },
+    {
+      element: '[data-tour="help-btn"]',
+      popover: {
+        title: isHe ? '❓ DealSpace Academy' : '❓ DealSpace Academy',
+        description: isHe
+          ? 'גישה מיידית ל-30+ מדריכים ותשובות בעברית ואנגלית. מסודרים לפי קטגוריות: יצירת הצעות, שליחה ומעקב, שירותים וחוזים, חיוב, ואוטומציות. כולל סיור מודרך נוסף בכפתור "הפעל סיור מחדש".'
+          : 'Instant access to 30+ guides and answers in Hebrew and English. Organized by category: creating proposals, sending & tracking, services & contracts, billing, and automations. Includes a "Restart Tour" button for future reference.',
+        side: 'bottom',
+        align: 'end',
       },
     },
     {
@@ -194,15 +235,15 @@ export function startDashboardTour(locale: 'he' | 'en'): void {
       popover: {
         title: isHe ? '🎨 זהות המותג שלך' : '🎨 Your Brand Identity',
         description: isHe
-          ? 'הגדר צבע מותג, לוגו חברה, ופרטים עסקיים. כל ההצעות שלך יוצגו עם זהות המותג שלך — חדר הדיל ותעודת החתימה.'
-          : 'Set your brand color, company logo, and business details. All your proposals display your brand identity — in the Deal Room and signature certificate.',
+          ? 'לחץ לפתיחת תפריט הפרופיל. בהגדרות: העלה לוגו חברה, בחר צבע מותג, הזן שם מורשה חתימה ופרטים עסקיים. כל הפרטים מוזרקים אוטומטית לכל הצעה חדשה — בחדר הדיל, בתעודת החתימה, ובקובץ PDF.'
+          : 'Click to open the profile menu. In Settings: upload your company logo, choose a brand color, enter your authorized signatory name and business details. All details auto-inject into every new proposal — in the Deal Room, signature certificate, and PDF.',
         side: 'bottom',
         align: 'end',
       },
     },
   ]
 
-  // Only run steps for elements that exist in the DOM
+  // Only run steps for elements currently in the DOM
   const steps = allSteps.filter(s => Boolean(document.querySelector(s.element)))
 
   if (steps.length === 0) return
@@ -212,8 +253,8 @@ export function startDashboardTour(locale: 'he' | 'en'): void {
     smoothScroll: true,
     allowClose: true,
     overlayOpacity: 0.82,
-    stagePadding: 6,
-    stageRadius: 12,
+    stagePadding: 8,
+    stageRadius: 14,
     showProgress: true,
     progressText: isHe ? '{{current}} מתוך {{total}}' : '{{current}} of {{total}}',
     nextBtnText: isHe ? 'הבא ←' : 'Next →',

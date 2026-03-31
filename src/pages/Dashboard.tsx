@@ -546,7 +546,7 @@ export default function Dashboard() {
         </AnimatePresence>
 
         {/* ── KPI Bento Grid ────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div data-tour="kpi-grid" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <KPICard
             icon={<TrendingUp size={16} />}
             label={isHe ? 'פייפליין פעיל' : 'Pipeline Value'}
@@ -568,10 +568,11 @@ export default function Dashboard() {
         </div>
 
         {/* ── CRM Toolbar ───────────────────────────────────────────────── */}
-        <div className="relative z-20 mb-6 space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}>
+        <div data-tour="crm-toolbar" className="relative z-20 mb-6 space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}>
 
           {/* ── Pipeline Tab Bar ──────────────────────────────────────────── */}
           <div
+            data-tour="pipeline-tabs"
             className="flex items-center rounded-2xl p-1 ds-tab-scroll overflow-x-auto"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
           >

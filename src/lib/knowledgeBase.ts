@@ -262,4 +262,89 @@ export const KNOWLEDGE_BASE: KBItem[] = [
     a_he: 'בדוק שהדפדפן לא חוסם קבצי PDF (הגדרות Pop-up / Downloads). רענן ונסה שוב. נסה דפדפן שונה (Chrome/Safari). לוגו חברה גדול מאוד עלול להאט את הייצור — מומלץ 400×200px.',
     a_en: 'Check that your browser is not blocking PDF downloads (Pop-up / Downloads settings). Refresh and try again. Try a different browser (Chrome/Safari). A very large company logo may slow generation — 400×200px is recommended.',
   },
+
+  // ── Additional Getting Started ─────────────────────────────────────────────
+
+  {
+    category: 'getting_started',
+    q_he: 'מה המשמעות של כל סטטוס הצעה?',
+    q_en: 'What does each proposal status mean?',
+    a_he: 'טיוטה — לא נשלחה עדיין, עדיין ניתן לערוך. נשלחה — הלקוח קיבל קישור. נצפתה — הלקוח פתח את חדר הדיל לפחות פעם אחת. מאושרת — הלקוח חתם, ההצעה ננעלת. נדחתה — הלקוח לחץ "דחה". ניתן לשכפל הצעה נדחית ולשלוח גרסה מחודשת.',
+    a_en: 'Draft — not yet sent, still editable. Sent — client received the link. Viewed — client opened the Deal Room at least once. Accepted — client signed; proposal locks. Declined — client clicked "Decline". You can duplicate a declined proposal and send a revised version.',
+  },
+  {
+    category: 'getting_started',
+    q_he: 'איך מכניסים הצעה לארכיון?',
+    q_en: 'How do I archive a proposal?',
+    a_he: 'לחץ על תפריט הנקודות (⋯) בכרטיס ההצעה ← "ארכיון". ההצעה מועברת לטאב "הופסד / ארכיון" ולא מופיעה עוד בטאב "הכל". ארכיון הוא מחיקה רכה — ניתן לשחזר בכל עת. הצעות ארכיוניות לא נספרות במגבלת הקוטה.',
+    a_en: "Click the dots menu (⋯) on the proposal card → 'Archive'. The proposal moves to the 'Lost / Archive' tab and no longer appears in 'All'. Archive is a soft delete — you can restore it at any time. Archived proposals don't count toward your quota.",
+  },
+  {
+    category: 'getting_started',
+    q_he: 'איך משכפלים הצעה?',
+    q_en: 'How do I duplicate a proposal?',
+    a_he: 'לחץ על תפריט הנקודות (⋯) בכרטיס ← "שכפל". נוצרת הצעה חדשה עם אותם פרטים — שם, מחיר, תוספות, חוזה — אבל סטטוס חוזר לטיוטה וקישור ציבורי חדש נוצר. מושלם לשליחת גרסה מעודכנת ללקוח שדחה.',
+    a_en: "Click the dots menu (⋯) on the card → 'Duplicate'. A new proposal is created with the same details — title, price, add-ons, contract — but the status resets to Draft and a new public link is generated. Perfect for sending an updated version to a client who declined.",
+  },
+
+  // ── Additional Creating Proposals ─────────────────────────────────────────
+
+  {
+    category: 'creating_proposals',
+    q_he: 'איך עובד קוד גישה לחדר הדיל?',
+    q_en: 'How does the Deal Room access code work?',
+    a_he: 'בסעיף "חוזה ותנאים" בבונה, הזן קוד גישה בן 4 ספרות. הלקוח שפותח את הקישור יראה תחילה מסך קוד — רק אחרי הקלדת הקוד הנכון הוא ייכנס לחדר הדיל. כך מונעים גישה בשוגג לצדדים לא רלוונטיים. שלח את הקוד ללקוח בנפרד (SMS/WhatsApp).',
+    a_en: 'In the "Contract & Terms" section in the Builder, enter a 4-digit access code. The client who opens the link will first see a PIN screen — only after entering the correct code will they enter the Deal Room. This prevents accidental access by unintended parties. Send the code to the client separately (SMS/WhatsApp).',
+  },
+  {
+    category: 'creating_proposals',
+    q_he: 'האם ניתן לכלול תמונת שער לפרויקט?',
+    q_en: 'Can I include a cover image for the project?',
+    a_he: 'כן. בסעיף "פרטי הפרויקט" ישנו שדה "תמונת שער" — הדבק URL של תמונה. התמונה מוצגת כ-hero banner בראש חדר הדיל. מומלץ: תמונה רחבה ב-16:9, פחות מ-2MB. Unsplash מספק תמונות חינמיות מעולות.',
+    a_en: 'Yes. In the "Project Info" section there is a "Cover Image" field — paste an image URL. The image appears as a hero banner at the top of the Deal Room. Recommended: a wide 16:9 image under 2MB. Unsplash provides excellent free images.',
+  },
+
+  // ── Additional Sending & Tracking ─────────────────────────────────────────
+
+  {
+    category: 'sending_tracking',
+    q_he: 'כמה זמן הלקוח שהה בחדר הדיל?',
+    q_en: 'How long did the client spend in the Deal Room?',
+    a_he: 'DealSpace מצבר זמן שהייה בשניות בכל ביקור. הנתון מוצג בכרטיס ההצעה. "הלקוח ביקר 3 פעמים ובזבז 12 דקות" הוא סיגנל קניה חזק מאוד — הגיע הזמן לפון. לקוח שביקר 30 שניות ויצא כנראה לא קרא.',
+    a_en: 'DealSpace accumulates time spent in seconds on every visit. The data is shown on the proposal card. "Client visited 3 times and spent 12 minutes" is a very strong buying signal — time to call. A client who visited for 30 seconds and left probably didn\'t read.',
+  },
+  {
+    category: 'sending_tracking',
+    q_he: 'איך מייצאים נתונים ל-Excel?',
+    q_en: 'How do I export data to Excel?',
+    a_he: 'בלוח הבקרה, לחץ על כפתור "ייצוא CSV" בסרגל הכלים. הקובץ יכלול: שם פרויקט, לקוח, סכום, מטבע, סטטוס, תאריך יצירה, ותאריך עדכון — לכל ההצעות המסוננות כרגע. פתח ב-Excel/Sheets לניתוח מכירות ודוחות.',
+    a_en: 'In the Dashboard, click the "Export CSV" button in the toolbar. The file includes: project name, client, amount, currency, status, creation date, and update date — for all currently filtered proposals. Open in Excel/Sheets for sales analytics and reports.',
+  },
+
+  // ── Additional Services & Contracts ───────────────────────────────────────
+
+  {
+    category: 'services_contracts',
+    q_he: 'מה ההבדל בין ספריית השירותים לבין תוספות בהצעה?',
+    q_en: 'What is the difference between the Services Library and add-ons in a proposal?',
+    a_he: 'ספריית השירותים היא "קטלוג מוצרים" שלך — פריטים שמורים עם מחירים קבועים. תוספות הן המופעים הספציפיים בתוך הצעה מסוימת. כשמכניסים שירות מהספרייה להצעה, נוצרת תוספת עצמאית — שינוי מאוחר בספרייה לא ישפיע על ההצעות הקיימות.',
+    a_en: "The Services Library is your 'product catalog' — saved items with fixed prices. Add-ons are the specific instances within a particular proposal. When you inject a service from the library into a proposal, an independent copy is created — later changes to the library won't affect existing proposals.",
+  },
+
+  // ── Additional Automations ─────────────────────────────────────────────────
+
+  {
+    category: 'automations',
+    q_he: 'האם DealSpace עובד על מובייל?',
+    q_en: 'Does DealSpace work on mobile?',
+    a_he: 'חדר הדיל (צד הלקוח) מותאם לחלוטין למובייל — הלקוח יכול לחתום בנוחות מהטלפון. לוח הבקרה ובונה ההצעות עובדים על מובייל אך מותאמים אופטימלית לדסקטופ/טאבלט. מומלץ ליצור ולערוך הצעות על מסך גדול.',
+    a_en: 'The Deal Room (client side) is fully mobile-optimized — clients can sign comfortably from their phone. The Dashboard and Proposal Builder work on mobile but are optimally designed for desktop/tablet. Recommended: create and edit proposals on a large screen.',
+  },
+  {
+    category: 'automations',
+    q_he: 'האם ניתן לראות מי צופה בחדר הדיל בזמן אמת?',
+    q_en: 'Can I see who is viewing the Deal Room in real time?',
+    a_he: 'כן. כשלקוח נמצא בחדר הדיל, מופיע toast "לקוח צופה כעת" בבונה ההצעות שלך (אם פתוח) ובלוח הבקרה — עדכון חי ממסד הנתונים. זהו הרגע האידיאלי לשלוח הודעת WhatsApp ידידותית ולהגדיל את הסיכוי לסגירה.',
+    a_en: 'Yes. When a client is in the Deal Room, a "Client viewing now" toast appears in your Proposal Builder (if open) and Dashboard — a live database update. This is the ideal moment to send a friendly WhatsApp message and increase your chance of closing.',
+  },
 ]
