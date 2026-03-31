@@ -16,7 +16,7 @@ const CORS = {
 
 const APP_URL     = Deno.env.get('APP_URL')     ?? 'https://duel-space.vercel.app'
 const RESEND_KEY  = Deno.env.get('RESEND_API_KEY') ?? ''
-const FROM_EMAIL  = 'proposals@dealspace.app'
+const FROM_EMAIL  = 'onboarding@resend.dev'
 const FROM_NAME   = 'DealSpace'
 
 // ─── HTML email template ──────────────────────────────────────────────────────
