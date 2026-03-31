@@ -641,6 +641,11 @@ export default function DealRoom() {
         })
       }
 
+      // Email open tracking — fire-and-forget, idempotent (RPC guards with IS NULL)
+      if (new URLSearchParams(window.location.search).get('source') === 'email' && !p.email_opened_at) {
+        supabase.rpc('mark_email_opened', { p_token: token }).then(() => {})
+      }
+
       // Only mark as viewed for active statuses — terminal/pending-revision proposals
       // must not bump updated_at (it would corrupt StatusTimeline timestamps or revert status)
       if (p.status !== 'accepted' && p.status !== 'rejected' && p.status !== 'needs_revision') {

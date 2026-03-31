@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus, MailCheck } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
@@ -554,6 +554,18 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
               </div>
 
               <div className="flex flex-col items-end gap-1">
+                {proposal.email_opened_at && (
+                  <div
+                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5"
+                    style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}
+                    title={locale === 'he' ? 'הלקוח פתח את האימייל' : 'Client opened the email'}
+                  >
+                    <MailCheck size={9} style={{ color: '#818cf8' }} />
+                    <span className="text-[9px] font-semibold" style={{ color: '#818cf8' }}>
+                      {locale === 'he' ? 'נפתח' : 'Opened'}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 text-[10px] text-white/30">
                   <Eye size={10} />
                   <span>{proposal.view_count}</span>

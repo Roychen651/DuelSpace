@@ -556,6 +556,7 @@ export default function ProposalBuilder() {
         clientEmail={draft.client_email}
         projectTitle={draft.project_title}
         locale={locale}
+        proposalId={proposalId}
       />
     </div>
   )

@@ -90,6 +90,12 @@ export interface Proposal {
   signer_ip?: string | null
   /** Client browser User-Agent string captured at signing time — forensic audit trail */
   signer_user_agent?: string | null
+  /** Email address the proposal was sent to via native delivery (Sprint 39) */
+  delivery_email?: string | null
+  /** Timestamp of when the native email was dispatched via Resend (Sprint 39) */
+  email_sent_at?: string | null
+  /** Timestamp of when the client opened the email link (?source=email) — set by mark_email_opened RPC (Sprint 39) */
+  email_opened_at?: string | null
   /**
    * Soft-delete flag — Sprint 29 Archive Engine.
    * When true the proposal is hidden from the active view but NEVER removed from the DB.
