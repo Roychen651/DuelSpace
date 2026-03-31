@@ -1,5 +1,5 @@
 -- ─── Admin Panel RPCs ──────────────────────────────────────────────────────────
--- Sprint 34: God-Mode Admin Panel
+-- Sprint 34 / 34.5: God-Mode Admin Panel
 --
 -- Both RPCs are SECURITY DEFINER and hardcode the admin email check.
 -- Regular authenticated users calling these functions will get an Access Denied
@@ -9,7 +9,8 @@
 -- SECURITY DEFINER context.
 
 -- ─── get_admin_users_data() ───────────────────────────────────────────────────
--- Returns a JSON array of all users with their metadata and proposal counts.
+-- Returns a JSON array of all users with their metadata, proposal counts,
+-- and total pipeline value (sum of base_price across all their proposals).
 -- Only callable by roychen651@gmail.com.
 
 CREATE OR REPLACE FUNCTION get_admin_users_data()
@@ -34,14 +35,18 @@ BEGIN
     SELECT
       u.id,
       u.email,
-      COALESCE(u.raw_user_meta_data ->> 'plan_tier', 'free')  AS plan_tier,
-      COALESCE(u.raw_user_meta_data ->> 'full_name', '')       AS full_name,
+      COALESCE(u.raw_user_meta_data ->> 'plan_tier', 'free')   AS plan_tier,
+      COALESCE(u.raw_user_meta_data ->> 'full_name', '')        AS full_name,
       u.created_at,
       u.last_sign_in_at,
-      COALESCE(p.proposal_count, 0)                           AS proposal_count
+      COALESCE(p.proposal_count, 0)                            AS proposal_count,
+      COALESCE(p.total_pipeline_value, 0)                      AS total_pipeline_value
     FROM auth.users u
     LEFT JOIN (
-      SELECT user_id, COUNT(*) AS proposal_count
+      SELECT
+        user_id,
+        COUNT(*)                    AS proposal_count,
+        SUM(COALESCE(base_price,0)) AS total_pipeline_value
       FROM public.proposals
       GROUP BY user_id
     ) p ON p.user_id = u.id
