@@ -1,9 +1,15 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Zap, Star, Infinity as InfinityIcon, Check } from 'lucide-react'
+import { X, Zap, Star, Infinity as InfinityIcon, Check, CreditCard } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
-import { FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
+import { useAuthStore, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import type { PlanTier } from '../../stores/useAuthStore'
+import {
+  STRIPE_PRO_LINK,
+  STRIPE_PREMIUM_LINK,
+  STRIPE_CUSTOMER_PORTAL,
+  buildCheckoutUrl,
+} from '../../lib/stripe'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,6 +113,7 @@ const PLAN_ICONS: Record<PlanDef['id'], React.ReactNode> = {
 export function UpgradeModal({ open, onClose, activeCount, currentTier }: UpgradeModalProps) {
   const { locale } = useI18n()
   const isHe = locale === 'he'
+  const user = useAuthStore(s => s.user)
 
   // Map tier → plan id ('unlimited' maps to 'premium')
   const currentPlanId: PlanDef['id'] = currentTier === 'unlimited' ? 'premium' : currentTier
@@ -236,6 +243,8 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
                         isHe={isHe}
                         delay={idx * 0.06}
                         currentPlanId={currentPlanId}
+                        userId={user?.id ?? ''}
+                        userEmail={user?.email ?? null}
                       />
                     ))}
                   </div>
@@ -258,26 +267,36 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
 
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, isHe, delay, currentPlanId }: {
+function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
   plan: PlanDef
   isHe: boolean
   delay: number
   currentPlanId: PlanDef['id']
+  userId: string
+  userEmail: string | null
 }) {
   const currentRank = PLAN_RANK[currentPlanId]
   const planRank    = PLAN_RANK[plan.id]
   const isCurrent   = plan.id === currentPlanId
   const isUpgrade   = planRank > currentRank
-  // isDowngrade = planRank < currentRank
+  const isDowngrade = planRank < currentRank
 
   const handleCta = () => {
     if (isCurrent) return
+
     if (isUpgrade) {
-      console.log('Initiate Stripe Checkout:', plan.id, plan.price)
-      // TODO Sprint 31: replace with real Stripe checkout session
+      const baseLink = plan.id === 'pro' ? STRIPE_PRO_LINK : STRIPE_PREMIUM_LINK
+      const url = buildCheckoutUrl(baseLink, userId, userEmail)
+      if (url) {
+        window.location.href = url
+      }
       return
     }
-    // Downgrade — TODO Sprint 32 (Stripe portal)
+
+    // Downgrade or manage — redirect to Stripe Customer Portal
+    if (isDowngrade && STRIPE_CUSTOMER_PORTAL) {
+      window.location.href = STRIPE_CUSTOMER_PORTAL
+    }
   }
 
   return (
@@ -419,14 +438,30 @@ function PlanCard({ plan, isHe, delay, currentPlanId }: {
           {isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn}
         </motion.button>
       ) : (
-        // ── Downgrade path — disabled until Sprint 32 ──
-        <div
-          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2"
-          style={{ background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'not-allowed' }}
-          title={isHe ? 'שינוי תוכנית יהיה זמין בקרוב' : 'Plan changes coming soon'}
+        // ── Downgrade / manage billing — Stripe Customer Portal ──
+        <motion.button
+          onClick={handleCta}
+          whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2 transition-colors"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            color: 'rgba(255,255,255,0.45)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+          onPointerEnter={e => {
+            const el = e.currentTarget as HTMLElement
+            el.style.background = 'rgba(255,255,255,0.08)'
+            el.style.color = 'rgba(255,255,255,0.7)'
+          }}
+          onPointerLeave={e => {
+            const el = e.currentTarget as HTMLElement
+            el.style.background = 'rgba(255,255,255,0.04)'
+            el.style.color = 'rgba(255,255,255,0.45)'
+          }}
         >
-          {isHe ? 'שנמך · בקרוב' : 'Downgrade · Soon'}
-        </div>
+          <CreditCard size={13} />
+          {isHe ? (isDowngrade ? 'שנמך תוכנית' : 'נהל חיוב') : (isDowngrade ? 'Downgrade Plan' : 'Manage Billing')}
+        </motion.button>
       )}
     </motion.div>
   )
