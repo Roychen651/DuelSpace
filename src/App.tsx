@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useProposalStore } from './stores/useProposalStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
 import { ProtectedLayout } from './components/layout/ProtectedLayout'
+import { AdminRoute } from './components/layout/AdminRoute'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
 import Dashboard from './pages/Dashboard'
@@ -20,6 +21,7 @@ import AccessibilityStatement from './pages/AccessibilityStatement'
 import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
 import Integrations from './pages/Integrations'
+import AdminDashboard from './pages/admin/AdminDashboard'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -107,6 +109,9 @@ function AnimatedRoutes() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/security" element={<Legal />} />
             <Route path="/accessibility" element={<AccessibilityStatement />} />
+
+            {/* Admin — founder only */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
             {/* Landing — always public */}
             <Route path="/" element={<LandingPage />} />
