@@ -444,11 +444,16 @@ export default function Dashboard() {
     const p = proposals.find(x => x.id === proposalId)
     if (!p) return
     setPdfGenerating(proposalId)
+    // Priority: DB column → localStorage written by DealRoom at signing time
+    const sigFromDb = p.signature_data_url ?? ''
+    const signatureDataUrl = sigFromDb || (() => {
+      try { return localStorage.getItem(`dealspace:sig:${p.public_token}`) ?? '' } catch { return '' }
+    })()
     await generateProposalPdf({
       proposal: p,
       totalAmount: proposalTotal(p),
       enabledAddOnIds: p.add_ons.filter(a => a.enabled).map(a => a.id),
-      signatureDataUrl: '',
+      signatureDataUrl,
       locale,
     })
     setPdfGenerating(null)
