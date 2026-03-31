@@ -29,21 +29,29 @@ function deriveNotifications(proposals: Proposal[]): Notif[] {
   const notifs: Notif[] = []
 
   for (const p of proposals) {
-    // Accepted — highest priority, always show
-    if (p.status === 'accepted') {
+    // ── Accepted ────────────────────────────────────────────────────────────
+    // Guard: accepted_at must exist — it is set atomically by the accept_proposal
+    // RPC when the client actually signs. Using updated_at would cause phantom
+    // notifications every time the owner autosaves the proposal.
+    if (p.status === 'accepted' && p.accepted_at) {
       notifs.push({
         id: `accepted-${p.id}`,
         proposalId: p.id,
         type: 'accepted',
         title: p.project_title || '—',
         client: p.client_name || '—',
-        time: p.updated_at,
+        time: p.accepted_at,   // ← always the actual signing timestamp
       })
     }
 
-    // Viewed — de-spammed: one entry per proposal showing latest view + count
-    // Skip if proposal is accepted (accepted notification already covers it)
-    if (p.last_viewed_at && p.status !== 'accepted') {
+    // ── Viewed ──────────────────────────────────────────────────────────────
+    // Guards:
+    // 1. last_viewed_at must exist (obvious)
+    // 2. sent_at must exist — proposal must have been sent to the client first.
+    //    Without this, the owner previewing their own deal room URL triggers a
+    //    "viewed" notification before the client ever sees it.
+    // 3. Skip accepted proposals — the accepted notification already covers them.
+    if (p.last_viewed_at && p.sent_at && p.status !== 'accepted') {
       notifs.push({
         id: `viewed-${p.id}`,
         proposalId: p.id,
