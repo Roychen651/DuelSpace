@@ -460,7 +460,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
           }}
         >
           <CreditCard size={13} />
-          {isHe ? (isDowngrade ? 'שנמך תוכנית' : 'נהל חיוב') : (isDowngrade ? 'Downgrade Plan' : 'Manage Billing')}
+          {isHe ? 'ניהול מנוי' : 'Manage Subscription'}
         </motion.button>
       )}
     </motion.div>
