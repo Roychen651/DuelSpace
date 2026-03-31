@@ -444,17 +444,29 @@ export default function Dashboard() {
     const p = proposals.find(x => x.id === proposalId)
     if (!p) return
     setPdfGenerating(proposalId)
-    // Priority: DB column → localStorage written by DealRoom at signing time
-    const sigFromDb = p.signature_data_url ?? ''
-    const signatureDataUrl = sigFromDb || (() => {
-      try { return localStorage.getItem(`dealspace:sig:${p.public_token}`) ?? '' } catch { return '' }
-    })()
+    // Always fetch signature fresh from DB — store cache may be stale
+    let signatureDataUrl = p.signature_data_url ?? ''
+    if (!signatureDataUrl) {
+      const { data: fresh } = await supabase
+        .from('proposals')
+        .select('signature_data_url')
+        .eq('id', proposalId)
+        .single()
+      signatureDataUrl = (fresh?.signature_data_url as string) ?? ''
+    }
+    // Last resort: localStorage (only works on same browser the client signed on)
+    if (!signatureDataUrl) {
+      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${p.public_token}`) ?? '' } catch { /* */ }
+    }
+    // Use accepted_at as the real signing timestamp, not current time
+    const sigTimestamp = p.accepted_at ? new Date(p.accepted_at) : undefined
     await generateProposalPdf({
       proposal: p,
       totalAmount: proposalTotal(p),
       enabledAddOnIds: p.add_ons.filter(a => a.enabled).map(a => a.id),
       signatureDataUrl,
       locale,
+      signatureTimestamp: sigTimestamp,
     })
     setPdfGenerating(null)
   }

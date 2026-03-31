@@ -281,11 +281,22 @@ export default function ProposalBuilder() {
     })()
     const fin = calculateFinancials(currentProposal, undefined, vatRate)
     const enabledIds = currentProposal.add_ons.filter(a => a.enabled).map(a => a.id)
-    // Priority: DB column → localStorage written by DealRoom at signing time
-    const sigFromDb = currentProposal.signature_data_url ?? ''
-    const signatureDataUrl = sigFromDb || (() => {
-      try { return localStorage.getItem(`dealspace:sig:${currentProposal.public_token}`) ?? '' } catch { return '' }
-    })()
+    // Always fetch signature fresh from DB — store cache may be stale
+    let signatureDataUrl = currentProposal.signature_data_url ?? ''
+    if (!signatureDataUrl) {
+      const { data: fresh } = await supabase
+        .from('proposals')
+        .select('signature_data_url')
+        .eq('id', currentProposal.id)
+        .single()
+      signatureDataUrl = (fresh?.signature_data_url as string) ?? ''
+    }
+    // Last resort: localStorage (only works on same browser the client signed on)
+    if (!signatureDataUrl) {
+      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${currentProposal.public_token}`) ?? '' } catch { /* */ }
+    }
+    // Use accepted_at as the real signing timestamp, not current time
+    const sigTimestamp = currentProposal.accepted_at ? new Date(currentProposal.accepted_at) : undefined
     await generateProposalPdf({
       proposal: currentProposal,
       totalAmount: fin.grandTotal,
@@ -293,6 +304,7 @@ export default function ProposalBuilder() {
       signatureDataUrl,
       locale,
       isDraft: currentProposal.status !== 'accepted',
+      signatureTimestamp: sigTimestamp,
     })
     setPdfGenerating(false)
   }, [currentProposal, pdfGenerating, locale])
