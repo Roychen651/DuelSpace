@@ -398,15 +398,12 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
                         label={locale === 'he' ? 'הסר מארכיון' : 'Unarchive'}
                         onClick={handleUnarchive}
                       />
-                      {/* Permanent delete only for non-signed proposals */}
-                      {proposal.status !== 'accepted' && (
-                        <DropItem
-                          icon={<Trash2 size={15} />}
-                          label={locale === 'he' ? 'מחק לצמיתות' : 'Delete permanently'}
-                          onClick={() => setConfirmingDelete(true)}
-                          variant="danger"
-                        />
-                      )}
+                      <DropItem
+                        icon={<Trash2 size={15} />}
+                        label={locale === 'he' ? 'מחק לצמיתות' : 'Delete permanently'}
+                        onClick={() => setConfirmingDelete(true)}
+                        variant="danger"
+                      />
                     </>
                   ) : (
                     // ── Active view actions ────────────────────────────────
@@ -618,34 +615,98 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
               </motion.div>
             )}
 
-            {/* Inline delete confirmation */}
+            {/* Inline delete / archive confirmation */}
             {confirmingDelete && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                transition={{ duration: 0.18 }}
-                className="mt-3 flex items-center gap-2"
+                transition={{ duration: 0.2 }}
                 style={{ overflow: 'hidden' }}
               >
-                <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
-                  {isArchived
-                    ? (locale === 'he' ? 'למחוק לצמיתות? לא ניתן לשחזר' : 'Delete permanently? Cannot undo.')
-                    : (locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?')}
-                </p>
-                <button
-                  className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
-                  onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
-                >
-                  {locale === 'he' ? 'ביטול' : 'Cancel'}
-                </button>
-                <button
-                  className="rounded-lg px-3 py-1 text-[11px] font-bold transition-colors"
-                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
-                  onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
-                >
-                  {isArchived ? (locale === 'he' ? 'מחק' : 'Delete') : (locale === 'he' ? 'ארכיון' : 'Archive')}
-                </button>
+                {isArchived && proposal.status === 'accepted' ? (
+                  // ── Signed-contract deletion — serious warning ──────────
+                  <div
+                    className="mt-3 rounded-xl overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(185,28,28,0.07) 100%)',
+                      border: '1px solid rgba(239,68,68,0.35)',
+                      boxShadow: '0 0 24px rgba(239,68,68,0.08), inset 0 1px 0 rgba(239,68,68,0.12)',
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+                      <div
+                        className="flex h-7 w-7 flex-none items-center justify-center rounded-lg"
+                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.25)' }}
+                      >
+                        <Trash2 size={12} style={{ color: '#f87171' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: '#f87171' }}>
+                          {locale === 'he' ? 'מחיקת חוזה חתום' : 'Delete Signed Contract'}
+                        </p>
+                        <p className="text-[10px] truncate" style={{ color: 'rgba(239,68,68,0.6)' }}>
+                          {proposal.client_name || '—'} · {proposal.project_title || '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Warning body */}
+                    <div className="px-3 pb-2.5">
+                      <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {locale === 'he'
+                          ? 'פעולה זו בלתי הפיכה לחלוטין. ההסכם החתום, נתוני הלקוח וכל הנתונים הפיננסיים יימחקו לצמיתות.'
+                          : 'This is completely irreversible. The signed agreement, client data, and all financial records will be permanently erased.'}
+                      </p>
+                    </div>
+
+                    {/* Buttons */}
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5"
+                      style={{ borderTop: '1px solid rgba(239,68,68,0.15)' }}
+                    >
+                      <button
+                        className="flex-1 rounded-lg py-1.5 text-[11px] font-semibold transition-colors"
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
+                        onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
+                      >
+                        {locale === 'he' ? 'ביטול' : 'Cancel'}
+                      </button>
+                      <button
+                        className="flex-1 rounded-lg py-1.5 text-[11px] font-black transition-colors"
+                        style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}
+                        onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
+                        onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.28)' }}
+                        onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
+                      >
+                        {locale === 'he' ? 'מחק לצמיתות' : 'Delete Forever'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // ── Standard archive / delete confirmation ──────────────
+                  <div className="mt-3 flex items-center gap-2">
+                    <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
+                      {isArchived
+                        ? (locale === 'he' ? 'למחוק לצמיתות? לא ניתן לשחזר' : 'Delete permanently? Cannot undo.')
+                        : (locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?')}
+                    </p>
+                    <button
+                      className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
+                      onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
+                    >
+                      {locale === 'he' ? 'ביטול' : 'Cancel'}
+                    </button>
+                    <button
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold transition-colors"
+                      style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
+                      onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
+                    >
+                      {isArchived ? (locale === 'he' ? 'מחק' : 'Delete') : (locale === 'he' ? 'ארכיון' : 'Archive')}
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
 
