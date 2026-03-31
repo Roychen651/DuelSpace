@@ -374,64 +374,56 @@ export default function AdminDashboard() {
           style={{ background:'linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.05)' }}
         >
           {/* Panel header */}
-          <div className="px-4 sm:px-6 py-4 space-y-3" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-            {/* Top row: title + search */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <Users size={13} style={{ color:'#818cf8' }} />
-                <p className="text-[13px] font-bold text-white">{L.registry}</p>
-                {!loading && (
-                  <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                    style={{ background:'rgba(99,102,241,0.12)', color:'#a5b4fc', border:'1px solid rgba(99,102,241,0.25)' }}>
-                    {filtered.length}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <p className="hidden sm:block text-[11px] font-medium" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</p>
-                <input
-                  type="text" value={search} onChange={e => setSearch(e.target.value)}
-                  placeholder={L.search}
-                  className="h-8 rounded-xl px-3 text-[11px] font-medium outline-none transition-all"
-                  style={{ width:190, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.75)' }}
-                  onFocus={e=>{ e.currentTarget.style.border='1px solid rgba(99,102,241,0.45)'; e.currentTarget.style.background='rgba(99,102,241,0.07)' }}
-                  onBlur={e =>{ e.currentTarget.style.border='1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
-                />
-              </div>
+          <div className="px-4 sm:px-6 py-4 space-y-2.5" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+            {/* Title row */}
+            <div className="flex items-center gap-2">
+              <Users size={13} style={{ color:'#818cf8' }} />
+              <p className="text-[13px] font-bold text-white">{L.registry}</p>
+              {!loading && (
+                <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  style={{ background:'rgba(99,102,241,0.12)', color:'#a5b4fc', border:'1px solid rgba(99,102,241,0.25)' }}>
+                  {filtered.length}
+                </span>
+              )}
+              <span className="hidden sm:block text-[11px] font-medium ms-2" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</span>
             </div>
 
-            {/* Bottom row: filter pills + sort */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {/* Filter pills */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {([
-                  { key: 'all',       label: L.filterAll,     color: '#818cf8', bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.4)' },
-                  { key: 'free',      label: L.filterFree,    color: 'rgba(255,255,255,0.55)', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
-                  { key: 'pro',       label: L.filterPro,     color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.35)' },
-                  { key: 'unlimited', label: L.filterUnlim,   color: '#fbbf24', bg: 'rgba(212,175,55,0.12)',  border: 'rgba(212,175,55,0.35)' },
-                  { key: 'suspended', label: L.filterSuspend, color: '#f87171', bg: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.3)' },
-                ] as const).map(pill => {
-                  const active = filterTier === pill.key
-                  return (
-                    <button
-                      key={pill.key}
-                      type="button"
-                      onClick={() => setFilterTier(pill.key)}
-                      className="h-8 rounded-xl px-3 text-[11px] font-semibold transition-all"
-                      style={{
-                        color:       active ? pill.color              : 'rgba(255,255,255,0.3)',
-                        background:  active ? pill.bg                 : 'rgba(255,255,255,0.03)',
-                        border:      active ? `1px solid ${pill.border}` : '1px solid rgba(255,255,255,0.07)',
-                        boxShadow:   active ? `0 0 10px ${pill.bg}`  : 'none',
-                      }}
-                    >
-                      {pill.label}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Sort dropdown */}
+            {/* Controls row — always LTR so RTL doesn't reorder controls */}
+            <div className="flex flex-wrap items-center gap-2" dir="ltr">
+              <input
+                type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder={L.search}
+                className="h-8 rounded-xl px-3 text-[11px] font-medium outline-none transition-all"
+                style={{ width:170, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.75)' }}
+                onFocus={e=>{ e.currentTarget.style.border='1px solid rgba(99,102,241,0.45)'; e.currentTarget.style.background='rgba(99,102,241,0.07)' }}
+                onBlur={e =>{ e.currentTarget.style.border='1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
+              />
+              {([
+                { key: 'all',       label: L.filterAll,     color: '#818cf8', bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.4)' },
+                { key: 'free',      label: L.filterFree,    color: 'rgba(255,255,255,0.55)', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+                { key: 'pro',       label: L.filterPro,     color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.35)' },
+                { key: 'unlimited', label: L.filterUnlim,   color: '#fbbf24', bg: 'rgba(212,175,55,0.12)',  border: 'rgba(212,175,55,0.35)' },
+                { key: 'suspended', label: L.filterSuspend, color: '#f87171', bg: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.3)' },
+              ] as const).map(pill => {
+                const active = filterTier === pill.key
+                return (
+                  <button
+                    key={pill.key}
+                    type="button"
+                    onClick={() => setFilterTier(pill.key)}
+                    className="h-8 rounded-xl px-3 text-[11px] font-semibold transition-all"
+                    style={{
+                      color:       active ? pill.color              : 'rgba(255,255,255,0.3)',
+                      background:  active ? pill.bg                 : 'rgba(255,255,255,0.03)',
+                      border:      active ? `1px solid ${pill.border}` : '1px solid rgba(255,255,255,0.07)',
+                      boxShadow:   active ? `0 0 10px ${pill.bg}`  : 'none',
+                    }}
+                  >
+                    {pill.label}
+                  </button>
+                )
+              })}
+              <div className="flex-1" />
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortBy)}

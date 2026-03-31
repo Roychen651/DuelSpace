@@ -280,13 +280,26 @@ export function UserOpsDrawer({ user, isHe, onClose, onUpdated, onDeleted }: Use
     setImpFb('loading')
     setImpLink(null)
     try {
-      const { data, error } = await supabase.functions.invoke<{ link?: string; error?: string }>(
-        'admin-impersonate',
-        { body: { target_email: user.email } },
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('No active session')
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'x-application-name': 'DealSpace',
+          },
+          body: JSON.stringify({ target_email: user.email }),
+        },
       )
-      if (error || !data?.link) throw new Error(data?.error ?? error?.message ?? 'No link returned')
-      setImpLink(data.link)
-      window.open(data.link, '_blank', 'noopener,noreferrer')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json() as { link?: string; error?: string }
+      if (!json.link) throw new Error(json.error ?? 'No link returned')
+      setImpLink(json.link)
+      window.open(json.link, '_blank', 'noopener,noreferrer')
       setImpFb('ok')
     } catch (e: unknown) {
       console.error('[impersonate]', e)
@@ -414,7 +427,7 @@ export function UserOpsDrawer({ user, isHe, onClose, onUpdated, onDeleted }: Use
               </Dialog.Overlay>
 
               {/* Drawer */}
-              <Dialog.Content asChild forceMount>
+              <Dialog.Content asChild forceMount aria-describedby={undefined}>
                 <motion.div
                   initial={{ x: isHe ? '-100%' : '100%' }}
                   animate={{ x: 0 }}
