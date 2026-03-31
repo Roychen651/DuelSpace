@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–31.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–37.
 
 ---
 
@@ -124,9 +124,14 @@ src/
 │   ├── Legal.tsx            # /security — security policy page
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
 │   ├── PrivacyPolicy.tsx    # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
-│   └── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
+│   ├── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
+│   └── admin/
+│       ├── AdminDashboard.tsx   # /admin — founder-only panel; KPI cards, user registry table, filter/sort
+│       └── UserOpsDrawer.tsx    # Slide-over drawer for a single user; Radix Tabs (Profile/Billing/Security/Danger)
 │
 ├── components/
+│   ├── layout/
+│   │   └── AdminRoute.tsx        # Three-layer auth guard: idle spinner → unauthenticated → wrong email → /dashboard
 │   ├── builder/
 │   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, contract picker, AI Ghostwriter
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
@@ -170,24 +175,34 @@ src/
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo (incl. logo_url, webhook_url),
-│                            #   proposalTotal(), applyVat(), formatCurrency(), milestonesValid(), STATUS_META
+│   └── proposal.ts          # Proposal (incl. signer_ip, signer_user_agent), ProposalInsert, AddOn,
+│                            #   PaymentMilestone, CreatorInfo, proposalTotal(), STATUS_META, …
 │
-└── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, ErrorBoundary
+└── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, AdminRoute, ErrorBoundary
 
 supabase/
-└── migrations/
-    ├── 01_proposals_schema.sql     # proposals table, RLS, indexes, updated_at trigger
-    ├── 02_deal_room_rpcs.sql       # mark_proposal_viewed(), accept_proposal()
-    ├── 03_vat_field.sql            # include_vat column + update_proposal_time_spent RPC
-    ├── 04_access_code.sql          # access_code column + get_deal_room_proposal RPC
-    ├── 05_fix_deal_room_rpc.sql    # Adds SET search_path = public, grants to authenticated
-    ├── 06_sprint10.sql             # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
-    ├── 07_sprint11.sql             # success_template column + decline_proposal() RPC
-    ├── 08_xray_section_time.sql    # section_time jsonb column for Deal Room X-Ray analytics
-    ├── 09–14_*.sql                 # Negotiation engine, status timestamps, discount engine, bugfixes
-    ├── 15_storage_avatars_bucket.sql # avatars Storage bucket + RLS policies
-    └── 16_services_table.sql       # services table + RLS + index (Sprint 27)
+├── migrations/
+│   ├── 01_proposals_schema.sql        # proposals table, RLS, indexes, updated_at trigger
+│   ├── 02_deal_room_rpcs.sql          # mark_proposal_viewed(), accept_proposal()
+│   ├── 03_vat_field.sql               # include_vat column + update_proposal_time_spent RPC
+│   ├── 04_access_code.sql             # access_code column + get_deal_room_proposal RPC
+│   ├── 05_fix_deal_room_rpc.sql       # Adds SET search_path = public, grants to authenticated
+│   ├── 06_sprint10.sql                # payment_milestones, client capture fields, brand_color, creator_info + save_client_details RPC
+│   ├── 07_sprint11.sql                # success_template column + decline_proposal() RPC
+│   ├── 08_xray_section_time.sql       # section_time jsonb column for Deal Room X-Ray analytics
+│   ├── 09–14_*.sql                    # Negotiation engine, status timestamps, discount engine, bugfixes
+│   ├── 15_storage_avatars_bucket.sql  # avatars Storage bucket + RLS policies
+│   ├── 16_services_table.sql          # services table + RLS + index (Sprint 27)
+│   ├── 17_archive_proposals.sql       # is_archived column + archive/unarchive RPCs
+│   ├── 18_admin_panel_rpcs.sql        # get_admin_users_data() + admin_set_user_tier()
+│   ├── 19_admin_pipeline_value.sql    # Adds total_pipeline_value to get_admin_users_data
+│   ├── 20_admin_crud.sql              # admin_delete_user() + admin_update_user_profile()
+│   ├── 21_admin_apex.sql              # admin_update_user_advanced(), admin_toggle_suspend(), refreshed get_admin_users_data with is_suspended + bonus_quota
+│   ├── 22_admin_v2.sql                # admin_save_note(), admin_get_user_proposals(), get_admin_users_data with phone + admin_notes
+│   └── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
+└── functions/
+    └── admin-impersonate/
+        └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
 ```
 
 ---
@@ -211,6 +226,7 @@ supabase/
 /privacy                   → PrivacyPolicy       (always public — 12-clause He/En)
 /security                  → Legal               (always public — security policy)
 /accessibility             → AccessibilityStatement (always public — WCAG 2.2 AA)
+/admin                     → AdminDashboard        (AdminRoute — founder email only: roychen651@gmail.com)
 *                          → redirect to /
 ```
 
@@ -319,6 +335,11 @@ if (eventType === 'UPDATE') {
 | `view_count` | integer | default 0 |
 | `last_viewed_at` | timestamptz | nullable |
 | `time_spent_seconds` | integer | default 0 |
+| `is_archived` | boolean | default false — soft-delete, never physically removed |
+| `sent_at` | timestamptz | nullable — first transition away from 'draft' |
+| `accepted_at` | timestamptz | nullable — when client signed |
+| `signer_ip` | text | nullable — client IP captured at signing (Sprint 37) |
+| `signer_user_agent` | text | nullable — client browser UA captured at signing (Sprint 37) |
 | `created_at` | timestamptz | now() |
 | `updated_at` | timestamptz | auto-updated via trigger |
 
@@ -342,14 +363,16 @@ RLS: `services_owner_select / insert / update / delete` — `auth.uid() = user_i
 ### RPCs (all SECURITY DEFINER, SET search_path = public)
 
 ```sql
--- Migration 02
+-- Migration 02 / 14 (14 changed return type to BOOLEAN) / 23 (added forensic params)
 mark_proposal_viewed(p_token TEXT)
   → increments view_count, sets last_viewed_at, advances status to 'viewed'
   → granted to: anon
 
-accept_proposal(p_token TEXT)
-  → sets status = 'accepted' (only from sent/viewed)
-  → granted to: anon
+accept_proposal(p_token TEXT, p_ip TEXT DEFAULT NULL, p_ua TEXT DEFAULT NULL)
+  → sets status = 'accepted' (only from sent/viewed/needs_revision)
+  → saves signer_ip + signer_user_agent atomically — both nullable, old callers unaffected
+  → returns BOOLEAN (true = row updated, false = already accepted or token not found)
+  → granted to: anon, authenticated
 
 -- Migration 03
 update_proposal_time_spent(p_token TEXT, p_seconds INTEGER)
@@ -368,6 +391,40 @@ save_client_details(p_token TEXT, p_full_name TEXT, p_company_name TEXT, p_tax_i
   → COALESCE(NULLIF(p_field, ''), existing_col) — empty strings never overwrite existing data
   → only updates when status IN ('sent', 'viewed')
   → granted to: anon, authenticated
+
+-- Migrations 18–22 (admin RPCs — all check auth.jwt() ->> 'email' = 'roychen651@gmail.com')
+get_admin_users_data() RETURNS json
+  → returns all users with plan_tier, full_name, company_name, phone, admin_notes,
+    is_suspended, bonus_quota, created_at, last_sign_in_at, proposal_count, total_pipeline_value
+  → granted to: authenticated
+
+admin_set_user_tier(p_target_id uuid, p_tier text)
+  → merges plan_tier into raw_user_meta_data
+  → granted to: authenticated
+
+admin_update_user_profile(p_target_id uuid, p_full_name text, p_company_name text)
+  → merges display identity fields into raw_user_meta_data
+  → granted to: authenticated
+
+admin_update_user_advanced(p_target_id uuid, p_name text, p_company text, p_bonus_quota int)
+  → merges full_name, company_name, bonus_quota into raw_user_meta_data (quota cannot be negative)
+  → granted to: authenticated
+
+admin_toggle_suspend(p_target_id uuid, p_suspend boolean)
+  → sets or clears is_suspended in raw_user_meta_data
+  → granted to: authenticated
+
+admin_save_note(p_target_id uuid, p_note text)
+  → stores admin_notes in raw_user_meta_data
+  → granted to: authenticated
+
+admin_get_user_proposals(p_target_id uuid) RETURNS json
+  → returns last 20 proposals for a user (id, project_title, client_name, status, base_price, currency, public_token, created_at, updated_at)
+  → granted to: authenticated
+
+admin_delete_user(p_target_id uuid)
+  → calls auth.users delete — permanent, irreversible
+  → granted to: authenticated
 ```
 
 ---
@@ -1479,6 +1536,180 @@ Integrations added as menu item after Contracts: `<Webhook size={13} />` icon + 
 
 ---
 
+## 27. Admin Panel Architecture (Sprints 34–35)
+
+### Route & Guard
+
+`/admin` is a founder-only route, guarded by `AdminRoute.tsx`:
+```
+idle/loading  → spinner
+unauthenticated → /auth
+auth.user.email !== 'roychen651@gmail.com' → /dashboard
+```
+
+`AdminDashboard.tsx` and `UserOpsDrawer.tsx` live in `src/pages/admin/`. Import `AdminUser` type from `UserOpsDrawer.tsx`.
+
+### AdminDashboard
+
+- 5 KPI cards: Total Users, Unlimited, Pro, Proposals, Platform Pipeline
+- Registry panel with filter pills (All / Free / Pro / Unlimited / Suspended) and sort dropdown (Newest / By Pipeline / By Proposals)
+- Filter + sort applied to `users` array client-side before rendering
+- Desktop table: fixed column widths (32/12/13/12/14/17%), `py-3` rows, `timeAgo` helper for Last Active column
+- Mobile: `MobileUserCard` bento stack
+- Clicking a row sets `selected` → opens `UserOpsDrawer`
+- Row shows indigo left-border accent when selected
+
+### Date formatting in AdminDashboard
+Always use the manual `fmtDate` / `fmtDateFull` / `timeAgo` helpers — **never `toLocaleDateString()`**. The locale-aware method produces browser-dependent output ("Mar 2026 29") that breaks the table layout. The manual formatters output "29 Mar" (current year) / "29 Mar 2026" (past year) deterministically.
+
+```ts
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+function fmtDate(iso: string): string {
+  const d = new Date(iso)
+  const sameYear = d.getFullYear() === new Date().getFullYear()
+  return sameYear
+    ? `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]}`
+    : `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+}
+function timeAgo(iso: string | null): string {
+  // → 'Just now' | '3h ago' | 'Yesterday' | '5d ago' | '29 Mar 2025'
+}
+```
+
+### UserOpsDrawer
+
+Radix `Dialog` slide-over (LTR slides from right, RTL from left). Width: `min(480px, 100vw)`. Contains:
+
+1. **Header** — user avatar + name/email + tier badge + big "Impersonate User" button
+2. **Radix Tabs** (`@radix-ui/react-tabs`) with 4 tabs:
+   - **Profile** (`overview`) — full_name, company_name, phone edit fields + Admin Notes textarea → `admin_update_user_advanced` + `admin_save_note`
+   - **Billing** (`billing`) — glowing radio cards (Free/Pro/Unlimited) + ±bonus quota adjuster → `admin_set_user_tier` + `admin_update_user_advanced`
+   - **Security** (`security`) — send password reset email + lazy-loaded proposals list with status badges and ExternalLink to deal room → `admin_get_user_proposals`
+   - **Danger** (`danger`) — orange Suspend/Unsuspend card + red Delete card → `admin_toggle_suspend` + `admin_delete_user`
+
+### Impersonation edge function
+
+The "Impersonate User" button calls the `admin-impersonate` Supabase Edge Function:
+
+```typescript
+// CRITICAL: must include BOTH Authorization AND apikey headers
+const res = await fetch(
+  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`,
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session?.access_token}`,
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,  // ← required by Supabase gateway
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ target_email: user.email }),
+  }
+)
+const { link } = await res.json()
+window.open(link, '_blank', 'noopener,noreferrer')
+```
+
+The edge function (`supabase/functions/admin-impersonate/index.ts`):
+1. Verifies caller JWT via anon client → checks `user.email === 'roychen651@gmail.com'`
+2. Uses service role client to call `supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email: target_email, options: { redirectTo: APP_URL/dashboard } })`
+3. Returns `{ link: data.properties.action_link }`
+
+**Deployment:** `supabase functions deploy admin-impersonate --project-ref aefyytktbpynkbxhzhyt`
+
+### `FeedbackState` + `withFb` pattern
+
+```ts
+type FeedbackState = 'idle' | 'loading' | 'ok' | 'error'
+
+function withFb(
+  setter: (s: FeedbackState) => void,
+  fn: () => Promise<void>,
+  clearMs = 2500,
+) {
+  return async () => {
+    setter('loading')
+    try { await fn(); setter('ok') }
+    catch { setter('error') }
+    setTimeout(() => setter('idle'), clearMs)
+  }
+}
+```
+
+All tab-level save/delete/suspend actions use this pattern. Feedback buttons show Loader2 → CheckCircle2 → AlertTriangle based on state.
+
+### AdminUser type (exported from UserOpsDrawer.tsx)
+
+```ts
+export interface AdminUser {
+  id: string
+  email: string
+  full_name: string
+  company_name: string
+  phone: string
+  admin_notes: string
+  plan_tier: 'free' | 'pro' | 'unlimited'
+  is_suspended: boolean
+  bonus_quota: number
+  created_at: string
+  last_sign_in_at: string | null
+  proposal_count: number
+  total_pipeline_value: number
+}
+```
+
+---
+
+## 28. Forensic Audit Trail (Sprint 37)
+
+### Architecture
+
+Three-layer chain: browser → RPC → PDF.
+
+**DealRoom `handleAccept`:**
+```ts
+// IP fetch — fire-and-forget, NEVER blocks signing
+let signerIp = 'Unknown'
+try {
+  const r = await fetch('https://api.ipify.org?format=json')
+  const j = await r.json() as { ip?: string }
+  if (j.ip) signerIp = j.ip
+} catch (_) {}
+
+const signerUa = navigator.userAgent
+
+await supabase.rpc('accept_proposal', {
+  p_token: token,
+  p_ip:    signerIp,
+  p_ua:    signerUa,
+})
+```
+
+**Database:** `signer_ip TEXT` and `signer_user_agent TEXT` saved atomically inside `accept_proposal` UPDATE. Both columns nullable — old callers that omit params get NULL without error.
+
+**Proposal type** (`src/types/proposal.ts`):
+```ts
+signer_ip?: string | null
+signer_user_agent?: string | null
+```
+
+**PDF Certificate — Forensic section:**
+- Renders only when `proposal.signer_ip` exists (conditional block)
+- Placed between the signer metadata row and the document token box
+- Uses brand-color header strip identical to the Audit Trail header
+- Two Iron Grid rows (38/62 split, `row-reverse`):
+  - "כתובת IP" / "IP Address" → `signer_ip`
+  - "מזהה מכשיר" / "Device / Browser" → UA truncated at 90 chars
+- IP address also appended as a named row inside the main Audit Trail table
+
+**Audit Trail row for IP:**
+```ts
+...(proposal.signer_ip ? [
+  { label: isHe ? 'כתובת IP' : 'Signer IP', value: proposal.signer_ip },
+] : []),
+```
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -1523,3 +1754,10 @@ Integrations added as menu item after Contracts: `<Webhook size={13} />` icon + 
 - **Do not use the service's DB `id` as the injected add-on `id`** — always call `crypto.randomUUID()` when mapping a `Service` → `AddOn` in `ReusableServices`. Using the same id links the proposal's add-on to the library entry, causing silent historical mutation if the service is later edited or deleted.
 - **Do not apply `filter: brightness(0) invert(1)` to company logos in Deal Room** — this filter first turns all pixels black then white, destroying any logo with a colored or non-transparent background. Display logos inside a glassmorphism pill container instead.
 - **Do not read services from localStorage** — `ServicesLibrary.tsx` and `ReusableServices.tsx` both source data from `useServicesStore` (Supabase). The old `dealspace:saved-services` localStorage key is abandoned as of Sprint 27.
+- **Do not call Supabase Edge Functions without the `apikey` header** — the Supabase API gateway requires `'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY` alongside `Authorization: Bearer <access_token>`. Omitting it causes the gateway to return a non-2xx response and the function appears to not be deployed (it is deployed — the gateway just rejects the request silently).
+- **Do not use `toLocaleDateString()` in admin data tables** — it produces browser/OS-dependent output ("Mar 2026 29") that breaks table layout. Always use the manual `fmtDate()` formatter: `DD Mon` for current year, `DD Mon YYYY` for past years. For recency columns use `timeAgo()` ("Just now", "3h ago", "Yesterday", "5d ago").
+- **Do not block the signing flow on IP fetch failure** — `fetch('https://api.ipify.org')` can time out on slow or restricted networks. Always wrap it in try/catch and fall back to `'Unknown'`. The signing must complete regardless of whether IP capture succeeds.
+- **Do not re-run `admin_delete_user` without confirmation UI** — it calls `auth.users delete` which is permanent and irreversible. The Danger tab must have a confirmation step (type-to-confirm or explicit confirm button) before calling the RPC.
+- **Do not change the admin guard email** — `AdminRoute.tsx` and all admin RPCs are hardcoded to `roychen651@gmail.com`. This is intentional: it is the single founder account. Do not extract it to a config or make it dynamic.
+- **Do not deploy the `admin-impersonate` edge function with `supabase functions deploy` without the `--project-ref` flag** — without it the CLI may deploy to the wrong project. Always: `supabase functions deploy admin-impersonate --project-ref aefyytktbpynkbxhzhyt`.
+- **Do not add `DROP FUNCTION` to a migration without re-creating with `GRANT`** — every DROP+CREATE pair must end with the appropriate `GRANT EXECUTE ON FUNCTION … TO anon` and/or `authenticated`. Missing grants silently break the function for the intended caller.
