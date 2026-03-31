@@ -182,7 +182,18 @@ export default function ProposalBuilder() {
           window.history.replaceState(null, '', `/proposals/${created.id}`)
         }
       } else {
-        await updateProposal(proposalIdRef.current, current)
+        // Strip server-managed fields — autosave must NEVER overwrite status,
+        // accepted_at, signer_ip/ua, delivery data, or signature_data_url.
+        // Without this, the autosave fires with status:'sent' from the initial
+        // draft state and overwrites an 'accepted' status set by accept_proposal.
+        const {
+          status: _s, accepted_at: _aa, sent_at: _sa,
+          signer_ip: _ip, signer_user_agent: _ua,
+          delivery_email: _de, email_sent_at: _es, email_opened_at: _eo,
+          signature_data_url: _sig,
+          ...autosaveFields
+        } = current
+        await updateProposal(proposalIdRef.current, autosaveFields)
       }
 
       setSaveStatus('saved')

@@ -96,6 +96,8 @@ export interface Proposal {
   email_sent_at?: string | null
   /** Timestamp of when the client opened the email link (?source=email) — set by mark_email_opened RPC (Sprint 39) */
   email_opened_at?: string | null
+  /** Base64 PNG data URL of the client's drawn signature — stored atomically with accept_proposal (Sprint 41) */
+  signature_data_url?: string | null
   /**
    * Soft-delete flag — Sprint 29 Archive Engine.
    * When true the proposal is hidden from the active view but NEVER removed from the DB.

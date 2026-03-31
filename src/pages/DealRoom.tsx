@@ -900,6 +900,7 @@ export default function DealRoom() {
       p_token: token,
       p_ip:    signerIp,
       p_ua:    signerUa,
+      p_sig:   signatureRef.current || signature,
     })
     // Migration 14: accept_proposal now returns BOOLEAN.
     // error = null + data = false  → 0 rows updated (already accepted, or token not found)
@@ -973,13 +974,18 @@ export default function DealRoom() {
       .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
       .map(a => a.id)
     // Signature priority chain (most reliable to least):
-    // 1. acceptedSignature — state set atomically when accept_proposal RPC succeeded
-    // 2. signatureRef.current — ref written synchronously on every onSignatureChange call
-    // 3. signature — React state (may be stale in old closures)
-    // 4. localStorage — cross-session / page-reload fallback
-    const sigForPdf = acceptedSignature || signatureRef.current || signature || (() => {
-      try { return localStorage.getItem(`dealspace:sig:${token}`) ?? '' } catch { return '' }
-    })()
+    // 1. proposal.signature_data_url — stored in DB at signing time, works cross-session/device
+    // 2. acceptedSignature — state set atomically when accept_proposal RPC succeeded
+    // 3. signatureRef.current — ref written synchronously on every onSignatureChange call
+    // 4. signature — React state
+    // 5. localStorage — legacy cross-session fallback
+    const sigForPdf = proposal.signature_data_url
+      || acceptedSignature
+      || signatureRef.current
+      || signature
+      || (() => {
+        try { return localStorage.getItem(`dealspace:sig:${token}`) ?? '' } catch { return '' }
+      })()
     await generateProposalPdf({
       proposal,
       totalAmount: grandTotal,
