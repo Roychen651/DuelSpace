@@ -509,6 +509,10 @@ export default function DealRoom() {
   >({})
 
   const [signature, setSignature] = useState('')
+  // Ref mirror of signature — always up-to-date regardless of closure staleness.
+  // Used by handleAccept and handleDownloadPdf to guarantee the real dataUrl is
+  // read even when those useCallback closures were created before setSignature fired.
+  const signatureRef = useRef('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
   const freshSignedRef = useRef(false) // true only when signed in this session
@@ -911,7 +915,7 @@ export default function DealRoom() {
     // Persist signature dataUrl to localStorage so the PDF download works even after
     // page reload or when the business owner visits the sealed link from the same browser.
     // Key is scoped to the token so multiple deals don't collide.
-    try { localStorage.setItem(`dealspace:sig:${token}`, signature) } catch (_) {}
+    try { localStorage.setItem(`dealspace:sig:${token}`, signatureRef.current) } catch (_) {}
     // Notify the Dashboard in the same browser tab/session immediately —
     // faster than waiting for Supabase Realtime Postgres Changes to propagate
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
@@ -964,9 +968,9 @@ export default function DealRoom() {
     const enabledIds = proposal.add_ons
       .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
       .map(a => a.id)
-    // Use in-memory signature first; fall back to localStorage copy for revisits /
-    // same-browser reloads. The localStorage key is scoped to the proposal token.
-    const sigForPdf = signature || (() => {
+    // Read signature from ref (always current) → state fallback → localStorage copy for revisits.
+    // The ref is the only source guaranteed to be fresh regardless of closure staleness.
+    const sigForPdf = signatureRef.current || signature || (() => {
       try { return localStorage.getItem(`dealspace:sig:${token}`) ?? '' } catch { return '' }
     })()
     await generateProposalPdf({
@@ -1814,7 +1818,7 @@ export default function DealRoom() {
                 currency={proposal.currency}
                 clientName={proposal.client_name}
                 signature={signature}
-                onSignatureChange={setSignature}
+                onSignatureChange={(dataUrl) => { signatureRef.current = dataUrl; setSignature(dataUrl) }}
                 onAccept={handleAccept}
                 accepting={accepting}
                 accepted={accepted}
