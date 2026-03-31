@@ -163,14 +163,19 @@ Deno.serve(async (req: Request) => {
     return new Response('Missing Authorization header', { status: 401, headers: CORS })
   }
 
-  const callerClient = createClient(
+  const jwt = authHeader.slice(7)
+
+  // Use the admin (service role) client to validate the JWT — more reliable
+  // than the anon client pattern for server-side token verification.
+  const adminClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } },
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  const { data: { user }, error: authError } = await callerClient.auth.getUser()
+  const { data: { user }, error: authError } = await adminClient.auth.getUser(jwt)
   if (authError || !user) {
+    console.warn('[send-proposal] JWT verification failed:', authError?.message)
     return new Response('Unauthorized', { status: 401, headers: CORS })
   }
 
@@ -195,12 +200,6 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Fetch proposal via admin client ───────────────────────────────────────
-  const adminClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  )
-
   const { data: proposal, error: fetchError } = await adminClient
     .from('proposals')
     .select('id, user_id, public_token, project_title, client_name, creator_info')
