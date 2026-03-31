@@ -151,8 +151,8 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
 
               {/* ── Category pills ──────────────────────────────────────── */}
               <div
-                className="flex-none flex items-center gap-1.5 px-4 py-3 overflow-x-auto"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'none' }}
+                className="flex-none flex flex-wrap gap-1.5 px-4 py-3"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
               >
                 {CATEGORY_PILLS.map(cat => {
                   const isActive = activeCategory === cat.key

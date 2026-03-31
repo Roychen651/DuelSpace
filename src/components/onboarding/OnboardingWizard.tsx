@@ -196,7 +196,7 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
           </div>
 
           {/* ── Step content ───────────────────────────────────────────── */}
-          <div className="relative overflow-hidden" style={{ minHeight: 320 }}>
+          <div className="relative" style={{ minHeight: step === 3 ? 460 : 320 }}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
@@ -204,7 +204,7 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="absolute inset-0 px-7 pb-8"
+                className="absolute inset-x-0 top-0 px-7 pb-8"
               >
                 {/* ── Step 1: Welcome ─────────────────────────────────── */}
                 {step === 1 && (
