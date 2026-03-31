@@ -476,7 +476,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── CRM Toolbar ───────────────────────────────────────────────── */}
-        <div className="mb-6 space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}>
+        <div className="relative z-20 mb-6 space-y-3" style={{ animation: 'ds-fade-up 0.4s ease-out 0.28s both' }}>
 
           {/* ── Pipeline Tab Bar ──────────────────────────────────────────── */}
           <div
@@ -642,7 +642,7 @@ export default function Dashboard() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.94, y: -8 }}
                     transition={{ type: 'spring' as const, stiffness: 480, damping: 30 }}
-                    className="absolute top-[calc(100%+6px)] start-0 z-50 min-w-[168px] rounded-2xl overflow-hidden"
+                    className="absolute top-[calc(100%+6px)] start-0 z-[200] min-w-[168px] rounded-2xl overflow-hidden"
                     style={{
                       background: 'linear-gradient(160deg, rgba(16,16,26,0.98) 0%, rgba(8,8,16,0.98) 100%)',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -750,7 +750,7 @@ export default function Dashboard() {
 
         {/* ── Proposals view ────────────────────────────────────────────── */}
         {loading ? (
-          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
             {Array.from({ length: 6 }).map((_, i) => <ProposalCardSkeleton key={i} />)}
           </div>
         ) : pipelineTab === 'all' && activeProposals.length === 0 ? (
@@ -877,7 +877,7 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
             <AnimatePresence>
               {filteredProposals.map((p, i) => (
                 <motion.div

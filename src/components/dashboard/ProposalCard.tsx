@@ -244,7 +244,7 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
   return (
     <>
       <motion.div
-        className="group relative rounded-2xl overflow-hidden cursor-pointer select-none"
+        className="group relative rounded-2xl overflow-hidden cursor-pointer select-none h-full"
         style={{ padding: '1px', background: hovered ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -286,7 +286,7 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
 
         {/* Card background */}
         <div
-          className="relative p-5 h-full"
+          className="relative p-5 h-full flex flex-col"
           style={{
             background: 'linear-gradient(135deg, #0e0e1c 0%, #07070f 100%)',
             borderRadius: '0.9375rem',
@@ -432,215 +432,214 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
             </h3>
           </div>
 
-          {/* ── Revision request panel — instantly actionable ──────────── */}
-          {proposal.status === 'needs_revision' && (
-            <div
-              className="mt-3 mb-1 rounded-xl overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(217,119,6,0.06) 100%)',
-                border: '1px solid rgba(245,158,11,0.25)',
-              }}
-            >
-              <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
-                <MessageSquarePlus size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
-                  {locale === 'he' ? 'הלקוח ביקש שינויים' : 'Client Requested Changes'}
-                </span>
-              </div>
-              {proposal.revision_notes ? (
-                <p
-                  className="px-3 pb-2 text-[11px] leading-relaxed"
-                  style={{
-                    color: 'rgba(245,158,11,0.7)',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {proposal.revision_notes}
-                </p>
-              ) : (
-                <p className="px-3 pb-2 text-[11px] italic" style={{ color: 'rgba(245,158,11,0.4)' }}>
-                  {locale === 'he' ? 'ללא הערות' : 'No notes provided'}
-                </p>
-              )}
-              <button
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold transition-colors"
-                style={{ borderTop: '1px solid rgba(245,158,11,0.15)', color: '#f59e0b', background: 'transparent' }}
-                onClick={e => { e.stopPropagation(); onEdit(proposal.id) }}
-                onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.08)' }}
-                onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-              >
-                <Edit3 size={11} />
-                {locale === 'he' ? 'ערוך ושלח שוב' : 'Edit & Resend'}
-              </button>
-            </div>
-          )}
+          {/* ── Optional middle content (revision panel + X-Ray) ──────── */}
+          <div className="flex-1 min-h-0 flex flex-col justify-end">
 
-          {/* Footer: price + meta */}
-          <div className="flex items-end justify-between">
-            <div>
-              <p
-                className="text-xl font-bold tabular-nums"
-                style={{ color: meta.color, textShadow: `0 0 20px ${meta.glow}` }}
+            {/* Revision request panel */}
+            {proposal.status === 'needs_revision' && (
+              <div
+                className="mt-3 mb-1 rounded-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(217,119,6,0.06) 100%)',
+                  border: '1px solid rgba(245,158,11,0.25)',
+                }}
               >
-                {formatted}
-              </p>
-              {proposal.add_ons.filter(a => a.enabled).length > 0 && (
-                <p className="text-[10px] text-white/30 mt-0.5">
-                  {locale === 'he'
-                    ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
-                    : `+${proposal.add_ons.filter(a => a.enabled).length} add-ons`}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-1 text-[10px] text-white/30">
-                <Eye size={10} />
-                <span>{proposal.view_count}</span>
-              </div>
-              {proposal.time_spent_seconds > 0 && (
-                <div className="flex items-center gap-1 text-[10px] text-white/25">
-                  <Timer size={10} />
-                  <span>{formatTimeSpent(proposal.time_spent_seconds)}</span>
+                <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+                  <MessageSquarePlus size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
+                    {locale === 'he' ? 'הלקוח ביקש שינויים' : 'Client Requested Changes'}
+                  </span>
                 </div>
-              )}
-              <div className="flex items-center gap-1 text-[10px] text-white/25">
-                <Clock size={10} />
-                <span>{date}</span>
+                {proposal.revision_notes ? (
+                  <p
+                    className="px-3 pb-2 text-[11px] leading-relaxed"
+                    style={{
+                      color: 'rgba(245,158,11,0.7)',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {proposal.revision_notes}
+                  </p>
+                ) : (
+                  <p className="px-3 pb-2 text-[11px] italic" style={{ color: 'rgba(245,158,11,0.4)' }}>
+                    {locale === 'he' ? 'ללא הערות' : 'No notes provided'}
+                  </p>
+                )}
+                <button
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold transition-colors"
+                  style={{ borderTop: '1px solid rgba(245,158,11,0.15)', color: '#f59e0b', background: 'transparent' }}
+                  onClick={e => { e.stopPropagation(); onEdit(proposal.id) }}
+                  onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.08)' }}
+                  onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <Edit3 size={11} />
+                  {locale === 'he' ? 'ערוך ושלח שוב' : 'Edit & Resend'}
+                </button>
               </div>
-            </div>
+            )}
+
+            {/* X-Ray: per-section time breakdown */}
+            {proposal.section_time && Object.keys(proposal.section_time).filter(k => (proposal.section_time![k] ?? 0) > 0).length > 0 && (() => {
+              const LABELS: Record<string, { he: string; en: string }> = {
+                pricing:    { he: 'תמחור',   en: 'Pricing'    },
+                addons:     { he: 'תוספות',  en: 'Add-ons'    },
+                milestones: { he: 'תשלומים', en: 'Milestones' },
+                contract:   { he: 'חוזה',    en: 'Contract'   },
+              }
+              const sections = Object.entries(proposal.section_time!)
+                .filter(([, t]) => t > 0)
+                .sort(([, a], [, b]) => b - a)
+              const total = sections.reduce((s, [, t]) => s + t, 0)
+              return (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/25 mb-2 flex items-center gap-1">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    {locale === 'he' ? 'X-RAY — זמן לפי קטע' : 'X-RAY — Time Per Section'}
+                  </p>
+                  <div className="space-y-1.5">
+                    {sections.map(([name, time]) => {
+                      const pct = Math.round((time / total) * 100)
+                      const label = (LABELS[name]?.[locale as 'he' | 'en']) ?? name
+                      return (
+                        <div key={name} className="flex items-center gap-2">
+                          <span className="text-[10px] text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
+                            {label}
+                          </span>
+                          <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                            <div
+                              className="h-1 rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+                                transition: 'width 0.6s ease',
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-white/30 font-medium flex-none text-end" style={{ width: 28 }}>
+                            {pct}%
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
-          {/* Download signed contract (accepted only) */}
-          {proposal.status === 'accepted' && (
-            <button
-              className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-semibold transition-all"
-              style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.18)', color: '#4ade80' }}
-              onClick={e => { e.stopPropagation(); handleDownloadPdf() }}
-              disabled={pdfGenerating}
-            >
-              {pdfGenerating
-                ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
-                : <FileDown size={12} />}
-              {locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
-            </button>
-          )}
+          {/* ── Footer — always pinned to bottom of card ──────────────── */}
+          <div className="mt-3">
 
-          {/* Archive error banner — shown when DB update fails */}
-          {archiveError && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="mt-3 rounded-xl px-3 py-2.5 overflow-hidden"
-              style={{
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.3)',
-              }}
-            >
-              <p className="text-[11px] font-bold mb-0.5" style={{ color: '#f87171' }}>
-                {locale === 'he' ? 'שגיאה בהעברה לארכיון' : 'Archive failed'}
-              </p>
-              <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(239,68,68,0.7)' }}>
-                {archiveError}
-              </p>
-              <p className="text-[9px] mt-1" style={{ color: 'rgba(239,68,68,0.45)' }}>
-                {locale === 'he'
-                  ? 'פתח את כלי המפתח (F12) → Console לפרטים נוספים'
-                  : 'Open DevTools (F12) → Console for full details'}
-              </p>
-            </motion.div>
-          )}
-
-          {/* Inline delete confirmation — prevents accidental destructive actions */}
-          {confirmingDelete && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              transition={{ duration: 0.18 }}
-              className="mt-3 flex items-center gap-2"
-              style={{ overflow: 'hidden' }}
-            >
-              <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
-                {isArchived
-                  ? (locale === 'he' ? 'למחוק לצמיתות? לא ניתן לשחזר' : 'Delete permanently? Cannot undo.')
-                  : (locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?')}
-              </p>
-              <button
-                className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
-                onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
-              >
-                {locale === 'he' ? 'ביטול' : 'Cancel'}
-              </button>
-              <button
-                className="rounded-lg px-3 py-1 text-[11px] font-bold transition-colors"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
-                onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
-              >
-                {isArchived
-                  ? (locale === 'he' ? 'מחק' : 'Delete')
-                  : (locale === 'he' ? 'ארכיון' : 'Archive')}
-              </button>
-            </motion.div>
-          )}
-
-          {/* ── X-Ray: per-section time breakdown ────────────────────────── */}
-          {proposal.section_time && Object.keys(proposal.section_time).filter(k => (proposal.section_time![k] ?? 0) > 0).length > 0 && (() => {
-            const LABELS: Record<string, { he: string; en: string }> = {
-              pricing:    { he: 'תמחור',   en: 'Pricing'    },
-              addons:     { he: 'תוספות',  en: 'Add-ons'    },
-              milestones: { he: 'תשלומים', en: 'Milestones' },
-              contract:   { he: 'חוזה',    en: 'Contract'   },
-            }
-            const sections = Object.entries(proposal.section_time!)
-              .filter(([, t]) => t > 0)
-              .sort(([, a], [, b]) => b - a)
-            const total = sections.reduce((s, [, t]) => s + t, 0)
-            return (
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/25 mb-2 flex items-center gap-1">
-                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  {locale === 'he' ? 'X-RAY — זמן לפי קטע' : 'X-RAY — Time Per Section'}
+            {/* Price + meta row */}
+            <div className="flex items-end justify-between">
+              <div>
+                <p
+                  className="text-xl font-bold tabular-nums"
+                  style={{ color: meta.color, textShadow: `0 0 20px ${meta.glow}` }}
+                >
+                  {formatted}
                 </p>
-                <div className="space-y-1.5">
-                  {sections.map(([name, time]) => {
-                    const pct = Math.round((time / total) * 100)
-                    const label = (LABELS[name]?.[locale as 'he' | 'en']) ?? name
-                    return (
-                      <div key={name} className="flex items-center gap-2">
-                        <span className="text-[10px] text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
-                          {label}
-                        </span>
-                        <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                          <div
-                            className="h-1 rounded-full"
-                            style={{
-                              width: `${pct}%`,
-                              background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-                              transition: 'width 0.6s ease',
-                            }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-white/30 font-medium flex-none text-end" style={{ width: 28 }}>
-                          {pct}%
-                        </span>
-                      </div>
-                    )
-                  })}
+                {proposal.add_ons.filter(a => a.enabled).length > 0 && (
+                  <p className="text-[10px] text-white/30 mt-0.5">
+                    {locale === 'he'
+                      ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
+                      : `+${proposal.add_ons.filter(a => a.enabled).length} add-ons`}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1 text-[10px] text-white/30">
+                  <Eye size={10} />
+                  <span>{proposal.view_count}</span>
+                </div>
+                {proposal.time_spent_seconds > 0 && (
+                  <div className="flex items-center gap-1 text-[10px] text-white/25">
+                    <Timer size={10} />
+                    <span>{formatTimeSpent(proposal.time_spent_seconds)}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1 text-[10px] text-white/25">
+                  <Clock size={10} />
+                  <span>{date}</span>
                 </div>
               </div>
-            )
-          })()}
+            </div>
 
-          {/* Status timeline */}
-          <StatusTimeline proposal={proposal} locale={locale} />
+            {/* Download signed contract (accepted only) */}
+            {proposal.status === 'accepted' && (
+              <button
+                className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-semibold transition-all"
+                style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.18)', color: '#4ade80' }}
+                onClick={e => { e.stopPropagation(); handleDownloadPdf() }}
+                disabled={pdfGenerating}
+              >
+                {pdfGenerating
+                  ? <div className="h-3 w-3 rounded-full border border-emerald-400/40 border-t-emerald-400 animate-spin" />
+                  : <FileDown size={12} />}
+                {locale === 'he' ? 'הורד חוזה חתום' : 'Download Signed Contract'}
+              </button>
+            )}
+
+            {/* Archive error banner */}
+            {archiveError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mt-3 rounded-xl px-3 py-2.5 overflow-hidden"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                <p className="text-[11px] font-bold mb-0.5" style={{ color: '#f87171' }}>
+                  {locale === 'he' ? 'שגיאה בהעברה לארכיון' : 'Archive failed'}
+                </p>
+                <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(239,68,68,0.7)' }}>{archiveError}</p>
+                <p className="text-[9px] mt-1" style={{ color: 'rgba(239,68,68,0.45)' }}>
+                  {locale === 'he' ? 'פתח את כלי המפתח (F12) → Console לפרטים נוספים' : 'Open DevTools (F12) → Console for full details'}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Inline delete confirmation */}
+            {confirmingDelete && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.18 }}
+                className="mt-3 flex items-center gap-2"
+                style={{ overflow: 'hidden' }}
+              >
+                <p className="flex-1 text-[11px] font-semibold" style={{ color: '#f87171' }}>
+                  {isArchived
+                    ? (locale === 'he' ? 'למחוק לצמיתות? לא ניתן לשחזר' : 'Delete permanently? Cannot undo.')
+                    : (locale === 'he' ? 'להעביר לארכיון?' : 'Archive this proposal?')}
+                </p>
+                <button
+                  className="rounded-lg px-3 py-1 text-[11px] font-semibold transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
+                  onClick={e => { e.stopPropagation(); setConfirmingDelete(false) }}
+                >
+                  {locale === 'he' ? 'ביטול' : 'Cancel'}
+                </button>
+                <button
+                  className="rounded-lg px-3 py-1 text-[11px] font-bold transition-colors"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
+                  onClick={e => { e.stopPropagation(); setConfirmingDelete(false); handleDelete() }}
+                >
+                  {isArchived ? (locale === 'he' ? 'מחק' : 'Delete') : (locale === 'he' ? 'ארכיון' : 'Archive')}
+                </button>
+              </motion.div>
+            )}
+
+            {/* Status timeline — always at very bottom */}
+            <StatusTimeline proposal={proposal} locale={locale} />
+          </div>
 
           {/* Keyframes */}
           <style>{`
