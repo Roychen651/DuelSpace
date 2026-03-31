@@ -17,6 +17,7 @@ import type { ClientCapturedDetails } from '../components/deal-room/ClientDetail
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../lib/successTemplates'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { triggerPostSignatureAutomations } from '../lib/automations'
+import { parseSmartVariables } from '../lib/contractEngine'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -1279,7 +1280,7 @@ export default function DealRoom() {
             <motion.div
               variants={slideUp}
               className="dr-prose text-[15px] text-white/50 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: proposal.description }}
+              dangerouslySetInnerHTML={{ __html: parseSmartVariables(proposal.description, proposal, locale) }}
             />
           )}
         </motion.div>

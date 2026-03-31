@@ -491,8 +491,10 @@ function SignUpForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({})
   const loading = status === 'loading'
+  const isHe = locale === 'he'
 
   const validate = () => {
     const errs: typeof fieldErrors = {}
@@ -560,21 +562,81 @@ function SignUpForm() {
           )}
         </AnimatePresence>
 
-        <div style={fadeUp(0.20)}>
-          <PrimaryButton loading={loading}>
+        {/* ── Compliance checkbox — mandatory, Israeli Privacy Protection Regulations ── */}
+        <div style={fadeUp(0.19)}>
+          <label
+            className="flex items-start gap-3 cursor-pointer group select-none"
+            dir={isHe ? 'rtl' : 'ltr'}
+          >
+            <div className="relative flex-none mt-0.5">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                aria-required="true"
+              />
+              <div
+                className="flex h-4 w-4 items-center justify-center rounded transition-all duration-150"
+                style={{
+                  background: termsAccepted ? '#6366f1' : 'rgba(255,255,255,0.04)',
+                  border: termsAccepted ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: termsAccepted ? '0 0 10px rgba(99,102,241,0.35)' : 'none',
+                }}
+              >
+                {termsAccepted && (
+                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden>
+                    <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              {isHe ? (
+                <>
+                  קראתי והסכמתי ל
+                  <a href="/terms" target="_blank" rel="noopener noreferrer"
+                    className="underline transition-colors"
+                    style={{ color: 'rgba(165,170,255,0.75)' }}
+                    onClick={e => e.stopPropagation()}
+                  >תנאי השימוש</a>
+                  {' '}ול
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                    className="underline transition-colors"
+                    style={{ color: 'rgba(165,170,255,0.75)' }}
+                    onClick={e => e.stopPropagation()}
+                  >מדיניות הפרטיות</a>
+                  {' '}של DealSpace
+                </>
+              ) : (
+                <>
+                  I have read and agree to DealSpace&apos;s{' '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer"
+                    className="underline transition-colors"
+                    style={{ color: 'rgba(165,170,255,0.75)' }}
+                    onClick={e => e.stopPropagation()}
+                  >Terms of Service</a>
+                  {' '}and{' '}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                    className="underline transition-colors"
+                    style={{ color: 'rgba(165,170,255,0.75)' }}
+                    onClick={e => e.stopPropagation()}
+                  >Privacy Policy</a>
+                </>
+              )}
+            </span>
+          </label>
+        </div>
+
+        <div style={fadeUp(0.22)}>
+          <PrimaryButton loading={loading} disabled={!termsAccepted}>
             {loading ? t('auth.action.signUp.loading') : <>{t('auth.action.signUp')} <ArrowRight size={15} /></>}
           </PrimaryButton>
         </div>
-        <div style={fadeUp(0.25)}><OrDivider label={t('auth.divider.or')} /></div>
-        <div style={fadeUp(0.28)}>
+        <div style={fadeUp(0.27)}><OrDivider label={t('auth.divider.or')} /></div>
+        <div style={fadeUp(0.30)}>
           <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
         </div>
-        <p className="text-center text-[10px] leading-relaxed" style={{ ...fadeUp(0.32), color: 'rgba(255,255,255,0.2)' }}>
-          {t('auth.legal.agree')}{' '}
-          <a href="/terms" className="underline" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('auth.legal.terms')}</a>
-          {' '}{t('auth.legal.and')}{' '}
-          <a href="/privacy" className="underline" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('auth.legal.privacy')}</a>
-        </p>
       </form>
     </>
   )

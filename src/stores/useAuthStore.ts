@@ -100,7 +100,11 @@ export const useAuthStore = create<AuthState>()(
           email,
           password,
           options: {
-            data: { full_name: fullName },
+            data: {
+              full_name: fullName,
+              // Immutable audit trail — Israeli Privacy Protection Regulations compliance
+              accepted_terms_at: new Date().toISOString(),
+            },
             emailRedirectTo: `${import.meta.env.VITE_APP_URL}/auth/callback`,
           },
         })

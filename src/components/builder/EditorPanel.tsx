@@ -20,6 +20,7 @@ import {
   type ContractTemplate,
 } from '../../lib/contractTemplates'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID } from '../../lib/successTemplates'
+import { SMART_VAR_TAGS } from '../../lib/contractEngine'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -798,6 +799,28 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             locale={locale}
             disabled={isLocked}
           />
+          {/* Smart Variable Tags — click to copy into contract */}
+          <div className="mt-2.5">
+            <p className="text-[11px] text-zinc-600 mb-1.5">
+              {isHe ? 'תגיות חכמות — לחץ להעתקה:' : 'Smart tags — click to copy:'}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {SMART_VAR_TAGS.map(tag => (
+                <button
+                  key={tag.key}
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`{${tag.key}}`).catch(() => {})
+                  }}
+                  className="rounded-md px-2 py-1 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300 hover:bg-white/10 active:scale-95"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  title={isHe ? `העתק ${tag.label_he}` : `Copy ${tag.label_en}`}
+                >
+                  {`{${tag.key}}`}
+                </button>
+              ))}
+            </div>
+          </div>
         </Field>
 
         {/* Video pitch URL */}
