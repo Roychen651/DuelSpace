@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–37.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–40.
 
 ---
 
@@ -114,7 +114,7 @@ src/
 │   ├── Auth.tsx             # /auth — Linear.app style, pure black bg, glassmorphism card
 │   ├── AuthCallback.tsx     # /auth/callback — Supabase PKCE redirect handler
 │   ├── ResetPassword.tsx    # /auth/reset-password — password reset flow
-│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar
+│   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar; DunningBanner when billing_status=past_due
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
 │   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT
@@ -159,7 +159,7 @@ src/
 │       └── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
 │
 ├── stores/
-│   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password
+│   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password; useTier() + useBillingStatus() selectors
 │   ├── useProposalStore.ts    # Zustand: proposals CRUD with optimistic updates + demo injection
 │   ├── useServicesStore.ts    # Zustand: services catalog CRUD (Supabase-backed, optimistic)
 │   └── useAccessibilityStore.ts # 14 a11y states, CSS DOM mutations, localStorage persistence (ds:a11y:*)
@@ -175,8 +175,8 @@ src/
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal (incl. signer_ip, signer_user_agent), ProposalInsert, AddOn,
-│                            #   PaymentMilestone, CreatorInfo, proposalTotal(), STATUS_META, …
+│   └── proposal.ts          # Proposal (incl. signer_ip, signer_user_agent, delivery_email, email_sent_at, email_opened_at),
+│                            #   ProposalInsert, AddOn, PaymentMilestone, CreatorInfo, proposalTotal(), STATUS_META, …
 │
 └── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, AdminRoute, ErrorBoundary
 
@@ -199,10 +199,15 @@ supabase/
 │   ├── 20_admin_crud.sql              # admin_delete_user() + admin_update_user_profile()
 │   ├── 21_admin_apex.sql              # admin_update_user_advanced(), admin_toggle_suspend(), refreshed get_admin_users_data with is_suspended + bonus_quota
 │   ├── 22_admin_v2.sql                # admin_save_note(), admin_get_user_proposals(), get_admin_users_data with phone + admin_notes
-│   └── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
+│   ├── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
+│   └── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
 └── functions/
-    └── admin-impersonate/
-        └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
+    ├── admin-impersonate/
+    │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
+    ├── send-proposal/
+    │   └── index.ts                   # Sends branded HTML email via Resend; stamps email_sent_at + delivery_email; --no-verify-jwt
+    └── stripe-webhook/
+        └── index.ts                   # Stripe webhook handler — updates plan_tier + billing_status in user_metadata
 ```
 
 ---
@@ -253,6 +258,34 @@ updatePassword(newPassword)           // Re-auth before calling this in Profile.
 deleteAccount()                       // Calls delete_user_account() RPC
 clearError()
 ```
+
+### Plan tier + billing status selectors
+
+```ts
+// Read plan_tier from user_metadata reactively. Defaults to 'free'.
+export const useTier = (): PlanTier => useAuthStore(s => {
+  const raw = s.user?.user_metadata?.plan_tier as string | undefined
+  if (raw === 'pro' || raw === 'unlimited') return raw
+  return 'free'
+})
+
+// Read billing_status from user_metadata reactively. null = never had a paid subscription.
+export const useBillingStatus = (): BillingStatus => useAuthStore(s => {
+  const raw = s.user?.user_metadata?.billing_status as string | undefined
+  if (raw === 'active' || raw === 'past_due' || raw === 'canceled') return raw
+  return null
+})
+
+export type PlanTier     = 'free' | 'pro' | 'unlimited'
+export type BillingStatus = 'active' | 'past_due' | 'canceled' | null
+```
+
+`billing_status` is written exclusively by the `stripe-webhook` edge function via the Supabase Admin API. The client only reads it. Do not write it client-side.
+
+- `'active'` — subscription in good standing
+- `'past_due'` — payment failed; proposal creation is locked in the UI (DunningBanner + locked navbar button)
+- `'canceled'` — subscription cancelled/expired; tier has already been set back to `'free'`
+- `null` — user never had a paid subscription
 
 ### Auth status lifecycle
 `idle` → `loading` → `authenticated` | `unauthenticated`
@@ -340,6 +373,9 @@ if (eventType === 'UPDATE') {
 | `accepted_at` | timestamptz | nullable — when client signed |
 | `signer_ip` | text | nullable — client IP captured at signing (Sprint 37) |
 | `signer_user_agent` | text | nullable — client browser UA captured at signing (Sprint 37) |
+| `delivery_email` | text | nullable — email address the proposal was last sent to (Sprint 39) |
+| `email_sent_at` | timestamptz | nullable — when the proposal email was last sent (Sprint 39) |
+| `email_opened_at` | timestamptz | nullable — when the client first opened the email link (Sprint 39) |
 | `created_at` | timestamptz | now() |
 | `updated_at` | timestamptz | auto-updated via trigger |
 
@@ -425,6 +461,12 @@ admin_get_user_proposals(p_target_id uuid) RETURNS json
 admin_delete_user(p_target_id uuid)
   → calls auth.users delete — permanent, irreversible
   → granted to: authenticated
+
+-- Migration 24 (Sprint 39 — native email delivery)
+mark_email_opened(p_token TEXT)
+  → sets email_opened_at = now() WHERE email_opened_at IS NULL (idempotent — only records first open)
+  → called fire-and-forget from DealRoom when ?source=email is in the URL and email_opened_at is null
+  → granted to: anon, authenticated
 ```
 
 ---
@@ -982,15 +1024,26 @@ function milestonesValid(milestones: PaymentMilestone[]): boolean
 Stored in `.env.local` (gitignored — never commit).
 
 ```bash
+# ── Browser (client bundle) ───────────────────────────────────────────────────
 VITE_SUPABASE_URL=https://aefyytktbpynkbxhzhyt.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...                  # anon/public key
 VITE_APP_URL=http://localhost:5173              # or https://duel-space.vercel.app in prod
 
+# ── Server-only (never exposed to browser) ───────────────────────────────────
 SUPABASE_SERVICE_ROLE_KEY=eyJ...               # server-only, never exposed to browser
 SUPABASE_ACCESS_TOKEN=sbp_...                  # Supabase PAT — needed for npm run migrate
+
+# ── Supabase Edge Function secrets (set in Dashboard → Edge Functions → Secrets)
+RESEND_API_KEY=re_...                          # Resend API key for send-proposal function
+APP_URL=https://duel-space.vercel.app          # Used by send-proposal for email CTA links
+
+STRIPE_SECRET_KEY=sk_live_...                  # Stripe secret key (sk_test_ for local dev)
+STRIPE_WEBHOOK_SECRET=whsec_...               # From Stripe Dashboard → Webhooks → Signing secret
+STRIPE_PRICE_PRO=price_...                     # Stripe Price ID for Pro plan
+STRIPE_PRICE_PREMIUM=price_...                 # Stripe Price ID for Unlimited plan
 ```
 
-`VITE_*` variables are safe for the browser. `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_ACCESS_TOKEN` must never reach the client bundle.
+`VITE_*` variables are safe for the browser. All others must never reach the client bundle. Edge Function secrets are set via Supabase Dashboard — they are NOT in `.env.local`.
 
 ---
 
@@ -1710,6 +1763,141 @@ signer_user_agent?: string | null
 
 ---
 
+## 29. Native Email Delivery Engine (Sprint 39)
+
+### Architecture
+
+Three-layer chain: ProposalBuilder → Edge Function → Resend → DealRoom ping.
+
+**`supabase/functions/send-proposal/index.ts`** (deployed with `--no-verify-jwt`):
+- Accepts `POST { proposal_id, to_email, message? }` with `Authorization: Bearer <user JWT>`
+- Verifies JWT via `adminClient.auth.getUser(jwt)` (admin client — more reliable than anon client for server-side verification)
+- Fetches proposal via admin client, checks `proposal.user_id === user.id`
+- Sends branded RTL HTML email via Resend API
+- Stamps `email_sent_at` + `delivery_email` on the proposal record after successful send
+- FROM address: `onboarding@resend.dev` (until `dealspace.app` domain is verified in Resend, then switch to `proposals@dealspace.app`)
+
+**`src/components/builder/SendModal.tsx`** — two-view architecture:
+```ts
+type View      = 'menu' | 'composer'
+type SendStatus = 'idle' | 'sending' | 'sent' | 'error'
+```
+- `menu` view: share URL, copy link, email button
+- `composer` view: to_email input + optional message textarea + Send button
+- Email send calls edge function:
+```ts
+await fetch(`${VITE_SUPABASE_URL}/functions/v1/send-proposal`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${session.access_token}`,
+    'apikey': VITE_SUPABASE_ANON_KEY,   // ← required by Supabase gateway
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ proposal_id, to_email, message }),
+})
+```
+- Requires `proposalId` prop on `SendModal`
+
+**Email open tracking** (`DealRoom.tsx`):
+```ts
+// Called once on load when ?source=email is in the URL and email_opened_at is null
+if (new URLSearchParams(window.location.search).get('source') === 'email' && !p.email_opened_at) {
+  supabase.rpc('mark_email_opened', { p_token: token }).then(() => {})
+}
+```
+
+**Read receipt badge** (`ProposalCard.tsx`):
+```tsx
+{proposal.email_opened_at && (
+  <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+    <MailCheck size={9} style={{ color: '#818cf8' }} />
+    <span>{locale === 'he' ? 'נפתח' : 'Opened'}</span>
+  </div>
+)}
+```
+
+### Proposal type additions (`src/types/proposal.ts`)
+```ts
+delivery_email?: string | null      // email address the proposal was last sent to
+email_sent_at?: string | null       // ISO timestamp of last email send
+email_opened_at?: string | null     // ISO timestamp of first email open (set by mark_email_opened RPC)
+```
+
+### Deployment notes
+- Deploy with: `supabase functions deploy send-proposal --project-ref aefyytktbpynkbxhzhyt --no-verify-jwt`
+- The `--no-verify-jwt` flag is required because the Supabase API gateway was rejecting the JWT before the function code could validate it. JWT validation is done manually inside the function via `adminClient.auth.getUser(jwt)`.
+- Set `RESEND_API_KEY` in Supabase Dashboard → Edge Functions → Secrets
+
+---
+
+## 30. Stripe Revenue & Dunning Engine (Sprint 40)
+
+### Architecture
+
+Four-layer system: Stripe → Edge Function → user_metadata → React hooks → UI.
+
+**`supabase/functions/stripe-webhook/index.ts`** (no `--no-verify-jwt` — Stripe does not send a Supabase JWT):
+
+| Stripe event | Action |
+|---|---|
+| `checkout.session.completed` | Set `plan_tier` (from price ID) + `billing_status: 'active'` + save `stripe_customer_id`; tag subscription with `supabase_user_id` metadata |
+| `customer.subscription.updated` | Update `plan_tier` from new price ID |
+| `customer.subscription.deleted` | Set `plan_tier: 'free'` + `billing_status: 'canceled'` |
+| `invoice.payment_failed` | Set `billing_status: 'past_due'` — triggers dunning UI |
+| `invoice.payment_succeeded` | Set `billing_status: 'active'` — resolves dunning |
+
+User lookup order:
+1. `session.client_reference_id` (checkout.session.completed) — set by `buildCheckoutUrl()`
+2. `subscription.metadata.supabase_user_id` — tagged on first checkout
+3. Scan `auth.users` list for matching `stripe_customer_id` in `user_metadata` (fallback)
+
+### `user_metadata` fields written by stripe-webhook
+```ts
+plan_tier:        'free' | 'pro' | 'unlimited'
+billing_status:   'active' | 'past_due' | 'canceled'
+stripe_customer_id: string  // saved on first checkout, used for user lookup
+```
+
+### Dashboard dunning UI (`src/pages/Dashboard.tsx`)
+
+```tsx
+const billingStatus = useBillingStatus()
+
+// In JSX, between page heading and KPI grid:
+<AnimatePresence>
+  {billingStatus === 'past_due' && <DunningBanner isHe={isHe} />}
+</AnimatePresence>
+```
+
+`DunningBanner` — red glassmorphism card (`rgba(239,68,68,0.1)` bg, `rgba(239,68,68,0.3)` border) with `ds-dunning-pulse` glow keyframe, `AlertTriangle` icon, bilingual warning text, CTA link to `STRIPE_CUSTOMER_PORTAL`.
+
+`handleCreate` blocks navigation when `billing_status === 'past_due'`:
+```ts
+const handleCreate = () => {
+  if (billingStatus === 'past_due') return  // locked
+  // ... rest of create logic
+}
+```
+
+### ProtectedLayout navbar lock (`src/components/layout/ProtectedLayout.tsx`)
+
+When `billingStatus === 'past_due'`, the "New Proposal" button:
+- Shows `<Lock>` icon instead of `<Plus>`
+- Uses red-muted styling (`rgba(255,255,255,0.06)` bg, `rgba(239,68,68,0.3)` border, `rgba(248,113,113,0.7)` text)
+- `cursor: not-allowed`, `opacity: 0.65`
+- Hover/tap animations suppressed (`whileHover={{}}`, `whileTap={{}}`)
+- `title` tooltip explains the lock in current locale
+
+### Stripe Webhook setup checklist
+1. Go to Stripe Dashboard → Webhooks → Add endpoint
+2. URL: `https://aefyytktbpynkbxhzhyt.supabase.co/functions/v1/stripe-webhook`
+3. Select events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
+4. Copy signing secret → Supabase Dashboard → Edge Functions → Secrets → `STRIPE_WEBHOOK_SECRET`
+5. Also set: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_PREMIUM`
+6. Deploy: `supabase functions deploy stripe-webhook --project-ref aefyytktbpynkbxhzhyt`
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -1761,3 +1949,9 @@ signer_user_agent?: string | null
 - **Do not change the admin guard email** — `AdminRoute.tsx` and all admin RPCs are hardcoded to `roychen651@gmail.com`. This is intentional: it is the single founder account. Do not extract it to a config or make it dynamic.
 - **Do not deploy the `admin-impersonate` edge function with `supabase functions deploy` without the `--project-ref` flag** — without it the CLI may deploy to the wrong project. Always: `supabase functions deploy admin-impersonate --project-ref aefyytktbpynkbxhzhyt`.
 - **Do not add `DROP FUNCTION` to a migration without re-creating with `GRANT`** — every DROP+CREATE pair must end with the appropriate `GRANT EXECUTE ON FUNCTION … TO anon` and/or `authenticated`. Missing grants silently break the function for the intended caller.
+- **Do not deploy `send-proposal` without `--no-verify-jwt`** — the Supabase API gateway was rejecting the user JWT before the function could validate it. The function manually validates with `adminClient.auth.getUser(jwt)` instead. Removing the flag silently breaks all email sends with a 401.
+- **Do not change `FROM_EMAIL` to a custom domain until the domain is verified in Resend** — Resend rejects unverified sender domains with a 422. Keep `onboarding@resend.dev` until Resend shows "Verified" for `dealspace.app`, then switch to `proposals@dealspace.app` and redeploy.
+- **Do not write `billing_status` from the client** — it is written exclusively by the `stripe-webhook` edge function via the Supabase Admin API. Client code only reads it via `useBillingStatus()`.
+- **Do not skip the Stripe webhook signature verification** — `stripe.webhooks.constructEventAsync(body, signature, secret)` must always be the first step in the handler. Skipping it allows anyone to spoof Stripe events and grant themselves arbitrary plan tiers.
+- **Do not use `session.metadata.plan_tier` to determine the tier in `checkout.session.completed`** — Payment Links cannot set session metadata. Instead, retrieve the subscription and map the `price.id` to a tier using `PRICE_TO_TIER`. Configure `STRIPE_PRICE_PRO` and `STRIPE_PRICE_PREMIUM` in Supabase Edge Function secrets.
+- **Do not show `DunningBanner` or lock the create button based on `tier === 'free'`** — the lock is for `billing_status === 'past_due'` only. A `free` user who never had a subscription has `billing_status: null` and should never see the dunning UI.
