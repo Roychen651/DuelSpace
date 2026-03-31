@@ -287,6 +287,7 @@ export function UserOpsDrawer({ user, isHe, onClose, onUpdated, onDeleted }: Use
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session?.access_token ?? ''}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ target_email: user.email }),

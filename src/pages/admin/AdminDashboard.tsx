@@ -29,8 +29,31 @@ const TIER_CFG: Record<Tier, {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+  const d = new Date(iso)
+  const now = new Date()
+  const sameYear = d.getFullYear() === now.getFullYear()
+  return sameYear
+    ? `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]}`
+    : `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+}
+function fmtDateFull(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+}
+function timeAgo(iso: string | null): string {
+  if (!iso) return '—'
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins  = Math.floor(diff / 60_000)
+  const hours = Math.floor(diff / 3_600_000)
+  const days  = Math.floor(diff / 86_400_000)
+  if (mins  < 2)   return 'Just now'
+  if (hours < 1)   return `${mins}m ago`
+  if (hours < 24)  return `${hours}h ago`
+  if (days  === 1) return 'Yesterday'
+  if (days  < 30)  return `${days}d ago`
+  return fmtDateFull(iso)
 }
 function fmtPipeline(value: number): string {
   if (value === 0)        return '—'
@@ -148,7 +171,7 @@ function MobileUserCard({ user, isHe, onClick }: { user:AdminUser; isHe:boolean;
 
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: isHe?'הצטרף':'Joined',   value: fmtDate(user.created_at).replace(' 2026','') },
+          { label: isHe?'הצטרף':'Joined',   value: fmtDate(user.created_at) },
           { label: isHe?'הצעות':'Proposals', value: String(user.proposal_count) },
           { label: isHe?'צפי':'Pipeline',    value: fmtPipeline(user.total_pipeline_value) },
         ].map(stat => (
@@ -455,13 +478,21 @@ export default function AdminDashboard() {
 
               {/* ── Desktop Table ─────────────────────────────────────────── */}
               <div className="adm-scroll hidden md:block overflow-x-auto">
-                <table style={{ width:'100%', borderCollapse:'collapse', minWidth:860 }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', minWidth:900 }}>
                   <thead>
-                    <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
-                      {[L.colUser, L.colJoined, L.colActive, L.colProposals, L.colPipeline, L.colTier].map(col => (
-                        <th key={col} className="px-6 py-3 text-start text-[10px] font-black uppercase tracking-widest"
-                          style={{ color:'rgba(255,255,255,0.22)' }}>
-                          {col}
+                    <tr style={{ background:'rgba(255,255,255,0.02)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+                      {[
+                        { label: L.colUser,      width: '32%' },
+                        { label: L.colJoined,    width: '12%' },
+                        { label: L.colActive,    width: '13%' },
+                        { label: L.colProposals, width: '12%' },
+                        { label: L.colPipeline,  width: '14%' },
+                        { label: L.colTier,      width: '17%' },
+                      ].map(col => (
+                        <th key={col.label}
+                          className="px-5 py-2.5 text-start text-[9px] font-black uppercase tracking-[0.12em]"
+                          style={{ color:'rgba(255,255,255,0.25)', width: col.width }}>
+                          {col.label}
                         </th>
                       ))}
                     </tr>
@@ -469,70 +500,102 @@ export default function AdminDashboard() {
                   <tbody>
                     <AnimatePresence initial={false}>
                       {filtered.map((user, idx) => {
-                        const cfg      = TIER_CFG[user.plan_tier]
-                        const initials = getInitials(user.email, user.full_name)
+                        const cfg         = TIER_CFG[user.plan_tier]
+                        const initials    = getInitials(user.email, user.full_name)
                         const isSuspended = user.is_suspended
+                        const isSelected  = selected?.id === user.id
                         return (
                           <motion.tr
                             key={user.id}
-                            className="adm-row"
-                            initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                            transition={{ duration:0.2, delay:idx*0.03, ease:'easeOut' as const }}
+                            className="adm-row group"
+                            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                            transition={{ duration:0.18, delay:idx*0.025, ease:'easeOut' as const }}
                             onClick={() => setSelected(user)}
                             style={{
-                              borderBottom:'1px solid rgba(255,255,255,0.04)',
-                              opacity: isSuspended ? 0.5 : 1,
-                              background: selected?.id === user.id ? 'rgba(99,102,241,0.07)' : 'transparent',
+                              borderBottom: '1px solid rgba(255,255,255,0.035)',
+                              opacity:      isSuspended ? 0.45 : 1,
+                              background:   isSelected
+                                ? 'linear-gradient(90deg, rgba(99,102,241,0.1), rgba(99,102,241,0.04))'
+                                : 'transparent',
+                              borderInlineStart: isSelected ? '2px solid #6366f1' : '2px solid transparent',
                             }}
                           >
-                            {/* User */}
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
+                            {/* ── User cell ──────────────────────────────── */}
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-3 min-w-0">
                                 <div className="relative flex-none">
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-xl text-[10px] font-black"
-                                    style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, color:cfg.color, boxShadow:cfg.glow }}>
+                                  <div
+                                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[11px] font-black tracking-tight"
+                                    style={{
+                                      background: cfg.bg,
+                                      border:     `1px solid ${cfg.border}`,
+                                      color:      cfg.color,
+                                      boxShadow:  cfg.glow !== 'none' ? cfg.glow : undefined,
+                                    }}
+                                  >
                                     {initials}
                                   </div>
                                   {isSuspended && (
-                                    <div className="absolute -bottom-1 -end-1 flex h-3.5 w-3.5 items-center justify-center rounded-full"
-                                      style={{ background:'#ef4444', border:'2px solid #030305' }}>
+                                    <div
+                                      className="absolute -bottom-0.5 -end-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full"
+                                      style={{ background:'#ef4444', border:'1.5px solid #030305' }}
+                                    >
                                       <Snowflake size={7} color="white" />
                                     </div>
                                   )}
                                 </div>
-                                <div className="min-w-0">
-                                  {user.full_name && <p className="text-[12px] font-semibold text-white truncate">{user.full_name}</p>}
-                                  <p className="text-[11px] truncate" style={{ color:'rgba(255,255,255,0.38)' }}>{user.email}</p>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[13px] font-semibold text-white leading-tight truncate">
+                                    {user.full_name || '—'}
+                                  </p>
+                                  <p className="mt-0.5 text-[11px] leading-none truncate"
+                                    style={{ color:'rgba(255,255,255,0.32)', fontFamily:'monospace', letterSpacing:'-0.01em' }}>
+                                    {user.email}
+                                  </p>
                                 </div>
                               </div>
                             </td>
-                            {/* Joined */}
-                            <td className="px-6 py-4">
-                              <span className="text-[11px] tabular-nums" style={{ color:'rgba(255,255,255,0.45)' }}>{fmtDate(user.created_at)}</span>
+
+                            {/* ── Joined ─────────────────────────────────── */}
+                            <td className="px-5 py-3">
+                              <p className="text-[12px] font-medium tabular-nums"
+                                style={{ color:'rgba(255,255,255,0.5)' }}>
+                                {fmtDate(user.created_at)}
+                              </p>
                             </td>
-                            {/* Last active */}
-                            <td className="px-6 py-4">
-                              <span className="text-[11px] tabular-nums" style={{ color:'rgba(255,255,255,0.3)' }}>
-                                {user.last_sign_in_at ? fmtDate(user.last_sign_in_at) : '—'}
-                              </span>
+
+                            {/* ── Last active ────────────────────────────── */}
+                            <td className="px-5 py-3">
+                              <p className="text-[12px] font-medium tabular-nums"
+                                style={{ color:'rgba(255,255,255,0.3)' }}>
+                                {timeAgo(user.last_sign_in_at)}
+                              </p>
                             </td>
-                            {/* Proposals */}
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1 rounded-full"
-                                  style={{ width:Math.max(Math.min(user.proposal_count*10,52),4), background:user.proposal_count>0?'linear-gradient(90deg,#6366f1,#8b5cf6)':'rgba(255,255,255,0.08)' }} />
-                                <span className="text-[12px] font-bold tabular-nums" style={{ color:'rgba(255,255,255,0.6)' }}>{user.proposal_count}</span>
+
+                            {/* ── Proposals ──────────────────────────────── */}
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <p className="text-[14px] font-black tabular-nums leading-none"
+                                  style={{ color: user.proposal_count > 0 ? '#a5b4fc' : 'rgba(255,255,255,0.18)', minWidth:16 }}>
+                                  {user.proposal_count}
+                                </p>
+                                {user.proposal_count > 0 && (
+                                  <div className="h-1 rounded-full flex-1 max-w-[48px]"
+                                    style={{ background:'linear-gradient(90deg,#6366f1,#8b5cf6)', opacity: Math.min(0.3 + user.proposal_count * 0.1, 1) }} />
+                                )}
                               </div>
                             </td>
-                            {/* Pipeline */}
-                            <td className="px-6 py-4">
-                              <span className="text-[12px] font-bold tabular-nums"
-                                style={{ color:user.total_pipeline_value>0?'#fb923c':'rgba(255,255,255,0.2)' }}>
+
+                            {/* ── Pipeline ───────────────────────────────── */}
+                            <td className="px-5 py-3">
+                              <p className="text-[13px] font-black tabular-nums"
+                                style={{ color: user.total_pipeline_value > 0 ? '#fb923c' : 'rgba(255,255,255,0.15)' }}>
                                 {fmtPipeline(user.total_pipeline_value)}
-                              </span>
+                              </p>
                             </td>
-                            {/* Tier + bonus */}
-                            <td className="px-6 py-4">
+
+                            {/* ── Tier ───────────────────────────────────── */}
+                            <td className="px-5 py-3">
                               <TierBadge tier={user.plan_tier} isHe={isHe} bonusQuota={user.bonus_quota} />
                             </td>
                           </motion.tr>
