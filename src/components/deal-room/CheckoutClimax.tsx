@@ -56,6 +56,8 @@ interface CheckoutClimaxProps {
   clientDetailsConfirmed?: boolean
   /** Called when user taps "fill details first" locked state — scrolls form into view */
   onScrollToDetails?: () => void
+  /** Opens the LegalTermsModal from DealRoom */
+  onOpenLegalTerms?: () => void
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -82,7 +84,7 @@ export function CheckoutClimax({
   includeVat = false, vatRate = 0.18, legalConsent, onLegalConsentChange,
   onRequestRevision, revisionSent = false, originalTotal = 0,
   financials, resolvedAddOns, globalDiscountPct = 0, basePrice = 0,
-  clientDetailsConfirmed = false, onScrollToDetails,
+  clientDetailsConfirmed = false, onScrollToDetails, onOpenLegalTerms,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -556,9 +558,33 @@ export function CheckoutClimax({
                           </div>
                         </div>
                         <p className="text-[11px] leading-relaxed" style={{ color: legalConsent ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
-                          {isHe
-                            ? 'אני מאשר/ת שקראתי את תנאי ההצעה ומסכים/ה לביצועה כהסכם מחייב.'
-                            : 'I confirm I have read the proposal terms and agree to its execution as a binding agreement.'}
+                          {isHe ? (
+                            <>
+                              אני מאשר/ת בחתימתי כי קראתי והבנתי את פרטי ההצעה, ואני מסכים/ה{' '}
+                              <button
+                                type="button"
+                                onClick={e => { e.preventDefault(); e.stopPropagation(); onOpenLegalTerms?.() }}
+                                className="underline underline-offset-2 transition-colors"
+                                style={{ color: legalConsent ? 'rgba(167,139,250,0.9)' : 'rgba(129,140,248,0.7)' }}
+                              >
+                                לתנאי ההתקשרות והתקנון המשפטי
+                              </button>
+                              .
+                            </>
+                          ) : (
+                            <>
+                              I confirm I have read and understood this proposal, and I agree to the{' '}
+                              <button
+                                type="button"
+                                onClick={e => { e.preventDefault(); e.stopPropagation(); onOpenLegalTerms?.() }}
+                                className="underline underline-offset-2 transition-colors"
+                                style={{ color: legalConsent ? 'rgba(167,139,250,0.9)' : 'rgba(129,140,248,0.7)' }}
+                              >
+                                Terms of Engagement
+                              </button>
+                              .
+                            </>
+                          )}
                         </p>
                       </motion.label>
                     )}

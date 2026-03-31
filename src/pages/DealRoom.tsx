@@ -18,6 +18,7 @@ import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../l
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { triggerPostSignatureAutomations } from '../lib/automations'
 import { parseSmartVariables } from '../lib/contractEngine'
+import { LegalTermsModal } from '../components/deal-room/LegalTermsModal'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -564,6 +565,7 @@ export default function DealRoom() {
   }, [accepted]) // eslint-disable-line react-hooks/exhaustive-deps
   const [clientDetails, setClientDetails] = useState<ClientCapturedDetails | null>(null)
   const [legalConsent, setLegalConsent] = useState(false)
+  const [legalModalOpen, setLegalModalOpen] = useState(false)
 
   // Time tracking
   const timeSpentRef = useRef(0)
@@ -1813,6 +1815,7 @@ export default function DealRoom() {
                 onScrollToDetails={() =>
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 }
+                onOpenLegalTerms={() => setLegalModalOpen(true)}
               />
             </div>
             {/* Accept error */}
@@ -2002,6 +2005,14 @@ export default function DealRoom() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Legal Terms Modal ──────────────────────────────────────────────────── */}
+      <LegalTermsModal
+        open={legalModalOpen}
+        onOpenChange={setLegalModalOpen}
+        locale={locale}
+        companyName={proposal?.creator_info?.company_name}
+      />
 
       <GlobalFooter />
     </div>
