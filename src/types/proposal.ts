@@ -86,6 +86,10 @@ export interface Proposal {
   sent_at?: string | null
   /** Timestamp of when the client accepted/signed the proposal */
   accepted_at?: string | null
+  /** Client IP address captured at signing time — forensic audit trail */
+  signer_ip?: string | null
+  /** Client browser User-Agent string captured at signing time — forensic audit trail */
+  signer_user_agent?: string | null
   /**
    * Soft-delete flag — Sprint 29 Archive Engine.
    * When true the proposal is hidden from the active view but NEVER removed from the DB.

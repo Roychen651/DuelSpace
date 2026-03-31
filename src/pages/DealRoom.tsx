@@ -875,7 +875,21 @@ export default function DealRoom() {
       }
     }
 
-    const { data: accepted_result, error } = await supabase.rpc('accept_proposal', { p_token: token })
+    // ── Forensic capture — IP + User-Agent (Migration 23) ─────────────────
+    // Fire-and-forget: a failed IP lookup must never block the signing flow.
+    let signerIp = 'Unknown'
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json')
+      const ipJson = await ipRes.json() as { ip?: string }
+      if (ipJson.ip) signerIp = ipJson.ip
+    } catch (_) {}
+    const signerUa = navigator.userAgent
+
+    const { data: accepted_result, error } = await supabase.rpc('accept_proposal', {
+      p_token: token,
+      p_ip:    signerIp,
+      p_ua:    signerUa,
+    })
     // Migration 14: accept_proposal now returns BOOLEAN.
     // error = null + data = false  → 0 rows updated (already accepted, or token not found)
     // error = null + data = true   → row was updated successfully

@@ -524,6 +524,9 @@ function ProposalDocument(opts: PdfOptions) {
     { label: isHe ? 'תאריך ושעת חתימה'  : 'Signature Timestamp', value: '', isDate:true, date:dateStr, time:timeStr },
     { label: isHe ? 'פלטפורמה'           : 'Platform',         value: forceWrap('DealSpace — dealspace.app') },
     { label: isHe ? 'תוקף חוקי'          : 'Legal Framework',  value: isHe ? 'חוק חתימה אלקטרונית, התשס״א-2001' : 'Electronic Signature Law, 5761-2001 (Israel)' },
+    ...(proposal.signer_ip ? [
+      { label: isHe ? 'כתובת IP'    : 'Signer IP',      value: proposal.signer_ip },
+    ] : []),
   ]
 
   return (
@@ -982,6 +985,71 @@ function ProposalDocument(opts: PdfOptions) {
                   </View>
                 </View>
               </View>
+
+              {/* ── Forensic Audit Data — only rendered when IP was captured ── */}
+              {proposal.signer_ip && (
+                <View
+                  wrap={false}
+                  style={{
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    backgroundColor: C.surface,
+                    marginBottom: 14,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Section header — same brand-color style as audit trail */}
+                  <Text style={{
+                    fontSize: 7, fontWeight: 900, letterSpacing: 1.4, color: '#ffffff',
+                    textTransform: 'uppercase', textAlign: 'right',
+                    paddingHorizontal: 14, paddingVertical: 7,
+                    backgroundColor: getBrandColor(proposal),
+                  }}>
+                    {isHe ? 'נתונים פורנזיים (Forensic Data)' : 'FORENSIC AUDIT DATA'}
+                  </Text>
+
+                  {/* IP Address row — Iron Grid: label RIGHT 38%, value LEFT 62% */}
+                  <View style={{
+                    flexDirection: 'row-reverse',
+                    paddingHorizontal: 14, paddingVertical: 6,
+                    borderBottom: `1px solid ${C.border}`,
+                    backgroundColor: C.bg,
+                  }}>
+                    <View style={{ width: '38%' }}>
+                      <Text style={{ fontSize: 7.5, color: C.muted, textAlign: 'right' }}>
+                        {isHe ? 'כתובת IP' : 'IP Address'}
+                      </Text>
+                    </View>
+                    <View style={{ width: '62%' }}>
+                      <Text style={{ fontSize: 7.5, fontWeight: 700, color: C.text, textAlign: 'left' }}>
+                        {proposal.signer_ip}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Device / Browser row — Iron Grid, UA truncated at 90 chars */}
+                  <View style={{
+                    flexDirection: 'row-reverse',
+                    paddingHorizontal: 14, paddingVertical: 6,
+                    backgroundColor: C.surface,
+                  }}>
+                    <View style={{ width: '38%' }}>
+                      <Text style={{ fontSize: 7.5, color: C.muted, textAlign: 'right' }}>
+                        {isHe ? 'מזהה מכשיר' : 'Device / Browser'}
+                      </Text>
+                    </View>
+                    <View style={{ width: '62%' }}>
+                      <Text style={{ fontSize: 6.5, fontWeight: 700, color: C.text, textAlign: 'left', lineHeight: 1.5 }}>
+                        {proposal.signer_user_agent
+                          ? (proposal.signer_user_agent.length > 90
+                            ? proposal.signer_user_agent.slice(0, 90) + '…'
+                            : proposal.signer_user_agent)
+                          : '—'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
 
               {/* Document token */}
               <View style={s.certTokenBox} wrap={false}>
