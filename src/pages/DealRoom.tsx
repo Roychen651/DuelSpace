@@ -918,6 +918,10 @@ export default function DealRoom() {
     // Priority: ref (freshest) → state → empty fallback.
     const sigDataUrl = signatureRef.current || signature
     setAcceptedSignature(sigDataUrl)
+    // Patch proposal state so handleDownloadPdf reads the correct signature_data_url
+    // immediately — without this the in-memory proposal still has null for the field
+    // even though the RPC just stored it in the DB.
+    setProposal(prev => prev ? { ...prev, signature_data_url: sigDataUrl } : prev)
     setAccepted(true)
     // Persist to localStorage so the PDF download works after page reload / revisit.
     try { localStorage.setItem(`dealspace:sig:${token}`, sigDataUrl) } catch (_) {}
