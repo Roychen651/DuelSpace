@@ -12,6 +12,8 @@ import { UserOpsDrawer } from './UserOpsDrawer'
 import type { AdminUser } from './UserOpsDrawer'
 
 type Tier = 'free' | 'pro' | 'unlimited'
+type FilterTier = 'all' | 'free' | 'pro' | 'unlimited' | 'suspended'
+type SortBy = 'newest' | 'pipeline' | 'proposals'
 
 // ─── Tier config ──────────────────────────────────────────────────────────────
 
@@ -178,6 +180,8 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [search,     setSearch]     = useState('')
   const [selected,   setSelected]   = useState<AdminUser | null>(null)
+  const [filterTier, setFilterTier] = useState<FilterTier>('all')
+  const [sortBy,     setSortBy]     = useState<SortBy>('newest')
 
   const fetchUsers = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true)
@@ -213,12 +217,22 @@ export default function AdminDashboard() {
   const totalProposals = users.reduce((s, u) => s + u.proposal_count, 0)
   const totalPipeline  = users.reduce((s, u) => s + u.total_pipeline_value, 0)
 
-  const filtered = search.trim()
-    ? users.filter(u =>
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.full_name.toLowerCase().includes(search.toLowerCase())
-      )
-    : users
+  const filtered = users
+    .filter(u => {
+      if (filterTier === 'suspended') return u.is_suspended
+      if (filterTier !== 'all') return u.plan_tier === filterTier
+      return true
+    })
+    .filter(u => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      return u.email.toLowerCase().includes(q) || u.full_name.toLowerCase().includes(q)
+    })
+    .sort((a, b) => {
+      if (sortBy === 'pipeline')  return b.total_pipeline_value - a.total_pipeline_value
+      if (sortBy === 'proposals') return b.proposal_count - a.proposal_count
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   // ── i18n strings ────────────────────────────────────────────────────────────
   const L = {
@@ -246,9 +260,17 @@ export default function AdminDashboard() {
     colProposals: isHe ? 'הצעות'                       : 'Proposals',
     colPipeline:  isHe ? 'צפי הכנסות'                 : 'Pipeline',
     colTier:      isHe ? 'חבילה'                       : 'Tier',
-    clickRow:     isHe ? 'לחץ לפתיחת פעולות'          : 'Click row to manage',
-    retry:        isHe ? 'נסה שוב'                     : 'Retry',
-    footer:       isHe ? 'שינויי חבילה נכנסים לתוקף מיד — לא ניתן לזייף בצד הלקוח.' : 'Tier changes take effect immediately — server-authoritative, client cannot spoof.',
+    clickRow:      isHe ? 'לחץ לפתיחת פעולות'          : 'Click row to manage',
+    retry:         isHe ? 'נסה שוב'                     : 'Retry',
+    footer:        isHe ? 'שינויי חבילה נכנסים לתוקף מיד — לא ניתן לזייף בצד הלקוח.' : 'Tier changes take effect immediately — server-authoritative, client cannot spoof.',
+    filterAll:     isHe ? 'הכל'                         : 'All',
+    filterFree:    isHe ? 'חינם'                        : 'Free',
+    filterPro:     isHe ? 'פרו'                         : 'Pro',
+    filterUnlim:   isHe ? 'ללא הגבלה'                  : 'Unlimited',
+    filterSuspend: isHe ? 'מושעים'                      : 'Suspended',
+    sortNewest:    isHe ? 'חדש ביותר'                   : 'Newest',
+    sortPipeline:  isHe ? 'לפי צפי'                     : 'By Pipeline',
+    sortProposals: isHe ? 'לפי הצעות'                   : 'By Proposals',
   }
 
   return (
@@ -329,28 +351,74 @@ export default function AdminDashboard() {
           style={{ background:'linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.05)' }}
         >
           {/* Panel header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4"
-            style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-2.5">
-              <Users size={13} style={{ color:'#818cf8' }} />
-              <p className="text-[13px] font-bold text-white">{L.registry}</p>
-              {!loading && (
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-black"
-                  style={{ background:'rgba(99,102,241,0.12)', color:'#a5b4fc', border:'1px solid rgba(99,102,241,0.25)' }}>
-                  {filtered.length}
-                </span>
-              )}
+          <div className="px-4 sm:px-6 py-4 space-y-3" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+            {/* Top row: title + search */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Users size={13} style={{ color:'#818cf8' }} />
+                <p className="text-[13px] font-bold text-white">{L.registry}</p>
+                {!loading && (
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                    style={{ background:'rgba(99,102,241,0.12)', color:'#a5b4fc', border:'1px solid rgba(99,102,241,0.25)' }}>
+                    {filtered.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="hidden sm:block text-[10px]" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</p>
+                <input
+                  type="text" value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder={L.search}
+                  className="rounded-xl px-3 py-1.5 text-[12px] outline-none transition-all"
+                  style={{ width:190, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.75)' }}
+                  onFocus={e=>{ e.currentTarget.style.border='1px solid rgba(99,102,241,0.45)'; e.currentTarget.style.background='rgba(99,102,241,0.07)' }}
+                  onBlur={e =>{ e.currentTarget.style.border='1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <p className="hidden sm:block text-[10px]" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</p>
-              <input
-                type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={L.search}
-                className="rounded-xl px-3 py-1.5 text-[12px] outline-none transition-all"
-                style={{ width:190, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.75)' }}
-                onFocus={e=>{ e.currentTarget.style.border='1px solid rgba(99,102,241,0.45)'; e.currentTarget.style.background='rgba(99,102,241,0.07)' }}
-                onBlur={e =>{ e.currentTarget.style.border='1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
-              />
+
+            {/* Bottom row: filter pills + sort */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* Filter pills */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {([
+                  { key: 'all',       label: L.filterAll,     color: '#818cf8', bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.4)' },
+                  { key: 'free',      label: L.filterFree,    color: 'rgba(255,255,255,0.55)', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+                  { key: 'pro',       label: L.filterPro,     color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.35)' },
+                  { key: 'unlimited', label: L.filterUnlim,   color: '#fbbf24', bg: 'rgba(212,175,55,0.12)',  border: 'rgba(212,175,55,0.35)' },
+                  { key: 'suspended', label: L.filterSuspend, color: '#f87171', bg: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.3)' },
+                ] as const).map(pill => {
+                  const active = filterTier === pill.key
+                  return (
+                    <button
+                      key={pill.key}
+                      type="button"
+                      onClick={() => setFilterTier(pill.key)}
+                      className="rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide transition-all"
+                      style={{
+                        color:       active ? pill.color              : 'rgba(255,255,255,0.3)',
+                        background:  active ? pill.bg                 : 'rgba(255,255,255,0.03)',
+                        border:      active ? `1px solid ${pill.border}` : '1px solid rgba(255,255,255,0.07)',
+                        boxShadow:   active ? `0 0 10px ${pill.bg}`  : 'none',
+                      }}
+                    >
+                      {pill.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Sort dropdown */}
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortBy)}
+                className="rounded-xl px-2.5 py-1 text-[11px] font-semibold outline-none transition-all cursor-pointer"
+                style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.45)' }}
+              >
+                <option value="newest"    style={{ background:'#0f0f1a' }}>{L.sortNewest}</option>
+                <option value="pipeline"  style={{ background:'#0f0f1a' }}>{L.sortPipeline}</option>
+                <option value="proposals" style={{ background:'#0f0f1a' }}>{L.sortProposals}</option>
+              </select>
             </div>
           </div>
 
