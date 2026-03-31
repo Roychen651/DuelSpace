@@ -13,9 +13,9 @@ function injectDarkStyles() {
   style.textContent = `
     /* ── DealSpace driver.js dark theme ─────────────────────────────────── */
 
-    /* Overlay */
+    /* Overlay — keep it light enough that the highlighted element is readable */
     .driver-overlay {
-      background: rgba(0, 0, 0, 0.82) !important;
+      background: rgba(0, 0, 0, 0.58) !important;
     }
 
     /* Popover shell */
@@ -111,29 +111,30 @@ function injectDarkStyles() {
       box-shadow: 0 0 24px rgba(99,102,241,0.55) !important;
     }
 
-    /* Close × button — ALWAYS physical top-right, regardless of dir */
+    /* Close × button — physical top-right, no box, blends into popover */
     .driver-popover-close-btn {
+      all: unset !important;
       position: absolute !important;
-      top: 14px !important;
+      top: 12px !important;
       right: 14px !important;
-      left: unset !important;
-      inset-inline-end: unset !important;
-      inset-inline-start: unset !important;
-      padding: 4px 7px !important;
-      opacity: 0.45 !important;
-      border: none !important;
-      background: transparent !important;
-      font-size: 15px !important;
-      font-weight: 400 !important;
-      color: rgba(255,255,255,0.6) !important;
-      cursor: pointer !important;
-      line-height: 1 !important;
+      left: auto !important;
+      inset-inline-end: auto !important;
+      inset-inline-start: auto !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 24px !important;
+      height: 24px !important;
       border-radius: 6px !important;
-      transition: opacity 0.15s, background 0.15s !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      color: rgba(255,255,255,0.3) !important;
+      cursor: pointer !important;
+      transition: color 0.15s, background 0.15s !important;
     }
 
     .driver-popover-close-btn:hover {
-      opacity: 1 !important;
+      color: rgba(255,255,255,0.8) !important;
       background: rgba(255,255,255,0.08) !important;
     }
 
@@ -252,7 +253,7 @@ export function startDashboardTour(locale: 'he' | 'en'): void {
     animate: true,
     smoothScroll: true,
     allowClose: true,
-    overlayOpacity: 0.82,
+    overlayOpacity: 0.58,
     stagePadding: 8,
     stageRadius: 14,
     showProgress: true,
