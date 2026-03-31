@@ -111,31 +111,43 @@ function injectDarkStyles() {
       box-shadow: 0 0 24px rgba(99,102,241,0.55) !important;
     }
 
-    /* Close × button — physical top-right, no box, blends into popover */
+    /* Close × button — physical top-right, no box outline */
     .driver-popover-close-btn {
-      all: unset !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
       position: absolute !important;
       top: 12px !important;
       right: 14px !important;
       left: auto !important;
       inset-inline-end: auto !important;
       inset-inline-start: auto !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 24px !important;
-      height: 24px !important;
-      border-radius: 6px !important;
-      font-size: 16px !important;
+      width: 22px !important;
+      height: 22px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      outline: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 5px !important;
+      font-size: 15px !important;
+      font-weight: 400 !important;
       line-height: 1 !important;
-      color: rgba(255,255,255,0.3) !important;
+      color: rgba(255,255,255,0.35) !important;
       cursor: pointer !important;
-      transition: color 0.15s, background 0.15s !important;
+      pointer-events: auto !important;
+      text-shadow: none !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transition: color 0.15s ease, background 0.15s ease !important;
     }
 
     .driver-popover-close-btn:hover {
-      color: rgba(255,255,255,0.8) !important;
-      background: rgba(255,255,255,0.08) !important;
+      color: rgba(255,255,255,0.85) !important;
+      background: rgba(255,255,255,0.1) !important;
+      border: none !important;
+      box-shadow: none !important;
     }
 
     /* Highlight ring */

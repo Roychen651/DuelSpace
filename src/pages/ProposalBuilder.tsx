@@ -281,11 +281,16 @@ export default function ProposalBuilder() {
     })()
     const fin = calculateFinancials(currentProposal, undefined, vatRate)
     const enabledIds = currentProposal.add_ons.filter(a => a.enabled).map(a => a.id)
+    // Priority: DB column → localStorage written by DealRoom at signing time
+    const sigFromDb = currentProposal.signature_data_url ?? ''
+    const signatureDataUrl = sigFromDb || (() => {
+      try { return localStorage.getItem(`dealspace:sig:${currentProposal.public_token}`) ?? '' } catch { return '' }
+    })()
     await generateProposalPdf({
       proposal: currentProposal,
       totalAmount: fin.grandTotal,
       enabledAddOnIds: enabledIds,
-      signatureDataUrl: currentProposal.signature_data_url ?? '',
+      signatureDataUrl,
       locale,
       isDraft: currentProposal.status !== 'accepted',
     })
