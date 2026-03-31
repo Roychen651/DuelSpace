@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–27.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–31.
 
 ---
 
@@ -120,6 +120,7 @@ src/
 │   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT
 │   ├── ServicesLibrary.tsx  # /services — services catalog CRUD (Supabase-backed via useServicesStore)
 │   ├── ContractLibrary.tsx  # /contracts — contract template management
+│   ├── Integrations.tsx     # /integrations — Webhook automations hub; free-tier paywall + paid webhook form
 │   ├── Legal.tsx            # /security — security policy page
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
 │   ├── PrivacyPolicy.tsx    # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
@@ -165,10 +166,11 @@ src/
 │   ├── contractTemplates.ts   # Built-in contract template definitions
 │   ├── successTemplates.ts    # Post-signature success screen template definitions
 │   ├── financialMath.ts       # VAT, rounding, milestone math helpers
+│   ├── automations.ts         # triggerPostSignatureAutomations — POSTs deal payload to creator's webhook_url
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo (incl. logo_url),
+│   └── proposal.ts          # Proposal, ProposalInsert, AddOn, PaymentMilestone, CreatorInfo (incl. logo_url, webhook_url),
 │                            #   proposalTotal(), applyVat(), formatCurrency(), milestonesValid(), STATUS_META
 │
 └── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, ErrorBoundary
@@ -202,6 +204,7 @@ supabase/
 /proposals/:id             → ProposalBuilder     (ProtectedRoute)
 /services                  → ServicesLibrary      (ProtectedRoute)
 /contracts                 → ContractLibrary      (ProtectedRoute)
+/integrations              → Integrations        (ProtectedRoute — webhook automations hub)
 /deal/:token               → DealRoom            (fully public, no auth)
 /profile                   → Profile             (ProtectedRoute)
 /terms                     → TermsOfService      (always public — 12-clause He/En)
@@ -445,16 +448,19 @@ backdrop-filter: blur(48px);
 box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
 ```
 
-### Premium inputs
+### Premium inputs (EditorPanel / Integrations — Sprint 13.8)
 ```css
-background: rgba(255,255,255,0.05);
-border: 1px solid rgba(255,255,255,0.1);
-box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-border-radius: 1rem; /* rounded-2xl */
+background: #0a0a0a;
+border: 1px solid rgba(255,255,255,0.08);
+border-radius: 0.75rem; /* rounded-xl */
+padding: 0 1rem; height: 3.5rem; /* py-3.5 */
+box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 /* on focus: */
-border: 1px solid rgba(99,102,241,0.55);
-box-shadow: 0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+background: #0f0f1a;
+border: 1px solid rgba(99,102,241,0.6);
+ring: 4px rgba(99,102,241,0.12);
 ```
+Auth card / legacy components still use the older `rgba(255,255,255,0.05)` style.
 
 ### Typography
 - **EN / numbers:** `Outfit` (Google Fonts, weights 300–900)
@@ -475,6 +481,8 @@ Each page/component injects custom keyframes via a `<style>` tag inside JSX. Nam
 - `ds-*` — Dashboard
 - `checkout-*` — CheckoutClimax
 - `builder-*` — ProposalBuilder
+- `int-*` — Integrations
+- `svc-*` — ServicesLibrary
 
 ---
 
@@ -609,13 +617,59 @@ Split-screen at `100dvh`, no page scroll.
 <SendModal>       ← AnimatePresence modal with share URL + copy button
 ```
 
-### EditorPanel sections (collapsible)
+### EditorPanel sections (collapsible — Bento card style)
+Each section is a rounded-3xl card with `background: rgba(255,255,255,0.02)` and `border: rgba(255,255,255,0.05)`. The section trigger (`p-5`) shows a conditional gradient `rgba(99,102,241,0.14) → 0.03 → transparent` + `borderBottom` when open. Body uses `p-6 space-y-6`.
+
 1. **Project** — title, cover image URL, description, AI Ghostwriter button
-2. **Client** — name, email (collapsed by default)
-3. **Pricing** — base price, currency, VAT toggle (`include_vat`), date picker (`expires_at`)
-4. **Add-ons** — drag-to-reorder (`Reorder.Group`), price inputs
+2. **Client** — name + email in 2-column grid (`grid grid-cols-1 sm:grid-cols-2 gap-4`), collapsed by default
+3. **Pricing** — base price + currency in 2-column grid, VAT toggle (`include_vat`), date picker (`expires_at`)
+4. **Add-ons** — drag-to-reorder (`Reorder.Group`), price inputs, clientAdjustable pill (green glow when open)
 5. **Payment Milestones** — milestone rows (name + percentage), sum indicator, validation
 6. **Contract** — contract template picker (from ContractLibrary), access code (`access_code`)
+
+### EditorPanel `inputClass` pattern (Sprint 13.8)
+```ts
+const inputClass = [
+  'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-white placeholder-white/30',
+  'outline-none transition-all duration-200',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
+].join(' ')
+```
+- `py-3.5` — tall touch targets
+- `focus:ring-4` — strong indigo glow on focus
+- Always use `ps-10` + `start-4` (logical properties, RTL-safe) when an icon is inside the input
+
+### Icons inside inputs (RTL-safe pattern)
+```tsx
+<div className="relative">
+  <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+    <User size={14} className="text-white/30" />
+  </div>
+  <input className={inputClass + ' ps-10'} ... />
+</div>
+```
+Use `start-4` (not `left-4`) and `ps-10` (not `pl-10`) — these are logical properties that flip automatically in RTL.
+
+### Field labels
+```tsx
+<label className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-300">
+  <IconName size={13} className="text-indigo-400" />
+  {label}
+</label>
+```
+Helper text: `<p className="text-[12px] text-zinc-500 mt-2">{helper}</p>`
+
+### clientAdjustable pill (Add-ons)
+Glowing segmented control — green glow when adjustable, muted when locked:
+```ts
+style={{
+  background: addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.04)',
+  border: `1px solid ${addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.1)'}`,
+  color: addOn.clientAdjustable !== false ? '#4ade80' : 'rgba(255,255,255,0.35)',
+  boxShadow: addOn.clientAdjustable !== false ? '0 0 14px rgba(34,197,94,0.18), inset 0 1px 0 rgba(74,222,128,0.1)' : 'none',
+}}
+```
 
 ### Send button condition
 `canSend = Boolean(draft.project_title?.trim())` — only title is required.
@@ -628,6 +682,16 @@ Debounced 1500ms on every `handleChange`. On Send, the debounce is flushed synch
 
 ### Creator info auto-injection
 `EditorPanel` reads `user.user_metadata` in a `useEffect` and calls `onChange({ creator_info, brand_color })` on mount and whenever `user` changes. This ensures every saved proposal carries the latest business identity, which the PDF engine and Deal Room use without requiring auth.
+
+Fields injected (as of Sprint 31):
+```ts
+const info: CreatorInfo = {
+  full_name, company_name, tax_id, address, phone, signatory_name,
+  logo_url,        // company logo URL — shown in Deal Room + PDF
+  webhook_url,     // automation webhook — used by triggerPostSignatureAutomations
+}
+onChange({ creator_info: info, brand_color: m['brand_color'] ?? null })
+```
 
 ---
 
@@ -1193,15 +1257,25 @@ useEffect(() => {
 
 When the page loads for an already-accepted proposal, `setAccepted(true)` runs but `freshSignedRef.current` is still `false` — so the effect guard prevents confetti on revisit.
 
-### Automation Handshake Stub (`triggerPostSignatureAutomations`)
-`DealRoom.tsx` exports an async stub called immediately after `accept_proposal` RPC succeeds:
+### `triggerPostSignatureAutomations` (Sprint 31 — real implementation)
+Lives in `src/lib/automations.ts`. Called from `DealRoom.tsx` immediately after `accept_proposal` RPC succeeds, fire-and-forget:
 
 ```ts
-// Called in handleAccept after: freshSignedRef.current = true; setAccepted(true)
+// DealRoom.tsx — in handleAccept, after freshSignedRef.current = true; setAccepted(true)
 if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
 ```
 
-The stub lives **outside the component** (module level) and takes `Proposal` as its argument. It logs a structured payload to the console. Sprint 19 will replace the log with real webhook calls (Make.com, Invoice4u, SendGrid, WhatsApp Business API). Do not move this into the component — it has no dependency on React state.
+The function reads `proposal.creator_info?.webhook_url`. If set, it POSTs this JSON payload:
+```ts
+{
+  event: 'proposal.accepted',
+  data: {
+    proposal_id, project_title, client_name, client_email,
+    client_company, grand_total, currency, public_token, signed_at
+  }
+}
+```
+If `webhook_url` is empty/absent, the function returns immediately with no side effects. Errors are swallowed — a failed webhook must never block the signing flow. The creator configures the webhook URL on `/integrations`; it is stored in `user_metadata.webhook_url` and auto-injected into `creator_info` by EditorPanel on every save.
 
 ### Dashboard CRM KPIs — correct formulas
 Three KPI cards with real business intelligence:
@@ -1359,7 +1433,53 @@ Logo container is centered (`flex justify-center` on parent). If no logo but `co
 
 ---
 
-## 25. What NOT To Do
+## 25. Integrations & Webhook Automations Engine (Sprint 31)
+
+### Architecture
+
+Three-layer system:
+1. **`CreatorInfo.webhook_url`** (`src/types/proposal.ts`) — field on the `CreatorInfo` interface. Optional string.
+2. **`EditorPanel` useEffect** — injects `webhook_url: m['webhook_url'] ?? ''` alongside `logo_url` and other metadata fields into every saved proposal's `creator_info` column.
+3. **`src/lib/automations.ts`** — `triggerPostSignatureAutomations(proposal)` reads `proposal.creator_info?.webhook_url` and POSTs the deal payload. Fire-and-forget, errors swallowed.
+4. **`src/pages/Integrations.tsx`** (`/integrations`) — protected page where creators configure their webhook URL. Saved to `user_metadata.webhook_url` via `supabase.auth.updateUser`.
+
+### Integrations page (`/integrations`)
+
+- **Free tier:** blur overlay (`backdropFilter: blur(8px)`) + lock icon + Upgrade CTA → opens `UpgradeModal`
+- **Paid tier (Pro/Unlimited):** webhook URL input + Save button + Test Connection button
+- Test fires a dummy payload with `proposal_id: 'test-00000000-...'` and `grand_total: 5000`
+- Status indicators (saved / error / webhook-ok / webhook-error) use `AnimatePresence` for smooth transitions
+- Compatible tools strip: Make.com, Zapier, n8n, Invoice4u, HubSpot, Pipedrive, monday.com, SendGrid, Slack, WhatsApp Business
+- Bilingual (He/En), full RTL support, `GlobalFooter` included
+- CSS keyframes namespaced `int-*`
+
+### Webhook payload structure
+```ts
+{
+  event: 'proposal.accepted',
+  data: {
+    proposal_id: string       // UUID
+    project_title: string
+    client_name: string
+    client_email: string | null
+    client_company: string | null
+    grand_total: number       // proposalTotal(proposal) — pre-VAT
+    currency: string          // 'ILS' | 'USD' | 'EUR' | …
+    public_token: string
+    signed_at: string         // ISO 8601
+  }
+}
+```
+
+### webhook_url storage path
+`user_metadata.webhook_url` → EditorPanel useEffect injects it into `proposal.creator_info.webhook_url` on every save → DealRoom reads it from the fetched proposal (no auth needed in the public route).
+
+### ProtectedLayout dropdown
+Integrations added as menu item after Contracts: `<Webhook size={13} />` icon + `'אינטגרציות' | 'Integrations'`.
+
+---
+
+## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
 - **Do not use `ease: number[]`** in Framer Motion — use named strings with `as const`.
@@ -1387,7 +1507,9 @@ Logo container is centered (`flex justify-center` on parent). If no logo but `co
 - **Do not use `py-*` padding alone for button height uniformity** — padding scales with content; if text wraps, the button grows taller than siblings. Always use explicit `h-*` (e.g., `h-9`) on action buttons alongside `whitespace-nowrap` on text spans.
 - **Do not omit `whitespace-nowrap` on button text spans** — without it, long labels like "הורד PDF" will wrap to two lines inside a flex button, inflating its height and breaking visual uniformity. Use `whitespace-nowrap` on every `<span>` inside a button, and `hidden sm:inline` to hide text entirely on mobile if space is tight.
 - **Do not fire confetti without checking `freshSignedRef.current`** — `setAccepted(true)` also runs on page load for already-accepted proposals. The ref guard is the only thing preventing confetti from playing when a creator or client revisits a sealed deal link.
-- **Do not put `triggerPostSignatureAutomations` inside the React component** — it is a module-level async function that takes `Proposal` as input. Placing it inside the component gains nothing and creates a new function reference on every render.
+- **Do not put `triggerPostSignatureAutomations` inside the React component** — it lives in `src/lib/automations.ts` (module level) and takes `Proposal` as input. Placing it inside a component creates a new function reference on every render.
+- **Do not throw or re-throw errors from `triggerPostSignatureAutomations`** — it must be fire-and-forget. A failed webhook must never block or break the signing flow. Always swallow errors silently.
+- **Do not expose `user_metadata.webhook_url` to clients via the Deal Room** — the webhook URL is a creator-private field. It travels through `creator_info.webhook_url` on the proposal record, but `get_deal_room_proposal` RPC excludes sensitive fields. Never render it in Deal Room UI.
 - **Do not use `accepted / all-non-draft` for Win Rate** — drafts and pending proposals dilute the metric incorrectly. The denominator must be `accepted + rejected` only (resolved deals).
 - **Do not remove `!important` from `input { font-size: 16px }` in `index.css`** — Tailwind class selectors have higher specificity than element selectors. Without `!important`, the rule is silently overridden by `text-sm` and iOS zoom returns on all inputs.
 - **Do not do optimistic in-place replace with Realtime `newRow` for UPDATE events** — the Supabase Realtime payload is partial and omits JSONB columns. Always call `fetchProposals()` on UPDATE. This bug has recurred multiple times.
