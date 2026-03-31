@@ -509,10 +509,12 @@ export default function DealRoom() {
   >({})
 
   const [signature, setSignature] = useState('')
-  // Ref mirror of signature — always up-to-date regardless of closure staleness.
-  // Used by handleAccept and handleDownloadPdf to guarantee the real dataUrl is
-  // read even when those useCallback closures were created before setSignature fired.
+  // Ref mirror — always current, bypasses useCallback stale closure entirely.
   const signatureRef = useRef('')
+  // Dedicated state set at the exact moment accept_proposal RPC succeeds.
+  // This is the primary PDF source — it's always the confirmed signature dataUrl
+  // regardless of React rendering cycles, closure age, or re-render ordering.
+  const [acceptedSignature, setAcceptedSignature] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
   const freshSignedRef = useRef(false) // true only when signed in this session
@@ -911,18 +913,20 @@ export default function DealRoom() {
     }
     setSigTimestamp(new Date())
     freshSignedRef.current = true
+    // Capture the best available signature dataUrl at the exact moment signing succeeds.
+    // Priority: ref (freshest) → state → empty fallback.
+    const sigDataUrl = signatureRef.current || signature
+    setAcceptedSignature(sigDataUrl)
     setAccepted(true)
-    // Persist signature dataUrl to localStorage so the PDF download works even after
-    // page reload or when the business owner visits the sealed link from the same browser.
-    // Key is scoped to the token so multiple deals don't collide.
-    try { localStorage.setItem(`dealspace:sig:${token}`, signatureRef.current) } catch (_) {}
+    // Persist to localStorage so the PDF download works after page reload / revisit.
+    try { localStorage.setItem(`dealspace:sig:${token}`, sigDataUrl) } catch (_) {}
     // Notify the Dashboard in the same browser tab/session immediately —
     // faster than waiting for Supabase Realtime Postgres Changes to propagate
     try { new BroadcastChannel('dealspace:proposals').postMessage({ type: 'accepted', token }) } catch (_) {}
     // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
     if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
     setAccepting(false)
-  }, [token, accepting, accepted, clientDetails, locale, signature])
+  }, [token, accepting, accepted, clientDetails, locale, signature, proposal])
 
   // ── Handle revision request ────────────────────────────────────────────────
   const handleRequestRevision = useCallback(async (notes: string) => {
@@ -968,9 +972,12 @@ export default function DealRoom() {
     const enabledIds = proposal.add_ons
       .filter(a => lineItems[a.id]?.enabled ?? a.enabled)
       .map(a => a.id)
-    // Read signature from ref (always current) → state fallback → localStorage copy for revisits.
-    // The ref is the only source guaranteed to be fresh regardless of closure staleness.
-    const sigForPdf = signatureRef.current || signature || (() => {
+    // Signature priority chain (most reliable to least):
+    // 1. acceptedSignature — state set atomically when accept_proposal RPC succeeded
+    // 2. signatureRef.current — ref written synchronously on every onSignatureChange call
+    // 3. signature — React state (may be stale in old closures)
+    // 4. localStorage — cross-session / page-reload fallback
+    const sigForPdf = acceptedSignature || signatureRef.current || signature || (() => {
       try { return localStorage.getItem(`dealspace:sig:${token}`) ?? '' } catch { return '' }
     })()
     await generateProposalPdf({
@@ -982,7 +989,7 @@ export default function DealRoom() {
       signatureTimestamp: sigTimestamp,
     })
     setPdfGenerating(false)
-  }, [proposal, pdfGenerating, lineItems, grandTotal, signature, locale, sigTimestamp])
+  }, [proposal, pdfGenerating, lineItems, grandTotal, acceptedSignature, signature, locale, sigTimestamp])
 
   // ── Draft PDF download (before acceptance) ────────────────────────────────
   const [draftGenerating, setDraftGenerating] = useState(false)
