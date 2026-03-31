@@ -381,18 +381,18 @@ export default function AdminDashboard() {
                 <Users size={13} style={{ color:'#818cf8' }} />
                 <p className="text-[13px] font-bold text-white">{L.registry}</p>
                 {!loading && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                  <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                     style={{ background:'rgba(99,102,241,0.12)', color:'#a5b4fc', border:'1px solid rgba(99,102,241,0.25)' }}>
                     {filtered.length}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <p className="hidden sm:block text-[10px]" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</p>
+                <p className="hidden sm:block text-[11px] font-medium" style={{ color:'rgba(255,255,255,0.2)' }}>{L.clickRow}</p>
                 <input
                   type="text" value={search} onChange={e => setSearch(e.target.value)}
                   placeholder={L.search}
-                  className="rounded-xl px-3 py-1.5 text-[12px] outline-none transition-all"
+                  className="h-8 rounded-xl px-3 text-[11px] font-medium outline-none transition-all"
                   style={{ width:190, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.75)' }}
                   onFocus={e=>{ e.currentTarget.style.border='1px solid rgba(99,102,241,0.45)'; e.currentTarget.style.background='rgba(99,102,241,0.07)' }}
                   onBlur={e =>{ e.currentTarget.style.border='1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
                       key={pill.key}
                       type="button"
                       onClick={() => setFilterTier(pill.key)}
-                      className="rounded-full px-2.5 py-1 text-[10px] font-black tracking-wide transition-all"
+                      className="h-8 rounded-xl px-3 text-[11px] font-semibold transition-all"
                       style={{
                         color:       active ? pill.color              : 'rgba(255,255,255,0.3)',
                         background:  active ? pill.bg                 : 'rgba(255,255,255,0.03)',
@@ -435,8 +435,8 @@ export default function AdminDashboard() {
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as SortBy)}
-                className="rounded-xl px-2.5 py-1 text-[11px] font-semibold outline-none transition-all cursor-pointer"
-                style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.45)' }}
+                className="h-8 rounded-xl px-3 text-[11px] font-semibold outline-none transition-all cursor-pointer"
+                style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.55)' }}
               >
                 <option value="newest"    style={{ background:'#0f0f1a' }}>{L.sortNewest}</option>
                 <option value="pipeline"  style={{ background:'#0f0f1a' }}>{L.sortPipeline}</option>
