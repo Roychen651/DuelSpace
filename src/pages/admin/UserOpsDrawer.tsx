@@ -296,10 +296,11 @@ export function UserOpsDrawer({ user, isHe, onClose, onUpdated, onDeleted }: Use
         },
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json() as { link?: string; error?: string }
-      if (!json.link) throw new Error(json.error ?? 'No link returned')
-      setImpLink(json.link)
-      window.open(json.link, '_blank', 'noopener,noreferrer')
+      const json = await res.json() as { otp?: string; email?: string; error?: string }
+      if (!json.otp || !json.email) throw new Error(json.error ?? 'No OTP returned')
+      const impUrl = `/auth/impersonate?email=${encodeURIComponent(json.email)}&otp=${encodeURIComponent(json.otp)}`
+      setImpLink(impUrl)
+      window.open(impUrl, '_blank', 'noopener,noreferrer')
       setImpFb('ok')
     } catch (e: unknown) {
       console.error('[impersonate]', e)

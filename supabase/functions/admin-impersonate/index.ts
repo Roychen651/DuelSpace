@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
     options: { redirectTo },
   })
 
-  if (error || !data?.properties?.action_link) {
+  if (error || !data?.properties?.email_otp) {
     console.error('[admin-impersonate] generateLink error:', error?.message)
     return new Response(
       JSON.stringify({ error: error?.message ?? 'Failed to generate link' }),
@@ -88,10 +88,10 @@ Deno.serve(async (req: Request) => {
     )
   }
 
-  console.log(`[admin-impersonate] Admin ${ADMIN_EMAIL} generated link for ${target_email}`)
+  console.log(`[admin-impersonate] Admin ${ADMIN_EMAIL} generated OTP for ${target_email}`)
 
   return new Response(
-    JSON.stringify({ link: data.properties.action_link }),
+    JSON.stringify({ otp: data.properties.email_otp, email: target_email }),
     { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } },
   )
 })

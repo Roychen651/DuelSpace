@@ -22,6 +22,7 @@ import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
 import Integrations from './pages/Integrations'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import ImpersonateCallback from './pages/ImpersonateCallback'
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 
@@ -88,6 +89,7 @@ function AnimatedRoutes() {
             {/* Public */}
             <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/impersonate" element={<ImpersonateCallback />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
 
             {/* Protected — with shared Navbar via ProtectedLayout */}
