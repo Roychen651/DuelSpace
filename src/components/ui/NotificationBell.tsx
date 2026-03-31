@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as Popover from '@radix-ui/react-popover'
-import { Bell, Eye, Check } from 'lucide-react'
+import { Bell, Eye, Check, CheckCheck } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useI18n } from '../../lib/i18n'
 import type { Proposal } from '../../types/proposal'
@@ -11,10 +12,13 @@ type NotifType = 'viewed' | 'accepted'
 
 interface Notif {
   id: string
+  proposalId: string
   type: NotifType
   title: string
   client: string
   time: string
+  /** view_count — shown as ×N suffix to de-spam repeated views */
+  viewCount?: number
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -25,22 +29,29 @@ function deriveNotifications(proposals: Proposal[]): Notif[] {
   const notifs: Notif[] = []
 
   for (const p of proposals) {
+    // Accepted — highest priority, always show
     if (p.status === 'accepted') {
       notifs.push({
         id: `accepted-${p.id}`,
+        proposalId: p.id,
         type: 'accepted',
         title: p.project_title || '—',
         client: p.client_name || '—',
         time: p.updated_at,
       })
     }
-    if (p.last_viewed_at) {
+
+    // Viewed — de-spammed: one entry per proposal showing latest view + count
+    // Skip if proposal is accepted (accepted notification already covers it)
+    if (p.last_viewed_at && p.status !== 'accepted') {
       notifs.push({
         id: `viewed-${p.id}`,
+        proposalId: p.id,
         type: 'viewed',
         title: p.project_title || '—',
         client: p.client_name || '—',
         time: p.last_viewed_at,
+        viewCount: p.view_count ?? 1,
       })
     }
   }
@@ -55,8 +66,8 @@ function timeAgo(dateStr: string, isHe: boolean): string {
   const mins  = Math.floor(diff / 60_000)
   const hours = Math.floor(diff / 3_600_000)
   const days  = Math.floor(diff / 86_400_000)
-  if (mins < 2)   return isHe ? 'הרגע'           : 'just now'
-  if (mins < 60)  return isHe ? `לפני ${mins} דק'` : `${mins}m ago`
+  if (mins < 2)   return isHe ? 'הרגע'             : 'just now'
+  if (mins < 60)  return isHe ? `לפני ${mins} דק'`  : `${mins}m ago`
   if (hours < 24) return isHe ? `לפני ${hours} שע'` : `${hours}h ago`
   return isHe ? `לפני ${days} ימים` : `${days}d ago`
 }
@@ -67,21 +78,37 @@ export function NotificationBell() {
   const { proposals } = useProposalStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+
+  // seenAt as state so markAllAsRead triggers a re-render immediately
+  const [seenAt, setSeenAt] = useState<number>(() =>
+    Number(localStorage.getItem(SEEN_KEY) ?? 0)
+  )
 
   const notifications = useMemo(() => deriveNotifications(proposals), [proposals])
 
-  // Read seenAt directly from localStorage on every render — lightweight and correct
-  const seenAt = Number(localStorage.getItem(SEEN_KEY) ?? 0)
-  const unreadCount = notifications.filter(n => new Date(n.time).getTime() > seenAt).length
+  const unreadCount = useMemo(
+    () => notifications.filter(n => new Date(n.time).getTime() > seenAt).length,
+    [notifications, seenAt]
+  )
 
-  const handleOpenChange = (v: boolean) => {
-    if (v) localStorage.setItem(SEEN_KEY, String(Date.now()))
-    setOpen(v)
-  }
+  // Explicit mark-all-as-read — NOT triggered on open
+  const markAllAsRead = useCallback(() => {
+    const now = Date.now()
+    localStorage.setItem(SEEN_KEY, String(now))
+    setSeenAt(now)
+  }, [])
+
+  // Clicking a notification: mark all read, close, navigate
+  const handleNotifClick = useCallback((n: Notif) => {
+    markAllAsRead()
+    setOpen(false)
+    navigate(`/proposals/${n.proposalId}`)
+  }, [navigate, markAllAsRead])
 
   return (
-    <Popover.Root open={open} onOpenChange={handleOpenChange}>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
           className="relative flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:text-white/75"
@@ -92,7 +119,7 @@ export function NotificationBell() {
           {unreadCount > 0 && (
             <span
               className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-0.5 text-[8px] font-black text-white"
-              style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.5)' }}
+              style={{ background: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.55)' }}
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
@@ -120,7 +147,7 @@ export function NotificationBell() {
         >
           {/* ── Header ──────────────────────────────────────────────────────── */}
           <div
-            className="flex items-center justify-between px-4 py-3.5"
+            className="flex items-center justify-between px-4 py-3"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
           >
             <div className="flex items-center gap-2">
@@ -128,18 +155,43 @@ export function NotificationBell() {
               <p className="text-[13px] font-bold text-white">
                 {isHe ? 'מרכז התראות' : 'Activity Feed'}
               </p>
+              {unreadCount > 0 && (
+                <span
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-black"
+                  style={{
+                    background: 'rgba(239,68,68,0.12)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                  }}
+                >
+                  {unreadCount}
+                </span>
+              )}
             </div>
+
+            {/* Mark all as read */}
             {unreadCount > 0 && (
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-black"
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors"
                 style={{
-                  background: 'rgba(239,68,68,0.12)',
-                  color: '#f87171',
-                  border: '1px solid rgba(239,68,68,0.2)',
+                  color: 'rgba(129,140,248,0.8)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  background: 'rgba(99,102,241,0.06)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(99,102,241,0.12)'
+                  e.currentTarget.style.color = '#a5b4fc'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(99,102,241,0.06)'
+                  e.currentTarget.style.color = 'rgba(129,140,248,0.8)'
                 }}
               >
-                {unreadCount} {isHe ? 'חדשות' : 'new'}
-              </span>
+                <CheckCheck size={11} />
+                {isHe ? 'סמן הכל כנקרא' : 'Mark all read'}
+              </button>
             )}
           </div>
 
@@ -174,19 +226,37 @@ export function NotificationBell() {
                   const isNew = new Date(n.time).getTime() > seenAt
                   const isAccepted = n.type === 'accepted'
                   const iconColor = isAccepted ? '#22c55e' : '#6366f1'
+
+                  // De-spammed label: "viewed ×N" when viewed more than once
+                  const viewSuffix = !isAccepted && n.viewCount && n.viewCount > 1
+                    ? ` (×${n.viewCount})`
+                    : ''
+
                   const textEn = isAccepted
                     ? `${n.client} accepted "${n.title}"`
-                    : `${n.client} viewed "${n.title}"`
+                    : `${n.client} viewed "${n.title}"${viewSuffix}`
                   const textHe = isAccepted
                     ? `${n.client} אישר את "${n.title}"`
-                    : `${n.client} צפה ב-"${n.title}"`
+                    : `${n.client} צפה ב-"${n.title}"${viewSuffix}`
 
                   return (
-                    <div
+                    <button
                       key={n.id}
-                      className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors"
+                      type="button"
+                      onClick={() => handleNotifClick(n)}
+                      className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-start transition-all"
                       style={{
                         background: isNew ? 'rgba(99,102,241,0.07)' : 'transparent',
+                        borderInlineStart: isNew ? '2px solid #6366f1' : '2px solid transparent',
+                        opacity: isNew ? 1 : 0.65,
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                        e.currentTarget.style.opacity = '1'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = isNew ? 'rgba(99,102,241,0.07)' : 'transparent'
+                        e.currentTarget.style.opacity = isNew ? '1' : '0.65'
                       }}
                     >
                       {/* Icon badge */}
@@ -199,10 +269,10 @@ export function NotificationBell() {
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium text-white/72 leading-snug">
+                        <p className="text-[12px] font-medium text-white/80 leading-snug">
                           {isHe ? textHe : textEn}
                         </p>
-                        <p className="text-[10px] text-white/28 mt-0.5">
+                        <p className="text-[10px] text-white/30 mt-0.5">
                           {timeAgo(n.time, isHe)}
                         </p>
                       </div>
@@ -214,7 +284,7 @@ export function NotificationBell() {
                           style={{ background: '#6366f1', boxShadow: '0 0 6px rgba(99,102,241,0.6)' }}
                         />
                       )}
-                    </div>
+                    </button>
                   )
                 })}
               </div>

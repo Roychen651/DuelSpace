@@ -20,7 +20,6 @@ import {
   type ContractTemplate,
 } from '../../lib/contractTemplates'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID } from '../../lib/successTemplates'
-import { SMART_VAR_TAGS } from '../../lib/contractEngine'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -799,28 +798,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             locale={locale}
             disabled={isLocked}
           />
-          {/* Smart Variable Tags — click to copy into contract */}
-          <div className="mt-2.5">
-            <p className="text-[11px] text-zinc-600 mb-1.5">
-              {isHe ? 'תגיות חכמות — לחץ להעתקה:' : 'Smart tags — click to copy:'}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {SMART_VAR_TAGS.map(tag => (
-                <button
-                  key={tag.key}
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`{${tag.key}}`).catch(() => {})
-                  }}
-                  className="rounded-md px-2 py-1 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300 hover:bg-white/10 active:scale-95"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
-                  title={isHe ? `העתק ${tag.label_he}` : `Copy ${tag.label_en}`}
-                >
-                  {`{${tag.key}}`}
-                </button>
-              ))}
-            </div>
-          </div>
         </Field>
 
         {/* Video pitch URL */}
@@ -952,14 +929,44 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           minDate={new Date()}
         />
 
-        {/* Contract template */}
-        <ContractTemplatePicker
-          locale={locale}
-          onSelect={body => {
-            const existing = draft.description ?? ''
-            onChange({ description: existing ? `${existing}\n\n---\n${body}` : body })
-          }}
-        />
+        {/* Contract template + clear button */}
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <ContractTemplatePicker
+              locale={locale}
+              onSelect={body => {
+                const existing = draft.description ?? ''
+                onChange({ description: existing ? `${existing}\n\n---\n${body}` : body })
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const msg = isHe ? 'האם למחוק את טקסט החוזה?' : 'Clear contract text?'
+              if (window.confirm(msg)) onChange({ description: '' })
+            }}
+            title={isHe ? 'מחק תוכן' : 'Clear content'}
+            className="flex h-[42px] w-10 flex-none items-center justify-center rounded-xl transition-colors"
+            style={{
+              background: 'rgba(239,68,68,0.06)',
+              border: '1px solid rgba(239,68,68,0.18)',
+              color: 'rgba(239,68,68,0.5)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
+              e.currentTarget.style.color = 'rgba(239,68,68,0.85)'
+              e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(239,68,68,0.06)'
+              e.currentTarget.style.color = 'rgba(239,68,68,0.5)'
+              e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)'
+            }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </Section>
 
       {/* ── Pricing ─────────────────────────────────────────────────────── */}
@@ -971,7 +978,9 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           <Field label={isHe ? 'מחיר בסיס' : 'Base Price'} required>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-                <DollarSign size={14} className="text-white/30" />
+                <span className="text-sm font-bold text-white/30">
+                  {draft.currency === 'ILS' ? '₪' : draft.currency === 'EUR' ? '€' : '$'}
+                </span>
               </div>
               <input
                 type="number"
