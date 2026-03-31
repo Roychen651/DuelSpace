@@ -93,13 +93,13 @@ function Section({
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition-all duration-200"
+        className="flex w-full items-center justify-between p-5 text-left transition-all duration-200"
         style={{
           background: open
-            ? 'linear-gradient(90deg, rgba(99,102,241,0.09) 0%, transparent 70%)'
+            ? 'linear-gradient(90deg, rgba(99,102,241,0.14) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)'
             : 'transparent',
           borderBottom: open
-            ? '1px solid rgba(255,255,255,0.06)'
+            ? '1px solid rgba(255,255,255,0.07)'
             : '1px solid transparent',
         }}
       >
@@ -110,7 +110,7 @@ function Section({
           >
             <span className="text-indigo-400">{icon}</span>
           </div>
-          <span className="text-[15px] font-semibold text-white/90">{title}</span>
+          <span className="text-base font-semibold text-white">{title}</span>
           {badge && (
             <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">
               {badge}
@@ -135,7 +135,7 @@ function Section({
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="px-5 pb-6 space-y-6">{children}</div>
+            <div className="p-6 space-y-6">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -166,10 +166,10 @@ function Field({
 }
 
 const inputClass = [
-  'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3 text-base text-white placeholder-white/25',
+  'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-white placeholder-white/30',
   'outline-none transition-all duration-200',
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
-  'focus:bg-[#0f0f1a] focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/[0.08]',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
 ].join(' ')
 
 
@@ -214,7 +214,7 @@ function AddOnRow({
       whileDrag={{ scale: 1.02, boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 10 }}
       transition={{ duration: 0.15 }}
     >
-      <div className="flex items-start gap-3 p-3">
+      <div className="flex items-start gap-3 p-4">
         {/* Drag handle */}
         <button
           type="button"
@@ -301,11 +301,16 @@ function AddOnRow({
           <button
             type="button"
             onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
-            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200"
             style={{
-              background: addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              color: addOn.clientAdjustable !== false ? '#22c55e' : 'rgba(255,255,255,0.35)',
+              background: addOn.clientAdjustable !== false
+                ? 'rgba(34,197,94,0.10)'
+                : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${addOn.clientAdjustable !== false ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.1)'}`,
+              color: addOn.clientAdjustable !== false ? '#4ade80' : 'rgba(255,255,255,0.35)',
+              boxShadow: addOn.clientAdjustable !== false
+                ? '0 0 14px rgba(34,197,94,0.18), inset 0 1px 0 rgba(74,222,128,0.1)'
+                : 'none',
             }}
             aria-label={isHe ? 'שינוי כמות על ידי לקוח' : 'Toggle client adjustable'}
           >
@@ -747,13 +752,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                 style={{ background: 'rgba(99,102,241,0.12)', pointerEvents: 'none' }}
               >
                 <Lock size={9} style={{ color: '#818cf8' }} />
-                <span className="text-[9px] font-bold text-indigo-400">
+                <span className="text-[11px] font-bold text-indigo-400">
                   {isHe ? 'מוגן' : 'Protected'}
                 </span>
               </div>
             )}
           </div>
-          <p className="text-xs text-white/40 mt-1.5">
+          <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed">
             {isHe
               ? 'אם מוגדר, הלקוח יצטרך להזין קוד זה לפני צפייה בהצעה'
               : 'If set, the client must enter this code before viewing the proposal'}
@@ -810,7 +815,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               onChange={e => onChange({ video_url: e.target.value || null })}
             />
           </div>
-          <p className="text-xs text-white/40 mt-1.5">
+          <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed">
             {isHe
               ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
               : 'Displayed cinematically to the client before pricing'}
@@ -844,7 +849,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </div>
 
           {(draft.testimonials ?? []).length === 0 && (
-            <p className="text-xs text-white/40 leading-relaxed">
+            <p className="text-[12px] text-zinc-500 leading-relaxed">
               {isHe
                 ? 'הוסף 1-3 המלצות — תוצגנה ללקוח לפני לוח התמחור להגברת אמון'
                 : 'Add 1-3 testimonials — shown before pricing to build client trust'}
@@ -1089,7 +1094,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         {/* VAT summary when enabled */}
         {showVat && fin.beforeVat > 0 && (
           <div
-            className="rounded-xl px-4 py-3 space-y-1.5"
+            className="rounded-xl px-5 py-4 space-y-2"
             style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
             <div className="flex items-center justify-between text-sm text-white/55">
@@ -1119,10 +1124,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         }}
       >
         <div
-          className="flex items-center justify-between px-5 py-4 transition-all"
+          className="flex items-center justify-between p-5 transition-all"
           style={{
-            background: 'linear-gradient(90deg, rgba(99,102,241,0.09) 0%, transparent 70%)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'linear-gradient(90deg, rgba(99,102,241,0.14) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -1132,7 +1137,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             >
               <span className="text-indigo-400"><Plus size={15} /></span>
             </div>
-            <span className="text-[15px] font-semibold text-white/90">
+            <span className="text-base font-semibold text-white">
               {isHe ? 'תוספות ושדרוגים' : 'Add-ons & Upgrades'}
             </span>
             {draft.add_ons.length > 0 && (
@@ -1156,7 +1161,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           )}
         </div>
 
-        <div className="px-5 pb-6 space-y-4">
+        <div className="p-5 space-y-4">
           <Reorder.Group
             axis="y"
             values={draft.add_ons}
@@ -1228,7 +1233,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
       >
         {/* Explanation */}
         <div className="flex items-start gap-2">
-          <p className="text-sm text-white/45 leading-relaxed flex-1">
+          <p className="text-[13px] text-zinc-400 leading-relaxed flex-1">
             {isHe
               ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
               : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
@@ -1323,7 +1328,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                   style={{ overflow: 'hidden' }}
                 >
                   <div
-                    className="flex items-center gap-2 rounded-xl p-2.5"
+                    className="flex items-center gap-2 rounded-xl p-3.5"
                     style={{
                       background: 'rgba(255,255,255,0.03)',
                       border: '1px solid rgba(255,255,255,0.07)',
@@ -1427,7 +1432,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           ? (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_he ?? '')
           : (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_en ?? '')}
       >
-        <p className="text-sm text-white/45 leading-relaxed mb-3">
+        <p className="text-[12px] text-zinc-500 leading-relaxed mb-3">
           {isHe
             ? 'בחר את ההודעה שתוצג ללקוח לאחר החתימה.'
             : 'Choose the message shown to the client after they sign.'}
