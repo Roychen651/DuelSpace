@@ -288,11 +288,11 @@ function makeStyles(brand: string) {
     },
     milestoneHeaderCell: { fontSize:7.5, fontWeight:700, color:C.white, letterSpacing:1, textTransform:'uppercase' },
     milestoneRow: {
-      flexDirection:'row-reverse', alignItems:'center',
+      flexDirection:'column',
       paddingHorizontal:14, paddingVertical:8, borderBottom:`1px solid ${C.border}`,
     },
     milestoneRowAlt: {
-      flexDirection:'row-reverse', alignItems:'center',
+      flexDirection:'column',
       paddingHorizontal:14, paddingVertical:8,
       borderBottom:`1px solid ${C.border}`, backgroundColor:C.surface,
     },
@@ -305,7 +305,7 @@ function makeStyles(brand: string) {
     milestoneName:    { fontSize:9.5, color:C.text,  textAlign:'right', flex:1 },
     milestonePct:     { fontSize:8.5, color:C.muted, fontWeight:700, width:50, textAlign:'center' },
     milestoneAmt:     { fontSize:10,  color:C.text,  fontWeight:700, width:80, textAlign:'left' },
-    milestoneBarBg:   { height:2, backgroundColor:C.border, borderRadius:1, marginTop:3 },
+    milestoneBarBg:   { height:2, backgroundColor:C.border, borderRadius:1, marginTop:5 },
     milestoneBarFill: { height:2, backgroundColor:brand, borderRadius:1 },
 
     // ── Terms ───────────────────────────────────────────────────────────────────
@@ -788,19 +788,21 @@ function ProposalDocument(opts: PdfOptions) {
                 const amt = Math.round((m.percentage/100) * displayTotal)
                 return (
                   <View key={m.id} style={i%2===0 ? s.milestoneRow : s.milestoneRowAlt} wrap={false}>
-                    <View style={s.milestoneNumBadge}>
-                      <Text style={s.milestoneNumText}>{i+1}</Text>
-                    </View>
-                    <View style={{flex:1}}>
-                      <Text style={s.milestoneName}>
-                        {m.name || (isHe ? `אבן דרך ${i+1}` : `Milestone ${i+1}`)}
-                      </Text>
-                      <View style={s.milestoneBarBg}>
-                        <View style={[s.milestoneBarFill,{width:`${m.percentage}%` as unknown as number}]} />
+                    <View style={{ flexDirection:'row-reverse', alignItems:'center' }}>
+                      <View style={s.milestoneNumBadge}>
+                        <Text style={s.milestoneNumText}>{i+1}</Text>
                       </View>
+                      <View style={{flex:1}}>
+                        <Text style={s.milestoneName}>
+                          {m.name || (isHe ? `אבן דרך ${i+1}` : `Milestone ${i+1}`)}
+                        </Text>
+                      </View>
+                      <Text style={s.milestonePct}>{m.percentage}%</Text>
+                      <Text style={s.milestoneAmt}>{fmtCurrencyPdf(amt, proposal.currency)}</Text>
                     </View>
-                    <Text style={s.milestonePct}>{m.percentage}%</Text>
-                    <Text style={s.milestoneAmt}>{fmtCurrencyPdf(amt, proposal.currency)}</Text>
+                    <View style={s.milestoneBarBg}>
+                      <View style={[s.milestoneBarFill,{width:`${m.percentage}%` as unknown as number}]} />
+                    </View>
                   </View>
                 )
               })}
@@ -1041,8 +1043,8 @@ function ProposalDocument(opts: PdfOptions) {
                     <View style={{ width: '62%' }}>
                       <Text style={{ fontSize: 6.5, fontWeight: 700, color: C.text, textAlign: 'left', lineHeight: 1.5 }}>
                         {proposal.signer_user_agent
-                          ? (proposal.signer_user_agent.length > 90
-                            ? proposal.signer_user_agent.slice(0, 90) + '…'
+                          ? (proposal.signer_user_agent.length > 160
+                            ? proposal.signer_user_agent.slice(0, 160) + '…'
                             : proposal.signer_user_agent)
                           : '—'}
                       </Text>

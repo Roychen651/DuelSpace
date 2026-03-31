@@ -918,7 +918,7 @@ export default function DealRoom() {
     // Fire post-signature automation hooks (stub — Sprint 19 wires real webhooks)
     if (proposal) triggerPostSignatureAutomations(proposal).catch(console.error)
     setAccepting(false)
-  }, [token, accepting, accepted, clientDetails, locale])
+  }, [token, accepting, accepted, clientDetails, locale, signature])
 
   // ── Handle revision request ────────────────────────────────────────────────
   const handleRequestRevision = useCallback(async (notes: string) => {
