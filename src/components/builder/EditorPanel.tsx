@@ -86,15 +86,22 @@ function Section({
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.05)',
       }}
     >
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors rounded-2xl"
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-all duration-200"
+        style={{
+          background: open
+            ? 'linear-gradient(90deg, rgba(99,102,241,0.09) 0%, transparent 70%)'
+            : 'transparent',
+          borderBottom: open
+            ? '1px solid rgba(255,255,255,0.06)'
+            : '1px solid transparent',
+        }}
       >
         <div className="flex items-center gap-3">
           <div
@@ -148,10 +155,10 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 text-sm font-semibold text-white/90">
-        {icon && <span className="text-white/50">{icon}</span>}
+      <label className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-300">
+        {icon && <span className="text-white/40">{icon}</span>}
         {label}
-        {required && <span className="text-indigo-400">*</span>}
+        {required && <span className="text-indigo-400 ms-0.5">*</span>}
       </label>
       {children}
     </div>
@@ -159,9 +166,10 @@ function Field({
 }
 
 const inputClass = [
-  'w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-base text-white placeholder-white/30',
+  'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3 text-base text-white placeholder-white/25',
   'outline-none transition-all duration-200',
-  'focus:bg-white/[0.06] focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/[0.08]',
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]',
+  'focus:bg-[#0f0f1a] focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/[0.08]',
 ].join(' ')
 
 
@@ -469,7 +477,7 @@ function ContractTemplatePicker({
                           {isHe ? v.labelHe : v.labelEn}
                         </label>
                         <input
-                          className={inputClass + ' py-2 text-xs'}
+                          className={inputClass + ' text-sm'}
                           placeholder={v.defaultValue ?? ''}
                           value={vars[v.key] ?? ''}
                           onChange={e => setVars(prev => ({ ...prev, [v.key]: e.target.value }))}
@@ -686,31 +694,47 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         title={isHe ? 'פרטי לקוח' : 'Client Details'}
         icon={<User size={15} />}
       >
-        <Field label={isHe ? 'שם הלקוח' : 'Client Name'} required>
-          <input
-            className={inputClass}
-            placeholder={isHe ? 'שם מלא של הלקוח' : 'Client full name'}
-            value={draft.client_name}
-            onChange={e => onChange({ client_name: e.target.value })}
-            autoComplete="off"
-          />
-        </Field>
-        <Field label={isHe ? 'אימייל לקוח' : 'Client Email'} icon={<Mail size={10} />}>
-          <input
-            className={inputClass}
-            type="email"
-            placeholder="client@example.com"
-            value={draft.client_email ?? ''}
-            onChange={e => onChange({ client_email: e.target.value })}
-            autoComplete="off"
-          />
-        </Field>
+        {/* Name + Email — 2-column grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={isHe ? 'שם הלקוח' : 'Client Name'} required>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+                <User size={14} className="text-white/30" />
+              </div>
+              <input
+                className={inputClass + ' ps-10'}
+                placeholder={isHe ? 'שם מלא של הלקוח' : 'Client full name'}
+                value={draft.client_name}
+                onChange={e => onChange({ client_name: e.target.value })}
+                autoComplete="off"
+              />
+            </div>
+          </Field>
+          <Field label={isHe ? 'אימייל לקוח' : 'Client Email'}>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+                <Mail size={14} className="text-white/30" />
+              </div>
+              <input
+                className={inputClass + ' ps-10'}
+                type="email"
+                placeholder="client@example.com"
+                value={draft.client_email ?? ''}
+                onChange={e => onChange({ client_email: e.target.value })}
+                autoComplete="off"
+              />
+            </div>
+          </Field>
+        </div>
 
         {/* Access code */}
-        <Field label={isHe ? 'קוד גישה (אופציונלי)' : 'Access Code (optional)'} icon={<Lock size={10} />}>
+        <Field label={isHe ? 'קוד גישה (אופציונלי)' : 'Access Code (optional)'}>
           <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+              <Lock size={14} className="text-white/25" />
+            </div>
             <input
-              className={inputClass}
+              className={inputClass + ' ps-10'}
               placeholder={isHe ? 'למשל: 1234 — הלקוח יצטרך להזין' : 'e.g. 1234 — client must enter this'}
               value={draft.access_code ?? ''}
               onChange={e => onChange({ access_code: e.target.value || null })}
@@ -743,12 +767,17 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         icon={<Briefcase size={15} />}
       >
         <Field label={isHe ? 'שם הפרויקט' : 'Project Title'} required>
-          <input
-            className={inputClass}
-            placeholder={isHe ? 'למשל: חבילת תוכן חודשית' : 'e.g. Monthly Content Package'}
-            value={draft.project_title}
-            onChange={e => onChange({ project_title: e.target.value })}
-          />
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+              <Briefcase size={14} className="text-white/30" />
+            </div>
+            <input
+              className={inputClass + ' ps-10'}
+              placeholder={isHe ? 'למשל: חבילת תוכן חודשית' : 'e.g. Monthly Content Package'}
+              value={draft.project_title}
+              onChange={e => onChange({ project_title: e.target.value })}
+            />
+          </div>
         </Field>
 
         <Field label={isHe ? 'תיאור / מה כלול' : "Description / What's Included"} icon={<FileText size={10} />}>
@@ -768,15 +797,19 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         {/* Video pitch URL */}
         <Field
           label={isHe ? 'וידאו פיץ׳ (YouTube / Vimeo / Loom)' : 'Video Pitch (YouTube / Vimeo / Loom)'}
-          icon={<Film size={10} />}
         >
-          <input
-            className={inputClass}
-            type="url"
-            placeholder="https://youtu.be/..."
-            value={draft.video_url ?? ''}
-            onChange={e => onChange({ video_url: e.target.value || null })}
-          />
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+              <Film size={14} className="text-white/30" />
+            </div>
+            <input
+              className={inputClass + ' ps-10'}
+              type="url"
+              placeholder="https://youtu.be/..."
+              value={draft.video_url ?? ''}
+              onChange={e => onChange({ video_url: e.target.value || null })}
+            />
+          </div>
           <p className="text-xs text-white/40 mt-1.5">
             {isHe
               ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
@@ -828,7 +861,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               }}
             >
               <textarea
-                className={inputClass + ' resize-none text-xs'}
+                className={inputClass + ' resize-none text-sm'}
                 rows={2}
                 placeholder={
                   isHe
@@ -842,9 +875,9 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                   onChange({ testimonials: updated })
                 }}
               />
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <input
-                  className={inputClass + ' text-xs flex-1'}
+                  className={inputClass + ' text-sm'}
                   placeholder={isHe ? 'שם הלקוח' : 'Client name'}
                   value={t.author}
                   onChange={e => {
@@ -854,7 +887,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                   }}
                 />
                 <input
-                  className={inputClass + ' text-xs flex-1'}
+                  className={inputClass + ' text-sm'}
                   placeholder={isHe ? 'תפקיד (אופציונלי)' : 'Role (optional)'}
                   value={t.role ?? ''}
                   onChange={e => {
@@ -905,30 +938,40 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
         title={isHe ? 'תמחור בסיסי' : 'Base Pricing'}
         icon={<DollarSign size={15} />}
       >
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <Field label={isHe ? 'מחיר בסיס' : 'Base Price'} required>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              className={inputClass}
-              placeholder="0"
-              value={draft.base_price || ''}
-              onChange={e => onChange({ base_price: Number(e.target.value) || 0 })}
-            />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
+                <DollarSign size={14} className="text-white/30" />
+              </div>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                className={inputClass + ' ps-10'}
+                placeholder="0"
+                value={draft.base_price || ''}
+                onChange={e => onChange({ base_price: Number(e.target.value) || 0 })}
+              />
+            </div>
           </Field>
           <Field label={isHe ? 'מטבע' : 'Currency'}>
-            <select
-              className={inputClass + ' appearance-none cursor-pointer'}
-              value={draft.currency}
-              onChange={e => onChange({ currency: e.target.value })}
-            >
-              {CURRENCIES.map(c => (
-                <option key={c.value} value={c.value} style={{ background: '#0f0f18', color: 'white' }}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                className={inputClass + ' appearance-none cursor-pointer pe-8'}
+                value={draft.currency}
+                onChange={e => onChange({ currency: e.target.value })}
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.value} value={c.value} style={{ background: '#0f0f18', color: 'white' }}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 end-3 flex items-center">
+                <ChevronDown size={13} className="text-white/30" />
+              </div>
+            </div>
           </Field>
         </div>
 
@@ -1075,7 +1118,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         }}
       >
-        <div className="flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors rounded-2xl">
+        <div
+          className="flex items-center justify-between px-5 py-4 transition-all"
+          style={{
+            background: 'linear-gradient(90deg, rgba(99,102,241,0.09) 0%, transparent 70%)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
           <div className="flex items-center gap-3">
             <div
               className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
@@ -1286,7 +1335,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                       style={{ background: color, boxShadow: `0 0 6px ${color}80` }}
                     />
                     <input
-                      className={inputClass + ' flex-1 py-2 text-xs'}
+                      className={inputClass + ' flex-1 text-sm'}
                       placeholder={isHe ? `שם שלב ${i + 1}` : `Stage ${i + 1} name`}
                       value={m.name}
                       onChange={e => updateMilestone(m.id, { name: e.target.value })}
@@ -1303,7 +1352,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                         inputMode="numeric"
                         min={0}
                         max={100}
-                        className={inputClass + ' py-2 text-xs text-center pe-5'}
+                        className={inputClass + ' text-sm text-center pe-5'}
                         value={m.percentage || ''}
                         onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
                       />
