@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X } from 'lucide-react'
+import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X, AlertTriangle, ExternalLink } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore, useTier, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
+import { useAuthStore, useTier, useBillingStatus, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
 import { useProposalStore } from '../stores/useProposalStore'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
@@ -16,6 +16,7 @@ import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { UpgradeModal } from '../components/dashboard/UpgradeModal'
 import { exportProposalsCsv } from '../lib/csvExport'
+import { STRIPE_CUSTOMER_PORTAL } from '../lib/stripe'
 
 // ─── Animated number (slot machine count-up) ──────────────────────────────────
 
@@ -181,6 +182,74 @@ function DashboardAurora() {
   )
 }
 
+// ─── Dunning Banner ───────────────────────────────────────────────────────────
+
+function DunningBanner({ isHe }: { isHe: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' as const }}
+      className="relative overflow-hidden rounded-2xl px-5 py-4 mb-6 flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row"
+      style={{
+        background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(185,28,28,0.07) 100%)',
+        border: '1px solid rgba(239,68,68,0.3)',
+        boxShadow: '0 0 40px rgba(239,68,68,0.08), inset 0 1px 0 rgba(239,68,68,0.12)',
+      }}
+    >
+      {/* Subtle pulsing glow */}
+      <div
+        className="pointer-events-none absolute -inset-px rounded-2xl"
+        style={{ animation: 'ds-dunning-pulse 3s ease-in-out infinite', borderRadius: 'inherit' }}
+        aria-hidden
+      />
+
+      {/* Left: icon + text */}
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div
+          className="flex h-9 w-9 flex-none items-center justify-center rounded-xl mt-0.5"
+          style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.28)' }}
+        >
+          <AlertTriangle size={16} style={{ color: '#f87171' }} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[13px] font-black text-white leading-tight mb-0.5">
+            {isHe ? 'בעיה בחיוב — יצירת הצעות חסומה' : 'Billing issue — proposal creation locked'}
+          </p>
+          <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            {isHe
+              ? 'לא הצלחנו לחייב את כרטיס האשראי שלך. אנא עדכן פרטי תשלום כדי להמשיך ליצור הצעות.'
+              : "We couldn't process your last payment. Please update your billing details to continue creating proposals."}
+          </p>
+        </div>
+      </div>
+
+      {/* Right: CTA */}
+      {STRIPE_CUSTOMER_PORTAL && (
+        <motion.a
+          href={STRIPE_CUSTOMER_PORTAL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-black whitespace-nowrap"
+          style={{
+            background: 'rgba(239,68,68,0.18)',
+            border: '1px solid rgba(239,68,68,0.4)',
+            color: '#fca5a5',
+            boxShadow: '0 0 16px rgba(239,68,68,0.12)',
+          }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.28)' }}
+          onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.18)' }}
+        >
+          <ExternalLink size={11} />
+          {isHe ? 'עדכן אמצעי תשלום' : 'Update Payment Method'}
+        </motion.a>
+      )}
+    </motion.div>
+  )
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ViewMode = 'grid' | 'kanban' | 'list'
@@ -209,6 +278,7 @@ export default function Dashboard() {
   const [sortOpen, setSortOpen] = useState(false)
   const sortRef = useRef<HTMLDivElement>(null)
   const tier = useTier()
+  const billingStatus = useBillingStatus()
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -347,6 +417,7 @@ export default function Dashboard() {
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const handleCreate = () => {
+    if (billingStatus === 'past_due') return
     if (tier === 'free' && activeProposals.length >= FREE_PROPOSAL_LIMIT) {
       setUpgradeModalOpen(true)
       return
@@ -402,6 +473,10 @@ export default function Dashboard() {
           0%        { transform: translateX(-120%); }
           60%, 100% { transform: translateX(120%); }
         }
+        @keyframes ds-dunning-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+          50%       { box-shadow: 0 0 24px 4px rgba(239,68,68,0.14); }
+        }
         .ds-tab-scroll::-webkit-scrollbar { display: none }
         .ds-tab-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
@@ -452,6 +527,11 @@ export default function Dashboard() {
             {isHe ? 'כל הצעות המחיר שלך במקום אחד.' : 'All your proposals in one place.'}
           </p>
         </div>
+
+        {/* ── Dunning Banner ────────────────────────────────────────────── */}
+        <AnimatePresence>
+          {billingStatus === 'past_due' && <DunningBanner isHe={isHe} />}
+        </AnimatePresence>
 
         {/* ── KPI Bento Grid ────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">

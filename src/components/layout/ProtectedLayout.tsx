@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight, Webhook } from 'lucide-react'
+import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore } from '../../stores/useAuthStore'
+import { useAuthStore, useBillingStatus } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
@@ -23,6 +23,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   const [helpOpen, setHelpOpen] = useState(false)
   const [viewingToast, setViewingToast] = useState<{ title: string; client: string } | null>(null)
 
+  const billingStatus = useBillingStatus()
   const isDashboard = pathname === '/dashboard'
   const isHe = locale === 'he'
   const isRTL = isHe
@@ -198,17 +199,29 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           {/* New Proposal button */}
           <motion.button
             data-tour="new-proposal"
-            onClick={() => navigate('/proposals/new')}
+            onClick={() => {
+              if (billingStatus === 'past_due') return
+              navigate('/proposals/new')
+            }}
             className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-bold text-white"
             style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 0 22px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+              background: billingStatus === 'past_due'
+                ? 'rgba(255,255,255,0.06)'
+                : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              boxShadow: billingStatus === 'past_due'
+                ? 'none'
+                : '0 0 22px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+              border: billingStatus === 'past_due' ? '1px solid rgba(239,68,68,0.3)' : 'none',
+              color: billingStatus === 'past_due' ? 'rgba(248,113,113,0.7)' : 'white',
+              cursor: billingStatus === 'past_due' ? 'not-allowed' : 'pointer',
+              opacity: billingStatus === 'past_due' ? 0.65 : 1,
             }}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
+            whileHover={billingStatus === 'past_due' ? {} : { scale: 1.03 }}
+            whileTap={billingStatus === 'past_due' ? {} : { scale: 0.96 }}
             aria-label={isHe ? 'הצעה חדשה' : 'New Proposal'}
+            title={billingStatus === 'past_due' ? (isHe ? 'יצירת הצעות חסומה — עדכן אמצעי תשלום' : 'Proposal creation locked — update billing') : undefined}
           >
-            <Plus size={13} strokeWidth={2.5} />
+            {billingStatus === 'past_due' ? <Lock size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
             <span className="hidden sm:inline">{isHe ? 'הצעה חדשה' : 'New Proposal'}</span>
           </motion.button>
 

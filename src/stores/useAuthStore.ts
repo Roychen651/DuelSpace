@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated'
-export type PlanTier = 'free' | 'pro' | 'unlimited'
+export type PlanTier     = 'free' | 'pro' | 'unlimited'
+export type BillingStatus = 'active' | 'past_due' | 'canceled' | null
 
 interface AuthState {
   user: User | null
@@ -241,6 +242,13 @@ export const useTier = (): PlanTier => useAuthStore(s => {
   const raw = s.user?.user_metadata?.plan_tier as string | undefined
   if (raw === 'pro' || raw === 'unlimited') return raw
   return 'free'
+})
+
+/** Reads billing_status from user_metadata. Null = never had a paid subscription. */
+export const useBillingStatus = (): BillingStatus => useAuthStore(s => {
+  const raw = s.user?.user_metadata?.billing_status as string | undefined
+  if (raw === 'active' || raw === 'past_due' || raw === 'canceled') return raw
+  return null
 })
 
 export const FREE_PROPOSAL_LIMIT = 5
