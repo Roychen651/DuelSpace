@@ -12,7 +12,8 @@ import { KanbanBoard } from '../components/dashboard/KanbanBoard'
 import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
 import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 import { generateProposalPdf } from '../lib/pdfEngine'
-import { GuidedTour, DEFAULT_TOUR_STEPS, TOUR_STORAGE_KEY } from '../components/onboarding/GuidedTour'
+import { OnboardingWizard } from '../components/onboarding/OnboardingWizard'
+import { startDashboardTour } from '../lib/tourEngine'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { UpgradeModal } from '../components/dashboard/UpgradeModal'
 import { exportProposalsCsv } from '../lib/csvExport'
@@ -265,7 +266,7 @@ export default function Dashboard() {
   const isHe = locale === 'he'
   const firstName = ((user?.user_metadata?.full_name as string | undefined) ?? '').split(' ')[0] || ''
   const navigate = useNavigate()
-  const [showTour, setShowTour] = useState(false)
+  const [wizardClosed, setWizardClosed] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     (localStorage.getItem('dealspace:view-mode') as ViewMode | null) ?? 'grid'
   )
@@ -311,12 +312,23 @@ export default function Dashboard() {
     if (!loading && proposals.length === 0) injectDemoProposal()
   }, [loading, proposals.length, injectDemoProposal])
 
+  // Wizard: show for users who haven't completed onboarding
+  const showWizard = !wizardClosed && Boolean(user) && user?.user_metadata?.has_completed_onboarding !== true
+
+  // Tour: auto-trigger for users who have onboarded but haven't seen the tour
   useEffect(() => {
-    if (!loading && !localStorage.getItem(TOUR_STORAGE_KEY)) {
-      const t = setTimeout(() => setShowTour(true), 1200)
+    if (!user || loading || showWizard) return
+    const hasSeen = user.user_metadata?.has_seen_tour === true
+    const localSeen = localStorage.getItem('dealspace:tour-completed') === '1'
+    if (!hasSeen && !localSeen) {
+      const t = setTimeout(() => {
+        startDashboardTour(locale as 'he' | 'en')
+        localStorage.setItem('dealspace:tour-completed', '1')
+        supabase.rpc('mark_tour_seen').then(() => {})
+      }, 1500)
       return () => clearTimeout(t)
     }
-  }, [loading])
+  }, [user, loading, locale, showWizard])
 
   useEffect(() => {
     if (!sortOpen) return
@@ -983,14 +995,11 @@ export default function Dashboard() {
         currentTier={tier}
       />
 
-      {showTour && (
-        <GuidedTour
-          steps={DEFAULT_TOUR_STEPS}
-          locale={locale as 'he' | 'en'}
-          onComplete={() => { localStorage.setItem(TOUR_STORAGE_KEY, '1'); setShowTour(false) }}
-          onSkip={() => { localStorage.setItem(TOUR_STORAGE_KEY, '1'); setShowTour(false) }}
-        />
-      )}
+      <AnimatePresence>
+        {showWizard && (
+          <OnboardingWizard onClose={() => setWizardClosed(true)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

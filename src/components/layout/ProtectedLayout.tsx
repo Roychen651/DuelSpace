@@ -280,13 +280,13 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     <button onClick={() => navigate('/profile')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
                       <Settings size={13} className="flex-none" />{isHe ? 'פרופיל והגדרות' : 'Profile & Settings'}
                     </button>
-                    <button onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
                       <Bookmark size={13} className="flex-none" />{isHe ? 'שירותים שמורים' : 'Saved Services'}
                     </button>
                     <button onClick={() => navigate('/contracts')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
                       <FileText size={13} className="flex-none" />{isHe ? 'ספריית חוזים' : 'Contracts'}
                     </button>
-                    <button onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
                   </div>
