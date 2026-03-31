@@ -1,28 +1,69 @@
-// Handles Supabase OAuth and magic-link redirects.
-// Supabase's PKCE flow + detectSessionInUrl:true auto-exchanges the code.
-// We just wait for the session and redirect to dashboard.
+// Handles Supabase OAuth, magic-link, and admin impersonation redirects.
+//
+// Two modes:
+// 1. PKCE code present (?code=…) — explicitly exchange the code and listen for
+//    SIGNED_IN event before navigating. We CANNOT rely on `status` here because
+//    the user might already be authenticated (e.g. admin impersonating a client
+//    in a new tab that shares localStorage). `status === 'authenticated'` would
+//    fire immediately with the WRONG user, before the code exchange completes.
+//
+// 2. No code — fall back to status-based navigation (OAuth hash tokens or
+//    password-recovery flow handled by the Supabase client automatically).
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
+import { supabase } from '../lib/supabase'
 
 export default function AuthCallback() {
   const { status } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  // If a PKCE code is present in the URL, we're mid-exchange — keep showing
-  // spinner even if status briefly hits 'unauthenticated' from the INITIAL_SESSION
-  // event firing before the code exchange completes.
-  const isPkceCallback = searchParams.has('code')
+  const code = searchParams.get('code')
+  const didExchange = useRef(false)
 
+  // ── Mode 1: PKCE code exchange ──────────────────────────────────────────────
+  // When a code is present we must complete the exchange before navigating.
+  // Listen for SIGNED_IN (only fires on real logins, not localStorage restores)
+  // so we react to the correct user regardless of any pre-existing session.
   useEffect(() => {
-    if (status === 'authenticated') {
-      navigate('/dashboard', { replace: true })
-    } else if (status === 'unauthenticated' && !isPkceCallback) {
+    if (!code || didExchange.current) return
+    didExchange.current = true
+
+    // Subscribe before calling exchange so we never miss the event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        subscription.unsubscribe()
+        navigate('/dashboard', { replace: true })
+      }
+    })
+
+    // Kick off the exchange — detectSessionInUrl may also attempt it; whichever
+    // wins will fire SIGNED_IN and trigger the navigation above.
+    supabase.auth.exchangeCodeForSession(code).catch(() => {
+      // If our explicit call lost the race, detectSessionInUrl already handled it
+      // and SIGNED_IN will still fire via the subscription above.
+    })
+
+    // Safety timeout: if exchange never completes (invalid/expired code) go to /auth
+    const fallback = setTimeout(() => {
+      subscription.unsubscribe()
       navigate('/auth', { replace: true })
+    }, 10_000)
+
+    return () => {
+      clearTimeout(fallback)
+      subscription.unsubscribe()
     }
-  }, [status, navigate, isPkceCallback])
+  }, [code, navigate])
+
+  // ── Mode 2: no code — status-based (OAuth hash, password-recovery, etc.) ────
+  useEffect(() => {
+    if (code) return // handled above
+    if (status === 'authenticated') navigate('/dashboard', { replace: true })
+    else if (status === 'unauthenticated') navigate('/auth', { replace: true })
+  }, [status, navigate, code])
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#040608]">
