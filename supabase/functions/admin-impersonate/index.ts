@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  const redirectTo = `${Deno.env.get('APP_URL') ?? 'https://duel-space.vercel.app'}/dashboard`
+  const redirectTo = `${Deno.env.get('APP_URL') ?? 'https://duel-space.vercel.app'}/auth/callback`
 
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: 'magiclink',
