@@ -160,6 +160,7 @@ export function PremiumSliderCard({
             {/* Delta badge — shown when client changed qty from default, sealed after signing */}
             {sealed && enabled && quantity !== defaultQty && (
               <div
+                dir="ltr"
                 className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tabular-nums"
                 style={{
                   background: 'rgba(212,175,55,0.15)',
