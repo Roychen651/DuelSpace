@@ -315,8 +315,11 @@ export default function ProposalBuilder() {
   }, [currentProposal, pdfGenerating, locale])
 
   // ── Build a synthetic Proposal for LivePreview ───────────────────────────────
+  // For accepted proposals, use the store's add_ons which include signed_qty
+  // (the local draft was initialized before signing and never gets signed_qty merged in)
   const previewProposal: Proposal = {
     ...draft,
+    ...(isAccepted && currentProposal ? { add_ons: currentProposal.add_ons } : {}),
     id: proposalId ?? 'preview',
     user_id: '',
     public_token: '',
