@@ -29,6 +29,8 @@ interface EditorPanelProps {
   locale: string
   /** When true (status === 'accepted'), the editor is read-only */
   isLocked?: boolean
+  /** When true (status === 'viewed' | 'accepted'), financial fields are locked */
+  isFinanciallyLocked?: boolean
   /** When true (status === 'needs_revision'), show the negotiation thread panel */
   needsRevision?: boolean
   /** The client's revision request text */
@@ -184,7 +186,7 @@ const CURRENCIES = [
 // ─── Add-on row (draggable) ───────────────────────────────────────────────────
 
 function AddOnRow({
-  addOn, locale, onChange, onDelete, showVat, vatRate, currency,
+  addOn, locale, onChange, onDelete, showVat, vatRate, currency, isFinanciallyLocked,
 }: {
   addOn: AddOn
   locale: string
@@ -193,6 +195,7 @@ function AddOnRow({
   showVat: boolean
   vatRate: number
   currency: string
+  isFinanciallyLocked?: boolean
 }) {
   const isHe = locale === 'he'
   const vatTotal = addOn.price > 0 ? applyVat(addOn.price, vatRate) : 0
@@ -241,11 +244,12 @@ function AddOnRow({
                   type="number"
                   inputMode="decimal"
                   min={0}
-                  className={inputClass + ' sm:w-24'}
+                  className={inputClass + ' sm:w-24' + (isFinanciallyLocked ? ' opacity-50 cursor-not-allowed' : '')}
                   placeholder="0"
                   value={addOn.price || ''}
                   onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
                   title={isHe ? 'מחיר לפני מע"מ' : 'Price before VAT'}
+                  disabled={isFinanciallyLocked}
                 />
                 {showVat && addOn.price > 0 && (
                   <div
@@ -300,7 +304,7 @@ function AddOnRow({
           {/* Client-adjustable quantity — clear labeled pill */}
           <button
             type="button"
-            onClick={() => onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
+            onClick={() => !isFinanciallyLocked && onChange({ ...addOn, clientAdjustable: !(addOn.clientAdjustable ?? true) })}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200"
             style={{
               background: addOn.clientAdjustable !== false
@@ -311,8 +315,11 @@ function AddOnRow({
               boxShadow: addOn.clientAdjustable !== false
                 ? '0 0 14px rgba(34,197,94,0.18), inset 0 1px 0 rgba(74,222,128,0.1)'
                 : 'none',
+              opacity: isFinanciallyLocked ? 0.5 : 1,
+              cursor: isFinanciallyLocked ? 'not-allowed' : 'pointer',
             }}
             aria-label={isHe ? 'שינוי כמות על ידי לקוח' : 'Toggle client adjustable'}
+            disabled={isFinanciallyLocked}
           >
             <SlidersHorizontal size={12} />
             <span>
@@ -512,7 +519,7 @@ function ContractTemplatePicker({
 
 // ─── Main EditorPanel ─────────────────────────────────────────────────────────
 
-export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRevision = false, revisionNotes }: EditorPanelProps) {
+export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinanciallyLocked = false, needsRevision = false, revisionNotes }: EditorPanelProps) {
   const isHe = locale === 'he'
   const vatRate = getVatRate()
   const showVat = draft.include_vat
@@ -632,6 +639,43 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
               {isHe
                 ? 'לא ניתן לערוך הצעה חתומה. לשינויים, יש לשכפל ולצור טיוטה חדשה.'
                 : 'Signed proposals are immutable. To make changes, duplicate and create a new draft.'}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Financial Lock Banner ──────────────────────────────────────── */}
+      {isFinanciallyLocked && !isLocked && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{
+            background: 'rgba(245,158,11,0.10)',
+            border: '1px solid rgba(245,158,11,0.30)',
+            boxShadow: '0 0 20px rgba(245,158,11,0.07), inset 0 1px 0 rgba(245,158,11,0.1)',
+          }}
+        >
+          <div
+            className="flex-none flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{
+              background: 'rgba(245,158,11,0.15)',
+              border: '1px solid rgba(245,158,11,0.3)',
+            }}
+          >
+            <Lock size={16} className="text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-amber-400">
+              {isHe
+                ? '🔒 ההצעה נצפתה — שדות התמחור נעולים'
+                : '🔒 Proposal is live — Financial fields are locked'}
+            </p>
+            <p className="text-xs text-amber-400/60 mt-1 leading-relaxed">
+              {isHe
+                ? 'שדות התמחור נעולים למניעת אי-התאמות משפטיות. ניתן לערוך את שם הפרויקט, תיאור ופרטי לקוח.'
+                : 'Financial fields are locked to prevent legal discrepancies. You can still edit the project title, description, and client details.'}
             </p>
           </div>
         </motion.div>
@@ -986,19 +1030,21 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                 type="number"
                 inputMode="decimal"
                 min={0}
-                className={inputClass + ' ps-10'}
+                className={inputClass + ' ps-10' + (isFinanciallyLocked ? ' opacity-50 cursor-not-allowed' : '')}
                 placeholder="0"
                 value={draft.base_price || ''}
                 onChange={e => onChange({ base_price: Number(e.target.value) || 0 })}
+                disabled={isFinanciallyLocked}
               />
             </div>
           </Field>
           <Field label={isHe ? 'מטבע' : 'Currency'}>
             <div className="relative">
               <select
-                className={inputClass + ' appearance-none cursor-pointer pe-8'}
+                className={inputClass + ' appearance-none cursor-pointer pe-8' + (isFinanciallyLocked ? ' opacity-50 cursor-not-allowed' : '')}
                 value={draft.currency}
                 onChange={e => onChange({ currency: e.target.value })}
+                disabled={isFinanciallyLocked}
               >
                 {CURRENCIES.map(c => (
                   <option key={c.value} value={c.value} style={{ background: '#0f0f18', color: 'white' }}>
@@ -1050,9 +1096,14 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </div>
           <button
             type="button"
-            onClick={() => onChange({ include_vat: !showVat })}
+            onClick={() => !isFinanciallyLocked && onChange({ include_vat: !showVat })}
             className="transition-colors"
-            style={{ color: showVat ? '#6366f1' : 'rgba(255,255,255,0.2)' }}
+            style={{
+              color: showVat ? '#6366f1' : 'rgba(255,255,255,0.2)',
+              opacity: isFinanciallyLocked ? 0.5 : 1,
+              cursor: isFinanciallyLocked ? 'not-allowed' : 'pointer',
+            }}
+            disabled={isFinanciallyLocked}
           >
             {showVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
           </button>
@@ -1095,22 +1146,27 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                     background: globalDisc > 0 ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
                     border: globalDisc > 0 ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.1)',
                     color: globalDisc > 0 ? '#4ade80' : 'rgba(255,255,255,0.6)',
+                    opacity: isFinanciallyLocked ? 0.5 : 1,
+                    cursor: isFinanciallyLocked ? 'not-allowed' : undefined,
                   }}
                   value={globalDisc || ''}
                   placeholder="0"
                   onChange={e => onChange({ global_discount_pct: Math.min(50, Math.max(0, Number(e.target.value) || 0)) })}
+                  disabled={isFinanciallyLocked}
                 />
                 <span className="text-[11px] font-bold" style={{ color: globalDisc > 0 ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>%</span>
               </div>
             </div>
-            <PremiumSlider
-              value={globalDisc}
-              min={0}
-              max={50}
-              step={1}
-              onChange={v => onChange({ global_discount_pct: v })}
-              color={globalDisc > 0 ? '#22c55e' : '#6366f1'}
-            />
+            <div style={{ opacity: isFinanciallyLocked ? 0.4 : 1, pointerEvents: isFinanciallyLocked ? 'none' : undefined }}>
+              <PremiumSlider
+                value={globalDisc}
+                min={0}
+                max={50}
+                step={1}
+                onChange={v => onChange({ global_discount_pct: v })}
+                color={globalDisc > 0 ? '#22c55e' : '#6366f1'}
+              />
+            </div>
             {globalDisc > 0 && totalSavings > 0 && (
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-emerald-400/70">
@@ -1213,6 +1269,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                   showVat={!!showVat}
                   vatRate={vatRate}
                   currency={draft.currency}
+                  isFinanciallyLocked={isFinanciallyLocked}
                 />
               ))}
             </AnimatePresence>
@@ -1226,34 +1283,36 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
             </p>
           )}
 
-          <div className="flex gap-2">
-            <motion.button
-              type="button"
-              onClick={handleAddNew}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border h-9 text-xs font-semibold text-indigo-400 transition-all duration-200 whitespace-nowrap"
-              style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-            >
-              <Plus size={13} />
-              <span className="whitespace-nowrap">{isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}</span>
-            </motion.button>
+          {!isFinanciallyLocked && (
+            <div className="flex gap-2">
+              <motion.button
+                type="button"
+                onClick={handleAddNew}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border h-9 text-xs font-semibold text-indigo-400 transition-all duration-200 whitespace-nowrap"
+                style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+              >
+                <Plus size={13} />
+                <span className="whitespace-nowrap">{isHe ? 'הוסף תוספת חדשה' : 'Add New Add-on'}</span>
+              </motion.button>
 
-            <motion.button
-              type="button"
-              onClick={() => setLibraryOpen(true)}
-              className="flex-none flex items-center gap-1.5 rounded-xl border h-9 px-3 text-xs font-semibold text-amber-400 transition-all duration-200 whitespace-nowrap"
-              style={{ borderColor: 'rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.06)' }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-              title={isHe ? 'משוך מהספרייה' : 'Pull from Library'}
-            >
-              <Library size={13} />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {isHe ? '✨ ספרייה' : '✨ Library'}
-              </span>
-            </motion.button>
-          </div>
+              <motion.button
+                type="button"
+                onClick={() => setLibraryOpen(true)}
+                className="flex-none flex items-center gap-1.5 rounded-xl border h-9 px-3 text-xs font-semibold text-amber-400 transition-all duration-200 whitespace-nowrap"
+                style={{ borderColor: 'rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.06)' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                title={isHe ? 'משוך מהספרייה' : 'Pull from Library'}
+              >
+                <Library size={13} />
+                <span className="hidden sm:inline whitespace-nowrap">
+                  {isHe ? '✨ ספרייה' : '✨ Library'}
+                </span>
+              </motion.button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1281,8 +1340,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </Tip>
         </div>
 
-        {/* Quick presets — only shown when no milestones yet */}
-        {milestones.length === 0 && (
+        {/* Quick presets — only shown when no milestones yet and not financially locked */}
+        {milestones.length === 0 && !isFinanciallyLocked && (
           <div className="flex flex-wrap gap-2">
             <p className="w-full text-xs font-bold uppercase tracking-widest text-white/35">
               {isHe ? 'תבניות מהירות' : 'Quick presets'}
@@ -1373,10 +1432,11 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                       style={{ background: color, boxShadow: `0 0 6px ${color}80` }}
                     />
                     <input
-                      className={inputClass + ' flex-1 text-sm'}
+                      className={inputClass + ' flex-1 text-sm' + (isFinanciallyLocked ? ' opacity-50 cursor-not-allowed' : '')}
                       placeholder={isHe ? `שם שלב ${i + 1}` : `Stage ${i + 1} name`}
                       value={m.name}
                       onChange={e => updateMilestone(m.id, { name: e.target.value })}
+                      disabled={isFinanciallyLocked}
                     />
                     {/* Amount preview */}
                     {milestoneAmt > 0 && (
@@ -1390,20 +1450,23 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
                         inputMode="numeric"
                         min={0}
                         max={100}
-                        className={inputClass + ' text-sm text-center pe-5'}
+                        className={inputClass + ' text-sm text-center pe-5' + (isFinanciallyLocked ? ' opacity-50 cursor-not-allowed' : '')}
                         value={m.percentage || ''}
                         onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
+                        disabled={isFinanciallyLocked}
                       />
                       <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-white/30 pointer-events-none">%</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteMilestone(m.id)}
-                      className="text-white/20 hover:text-red-400 transition-colors flex-none"
-                      aria-label="Delete milestone"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {!isFinanciallyLocked && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMilestone(m.id)}
+                        className="text-white/20 hover:text-red-400 transition-colors flex-none"
+                        aria-label="Delete milestone"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               )
@@ -1437,17 +1500,19 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, needsRe
           </div>
         )}
 
-        <motion.button
-          type="button"
-          onClick={addMilestone}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
-          style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-        >
-          <Plus size={13} />
-          {isHe ? 'הוסף אבן דרך' : 'Add Milestone'}
-        </motion.button>
+        {!isFinanciallyLocked && (
+          <motion.button
+            type="button"
+            onClick={addMilestone}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
+            style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          >
+            <Plus size={13} />
+            {isHe ? 'הוסף אבן דרך' : 'Add Milestone'}
+          </motion.button>
+        )}
       </Section>
 
       {/* ── AI Ghostwriter ───────────────────────────────────────────────── */}

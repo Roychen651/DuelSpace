@@ -1,4 +1,4 @@
-import { useEffect, Component, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
@@ -23,25 +23,7 @@ import ServicesLibrary from './pages/ServicesLibrary'
 import Integrations from './pages/Integrations'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ImpersonateCallback from './pages/ImpersonateCallback'
-
-// ─── Error Boundary ───────────────────────────────────────────────────────────
-
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
-  state = { error: null }
-  static getDerivedStateFromError(e: Error) { return { error: e.message } }
-  render() {
-    if (this.state.error) {
-      return (
-        <div style={{ background: '#040608', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <pre style={{ color: '#f87171', fontFamily: 'monospace', fontSize: 13, maxWidth: 600, whiteSpace: 'pre-wrap' }}>
-            ⚠ Render error:{'\n'}{this.state.error}
-          </pre>
-        </div>
-      )
-    }
-    return this.props.children
-  }
-}
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 // ─── Route Guards ─────────────────────────────────────────────────────────────
 

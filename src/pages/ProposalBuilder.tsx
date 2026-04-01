@@ -212,6 +212,7 @@ export default function ProposalBuilder() {
   const isAccepted = currentStatus === 'accepted'
   const isNeedsRevision = currentStatus === 'needs_revision'
   const isAlreadySent = currentStatus === 'sent' || currentStatus === 'viewed'
+  const isFinanciallyLocked = isAccepted || isAlreadySent
 
   const handleSend = useCallback(async () => {
     // If already accepted → navigate to deal room (read-only view)
@@ -557,6 +558,7 @@ export default function ProposalBuilder() {
             onChange={handleChange}
             locale={locale}
             isLocked={isAccepted}
+            isFinanciallyLocked={isFinanciallyLocked}
             needsRevision={isNeedsRevision}
             revisionNotes={currentProposal?.revision_notes}
           />
