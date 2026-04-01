@@ -439,7 +439,7 @@ function ProposalDocument(opts: PdfOptions) {
   proposal.add_ons.forEach(a => {
     lineItemsOverride[a.id] = {
       enabled: enabledAddOnIds.includes(a.id),
-      qty: a.signed_qty ?? a.default_quantity ?? 1,
+      qty: a.default_quantity ?? 1,
     }
   })
 

@@ -433,7 +433,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                         enabled={addOn.enabled}
                         currency={proposal.currency}
                         locale={locale}
-                        defaultQty={addOn.signed_qty ?? addOn.default_quantity}
+                        defaultQty={addOn.default_quantity}
                       />
                     ))}
                   </div>

@@ -10,12 +10,8 @@ export interface AddOn {
   enabled: boolean
   /** Per-item discount percentage (0–100). Applied before global discount. */
   discount_pct?: number
-  /** When false, the client cannot adjust quantity in the Deal Room (qty is fixed at 1). Default: true */
-  clientAdjustable?: boolean
-  /** Default quantity the proposal starts with — set by creator in EditorPanel. Default: 1 */
+  /** Quantity set by the creator in EditorPanel. Default: 1. Client cannot change this. */
   default_quantity?: number
-  /** Quantity the client chose when signing — embedded into add_ons JSONB by accept_proposal. */
-  signed_qty?: number
 }
 
 export interface PaymentMilestone {
@@ -137,7 +133,7 @@ export function proposalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
     .reduce((sum, a) => {
-      const qty = a.signed_qty ?? a.default_quantity ?? 1
+      const qty = a.default_quantity ?? 1
       const disc = a.discount_pct || 0
       return sum + Math.round(a.price * (1 - disc / 100)) * qty
     }, 0)
@@ -151,7 +147,7 @@ export function proposalOriginalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
     .reduce((sum, a) => {
-      const qty = a.signed_qty ?? a.default_quantity ?? 1
+      const qty = a.default_quantity ?? 1
       return sum + Math.round(a.price) * qty
     }, 0)
   return Math.round(p.base_price) + addOnsTotal

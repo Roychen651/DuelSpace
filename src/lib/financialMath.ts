@@ -192,7 +192,7 @@ export interface Financials {
 export function calculateFinancials(
   proposal: {
     base_price: number
-    add_ons: Array<{ id: string; price: number; enabled: boolean; discount_pct?: number; default_quantity?: number; signed_qty?: number }>
+    add_ons: Array<{ id: string; price: number; enabled: boolean; discount_pct?: number; default_quantity?: number }>
     global_discount_pct?: number | null
     include_vat?: boolean
   },
@@ -201,14 +201,11 @@ export function calculateFinancials(
 ): Financials {
   const globalDiscountPct = proposal.global_discount_pct || 0
 
-  // Resolve active add-ons with optional client overrides.
-  // qty priority: lineItems override → signed_qty (post-signing) → default_quantity (creator default) → 1
+  // Resolve active add-ons with optional client overrides (toggle only — qty is fixed by creator).
   const resolved = proposal.add_ons.map(a => ({
     price:        a.price,
     enabled:      lineItems ? (lineItems[a.id]?.enabled ?? a.enabled) : a.enabled,
-    qty:          lineItems
-                    ? (lineItems[a.id]?.qty ?? (a.default_quantity ?? 1))
-                    : (a.signed_qty ?? a.default_quantity ?? 1),
+    qty:          a.default_quantity ?? 1,
     discount_pct: a.discount_pct,
   }))
 

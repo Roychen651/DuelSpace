@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Minus, Plus } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { formatCurrency } from '../../types/proposal'
 import type { AddOn } from '../../types/proposal'
 
@@ -11,27 +11,22 @@ interface PremiumSliderCardProps {
   enabled: boolean
   currency: string
   locale: string
-  adjustable: boolean
   onToggle: () => void
-  onQuantityChange: (qty: number) => void
   /** When true the contract is signed — all interactive controls are locked */
   sealed?: boolean
-  /** The creator's default quantity — used to show a delta badge when client changed it */
-  defaultQty?: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PremiumSliderCard({
-  addOn, quantity, enabled, currency, locale, adjustable,
-  onToggle, onQuantityChange, sealed = false, defaultQty = 1,
+  addOn, quantity, enabled, currency, locale,
+  onToggle, sealed = false,
 }: PremiumSliderCardProps) {
   const disc = addOn.discount_pct || 0
   const unitDiscounted = Math.round(addOn.price * (1 - disc / 100))
   const lineTotal = unitDiscounted * quantity
   const lineTotalOriginal = addOn.price * quantity
   const isDiscounted = disc > 0
-  const fillPct = ((quantity - 1) / 9) * 100
 
   return (
     <motion.div
@@ -68,7 +63,7 @@ export function PremiumSliderCard({
         )}
 
         {/* ── Row: Toggle + Label + Price ─────────────────────────────────── */}
-        <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
             {/* Circle toggle — pointer-events disabled once contract is sealed */}
             <button
@@ -157,109 +152,8 @@ export function PremiumSliderCard({
                 {quantity}× {formatCurrency(unitDiscounted, currency)}
               </p>
             )}
-            {/* Delta badge — shown when client changed qty from default, sealed after signing */}
-            {sealed && enabled && quantity !== defaultQty && (
-              <div
-                dir="ltr"
-                className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tabular-nums"
-                style={{
-                  background: 'rgba(212,175,55,0.15)',
-                  border: '1px solid rgba(212,175,55,0.35)',
-                  color: '#d4af37',
-                }}
-              >
-                {defaultQty} → {quantity}
-              </div>
-            )}
           </div>
         </div>
-
-        {/* ── Quantity slider — only when enabled AND creator allows adjustment AND not sealed ── */}
-        <AnimatePresence initial={false}>
-          {enabled && adjustable && !sealed && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.24, ease: 'easeOut' }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div
-                className="mt-2 pt-4"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                {/* Label row */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/25">
-                    {locale === 'he' ? 'כמות' : 'Quantity'}
-                  </span>
-
-                  {/* Stepper buttons */}
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1}
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-20"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus size={10} />
-                    </button>
-                    <motion.span
-                      key={quantity}
-                      className="w-6 text-center text-sm font-bold text-white tabular-nums"
-                      initial={{ y: -8, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      {quantity}
-                    </motion.span>
-                    <button
-                      type="button"
-                      onClick={() => onQuantityChange(Math.min(10, quantity + 1))}
-                      disabled={quantity >= 10}
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-20"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus size={10} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Slider track + fill */}
-                <div className="relative flex items-center">
-                  {/* Filled portion overlay */}
-                  <div
-                    className="pointer-events-none absolute h-1 rounded-full transition-all duration-150"
-                    style={{
-                      width: `${fillPct}%`,
-                      left: 0,
-                      background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-                      boxShadow: '0 0 8px rgba(99,102,241,0.5)',
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={quantity}
-                    onChange={e => onQuantityChange(Number(e.target.value))}
-                    className="deal-room-slider w-full"
-                    aria-label={locale === 'he' ? 'כמות' : 'Quantity'}
-                    aria-valuemin={1}
-                    aria-valuemax={10}
-                    aria-valuenow={quantity}
-                  />
-                </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[9px] font-medium text-white/15">1</span>
-                  <span className="text-[9px] font-medium text-white/15">10</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </motion.div>
   )
