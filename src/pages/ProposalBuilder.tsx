@@ -59,6 +59,10 @@ export default function ProposalBuilder() {
   // Prevent double-create in StrictMode/concurrent renders
   const creatingRef = useRef(false)
 
+  // Tracks whether the proposal is accepted — used inside autosave setTimeout
+  // to prevent overwriting signed add_ons (which contain signed_qty).
+  const acceptedRef = useRef(false)
+
   // Keep refs in sync
   useEffect(() => { draftRef.current = draft }, [draft])
   useEffect(() => { proposalIdRef.current = proposalId }, [proposalId])
@@ -193,7 +197,15 @@ export default function ProposalBuilder() {
           signature_data_url: _sig,
           ...autosaveFields
         } = current
-        await updateProposal(proposalIdRef.current, autosaveFields)
+        // When the proposal is accepted, add_ons are sealed — they contain
+        // signed_qty embedded by accept_proposal. The draft's add_ons are stale
+        // (no signed_qty). EditorPanel's creator_info useEffect triggers
+        // handleChange on mount, which would fire this autosave and overwrite
+        // the DB's signed add_ons with the stale draft copy, wiping signed_qty.
+        const safePatch = acceptedRef.current
+          ? (({ add_ons: _, ...rest }) => rest)(autosaveFields)
+          : autosaveFields
+        await updateProposal(proposalIdRef.current, safePatch)
       }
 
       setSaveStatus('saved')
@@ -210,6 +222,7 @@ export default function ProposalBuilder() {
   // Derive the current real status (prefer live proposal over draft state)
   const currentStatus = currentProposal?.status ?? draft.status ?? 'draft'
   const isAccepted = currentStatus === 'accepted'
+  acceptedRef.current = isAccepted
   const isNeedsRevision = currentStatus === 'needs_revision'
   const isAlreadySent = currentStatus === 'sent' || currentStatus === 'viewed'
   const isFinanciallyLocked = isAccepted || isAlreadySent
