@@ -137,8 +137,9 @@ export function proposalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
     .reduce((sum, a) => {
+      const qty = a.signed_qty ?? a.default_quantity ?? 1
       const disc = a.discount_pct || 0
-      return sum + Math.round(a.price * (1 - disc / 100))
+      return sum + Math.round(a.price * (1 - disc / 100)) * qty
     }, 0)
   const subtotal = Math.round(p.base_price) + addOnsTotal
   const globalDisc = p.global_discount_pct || 0
@@ -149,7 +150,10 @@ export function proposalTotal(p: Proposal): number {
 export function proposalOriginalTotal(p: Proposal): number {
   const addOnsTotal = p.add_ons
     .filter(a => a.enabled)
-    .reduce((sum, a) => sum + Math.round(a.price), 0)
+    .reduce((sum, a) => {
+      const qty = a.signed_qty ?? a.default_quantity ?? 1
+      return sum + Math.round(a.price) * qty
+    }, 0)
   return Math.round(p.base_price) + addOnsTotal
 }
 

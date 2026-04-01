@@ -1097,7 +1097,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); toggleSelect(p.id) }}
-                      className="absolute top-3 start-3 z-20 flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150"
+                      className="absolute top-3 end-3 z-20 flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150"
                       style={{
                         background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.25)' : 'rgba(0,0,0,0.55)',
                         border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.6)' : 'rgba(255,255,255,0.2)'}`,
