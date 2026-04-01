@@ -279,31 +279,37 @@ export default function ProposalBuilder() {
       const v = parseFloat(localStorage.getItem('dealspace:vat-rate') ?? '')
       return isNaN(v) ? ISRAELI_VAT_RATE : v
     })()
-    const fin = calculateFinancials(currentProposal, undefined, vatRate)
-    const enabledIds = currentProposal.add_ons.filter(a => a.enabled).map(a => a.id)
-    // Always fetch signature fresh from DB — store cache may be stale
-    let signatureDataUrl = currentProposal.signature_data_url ?? ''
+
+    // Always fetch the FULL proposal row fresh from DB before generating PDF.
+    // The local store may have stale signature_data_url or accepted_at.
+    // A fresh SELECT * guarantees both fields reflect the actual signed record.
+    const { data: freshRow } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('id', currentProposal.id)
+      .single()
+    const liveProposal = (freshRow as typeof currentProposal | null) ?? currentProposal
+
+    const fin = calculateFinancials(liveProposal, undefined, vatRate)
+    const enabledIds = liveProposal.add_ons.filter(a => a.enabled).map(a => a.id)
+
+    // Resolve signature: fresh DB value → localStorage fallback (same-browser only)
+    let signatureDataUrl = liveProposal.signature_data_url ?? ''
     if (!signatureDataUrl) {
-      const { data: fresh } = await supabase
-        .from('proposals')
-        .select('signature_data_url')
-        .eq('id', currentProposal.id)
-        .single()
-      signatureDataUrl = (fresh?.signature_data_url as string) ?? ''
+      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${liveProposal.public_token}`) ?? '' } catch { /* */ }
     }
-    // Last resort: localStorage (only works on same browser the client signed on)
-    if (!signatureDataUrl) {
-      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${currentProposal.public_token}`) ?? '' } catch { /* */ }
-    }
-    // Use accepted_at as the real signing timestamp, not current time
-    const sigTimestamp = currentProposal.accepted_at ? new Date(currentProposal.accepted_at) : undefined
+    // Timestamp: MUST come from accepted_at (set by DB trigger at signing), never new Date()
+    const sigTimestamp = liveProposal.accepted_at
+      ? new Date(liveProposal.accepted_at)
+      : liveProposal.updated_at ? new Date(liveProposal.updated_at) : undefined
+
     await generateProposalPdf({
-      proposal: currentProposal,
+      proposal: liveProposal,
       totalAmount: fin.grandTotal,
       enabledAddOnIds: enabledIds,
       signatureDataUrl,
       locale,
-      isDraft: currentProposal.status !== 'accepted',
+      isDraft: liveProposal.status !== 'accepted',
       signatureTimestamp: sigTimestamp,
     })
     setPdfGenerating(false)

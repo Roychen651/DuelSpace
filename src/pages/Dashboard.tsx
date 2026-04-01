@@ -444,26 +444,31 @@ export default function Dashboard() {
     const p = proposals.find(x => x.id === proposalId)
     if (!p) return
     setPdfGenerating(proposalId)
-    // Always fetch signature fresh from DB — store cache may be stale
-    let signatureDataUrl = p.signature_data_url ?? ''
+
+    // Always fetch the FULL proposal row fresh from DB before generating PDF.
+    // The Zustand store may have stale signature_data_url or accepted_at.
+    // A fresh SELECT * guarantees both fields reflect the actual signed record.
+    const { data: freshRow } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('id', proposalId)
+      .single()
+    const liveProposal = (freshRow as typeof p | null) ?? p
+
+    // Resolve signature: fresh DB value → localStorage fallback (same-browser only)
+    let signatureDataUrl = liveProposal.signature_data_url ?? ''
     if (!signatureDataUrl) {
-      const { data: fresh } = await supabase
-        .from('proposals')
-        .select('signature_data_url')
-        .eq('id', proposalId)
-        .single()
-      signatureDataUrl = (fresh?.signature_data_url as string) ?? ''
+      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${liveProposal.public_token}`) ?? '' } catch { /* */ }
     }
-    // Last resort: localStorage (only works on same browser the client signed on)
-    if (!signatureDataUrl) {
-      try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${p.public_token}`) ?? '' } catch { /* */ }
-    }
-    // Use accepted_at as the real signing timestamp, not current time
-    const sigTimestamp = p.accepted_at ? new Date(p.accepted_at) : undefined
+    // Timestamp: MUST come from accepted_at (set by DB trigger at signing), never new Date()
+    const sigTimestamp = liveProposal.accepted_at
+      ? new Date(liveProposal.accepted_at)
+      : liveProposal.updated_at ? new Date(liveProposal.updated_at) : undefined
+
     await generateProposalPdf({
-      proposal: p,
-      totalAmount: proposalTotal(p),
-      enabledAddOnIds: p.add_ons.filter(a => a.enabled).map(a => a.id),
+      proposal: liveProposal,
+      totalAmount: proposalTotal(liveProposal),
+      enabledAddOnIds: liveProposal.add_ons.filter(a => a.enabled).map(a => a.id),
       signatureDataUrl,
       locale,
       signatureTimestamp: sigTimestamp,
