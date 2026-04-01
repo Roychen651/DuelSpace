@@ -413,7 +413,14 @@ function HtmlBlocks({ blocks, s }: { blocks: HtmlBlock[]; s: ReturnType<typeof m
 
 function ProposalDocument(opts: PdfOptions) {
   const { proposal, enabledAddOnIds, signatureDataUrl, locale, isDraft=false } = opts
-  const sigTs    = opts.signatureTimestamp ?? new Date()
+  // Timestamp priority (legal document — must never use download time):
+  // 1. signatureTimestamp from caller (already resolved to accepted_at)
+  // 2. proposal.accepted_at — DB trigger sets this at the instant the client signs
+  // 3. proposal.updated_at — last resort, always populated
+  // new Date() is NEVER used for signed proposals
+  const sigTs = opts.signatureTimestamp
+    ?? (proposal.accepted_at ? new Date(proposal.accepted_at) : null)
+    ?? new Date(proposal.updated_at)
   const isHe     = locale === 'he'
   const brand    = getBrandColor(proposal)
   const s        = makeStyles(brand)

@@ -460,10 +460,8 @@ export default function Dashboard() {
     if (!signatureDataUrl) {
       try { signatureDataUrl = localStorage.getItem(`dealspace:sig:${liveProposal.public_token}`) ?? '' } catch { /* */ }
     }
-    // Timestamp: MUST come from accepted_at (set by DB trigger at signing), never new Date()
-    const sigTimestamp = liveProposal.accepted_at
-      ? new Date(liveProposal.accepted_at)
-      : liveProposal.updated_at ? new Date(liveProposal.updated_at) : undefined
+    // Pass accepted_at explicitly; pdfEngine also reads it from proposal as safety net
+    const sigTimestamp = liveProposal.accepted_at ? new Date(liveProposal.accepted_at) : undefined
 
     await generateProposalPdf({
       proposal: liveProposal,
