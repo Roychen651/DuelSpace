@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useTier, useBillingStatus, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
@@ -260,7 +260,7 @@ type SortBy = 'newest' | 'oldest' | 'value'
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { proposals, loading, fetchProposals, injectDemoProposal } = useProposalStore()
+  const { proposals, loading, fetchProposals, injectDemoProposal, deleteProposal } = useProposalStore()
   const { user } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
@@ -280,6 +280,9 @@ export default function Dashboard() {
   const sortRef = useRef<HTMLDivElement>(null)
   const tier = useTier()
   const billingStatus = useBillingStatus()
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => { fetchProposals() }, [fetchProposals])
 
@@ -329,6 +332,27 @@ export default function Dashboard() {
       return () => clearTimeout(t)
     }
   }, [user, loading, locale, showWizard])
+
+  // Clear selection when switching tabs
+  useEffect(() => {
+    setSelectedIds(new Set())
+    setConfirmDelete(false)
+  }, [pipelineTab])
+
+  // ── Multi-select helpers (archive tab only) ───────────────────────────────
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true)
+    await Promise.all([...selectedIds].map(id => deleteProposal(id)))
+    setSelectedIds(new Set())
+    setConfirmDelete(false)
+    setBulkDeleting(false)
+  }
 
   useEffect(() => {
     if (!sortOpen) return
@@ -714,6 +738,54 @@ export default function Dashboard() {
             </AnimatePresence>
           </div>
 
+          {/* ── Archive multi-select bar ──────────────────────────────── */}
+          {pipelineTab === 'lost' && filteredProposals.length > 0 && (
+            <div
+              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
+              style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}
+            >
+              {/* Select-all checkbox */}
+              <button
+                type="button"
+                onClick={() => {
+                  const allSelected = filteredProposals.every(p => selectedIds.has(p.id))
+                  if (allSelected) setSelectedIds(new Set())
+                  else setSelectedIds(new Set(filteredProposals.map(p => p.id)))
+                }}
+                className="flex h-5 w-5 flex-none items-center justify-center rounded-md transition-all duration-150"
+                style={{
+                  background: filteredProposals.every(p => selectedIds.has(p.id))
+                    ? 'rgba(248,113,113,0.25)'
+                    : 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${filteredProposals.every(p => selectedIds.has(p.id)) ? 'rgba(248,113,113,0.55)' : 'rgba(255,255,255,0.18)'}`,
+                }}
+                aria-label={isHe ? 'בחר הכל' : 'Select all'}
+              >
+                {filteredProposals.every(p => selectedIds.has(p.id)) && (
+                  <Check size={11} style={{ color: '#f87171' }} strokeWidth={3} />
+                )}
+                {filteredProposals.some(p => selectedIds.has(p.id)) && !filteredProposals.every(p => selectedIds.has(p.id)) && (
+                  <div className="h-[3px] w-2.5 rounded-full" style={{ background: '#f87171' }} />
+                )}
+              </button>
+              <span className="text-xs font-semibold" style={{ color: 'rgba(248,113,113,0.7)' }}>
+                {selectedIds.size > 0
+                  ? (isHe ? `${selectedIds.size} נבחרו` : `${selectedIds.size} selected`)
+                  : (isHe ? 'בחר הצעות למחיקה' : 'Select proposals to delete')}
+              </span>
+              {selectedIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="ms-auto text-[10px] font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
+                  {isHe ? 'בטל בחירה' : 'Clear'}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* ── Controls row: Sort · Views · CSV · Count ──────────────── */}
           <div className="flex items-center gap-2">
 
@@ -896,7 +968,8 @@ export default function Dashboard() {
           <div data-tour="proposals-list">
             {/* Column header */}
             <div className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl"
-              style={{ gridTemplateColumns: '8px 1fr 96px 112px 90px 56px', gap: '0 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              style={{ gridTemplateColumns: pipelineTab === 'lost' ? '28px 8px 1fr 96px 112px 90px 56px' : '8px 1fr 96px 112px 90px 56px', gap: '0 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              {pipelineTab === 'lost' && <div />}
               <div />
               <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20">{isHe ? 'פרויקט / לקוח' : 'Project / Client'}</p>
               <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-center">{isHe ? 'סטטוס' : 'Status'}</p>
@@ -929,7 +1002,20 @@ export default function Dashboard() {
                       <div className="absolute inset-y-0 start-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" style={{ background: meta.color }} />
 
                       {/* Desktop row */}
-                      <div className="hidden md:grid items-center px-4 py-3.5" style={{ gridTemplateColumns: '8px 1fr 96px 112px 90px 56px', gap: '0 16px' }}>
+                      <div className="hidden md:grid items-center px-4 py-3.5" style={{ gridTemplateColumns: pipelineTab === 'lost' ? '28px 8px 1fr 96px 112px 90px 56px' : '8px 1fr 96px 112px 90px 56px', gap: '0 16px' }}>
+                        {pipelineTab === 'lost' && (
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); toggleSelect(p.id) }}
+                            className="flex h-5 w-5 flex-none items-center justify-center rounded-md transition-all duration-150"
+                            style={{
+                              background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.2)' : 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.5)' : 'rgba(255,255,255,0.14)'}`,
+                            }}
+                          >
+                            {selectedIds.has(p.id) && <Check size={11} style={{ color: '#f87171' }} strokeWidth={3} />}
+                          </button>
+                        )}
                         <div className="h-2 w-2 rounded-full flex-none" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
                         <div className="min-w-0">
                           <p className="text-[13px] font-semibold text-white/90 truncate leading-snug">
@@ -995,9 +1081,34 @@ export default function Dashboard() {
               {filteredProposals.map((p, i) => (
                 <motion.div
                   key={p.id}
+                  className="relative"
                   style={{ animation: `ds-fade-up 0.4s ease-out ${0.35 + i * 0.06}s both` }}
                   exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
                 >
+                  {/* Selection overlay ring */}
+                  {pipelineTab === 'lost' && selectedIds.has(p.id) && (
+                    <div
+                      className="pointer-events-none absolute inset-0 rounded-3xl z-10"
+                      style={{ border: '2px solid rgba(248,113,113,0.6)', boxShadow: '0 0 20px rgba(248,113,113,0.15), inset 0 0 20px rgba(248,113,113,0.04)' }}
+                    />
+                  )}
+                  {/* Checkbox — archive tab only */}
+                  {pipelineTab === 'lost' && (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); toggleSelect(p.id) }}
+                      className="absolute top-3 start-3 z-20 flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150"
+                      style={{
+                        background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.25)' : 'rgba(0,0,0,0.55)',
+                        border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.6)' : 'rgba(255,255,255,0.2)'}`,
+                        boxShadow: selectedIds.has(p.id) ? '0 0 10px rgba(248,113,113,0.25)' : 'none',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                      aria-label={selectedIds.has(p.id) ? (isHe ? 'בטל בחירה' : 'Deselect') : (isHe ? 'בחר' : 'Select')}
+                    >
+                      {selectedIds.has(p.id) && <Check size={12} style={{ color: '#f87171' }} strokeWidth={3} />}
+                    </button>
+                  )}
                   <ProposalCard proposal={p} onEdit={handleEdit} onDownload={handleDownloadPdf} onUpgradeRequired={() => setUpgradeModalOpen(true)} />
                 </motion.div>
               ))}
@@ -1006,6 +1117,97 @@ export default function Dashboard() {
         )}
 
       </main>
+
+      {/* ── Bulk-delete floating action bar (archive tab) ──────────────── */}
+      <AnimatePresence>
+        {pipelineTab === 'lost' && selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 64 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 64 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+            style={{ width: 'min(480px, calc(100vw - 32px))' }}
+          >
+            <div
+              className="flex items-center gap-3 rounded-2xl px-4 py-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16,8,8,0.97) 0%, rgba(24,8,8,0.97) 100%)',
+                border: '1px solid rgba(248,113,113,0.3)',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(248,113,113,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(32px)',
+              }}
+            >
+              {/* Count badge */}
+              <div
+                className="flex h-8 w-8 flex-none items-center justify-center rounded-xl text-xs font-black tabular-nums"
+                style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}
+              >
+                {selectedIds.size}
+              </div>
+
+              <p className="flex-1 text-sm font-semibold text-white/70">
+                {confirmDelete
+                  ? (isHe ? 'למחוק לצמיתות?' : 'Delete permanently?')
+                  : (isHe
+                    ? `${selectedIds.size} ${selectedIds.size === 1 ? 'הצעה נבחרה' : 'הצעות נבחרו'}`
+                    : `${selectedIds.size} proposal${selectedIds.size !== 1 ? 's' : ''} selected`)}
+              </p>
+
+              {!confirmDelete ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds(new Set())}
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    {isHe ? 'בטל' : 'Cancel'}
+                  </button>
+                  <motion.button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex-none flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
+                    style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5', boxShadow: '0 0 14px rgba(239,68,68,0.15)' }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                  >
+                    <Trash2 size={12} />
+                    {isHe ? 'מחק' : 'Delete'}
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    {isHe ? 'חזור' : 'Back'}
+                  </button>
+                  <motion.button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleting}
+                    className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-black"
+                    style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', border: '1px solid rgba(239,68,68,0.5)', color: 'white', boxShadow: '0 0 20px rgba(239,68,68,0.3)', opacity: bulkDeleting ? 0.6 : 1 }}
+                    whileHover={bulkDeleting ? {} : { scale: 1.04 }}
+                    whileTap={bulkDeleting ? {} : { scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                  >
+                    {bulkDeleting
+                      ? <div className="h-3 w-3 rounded-full border border-white/30 border-t-white animate-spin" />
+                      : <Trash2 size={12} />}
+                    {isHe
+                      ? (bulkDeleting ? 'מוחק...' : `כן, מחק ${selectedIds.size}`)
+                      : (bulkDeleting ? 'Deleting...' : `Yes, delete ${selectedIds.size}`)}
+                  </motion.button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <GlobalFooter />
 

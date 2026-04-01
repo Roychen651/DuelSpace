@@ -437,7 +437,10 @@ function ProposalDocument(opts: PdfOptions) {
 
   const lineItemsOverride: Record<string,{enabled:boolean;qty:number}> = {}
   proposal.add_ons.forEach(a => {
-    lineItemsOverride[a.id] = { enabled:enabledAddOnIds.includes(a.id), qty:1 }
+    lineItemsOverride[a.id] = {
+      enabled: enabledAddOnIds.includes(a.id),
+      qty: a.signed_qty ?? a.default_quantity ?? 1,
+    }
   })
 
   const fin          = calculateFinancials(proposal, lineItemsOverride, vatRate)
@@ -706,15 +709,26 @@ function ProposalDocument(opts: PdfOptions) {
             <Text style={s.tablePrice}>{fmtCurrencyPdf(proposal.base_price, proposal.currency)}</Text>
           </View>
 
-          {enabledAddOns.map((a, idx) => (
-            <View key={a.id} style={idx%2===0 ? s.tableRow : s.tableRowAlt} wrap={false}>
-              <View style={{width:'65%',flexDirection:'column'}}>
-                <Text style={s.tableLabel}>{a.label}</Text>
-                {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
+          {enabledAddOns.map((a, idx) => {
+            const aqty = lineItemsOverride[a.id]?.qty ?? 1
+            const disc = a.discount_pct || 0
+            const unitPrice = Math.round(a.price * (1 - disc / 100))
+            const lineTotal = unitPrice * aqty
+            return (
+              <View key={a.id} style={idx%2===0 ? s.tableRow : s.tableRowAlt} wrap={false}>
+                <View style={{width:'65%',flexDirection:'column'}}>
+                  <Text style={s.tableLabel}>{a.label}</Text>
+                  {a.description ? <Text style={s.tableLabelSub}>{a.description}</Text> : null}
+                  {aqty > 1 && (
+                    <Text style={s.tableLabelSub}>
+                      {`${aqty} × ${fmtCurrencyPdf(unitPrice, proposal.currency)}`}
+                    </Text>
+                  )}
+                </View>
+                <Text style={s.tablePrice}>{fmtCurrencyPdf(lineTotal, proposal.currency)}</Text>
               </View>
-              <Text style={s.tablePrice}>{fmtCurrencyPdf(a.price, proposal.currency)}</Text>
-            </View>
-          ))}
+            )
+          })}
         </View>
 
         {/* ── Discount + VAT ─────────────────────────────────────────── */}

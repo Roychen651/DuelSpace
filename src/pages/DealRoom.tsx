@@ -955,6 +955,14 @@ export default function DealRoom() {
     // immediately — without this the in-memory proposal still has null for the field
     // even though the RPC just stored it in the DB.
     setProposal(prev => prev ? { ...prev, signature_data_url: sigDataUrl, add_ons: signedAddOns } : prev)
+    // Sync lineItems to signed quantities so sealed PremiumSliderCards show the correct qty immediately
+    setLineItems(prev => {
+      const updated = { ...prev }
+      signedAddOns.forEach(a => {
+        updated[a.id] = { ...updated[a.id], qty: a.signed_qty ?? a.default_quantity ?? 1 }
+      })
+      return updated
+    })
     setAccepted(true)
     // Persist to localStorage so the PDF download works after page reload / revisit.
     try { localStorage.setItem(`dealspace:sig:${token}`, sigDataUrl) } catch (_) {}
