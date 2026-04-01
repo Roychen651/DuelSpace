@@ -998,7 +998,7 @@ export default function Dashboard() {
                   style={{ animation: `ds-fade-up 0.4s ease-out ${0.35 + i * 0.06}s both` }}
                   exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
                 >
-                  <ProposalCard proposal={p} onEdit={handleEdit} onUpgradeRequired={() => setUpgradeModalOpen(true)} />
+                  <ProposalCard proposal={p} onEdit={handleEdit} onDownload={handleDownloadPdf} onUpgradeRequired={() => setUpgradeModalOpen(true)} />
                 </motion.div>
               ))}
             </AnimatePresence>

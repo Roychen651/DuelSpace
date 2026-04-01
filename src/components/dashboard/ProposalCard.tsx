@@ -168,10 +168,11 @@ function DropItem({
 interface ProposalCardProps {
   proposal: Proposal
   onEdit: (id: string) => void
+  onDownload?: (id: string) => void
   onUpgradeRequired?: () => void
 }
 
-export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCardProps) {
+export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }: ProposalCardProps) {
   const { locale } = useI18n()
   const { archiveProposal, unarchiveProposal, deleteProposal, duplicateProposal, proposals } = useProposalStore()
   const tier = useTier()
@@ -230,12 +231,20 @@ export function ProposalCard({ proposal, onEdit, onUpgradeRequired }: ProposalCa
 
   const handleDownloadPdf = async () => {
     if (pdfGenerating) return
+    // Delegate to parent's handler which does a fresh SELECT * before generating.
+    // Never call generateProposalPdf directly with the stale proposal prop —
+    // it won't have signature_data_url unless fetched fresh from the DB.
+    if (onDownload) {
+      onDownload(proposal.id)
+      return
+    }
+    // Fallback (should not happen in practice — Dashboard always provides onDownload)
     setPdfGenerating(true)
     await generateProposalPdf({
       proposal,
       totalAmount: total,
       enabledAddOnIds: proposal.add_ons.filter(a => a.enabled).map(a => a.id),
-      signatureDataUrl: '',
+      signatureDataUrl: proposal.signature_data_url ?? '',
       locale,
     })
     setPdfGenerating(false)
