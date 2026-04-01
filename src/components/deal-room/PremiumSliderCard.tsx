@@ -16,13 +16,15 @@ interface PremiumSliderCardProps {
   onQuantityChange: (qty: number) => void
   /** When true the contract is signed — all interactive controls are locked */
   sealed?: boolean
+  /** The creator's default quantity — used to show a delta badge when client changed it */
+  defaultQty?: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PremiumSliderCard({
   addOn, quantity, enabled, currency, locale, adjustable,
-  onToggle, onQuantityChange, sealed = false,
+  onToggle, onQuantityChange, sealed = false, defaultQty = 1,
 }: PremiumSliderCardProps) {
   const disc = addOn.discount_pct || 0
   const unitDiscounted = Math.round(addOn.price * (1 - disc / 100))
@@ -154,6 +156,19 @@ export function PremiumSliderCard({
               <p className="text-[10px] text-white/30 mt-0.5 tabular-nums">
                 {quantity}× {formatCurrency(unitDiscounted, currency)}
               </p>
+            )}
+            {/* Delta badge — shown when client changed qty from default, sealed after signing */}
+            {sealed && enabled && quantity !== defaultQty && (
+              <div
+                className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tabular-nums"
+                style={{
+                  background: 'rgba(212,175,55,0.15)',
+                  border: '1px solid rgba(212,175,55,0.35)',
+                  color: '#d4af37',
+                }}
+              >
+                {defaultQty} → {quantity}
+              </div>
             )}
           </div>
         </div>

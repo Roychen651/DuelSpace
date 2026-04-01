@@ -631,7 +631,14 @@ export default function DealRoom() {
 
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of p.add_ons) {
-        init[a.id] = { enabled: a.enabled, qty: 1 }
+        // For accepted proposals: show the signed quantity (what client actually agreed to)
+        // For active proposals: start from the creator's default quantity
+        init[a.id] = {
+          enabled: a.enabled,
+          qty: p.status === 'accepted'
+            ? (a.signed_qty ?? a.default_quantity ?? 1)
+            : (a.default_quantity ?? 1),
+        }
       }
       setLineItems(init)
 
@@ -672,7 +679,12 @@ export default function DealRoom() {
       if (pending.status === 'accepted') setAccepted(true)
       const init: Record<string, { enabled: boolean; qty: number }> = {}
       for (const a of pending.add_ons) {
-        init[a.id] = { enabled: a.enabled, qty: 1 }
+        init[a.id] = {
+          enabled: a.enabled,
+          qty: pending.status === 'accepted'
+            ? (a.signed_qty ?? a.default_quantity ?? 1)
+            : (a.default_quantity ?? 1),
+        }
       }
       setLineItems(init)
       if (pending.client_company_name || pending.client_tax_id || pending.client_address || pending.client_signer_role) {
@@ -906,11 +918,18 @@ export default function DealRoom() {
       })
     }
 
+    // Embed signed_qty into each add-on so the business can see what was agreed
+    const signedAddOns = (proposal?.add_ons ?? []).map(a => ({
+      ...a,
+      signed_qty: lineItems[a.id]?.qty ?? (a.default_quantity ?? 1),
+    }))
+
     const { data: accepted_result, error } = await supabase.rpc('accept_proposal', {
-      p_token: token,
-      p_ip:    signerIp,
-      p_ua:    signerUa,
-      p_sig:   sigDataUrl,
+      p_token:   token,
+      p_ip:      signerIp,
+      p_ua:      signerUa,
+      p_sig:     sigDataUrl,
+      p_add_ons: JSON.stringify(signedAddOns),
     })
     // Migration 14: accept_proposal now returns BOOLEAN.
     // error = null + data = false  → 0 rows updated (already accepted, or token not found)
@@ -935,7 +954,7 @@ export default function DealRoom() {
     // Patch proposal state so handleDownloadPdf reads the correct signature_data_url
     // immediately — without this the in-memory proposal still has null for the field
     // even though the RPC just stored it in the DB.
-    setProposal(prev => prev ? { ...prev, signature_data_url: sigDataUrl } : prev)
+    setProposal(prev => prev ? { ...prev, signature_data_url: sigDataUrl, add_ons: signedAddOns } : prev)
     setAccepted(true)
     // Persist to localStorage so the PDF download works after page reload / revisit.
     try { localStorage.setItem(`dealspace:sig:${token}`, sigDataUrl) } catch (_) {}
@@ -1469,7 +1488,7 @@ export default function DealRoom() {
                       ...prev,
                       [addOn.id]: {
                         enabled: !(prev[addOn.id]?.enabled ?? addOn.enabled),
-                        qty: prev[addOn.id]?.qty ?? 1,
+                        qty: prev[addOn.id]?.qty ?? (addOn.default_quantity ?? 1),
                       },
                     }))
                   }
@@ -1482,6 +1501,7 @@ export default function DealRoom() {
                       },
                     }))
                   }
+                  defaultQty={addOn.default_quantity ?? 1}
                 />
               ))}
             </motion.div>

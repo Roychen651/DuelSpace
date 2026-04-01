@@ -12,6 +12,10 @@ export interface AddOn {
   discount_pct?: number
   /** When false, the client cannot adjust quantity in the Deal Room (qty is fixed at 1). Default: true */
   clientAdjustable?: boolean
+  /** Default quantity the proposal starts with — set by creator in EditorPanel. Default: 1 */
+  default_quantity?: number
+  /** Quantity the client chose when signing — embedded into add_ons JSONB by accept_proposal. */
+  signed_qty?: number
 }
 
 export interface PaymentMilestone {

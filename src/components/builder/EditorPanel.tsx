@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
-  Plus, GripVertical, Trash2, ToggleLeft, ToggleRight,
+  Plus, Minus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
   Film, Quote, MessageSquarePlus, Percent, Tag, Library,
 } from 'lucide-react'
@@ -300,6 +300,42 @@ function AddOnRow({
               </span>
             )}
           </div>
+
+          {/* Default quantity stepper — only relevant when client can adjust */}
+          {addOn.clientAdjustable !== false && (
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={11} className="text-indigo-400/50 flex-none" />
+              <span className="text-xs font-semibold text-white/40 flex-none">
+                {isHe ? 'כמות ברירת מחדל' : 'Default Qty'}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={isFinanciallyLocked || (addOn.default_quantity ?? 1) <= 1}
+                  onClick={() => onChange({ ...addOn, default_quantity: Math.max(1, (addOn.default_quantity ?? 1) - 1) })}
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-25"
+                >
+                  <Minus size={9} />
+                </button>
+                <span className="w-5 text-center text-xs font-bold text-white tabular-nums">
+                  {addOn.default_quantity ?? 1}
+                </span>
+                <button
+                  type="button"
+                  disabled={isFinanciallyLocked || (addOn.default_quantity ?? 1) >= 10}
+                  onClick={() => onChange({ ...addOn, default_quantity: Math.min(10, (addOn.default_quantity ?? 1) + 1) })}
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-25"
+                >
+                  <Plus size={9} />
+                </button>
+              </div>
+              {(addOn.default_quantity ?? 1) > 1 && addOn.price > 0 && (
+                <span className="text-[11px] font-semibold tabular-nums" style={{ color: '#818cf8' }}>
+                  = {formatCurrency(Math.round(addOn.price * (addOn.default_quantity ?? 1)), currency)}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Client-adjustable quantity — clear labeled pill */}
           <button

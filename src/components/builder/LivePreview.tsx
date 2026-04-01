@@ -112,6 +112,7 @@ function AddOnPreviewCard({
   enabled,
   currency,
   locale,
+  defaultQty,
 }: {
   label: string
   description?: string
@@ -119,6 +120,7 @@ function AddOnPreviewCard({
   enabled: boolean
   currency: string
   locale: string
+  defaultQty?: number
 }) {
   return (
     <div
@@ -169,12 +171,19 @@ function AddOnPreviewCard({
             )}
           </div>
         </div>
-        <p
-          className="flex-none text-sm font-bold tabular-nums"
-          style={{ color: enabled ? '#a78bfa' : 'rgba(255,255,255,0.25)' }}
-        >
-          +{formatCurrency(price, currency)}
-        </p>
+        <div className="flex-none text-end">
+          <p
+            className="text-sm font-bold tabular-nums"
+            style={{ color: enabled ? '#a78bfa' : 'rgba(255,255,255,0.25)' }}
+          >
+            +{formatCurrency(price * (defaultQty ?? 1), currency)}
+          </p>
+          {(defaultQty ?? 1) > 1 && (
+            <p className="text-[10px] text-white/30 tabular-nums">
+              {defaultQty}× {formatCurrency(price, currency)}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -424,6 +433,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                         enabled={addOn.enabled}
                         currency={proposal.currency}
                         locale={locale}
+                        defaultQty={addOn.default_quantity}
                       />
                     ))}
                   </div>
