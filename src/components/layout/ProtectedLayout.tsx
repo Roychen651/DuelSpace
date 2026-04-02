@@ -9,7 +9,6 @@ import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
-import { ThemeToggle } from '../ui/ThemeToggle'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -169,9 +168,6 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             <Globe size={10} />
             {isHe ? 'EN' : 'עב'}
           </button>
-
-          {/* Theme toggle */}
-          <ThemeToggle />
 
           {/* Help Center */}
           <button
