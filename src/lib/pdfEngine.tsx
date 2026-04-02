@@ -895,15 +895,12 @@ function ProposalDocument(opts: PdfOptions) {
           )}
         </View>
 
-        {/* ── Business Terms & Conditions (from creator's Profile) ── */}
+        {/* ── Business Terms & Conditions — always starts on a fresh page ── */}
         {termsBlocks.length > 0 && (
-          <>
-            <View style={s.sectionDivider} />
-            <View style={s.section}>
-              <Text style={s.sectionTitle}>{isHe ? 'תנאי העסק' : 'BUSINESS TERMS'}</Text>
-              <HtmlBlocks blocks={termsBlocks} s={s} />
-            </View>
-          </>
+          <View break style={s.section}>
+            <Text style={s.sectionTitle}>{isHe ? 'תנאי העסק' : 'BUSINESS TERMS'}</Text>
+            <HtmlBlocks blocks={termsBlocks} s={s} />
+          </View>
         )}
 
         <View style={s.pageFooter} fixed>
