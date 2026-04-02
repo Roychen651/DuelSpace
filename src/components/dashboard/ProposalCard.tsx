@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { motion } from 'framer-motion'
-import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus, MailCheck } from 'lucide-react'
+import { MoreVertical, Eye, Copy, Archive, ArchiveRestore, Trash2, Edit3, ExternalLink, Clock, Timer, FileDown, MessageSquarePlus, MailCheck, MessageCircle } from 'lucide-react'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
@@ -200,6 +200,14 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
     await navigator.clipboard.writeText(shareUrl)
   }
 
+  const handleFollowUp = () => {
+    const client = proposal.client_name || (locale === 'he' ? 'שם הלקוח' : 'there')
+    const text = locale === 'he'
+      ? `היי ${client}, רק רציתי לוודא שיצא לך לעבור על ההצעה / המסמך ששלחתי. \nאפשר לצפות ולאשר אותה מכל מכשיר ממש כאן:\n${shareUrl}\n\nאני זמין לכל שאלה!`
+      : `Hi ${client}, just checking in to see if you had a chance to review the document. \nYou can view and approve it securely right here:\n${shareUrl}\n\nLet me know if you have any questions!`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+  }
+
   const handleDuplicate = async () => {
     const activeCount = proposals.filter(p => !p.is_archived).length
     if (tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT) {
@@ -394,6 +402,13 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                       icon={<FileDown size={15} />}
                       label={locale === 'he' ? 'הורד חוזה' : 'Download PDF'}
                       onClick={handleDownloadPdf}
+                    />
+                  )}
+                  {(proposal.status === 'sent' || proposal.status === 'viewed') && (
+                    <DropItem
+                      icon={<MessageCircle size={15} style={{ color: '#25D366' }} />}
+                      label={locale === 'he' ? 'מעקב ב-WhatsApp' : 'Follow Up via WhatsApp'}
+                      onClick={handleFollowUp}
                     />
                   )}
                   <DropdownMenu.Separator className="h-px bg-slate-100 dark:bg-white/[0.07] mx-3.5 my-1" />

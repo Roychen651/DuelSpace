@@ -1221,6 +1221,9 @@ export default function DealRoom() {
   if (!proposal) return null
 
   const brandColor = proposal.brand_color ?? '#6366f1'
+  const isExpired = proposal.expires_at
+    ? new Date(proposal.expires_at).getTime() < Date.now()
+    : false
   const isWithin48h = proposal.expires_at
     ? (new Date(proposal.expires_at).getTime() - Date.now() > 0) &&
       (new Date(proposal.expires_at).getTime() - Date.now() < 48 * 3_600_000)
@@ -1303,8 +1306,42 @@ export default function DealRoom() {
             <span className="text-sm font-bold tracking-tight text-slate-500 dark:text-white/60">DealSpace</span>
           </motion.div>
 
-          {/* Countdown — hidden once deal is signed */}
-          {proposal.expires_at && !accepted && (
+          {/* Expiry lock banner — replaces countdown when past due */}
+          {isExpired && !accepted && !declined && (
+            <motion.div
+              variants={slideUp}
+              className="mb-6 rounded-2xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(180,60,30,0.07) 100%)',
+                border: '1px solid rgba(239,68,68,0.28)',
+                boxShadow: '0 0 40px rgba(239,68,68,0.08), inset 0 1px 0 rgba(239,68,68,0.12)',
+              }}
+            >
+              <div className="flex items-start gap-3.5 p-4">
+                <div
+                  className="flex-none flex h-10 w-10 items-center justify-center rounded-xl mt-0.5"
+                  style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.28)' }}
+                >
+                  <XCircle size={18} className="text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0" dir={locale === 'he' ? 'rtl' : 'ltr'}>
+                  <p className="text-sm font-black text-red-400 mb-1">
+                    {locale === 'he'
+                      ? `⏳ תוקף ההצעה פג ב-${new Date(proposal.expires_at!).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                      : `⏳ This proposal expired on ${new Date(proposal.expires_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                  </p>
+                  <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                    {locale === 'he'
+                      ? 'התמחור והתנאים אינם מובטחים עוד. אנא צור קשר עם השולח לחידוש ההצעה.'
+                      : 'Pricing and terms are no longer guaranteed. Please contact the sender to renew.'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Countdown — hidden once deal is signed or expired */}
+          {proposal.expires_at && !accepted && !isExpired && (
             <motion.div variants={slideUp}>
               <CountdownBanner expiresAt={proposal.expires_at} locale={locale} />
             </motion.div>
@@ -1385,6 +1422,17 @@ export default function DealRoom() {
             brandColor={brandColor}
           />
         )}
+
+        {/* ── Pricing / interaction zone — blurred when expired ────────── */}
+        <div
+          style={isExpired && !accepted ? {
+            opacity: 0.4,
+            filter: 'blur(2px)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            transition: 'opacity 0.4s, filter 0.4s',
+          } : {}}
+        >
 
         {/* ── Base package card ─────────────────────────────────────────── */}
         {!proposal.is_document_only && <motion.div
@@ -1519,6 +1567,8 @@ export default function DealRoom() {
             />
           </motion.div>
         )}
+
+        </div>{/* end pricing/interaction blur zone */}
 
         {/* ── Client details capture / sealed confirmation ───────────────── */}
         {!accepted && !revisionSent && (
@@ -1791,10 +1841,6 @@ export default function DealRoom() {
       {(() => {
         // Already accepted before this session — inline summary is shown instead
         if (accepted && !freshSignedRef.current) return null
-
-        const isExpired = proposal.expires_at
-          ? new Date(proposal.expires_at).getTime() < Date.now()
-          : false
 
         if (isExpired && !accepted) {
           return (

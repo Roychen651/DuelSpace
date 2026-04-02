@@ -120,8 +120,8 @@ export function SendModal({
   const titleDisplay  = projectTitle || (isHe ? 'הפרויקט' : 'our project')
 
   const waMsg = isHe
-    ? `היי${clientName ? ` ${clientName}` : ''}! הכנתי עבורך את הצעת המחיר / הסכם ההתקשרות לפרויקט ${titleDisplay}. אפשר לצפות, לאשר ולחתום דיגיטלית בצורה מאובטחת כאן:\n${shareUrl}`
-    : `Hi${clientName ? ` ${clientName}` : ''}! I've prepared the proposal / engagement agreement for "${titleDisplay}". You can view, approve, and sign digitally here:\n${shareUrl}`
+    ? `היי ${clientDisplay},\nהכנתי עבורך את המסמך / הצעת המחיר: *${titleDisplay}*.\n\nאפשר לצפות בפרטים, לבחור אפשרויות ולחתום דיגיטלית באופן מאובטח בלינק הבא:\n${shareUrl}`
+    : `Hi ${clientDisplay},\nI've prepared the document / proposal for: *${titleDisplay}*.\n\nYou can review the details, customize options, and securely sign it online here:\n${shareUrl}`
 
   const waHref = `https://wa.me/?text=${encodeURIComponent(waMsg)}`
 
