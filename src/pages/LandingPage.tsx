@@ -5,8 +5,9 @@ import {
 } from 'framer-motion'
 import {
   ArrowRight, Zap, Check, X, Star, Globe,
-  Sparkles, Eye, Layers, FileSignature, ChevronRight,
-  FileText, Download, Clock, Shield,
+  Eye, FileSignature, ChevronRight,
+  Clock, Shield, MessageCircle, Lock,
+  Percent, FileCheck,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { ReactLenis } from 'lenis/react'
@@ -79,12 +80,12 @@ const copy = {
     featuresLabel: 'כל מה שצריך. כלום מיותר.',
     featuresH2: 'הכלים שיסגרו לכם עסקאות.',
     bento: [
-      { icon: 'layers', tag: 'מיילסטונים',      title: 'לוח תשלומים שהלקוח מאשר מראש',  body: 'מקדמה, תשלום ביניים, סגירה — הלקוח מאשר הכל בחדר העסקאות לפני שמתחילים.', wide: true  },
-      { icon: 'eye',    tag: 'מעקב חי',          title: 'דעו בדיוק מתי קוראים',            body: 'התראה מיידית כשפתחו. פנו בדיוק ברגע הנכון — לא שעה אחרי.',                   wide: false },
-      { icon: 'sparkles', tag: 'AI Ghostwriter', title: 'טקסט מקצועי תוך שניות',          body: 'תיאורי הפרויקט נכתבים אוטומטית ברמת קופירייטר בכיר — בעברית ובאנגלית.',       wide: false },
-      { icon: 'sign',   tag: 'חתימה דיגיטלית',  title: 'חתמו ב-60 שניות',                 body: 'חתימה ייחודית, מסמך מאומת ורשומת ביקורת מלאה. הכל חוקי לפי חוק החתימה האלקטרונית.', wide: true  },
-      { icon: 'file',   tag: 'ספריית חוזים',    title: 'תבניות שמורות ומוכנות לשימוש',   body: 'שמרו חוזי עבודה שחוזרים על עצמם. שלפו בלחיצה, שלחו תוך שניות.',              wide: false },
-      { icon: 'download', tag: 'PDF מוסמך',      title: 'מסמך מוסמך ברמה עסקית — אוטומטי', body: 'כל עסקה חתומה מייצרת מסמך מוסמך עם חתימה, חותמת זמן ורשומת ביקורת מלאה.',  wide: false },
+      { icon: 'lock',    tag: 'נעילת תפוגה',      title: 'FOMO שמניע לסגירה — מובנה בתוך ההצעה', body: 'הגדירו תאריך תפוגה. כשהזמן עובר, המחירים נעולים ויש עיכוב ויזואלי. לקוחות חותמים מהר יותר כשיש לחץ אמיתי.',                wide: true  },
+      { icon: 'eye',     tag: 'אינטליגנציית עסקה', title: 'דעו בדיוק מתי — ופנו ברגע הנכון',       body: 'קבלו התראה כשפתחו, כמה זמן בילו, ואישור קריאת אימייל. פנו בדיוק ברגע שהלקוח חם.',               wide: false },
+      { icon: 'whatsapp', tag: 'פולואו-אפ WhatsApp', title: 'מעקב חכם בלחיצה אחת',                 body: 'קישור מובנה לשליחת הצעה ב-WhatsApp עם טקסט מנצח — שם הלקוח, שם הפרויקט, קישור ישיר לחדר.',      wide: false },
+      { icon: 'sign',    tag: 'חתימה דיגיטלית',    title: 'חתמו ב-60 שניות',                        body: 'חתימה ייחודית, מסמך מאומת ורשומת ביקורת מלאה. הכל חוקי לפי חוק החתימה האלקטרונית.',            wide: true  },
+      { icon: 'terms',   tag: 'תנאי עסק גלובליים',  title: 'תנאים שמוקפאים לתוך כל הצעה אוטומטית', body: 'הגדירו פעם אחת בפרופיל. DealSpace מזריק אותם לכל הצעה שנשלחת — הלקוח מאשר, PDF מאושר כולל תנאים.', wide: false },
+      { icon: 'vat',     tag: 'מנוע מע"מ ישראלי',   title: 'מחירים כוללים מע"מ — תמיד',             body: 'מזינים מחיר גולמי, המערכת מחשבת מתוכם מע"מ אוטומטית. ללא הפתעות, ללא "פלוס מע"מ" — בדיוק כמו שהשוק מכיר.',   wide: false },
     ],
 
     // Social Proof
@@ -105,6 +106,61 @@ const copy = {
     ctaSub: 'הצטרפו לפרילנסרים שסוגרים עסקאות מהר יותר — עם הצעות שהלקוחות אוהבים לחתום עליהן.',
     ctaBtn: 'צרו חדר עסקאות ראשון — בחינם',
     ctaUrgency: '87 מ-100 מקומות חינם נלקחו',
+
+    // Pricing section
+    pricingLabel: 'תמחור פשוט ושקוף',
+    pricingH2: 'צמחו ב-DealSpace',
+    pricingSub: 'בחרו תוכנית. שדרגו בכל עת. ביטול ללא עלויות.',
+    pricingPopular: 'הכי פופולרי',
+    pricingCta: 'התחילו עכשיו',
+    pricingFreeCta: 'חינם לנצח',
+    tiers: [
+      {
+        name: 'חינם',
+        price: '₪0',
+        period: '/חודש',
+        sub: 'לפרילנסרים שמתחילים',
+        features: [
+          { text: '5 הצעות בחודש', ok: true },
+          { text: 'אנליטיקה בסיסית', ok: true },
+          { text: 'תבניות סטנדרטיות', ok: true },
+          { text: 'חתימה דיגיטלית חוקית', ok: true },
+          { text: 'מיתוג DealSpace', ok: false },
+          { text: 'ספריית שירותים', ok: false },
+          { text: 'WhatsApp פולואו-אפ', ok: false },
+        ],
+      },
+      {
+        name: 'Pro',
+        price: '₪149',
+        period: '/חודש',
+        sub: 'לפרילנסרים רציניים',
+        features: [
+          { text: 'הצעות ללא הגבלה', ok: true },
+          { text: 'מיתוג מותאם אישית (לוגו + צבע)', ok: true },
+          { text: 'ספריית שירותים שמורים', ok: true },
+          { text: 'WhatsApp פולואו-אפ מובנה', ok: true },
+          { text: 'אינטליגנציית עסקה מלאה', ok: true },
+          { text: 'Webhooks ואוטומציות', ok: false },
+          { text: 'מסמך משפטי (DocuSign Killer)', ok: false },
+        ],
+      },
+      {
+        name: 'Unlimited',
+        price: '₪349',
+        period: '/חודש',
+        sub: 'לסוכנויות ועסקים',
+        features: [
+          { text: 'הכל ב-Pro', ok: true },
+          { text: 'Webhook אוטומציות (Make/Zapier/n8n)', ok: true },
+          { text: 'מצב מסמך משפטי (DocuSign Killer)', ok: true },
+          { text: 'נתיב ביקורת פורנזי (IP + UA)', ok: true },
+          { text: 'תנאי עסק גלובליים', ok: true },
+          { text: 'תמיכה בעדיפות גבוהה', ok: true },
+          { text: 'ללא הגבלת הכל', ok: true },
+        ],
+      },
+    ],
 
     // Mockup strings
     mockupUrl: 'dealspace.app/deal/abc123',
@@ -164,14 +220,14 @@ const copy = {
     ],
 
     featuresLabel: 'Everything you need. Nothing you don\'t.',
-    featuresH2: 'Tools that make you money, not headaches.',
+    featuresH2: 'Tools that close deals. Not just look pretty.',
     bento: [
-      { icon: 'layers',   tag: 'Milestones',      title: 'Payment schedules your client approves upfront',  body: 'Set deposit, mid-project, final. Client approves everything in the deal room before you start.',     wide: true  },
-      { icon: 'eye',      tag: 'Live Tracking',   title: "Know exactly when they're reading",               body: 'Instant notification the moment your client opens. Always one step ahead.',                         wide: false },
-      { icon: 'sparkles', tag: 'AI Ghostwriter',  title: 'Senior-copywriter prose, instantly',              body: 'AI generates proposal copy that sounds like you hired an agency — in Hebrew and English.',         wide: false },
-      { icon: 'sign',     tag: 'E-Signature',     title: 'Signed and closed in 60 seconds',                 body: 'Native canvas signature, certified PDF, and full audit trail. Legally binding under E-Sign Law.',   wide: true  },
-      { icon: 'file',     tag: 'Contract Library',title: 'Save once, reuse forever',                        body: 'Save your legal contracts as reusable templates. Pull them in one click, send in seconds.',         wide: false },
-      { icon: 'download', tag: 'Certified PDF',   title: 'Enterprise-grade PDF, auto-generated',            body: 'Every signed proposal creates a certified PDF with signature, timestamp, and full audit trail.',    wide: false },
+      { icon: 'lock',    tag: 'Expiry Lock',        title: 'Built-in FOMO that drives signatures',             body: 'Set an expiry date. When time is up, pricing blurs and locks. Clients sign faster when urgency is real.',                     wide: true  },
+      { icon: 'eye',     tag: 'Deal Intelligence',  title: 'Know exactly when — follow up at the right second', body: 'Get notified when they open it, how long they spent, and read-receipt on every email. Never follow up too late.',           wide: false },
+      { icon: 'whatsapp', tag: 'WhatsApp Follow-up', title: 'One-tap follow-up that actually gets read',        body: 'Built-in WhatsApp share with smart copy — client name, project title, and a direct link to their deal room.',               wide: false },
+      { icon: 'sign',    tag: 'E-Signature',         title: 'Signed and closed in 60 seconds',                  body: 'Native canvas signature, certified PDF, and full audit trail. Legally binding under E-Sign Law.',                         wide: true  },
+      { icon: 'terms',   tag: 'Global Business Terms', title: 'Your T&Cs frozen into every proposal automatically', body: 'Define once in your profile. DealSpace injects them into every deal you send — client consents, PDF includes the full terms.', wide: false },
+      { icon: 'vat',     tag: 'Israeli VAT Engine', title: 'Gross prices, zero surprises',                      body: 'Enter the gross amount. The system back-calculates the VAT component automatically. No "plus VAT" math for your clients.',   wide: false },
     ],
 
     socialsLabel: 'What our users say',
@@ -190,6 +246,61 @@ const copy = {
     ctaSub: 'Join freelancers who close faster with proposals clients actually love to sign.',
     ctaBtn: 'Create your first Deal Room — free',
     ctaUrgency: '87 of 100 free spots claimed',
+
+    // Pricing section
+    pricingLabel: 'Simple, transparent pricing',
+    pricingH2: 'Grow with DealSpace',
+    pricingSub: 'Pick a plan. Upgrade anytime. Cancel with zero hassle.',
+    pricingPopular: 'Most Popular',
+    pricingCta: 'Get started',
+    pricingFreeCta: 'Free forever',
+    tiers: [
+      {
+        name: 'Free',
+        price: '$0',
+        period: '/mo',
+        sub: 'For freelancers getting started',
+        features: [
+          { text: '5 proposals per month', ok: true },
+          { text: 'Basic analytics', ok: true },
+          { text: 'Standard templates', ok: true },
+          { text: 'Legally binding e-signature', ok: true },
+          { text: 'Remove DealSpace branding', ok: false },
+          { text: 'Services library', ok: false },
+          { text: 'WhatsApp follow-up', ok: false },
+        ],
+      },
+      {
+        name: 'Pro',
+        price: '$39',
+        period: '/mo',
+        sub: 'For serious freelancers',
+        features: [
+          { text: 'Unlimited proposals', ok: true },
+          { text: 'Custom branding (logo + color)', ok: true },
+          { text: 'Saved services library', ok: true },
+          { text: 'Built-in WhatsApp follow-up', ok: true },
+          { text: 'Full deal intelligence', ok: true },
+          { text: 'Webhooks & automations', ok: false },
+          { text: 'Legal Document mode (DocuSign Killer)', ok: false },
+        ],
+      },
+      {
+        name: 'Unlimited',
+        price: '$89',
+        period: '/mo',
+        sub: 'For agencies & businesses',
+        features: [
+          { text: 'Everything in Pro', ok: true },
+          { text: 'Webhook automations (Make/Zapier/n8n)', ok: true },
+          { text: 'Legal Document mode (DocuSign Killer)', ok: true },
+          { text: 'Forensic audit trail (IP + UA)', ok: true },
+          { text: 'Global business terms engine', ok: true },
+          { text: 'Priority support', ok: true },
+          { text: 'Truly unlimited everything', ok: true },
+        ],
+      },
+    ],
 
     mockupUrl: 'dealspace.app/deal/abc123',
     mockupTotal: 'Total',
@@ -289,20 +400,24 @@ function HeroAurora() {
         }}
       />
       <div
-        className="absolute top-[-20%] left-[15%] h-[700px] w-[700px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.26) 0%, rgba(168,85,247,0.12) 45%, transparent 70%)', filter: 'blur(70px)', animation: 'lp-aurora-1 28s ease-in-out infinite' }}
+        className="absolute top-[-20%] left-[15%] h-[800px] w-[800px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.38) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(72px)', animation: 'lp-aurora-1 28s ease-in-out infinite' }}
       />
       <div
-        className="absolute top-[10%] right-[-10%] h-[600px] w-[600px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 65%)', filter: 'blur(80px)', animation: 'lp-aurora-2 22s ease-in-out infinite' }}
+        className="absolute top-[10%] right-[-10%] h-[700px] w-[700px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(99,102,241,0.12) 50%, transparent 70%)', filter: 'blur(80px)', animation: 'lp-aurora-2 22s ease-in-out infinite' }}
       />
       <div
-        className="absolute bottom-[-10%] left-[-5%] h-[500px] w-[500px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'lp-aurora-3 32s ease-in-out infinite' }}
+        className="absolute bottom-[-10%] left-[-5%] h-[560px] w-[560px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.1) 50%, transparent 70%)', filter: 'blur(64px)', animation: 'lp-aurora-3 32s ease-in-out infinite' }}
       />
       <div
-        className="absolute top-[40%] right-[30%] h-[360px] w-[360px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%)', filter: 'blur(90px)', animation: 'lp-aurora-1 40s ease-in-out infinite reverse' }}
+        className="absolute top-[40%] right-[30%] h-[400px] w-[400px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)', filter: 'blur(90px)', animation: 'lp-aurora-1 40s ease-in-out infinite reverse' }}
+      />
+      <div
+        className="absolute top-[60%] left-[45%] h-[300px] w-[300px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'lp-aurora-2 36s ease-in-out infinite reverse' }}
       />
       {PARTICLES.map((p, i) => (
         <div
@@ -801,23 +916,53 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
 
 // ─── Bento Mini UIs ────────────────────────────────────────────────────────────
 
-function MilestoneMini({ isHe }: { isHe: boolean }) {
-  const rows = isHe
-    ? [{ name: 'מקדמה', pct: 30, done: true }, { name: 'עיצוב', pct: 50, done: true }, { name: 'השקה', pct: 20, done: false }]
-    : [{ name: 'Deposit', pct: 30, done: true }, { name: 'Design', pct: 50, done: true }, { name: 'Launch', pct: 20, done: false }]
+// ─── NEW: Expiry Lock Mini (replaces MilestoneMini) ───────────────────────────
+
+function ExpiryLockMini({ isHe }: { isHe: boolean }) {
+  const [secs, setSecs] = useState(47 * 3600 + 23 * 60 + 11)
+  useEffect(() => {
+    const id = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 47 * 3600 + 23 * 60 + 11)), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const h = String(Math.floor(secs / 3600)).padStart(2, '0')
+  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0')
+  const s = String(secs % 60).padStart(2, '0')
+
   return (
-    <div className="space-y-3 mt-4">
-      {rows.map((r, i) => (
-        <div key={r.name}>
-          <div className="flex justify-between text-[10px] mb-1">
-            <span className="text-white/45 font-medium">{r.name}</span>
-            <span style={{ color: r.done ? '#a5b4fc' : 'rgba(255,255,255,0.2)' }}>{r.pct}%</span>
-          </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <motion.div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #a855f7)' }} initial={{ width: '0%' }} whileInView={{ width: r.done ? '100%' : '8%' }} viewport={{ once: true }} transition={{ duration: 0.9, delay: i * 0.18, ease: 'easeOut' as const }} />
-          </div>
+    <div className="mt-4 space-y-3">
+      {/* Countdown display */}
+      <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
+        <p className="text-[9px] font-black uppercase tracking-[0.18em] mb-1.5" style={{ color: 'rgba(248,113,113,0.7)' }}>
+          {isHe ? 'תוקף ההצעה פג בעוד' : 'Offer expires in'}
+        </p>
+        <div className="flex items-center justify-center gap-1.5" dir="ltr">
+          {[h, m, s].map((unit, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <div className="rounded-lg px-2 py-1 min-w-[32px] text-center" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                <span className="text-[15px] font-black tabular-nums" style={{ color: '#fca5a5', fontFamily: 'var(--font-accent)' }}>{unit}</span>
+              </div>
+              {i < 2 && <span className="text-[13px] font-black" style={{ color: 'rgba(248,113,113,0.5)' }}>:</span>}
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+      {/* Locked price row */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, delay: 0.3, ease: 'easeOut' as const }}
+        className="flex items-center justify-between rounded-xl px-3 py-2.5"
+        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Lock size={11} style={{ color: '#f87171' }} />
+          <span className="text-[10px] text-white/40">{isHe ? 'מחיר נעול לאחר תפוגה' : 'Price locked after expiry'}</span>
+        </div>
+        <div className="rounded px-1.5 py-0.5" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <span className="text-[9px] font-bold" style={{ color: '#f87171' }}>{isHe ? 'נעול' : 'LOCKED'}</span>
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -840,20 +985,32 @@ function ViewTrackingMini({ isHe }: { isHe: boolean }) {
   )
 }
 
-function AIGhostwriterMini({ isHe }: { isHe: boolean }) {
-  const text = isHe
-    ? 'פרויקט מקצועי ומרשים שיביא את המותג שלכם לשלב הבא — בגישה חדשנית ותוצאות מדידות.'
-    : 'A professional, compelling project that elevates your brand — with an innovative approach and measurable results.'
+function WhatsAppMini({ isHe }: { isHe: boolean }) {
   return (
     <div className="mt-4 space-y-2">
-      <div className="flex items-center gap-1.5">
-        <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" style={{ animation: 'lp-ping-ring 1.2s ease-out infinite' }} />
-        <span className="text-[9px] font-black uppercase tracking-[0.18em]" style={{ color: '#818cf8' }}>{isHe ? 'AI כותב…' : 'AI writing…'}</span>
+      {/* WA message bubble */}
+      <motion.div
+        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, ease: 'easeOut' as const }}
+        className="rounded-2xl rounded-tl-sm px-3 py-2.5 max-w-[90%]"
+        style={{ background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.2)' }}
+      >
+        <p className="text-[10px] text-white/70 leading-relaxed">
+          {isHe
+            ? 'היי דוד, רק רציתי לוודא שיצא לך לעבור על ההצעה ששלחתי. אפשר לצפות ולאשר מכל מכשיר:'
+            : 'Hi David, just checking in on the proposal I sent. You can review & sign from any device:'}
+        </p>
+        <div className="mt-1.5 rounded-lg px-2 py-1" style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.15)' }}>
+          <span className="text-[9px] font-semibold" style={{ color: '#4ade80' }}>dealspace.app/deal/abc123 ↗</span>
+        </div>
+        <p className="text-[8px] text-right mt-1" style={{ color: 'rgba(37,211,102,0.5)' }}>✓✓</p>
+      </motion.div>
+      <div className="flex items-center gap-1.5 ps-1">
+        <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#25D366', boxShadow: '0 0 6px #25D366', animation: 'lp-ping-ring 2s ease-out infinite' }} />
+        <span className="text-[9px]" style={{ color: 'rgba(74,222,128,0.6)' }}>{isHe ? 'נשלח דרך WhatsApp' : 'Sent via WhatsApp'}</span>
       </div>
-      <p className="text-[11px] text-white/55 leading-relaxed">
-        {text}
-        <span className="inline-block w-0.5 h-3 ms-0.5 align-middle rounded-sm" style={{ background: '#a5b4fc', animation: 'lp-cursor-blink 0.9s step-end infinite' }} />
-      </p>
     </div>
   )
 }
@@ -881,70 +1038,88 @@ function SignatureMini() {
   )
 }
 
-function ContractLibraryMini({ isHe }: { isHe: boolean }) {
-  const templates = isHe
-    ? ['חוזה פיתוח אתרים', 'חוזה עיצוב גרפי', 'הסכם ייעוץ']
-    : ['Web Development', 'Graphic Design', 'Consulting Agreement']
+function BusinessTermsMini({ isHe }: { isHe: boolean }) {
   return (
     <div className="mt-4 space-y-2">
-      {templates.map((t, i) => (
-        <motion.div
-          key={t}
-          initial={{ opacity: 0, x: -8 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: i * 0.12, ease: 'easeOut' as const }}
-          className="flex items-center gap-2.5 rounded-xl px-3 py-2"
-          style={{
-            background: i === 0 ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
-            border: i === 0 ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.05)',
-          }}
-        >
-          <FileText size={11} style={{ color: i === 0 ? '#a5b4fc' : 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
-          <span className="text-[10px] font-medium truncate" style={{ color: i === 0 ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.3)' }}>{t}</span>
-          {i === 0 && <div className="ms-auto h-4 w-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.2)', flexShrink: 0 }}><Check size={8} style={{ color: '#a5b4fc' }} /></div>}
-        </motion.div>
-      ))}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, ease: 'easeOut' as const }}
+        className="rounded-xl p-2.5"
+        style={{ background: 'rgba(168,85,247,0.07)', border: '1px solid rgba(168,85,247,0.18)' }}
+      >
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <FileCheck size={10} style={{ color: '#c084fc' }} />
+          <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(192,132,252,0.7)' }}>
+            {isHe ? 'תנאי עסק גלובליים' : 'Global Business Terms'}
+          </span>
+        </div>
+        <div className="space-y-1">
+          {[isHe ? 'תנאי תשלום: 30 יום נטו' : 'Payment: Net 30 days', isHe ? 'בעלות קניין רוחני לאחר תשלום' : 'IP transfers on full payment'].map((line, i) => (
+            <p key={i} className="text-[9px] text-white/40 leading-relaxed">{line}</p>
+          ))}
+        </div>
+      </motion.div>
+      {/* Consent row */}
+      <motion.div
+        initial={{ opacity: 0, x: -6 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.35, delay: 0.25, ease: 'easeOut' as const }}
+        className="flex items-center gap-2 rounded-xl px-3 py-2"
+        style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}
+      >
+        <div className="h-3.5 w-3.5 rounded flex items-center justify-center flex-none" style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.4)' }}>
+          <Check size={8} style={{ color: '#4ade80' }} />
+        </div>
+        <span className="text-[9px] text-white/50">{isHe ? 'הלקוח אישר את התנאים' : 'Client accepted the terms'}</span>
+      </motion.div>
     </div>
   )
 }
 
-function PdfPreviewMini({ isHe }: { isHe: boolean }) {
+function VATMini({ isHe }: { isHe: boolean }) {
+  const gross = 11800
+  const vatRate = 0.18
+  const vat = Math.round(gross - gross / (1 + vatRate))
+  const net = gross - vat
+  const fmt = (n: number) => n.toLocaleString('en-US')
+
   return (
-    <div className="mt-4 flex gap-2 justify-center">
-      {[{ label: isHe ? 'שער' : 'Cover', color: 'rgba(99,102,241,0.15)' }, { label: isHe ? 'תוכן' : 'Content', color: 'rgba(168,85,247,0.1)' }, { label: isHe ? 'אישור' : 'Cert', color: 'rgba(34,197,94,0.1)' }].map((p, i) => (
+    <div className="mt-4 space-y-2" dir="ltr">
+      {/* Gross amount */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.35, ease: 'easeOut' as const }}
+        className="flex items-center justify-between rounded-xl px-3 py-2"
+        style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}
+      >
+        <span className="text-[9px] text-white/50">{isHe ? 'מחיר שהזנתם' : 'You entered'}</span>
+        <span className="text-[11px] font-black" style={{ color: '#a5b4fc' }}>₪{fmt(gross)}</span>
+      </motion.div>
+      {/* Breakdown */}
+      {[
+        { label: isHe ? 'לפני מע"מ' : 'Before VAT', val: `₪${fmt(net)}`, color: 'rgba(255,255,255,0.45)' },
+        { label: isHe ? 'מתוכם מע"מ (18%)' : 'Of which VAT (18%)', val: `₪${fmt(vat)}`, color: '#c084fc' },
+      ].map((row, i) => (
         <motion.div
-          key={p.label}
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          key={row.label}
+          initial={{ opacity: 0, x: 8 }}
+          whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: i * 0.1, ease: 'easeOut' as const }}
-          className="flex flex-col items-center gap-1.5"
-          style={{ width: 42 }}
+          transition={{ duration: 0.3, delay: 0.15 + i * 0.1, ease: 'easeOut' as const }}
+          className="flex items-center justify-between px-1"
         >
-          <div className="rounded-md flex items-center justify-center" style={{ width: 42, height: 54, background: p.color, border: `1px solid rgba(255,255,255,0.07)` }}>
-            <div className="space-y-1 px-1.5">
-              {Array.from({ length: i === 0 ? 2 : 3 }).map((_, j) => (
-                <div key={j} className="rounded-full" style={{ height: 1.5, width: i === 0 && j === 0 ? 28 : 20, background: 'rgba(255,255,255,0.2)' }} />
-              ))}
-            </div>
+          <div className="flex items-center gap-1.5">
+            <Percent size={9} style={{ color: 'rgba(192,132,252,0.5)' }} />
+            <span className="text-[9px] text-white/35">{row.label}</span>
           </div>
-          <span className="text-[8px] text-white/30 font-medium">{p.label}</span>
+          <span className="text-[10px] font-semibold" style={{ color: row.color }}>{row.val}</span>
         </motion.div>
       ))}
-      <div className="flex items-end pb-6">
-        <span className="text-[8px] text-white/20 font-medium">+</span>
-      </div>
-      <motion.div
-        initial={{ scale: 0 }}
-        whileInView={{ scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.4, type: 'spring' as const, stiffness: 260, damping: 16 }}
-        className="flex items-center justify-center self-center rounded-full"
-        style={{ width: 24, height: 24, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}
-      >
-        <Check size={10} style={{ color: '#4ade80' }} />
-      </motion.div>
     </div>
   )
 }
@@ -955,14 +1130,14 @@ const BENTO_COLORS = ['#6366f1', '#6366f1', '#a855f7', '#22c55e', '#a855f7', '#d
 const BENTO_GLOWS  = ['rgba(99,102,241,0.35)', 'rgba(99,102,241,0.3)', 'rgba(168,85,247,0.35)', 'rgba(34,197,94,0.35)', 'rgba(168,85,247,0.3)', 'rgba(212,175,55,0.3)']
 
 function BentoGridSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
-  const icons = [<Layers size={16} />, <Eye size={16} />, <Sparkles size={16} />, <FileSignature size={16} />, <FileText size={16} />, <Download size={16} />]
+  const icons = [<Lock size={16} />, <Eye size={16} />, <MessageCircle size={16} />, <FileSignature size={16} />, <FileCheck size={16} />, <Percent size={16} />]
   const minis = [
-    <MilestoneMini isHe={isHe} />,
+    <ExpiryLockMini isHe={isHe} />,
     <ViewTrackingMini isHe={isHe} />,
-    <AIGhostwriterMini isHe={isHe} />,
+    <WhatsAppMini isHe={isHe} />,
     <SignatureMini />,
-    <ContractLibraryMini isHe={isHe} />,
-    <PdfPreviewMini isHe={isHe} />,
+    <BusinessTermsMini isHe={isHe} />,
+    <VATMini isHe={isHe} />,
   ]
 
   return (
@@ -1111,7 +1286,7 @@ function SocialProofNumbers({ isHe }: { isHe: boolean }) {
   )
 }
 
-// ─── Testimonials ──────────────────────────────────────────────────────────────
+// ─── Testimonials — Wall of Love (bidirectional marquee) ──────────────────────
 
 const AVATAR_GRADS = [
   'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -1124,63 +1299,252 @@ const AVATAR_GRADS = [
 
 function TestimonialCard({ t, i }: { t: { name: string; role: string; text: string; stars: number }; i: number }) {
   return (
-    <Tilt3D
-      className="relative rounded-3xl p-6 overflow-hidden h-full"
-      style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+    <motion.div
+      className="relative rounded-3xl p-5 overflow-hidden flex-none"
+      style={{
+        width: 300,
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+        border: '1px solid rgba(255,255,255,0.09)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)',
+      }}
+      whileHover={{ scale: 1.03, y: -4, transition: { type: 'spring' as const, stiffness: 300, damping: 20 } }}
     >
-      <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
-      <div className="pointer-events-none absolute -top-2 start-4 select-none leading-none" style={{ fontSize: 96, fontWeight: 900, color: 'rgba(99,102,241,0.08)', fontFamily: 'var(--font-accent)', lineHeight: 1 }} aria-hidden>"</div>
-      <div className="flex gap-0.5 mb-4 relative z-10">
-        {Array.from({ length: t.stars }).map((_, s) => <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37' }} />)}
+      <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
+      {/* Glow orb behind avatar */}
+      <div className="pointer-events-none absolute -top-4 -start-4 h-20 w-20 rounded-full" style={{ background: `radial-gradient(circle, ${AVATAR_GRADS[i % AVATAR_GRADS.length].includes('d4af37') ? 'rgba(212,175,55,0.2)' : 'rgba(99,102,241,0.2)'} 0%, transparent 70%)`, filter: 'blur(16px)' }} />
+      <div className="flex gap-0.5 mb-3 relative z-10">
+        {Array.from({ length: t.stars }).map((_, s) => <Star key={s} size={11} fill="#d4af37" style={{ color: '#d4af37' }} />)}
       </div>
-      <p className="relative z-10 text-sm text-white/65 leading-relaxed mb-5">"{t.text}"</p>
-      <div className="flex items-center gap-3 mt-auto">
-        <div className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-none" style={{ background: AVATAR_GRADS[i] }}>
+      <p className="relative z-10 text-[12px] text-white/60 leading-relaxed mb-4">"{t.text}"</p>
+      <div className="flex items-center gap-2.5 mt-auto">
+        <div
+          className="h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-none"
+          style={{ background: AVATAR_GRADS[i % AVATAR_GRADS.length], boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}
+        >
           {t.name[0]}
         </div>
         <div>
-          <p className="text-[13px] font-bold text-white/90">{t.name}</p>
-          <p className="text-[11px] text-white/35">{t.role}</p>
+          <p className="text-[12px] font-bold text-white/90">{t.name}</p>
+          <p className="text-[10px] text-white/35">{t.role}</p>
         </div>
       </div>
-    </Tilt3D>
+    </motion.div>
   )
 }
 
 function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
+  // Split testimonials into two rows for bidirectional scroll
+  const row1 = [...c.testimonials, ...c.testimonials, ...c.testimonials]
+  const row2 = [...c.testimonials.slice().reverse(), ...c.testimonials.slice().reverse(), ...c.testimonials.slice().reverse()]
+
   return (
-    <section className="relative py-16 sm:py-24">
-      <div className="max-w-6xl mx-auto">
-        <motion.div className="text-center mb-14 px-6" variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}>
+    <section className="relative py-16 sm:py-24 overflow-hidden">
+      {/* Subtle section bg */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%)' }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
+
+      {/* Heading */}
+      <motion.div
+        className="text-center mb-12 px-6"
+        variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}
+      >
+        <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
+          {c.socialsLabel}
+        </p>
+        <div className="flex items-center justify-center gap-1 mb-2">
+          {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={18} fill="#d4af37" style={{ color: '#d4af37' }} />)}
+        </div>
+        <p className="text-white/30 text-[12px]">4.9 / 5 · 500+ {c.socialsLabel.includes('משתמש') ? 'משתמשים' : 'users'}</p>
+      </motion.div>
+
+      {/* Row 1 — scrolls left */}
+      <div className="relative mb-4">
+        <div className="pointer-events-none absolute inset-y-0 start-0 w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+        <div className="pointer-events-none absolute inset-y-0 end-0 w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+        <div
+          dir="ltr"
+          className="flex gap-4"
+          style={{ width: 'max-content', animation: 'lp-marquee 38s linear infinite', paddingInline: 16 }}
+        >
+          {row1.map((t, i) => (
+            <TestimonialCard key={`r1-${i}`} t={t} i={i % AVATAR_GRADS.length} />
+          ))}
+        </div>
+      </div>
+
+      {/* Row 2 — scrolls right */}
+      <div className="relative hidden sm:block">
+        <div className="pointer-events-none absolute inset-y-0 start-0 w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+        <div className="pointer-events-none absolute inset-y-0 end-0 w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+        <div
+          dir="ltr"
+          className="flex gap-4"
+          style={{ width: 'max-content', animation: 'lp-marquee-rtl 42s linear infinite', paddingInline: 16 }}
+        >
+          {row2.map((t, i) => (
+            <TestimonialCard key={`r2-${i}`} t={t} i={(i + 2) % AVATAR_GRADS.length} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Pricing Section ───────────────────────────────────────────────────────────
+
+const TIER_BORDER = [
+  'rgba(99,102,241,0.18)',
+  'rgba(168,85,247,0.5)',
+  'rgba(212,175,55,0.2)',
+]
+const TIER_ACCENT = ['#818cf8', '#c084fc', '#d4af37']
+
+function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void }) {
+  return (
+    <section className="relative py-16 sm:py-28 px-6 overflow-hidden">
+      {/* Deep aurora behind Pro card */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 60% 50%, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)' }} />
+
+      <div className="max-w-5xl mx-auto">
+        {/* Heading */}
+        <motion.div
+          className="text-center mb-14"
+          variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}
+        >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
-            {c.socialsLabel}
+            {c.pricingLabel}
           </p>
-          <div className="flex items-center justify-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={18} fill="#d4af37" style={{ color: '#d4af37' }} />)}
-          </div>
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white mb-3">{c.pricingH2}</h2>
+          <p className="text-white/40 text-[14px]">{c.pricingSub}</p>
         </motion.div>
 
-        {/* Mobile: horizontal snap-scroll */}
-        <div className="sm:hidden">
-          <div className="flex gap-4 overflow-x-auto pb-5" style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', paddingInlineStart: 24, paddingInlineEnd: 24 }}>
-            {c.testimonials.map((t, i) => (
-              <div key={t.name} className="flex-none" style={{ scrollSnapAlign: 'start', width: '82vw', maxWidth: 320, minHeight: 220 }}>
-                <TestimonialCard t={t} i={i} />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-center gap-1.5 mt-2 px-6">
-            {c.testimonials.map((_, i) => (
-              <div key={i} className="rounded-full transition-all" style={{ width: i === 0 ? 16 : 4, height: 4, background: i === 0 ? 'rgba(99,102,241,0.6)' : 'rgba(255,255,255,0.12)' }} />
-            ))}
-          </div>
-        </div>
+        {/* Cards grid */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start"
+          variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
+        >
+          {c.tiers.map((tier, i) => {
+            const isPro = i === 1
+            return (
+              <motion.div
+                key={tier.name}
+                variants={itemFade}
+                className="relative rounded-3xl overflow-hidden"
+                style={{
+                  transform: isPro ? 'translateY(-12px)' : undefined,
+                }}
+              >
+                {/* Pro: animated aurora glow behind card */}
+                {isPro && (
+                  <div
+                    className="pointer-events-none absolute -inset-4 rounded-[2rem]"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.35) 0%, rgba(99,102,241,0.2) 40%, transparent 70%)', filter: 'blur(24px)', animation: 'lp-badge-pulse 3s ease-in-out infinite' }}
+                  />
+                )}
 
-        {/* Desktop: staggered grid */}
-        <motion.div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 px-6" variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}>
-          {c.testimonials.map((t, i) => (
-            <motion.div key={t.name} variants={itemFade}><TestimonialCard t={t} i={i} /></motion.div>
-          ))}
+                <Tilt3D
+                  className="relative rounded-3xl p-6 h-full flex flex-col"
+                  style={{
+                    background: isPro
+                      ? 'linear-gradient(160deg, rgba(168,85,247,0.16) 0%, rgba(99,102,241,0.1) 50%, rgba(255,255,255,0.03) 100%)'
+                      : 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                    border: `1px solid ${TIER_BORDER[i]}`,
+                    boxShadow: isPro
+                      ? '0 0 60px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.1)'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {/* Top highlight line */}
+                  <div className="pointer-events-none absolute top-0 inset-x-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}55, transparent)` }} />
+
+                  {/* Popular badge */}
+                  {isPro && (
+                    <div className="flex justify-center mb-4">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black"
+                        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.2))', border: '1px solid rgba(168,85,247,0.45)', color: '#e9d5ff', boxShadow: '0 0 18px rgba(168,85,247,0.3)' }}
+                      >
+                        <Star size={9} fill="#c084fc" style={{ color: '#c084fc' }} />
+                        {c.pricingPopular}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Tier name + price */}
+                  <div className="mb-5">
+                    <p className="text-[12px] font-black uppercase tracking-[0.18em] mb-2" style={{ color: TIER_ACCENT[i] }}>{tier.name}</p>
+                    <div className="flex items-end gap-1 mb-1" dir="ltr">
+                      <span className="text-4xl font-black text-white tracking-tight">{tier.price}</span>
+                      <span className="text-[13px] text-white/35 mb-1">{tier.period}</span>
+                    </div>
+                    <p className="text-[12px] text-white/40">{tier.sub}</p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-px mb-5" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}30, transparent)` }} />
+
+                  {/* Features */}
+                  <ul className="space-y-3 flex-1 mb-6">
+                    {tier.features.map((f) => (
+                      <li key={f.text} className="flex items-start gap-2.5">
+                        <div
+                          className="mt-0.5 flex-none h-4 w-4 rounded-full flex items-center justify-center"
+                          style={{
+                            background: f.ok ? `${TIER_ACCENT[i]}22` : 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${f.ok ? `${TIER_ACCENT[i]}44` : 'rgba(255,255,255,0.08)'}`,
+                          }}
+                        >
+                          {f.ok
+                            ? <Check size={9} style={{ color: TIER_ACCENT[i] }} />
+                            : <X size={9} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                          }
+                        </div>
+                        <span className="text-[12px] leading-snug" style={{ color: f.ok ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>{f.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA button */}
+                  {isPro ? (
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', filter: 'blur(12px)', opacity: 0.55, animation: 'lp-badge-pulse 2.5s ease-in-out infinite' }} />
+                      <motion.button
+                        onClick={onCta}
+                        whileHover={{ scale: 1.04, y: -2 }}
+                        whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                        className="relative w-full py-3 rounded-xl text-[13px] font-bold text-white"
+                        style={{ background: 'linear-gradient(105deg, #6366f1 0%, #7c3aed 38%, rgba(200,190,255,0.5) 50%, #7c3aed 62%, #6366f1 100%)', backgroundSize: '220% 100%', animation: 'lp-shimmer 3s linear infinite', boxShadow: '0 0 28px rgba(99,102,241,0.4)' }}
+                      >
+                        {c.pricingCta} →
+                      </motion.button>
+                    </div>
+                  ) : i === 0 ? (
+                    <motion.button
+                      onClick={onCta}
+                      whileHover={{ scale: 1.03, backgroundColor: 'rgba(99,102,241,0.1)' }}
+                      whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                      className="w-full py-3 rounded-xl text-[13px] font-bold transition-colors"
+                      style={{ border: '1px solid rgba(99,102,241,0.25)', color: '#a5b4fc', background: 'transparent' }}
+                    >
+                      {c.pricingFreeCta}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={onCta}
+                      whileHover={{ scale: 1.03, backgroundColor: 'rgba(212,175,55,0.08)' }}
+                      whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+                      className="w-full py-3 rounded-xl text-[13px] font-bold transition-colors"
+                      style={{ border: '1px solid rgba(212,175,55,0.25)', color: '#d4af37', background: 'transparent' }}
+                    >
+                      {c.pricingCta} →
+                    </motion.button>
+                  )}
+                </Tilt3D>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </div>
     </section>
@@ -1559,6 +1923,7 @@ export default function LandingPage() {
           <BentoGridSection  c={c} isHe={isHe} />
           <SocialProofNumbers isHe={isHe} />
           <TestimonialsSection c={c} />
+          <PricingSection    c={c} onCta={goSignup} />
           <FinalCTASection   c={c} isHe={isHe} onCta={goSignup} />
         </main>
 
