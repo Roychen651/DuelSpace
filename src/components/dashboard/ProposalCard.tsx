@@ -450,25 +450,33 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                   border: '1px solid rgba(245,158,11,0.25)',
                 }}
               >
-                <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+                <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1.5">
                   <MessageSquarePlus size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
                   <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#f59e0b' }}>
                     {locale === 'he' ? 'הלקוח ביקש שינויים' : 'Client Requested Changes'}
                   </span>
                 </div>
                 {proposal.revision_notes ? (
-                  <p
-                    className="px-3 pb-2 text-[11px] leading-relaxed"
+                  <div className="mx-3 mb-2.5 rounded-lg px-3 py-2"
+                    dir={locale === 'he' ? 'rtl' : 'ltr'}
                     style={{
-                      color: 'rgba(245,158,11,0.7)',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
+                      background: 'rgba(245,158,11,0.08)',
+                      borderInlineStart: '3px solid rgba(245,158,11,0.5)',
                     }}
                   >
-                    {proposal.revision_notes}
-                  </p>
+                    <p className="text-xs font-medium leading-relaxed"
+                      style={{
+                        color: 'rgba(255,255,255,0.85)',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {proposal.revision_notes}
+                    </p>
+                  </div>
                 ) : (
                   <p className="px-3 pb-2 text-[11px] italic" style={{ color: 'rgba(245,158,11,0.4)' }}>
                     {locale === 'he' ? 'ללא הערות' : 'No notes provided'}

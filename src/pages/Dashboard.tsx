@@ -1052,6 +1052,21 @@ export default function Dashboard() {
                         </div>
                       </div>
 
+                      {/* Revision notes sub-row (list view) */}
+                      {p.status === 'needs_revision' && p.revision_notes && (
+                        <div className="hidden md:block px-4 pb-3 -mt-1" style={{ paddingInlineStart: pipelineTab === 'lost' ? '76px' : '40px' }}>
+                          <div className="rounded-lg px-3 py-2" dir={isHe ? 'rtl' : 'ltr'}
+                            style={{ background: 'rgba(245,158,11,0.06)', borderInlineStart: '3px solid rgba(245,158,11,0.4)' }}>
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#f59e0b' }}>
+                              {isHe ? 'הלקוח ביקש' : 'Client request'}
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {p.revision_notes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Mobile row */}
                       <div className="flex md:hidden items-center gap-3 px-4 py-3.5">
                         <div className="h-2 w-2 rounded-full flex-none" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
@@ -1069,6 +1084,21 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Revision notes — mobile */}
+                      {p.status === 'needs_revision' && p.revision_notes && (
+                        <div className="md:hidden px-4 pb-3 -mt-1">
+                          <div className="rounded-lg px-3 py-2" dir={isHe ? 'rtl' : 'ltr'}
+                            style={{ background: 'rgba(245,158,11,0.06)', borderInlineStart: '3px solid rgba(245,158,11,0.4)' }}>
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#f59e0b' }}>
+                              {isHe ? 'הלקוח ביקש' : 'Client request'}
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {p.revision_notes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   )
                 })}
