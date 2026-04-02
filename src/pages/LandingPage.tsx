@@ -1422,14 +1422,12 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
           {c.tiers.map((tier, i) => {
             const isPro = i === 1
             const isFree = i === 0
-            // Mobile order: Pro(1) → Free(2) → Premium(3); Desktop: Free(1) → Pro(2) → Premium(3)
-            const orderClass = isPro ? 'order-1 md:order-2' : isFree ? 'order-2 md:order-1' : 'order-3'
 
             return (
               <motion.div
                 key={tier.name}
                 variants={itemFade}
-                className={`relative rounded-[22px] ${orderClass}${isPro ? ' md:-top-3' : ''}`}
+                className={`relative rounded-[22px]${isPro ? ' md:-top-3' : ''}`}
                 style={{ position: 'relative' as const }}
               >
                 {/* Pro: aurora glow behind card */}
