@@ -517,8 +517,8 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                 </div>
               )}
 
-              {/* ── Proposal extras: contract + video + access protection */}
-              {(proposal.description || proposal.video_url || proposal.access_code) && (
+              {/* ── Proposal extras: contract + access protection */}
+              {(proposal.description || proposal.access_code) && (
                 <div className="flex flex-wrap gap-2 mb-5">
                   {proposal.description && (
                     <div
@@ -528,17 +528,6 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                       <FileText size={11} style={{ color: '#818cf8', flexShrink: 0 }} />
                       <span className="text-[11px] font-medium" style={{ color: 'rgba(129,140,248,0.85)' }}>
                         {locale === 'he' ? '📄 חוזה התקשרות מצורף' : '📄 Contract included'}
-                      </span>
-                    </div>
-                  )}
-                  {proposal.video_url && (
-                    <div
-                      className="flex items-center gap-1.5 rounded-xl px-3 py-2"
-                      style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}
-                    >
-                      <FileText size={11} style={{ color: '#d4af37', flexShrink: 0 }} />
-                      <span className="text-[11px] font-medium" style={{ color: 'rgba(212,175,55,0.75)' }}>
-                        {locale === 'he' ? 'וידאו פיץ׳ מצורף' : 'Video pitch included'}
                       </span>
                     </div>
                   )}

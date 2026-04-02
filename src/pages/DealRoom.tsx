@@ -267,87 +267,6 @@ const slideUp: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 }
 
-// ─── Video URL parser ─────────────────────────────────────────────────────────
-
-function parseVideoEmbed(url: string): string | null {
-  if (!url) return null
-  // YouTube: watch?v= or youtu.be/ or embed/
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1&color=white`
-  // Vimeo
-  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
-  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?dnt=1`
-  // Loom
-  const loom = url.match(/loom\.com\/share\/([a-zA-Z0-9]+)/)
-  if (loom) return `https://www.loom.com/embed/${loom[1]}`
-  return null
-}
-
-// ─── Cinematic video player ───────────────────────────────────────────────────
-
-function CinematicVideoPlayer({
-  videoUrl,
-  brandColor,
-  locale,
-}: {
-  videoUrl: string
-  brandColor: string
-  locale: string
-}) {
-  const embedUrl = parseVideoEmbed(videoUrl)
-  if (!embedUrl) return null
-  const isHe = locale === 'he'
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 28, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.6, ease: 'easeOut' as const }}
-      className="mb-8"
-    >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3 flex items-center gap-2">
-        <span
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px]"
-          style={{ background: `${brandColor}22`, color: brandColor }}
-        >
-          ▶
-        </span>
-        {isHe ? 'מצגת הפרויקט' : 'Project Pitch'}
-      </p>
-
-      <div className="relative">
-        {/* Ambient glow layer */}
-        <div
-          className="pointer-events-none absolute -inset-3 -z-10 rounded-3xl"
-          style={{
-            background: `radial-gradient(ellipse at center, ${brandColor}18 0%, transparent 68%)`,
-            filter: 'blur(24px)',
-          }}
-        />
-
-        {/* Player wrapper */}
-        <div
-          className="relative w-full overflow-hidden rounded-2xl"
-          style={{
-            aspectRatio: '16 / 9',
-            border: `1px solid ${brandColor}30`,
-            boxShadow: `0 0 0 1px ${brandColor}15, 0 32px 80px rgba(0,0,0,0.75), 0 0 48px ${brandColor}12`,
-          }}
-        >
-          <iframe
-            src={embedUrl}
-            title={isHe ? 'מצגת הפרויקט' : 'Project pitch video'}
-            className="absolute inset-0 h-full w-full"
-            allow="autoplay; fullscreen; picture-in-picture"
-            allowFullScreen
-            style={{ border: 'none' }}
-          />
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 // ─── Social proof block ───────────────────────────────────────────────────────
 
 function SocialProofBlock({
@@ -576,6 +495,7 @@ export default function DealRoom() {
   }, [accepted]) // eslint-disable-line react-hooks/exhaustive-deps
   const [clientDetails, setClientDetails] = useState<ClientCapturedDetails | null>(null)
   const [legalConsent, setLegalConsent] = useState(false)
+  const [businessTermsConsent, setBusinessTermsConsent] = useState(false)
   const [legalModalOpen, setLegalModalOpen] = useState(false)
 
   // Time tracking
@@ -1405,15 +1325,6 @@ export default function DealRoom() {
           )}
         </motion.div>
 
-        {/* ── Cinematic video player ────────────────────────────────────── */}
-        {proposal.video_url && (
-          <CinematicVideoPlayer
-            videoUrl={proposal.video_url}
-            brandColor={brandColor}
-            locale={locale}
-          />
-        )}
-
         {/* ── Social proof block ────────────────────────────────────────── */}
         {(proposal.testimonials ?? []).length > 0 && (
           <SocialProofBlock
@@ -1833,6 +1744,31 @@ export default function DealRoom() {
           </motion.div>
         )}
 
+        {/* ── Business Terms display — shown above checkout when terms exist ── */}
+        {!!(proposal.business_terms?.trim()) && !accepted && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="mt-6 rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            <div className="px-5 pt-4 pb-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+                {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
+              </p>
+            </div>
+            <div
+              className="px-5 pb-5 text-[13px] leading-relaxed text-white/55 prose-sm prose-invert max-w-none"
+              style={{ direction: locale === 'he' ? 'rtl' : 'ltr' }}
+              dangerouslySetInnerHTML={{ __html: proposal.business_terms }}
+            />
+          </motion.div>
+        )}
+
         {/* Spacer — smaller when sticky bar is absent (accepted non-fresh) */}
         <div className={accepted && !freshSignedRef.current ? 'h-10' : 'h-44'} />
       </div>
@@ -1918,6 +1854,9 @@ export default function DealRoom() {
                 vatRate={vatRate}
                 legalConsent={legalConsent}
                 onLegalConsentChange={setLegalConsent}
+                businessTerms={proposal.business_terms ?? ''}
+                businessTermsConsent={businessTermsConsent}
+                onBusinessTermsConsentChange={setBusinessTermsConsent}
                 onRequestRevision={handleRequestRevision}
                 revisionSent={revisionSent}
                 originalTotal={originalGrandTotal}

@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2 } from 'lucide-react'
+import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { InfoTip } from '../components/ui/InfoTip'
+import { RichTextEditor } from '../components/builder/RichTextEditor'
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
@@ -332,6 +333,21 @@ export default function Profile() {
     setTimeout(() => setVatSaved(false), 2500)
   }
 
+  // ── Business Terms ────────────────────────────────────────────────────────
+  const [businessTerms, setBusinessTerms] = useState<string>(
+    (user?.user_metadata?.business_terms as string | undefined) ?? ''
+  )
+  const [termsSaving, setTermsSaving] = useState(false)
+  const [termsSaved, setTermsSaved] = useState(false)
+
+  const handleSaveTerms = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setTermsSaving(true)
+    const { error } = await supabase.auth.updateUser({ data: { business_terms: businessTerms } })
+    setTermsSaving(false)
+    if (!error) { setTermsSaved(true); setTimeout(() => setTermsSaved(false), 2500) }
+  }
+
   // ── Password form ─────────────────────────────────────────────────────────
   const [currentPw, setCurrentPw] = useState('')
   const [newPw, setNewPw] = useState('')
@@ -370,6 +386,7 @@ export default function Profile() {
     // logo_url must also sync — useState initializes once on mount; if user loads after
     // initial render (common on page refresh) the logo would show blank without this.
     setLogoUrl((user.user_metadata?.logo_url as string | undefined) ?? '')
+    setBusinessTerms((user.user_metadata?.business_terms as string | undefined) ?? '')
   }, [user])
 
   if (!user) return null
@@ -614,6 +631,33 @@ export default function Profile() {
                 />
               </div>
             </div>
+          </Card>
+        </motion.div>
+
+        {/* ── Business Terms & Conditions ────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card
+            title={isHe ? 'תקנון העסק / תנאים והתניות' : 'Business Terms & Conditions'}
+            icon={<FileText size={16} />}
+          >
+            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
+              {isHe
+                ? 'הגדר פעם אחת — יוקפאו אוטומטית בכל הצעה חדשה. הלקוח יראה ויצטרך להסכים לפני החתימה.'
+                : 'Define once — automatically frozen into every new proposal. Clients must agree before signing.'}
+            </p>
+            <form onSubmit={handleSaveTerms} className="space-y-4">
+              <RichTextEditor
+                value={businessTerms}
+                onChange={setBusinessTerms}
+                placeholder={isHe
+                  ? 'תנאי תשלום, זכויות יוצרים, אחריות, ביטולים...'
+                  : 'Payment terms, IP ownership, liability, cancellation policy...'}
+                locale={locale}
+              />
+              <div className="flex justify-end pt-1">
+                <SaveButton loading={termsSaving} saved={termsSaved} label={isHe ? 'שמור תנאים' : 'Save Terms'} />
+              </div>
+            </form>
           </Card>
         </motion.div>
 

@@ -456,6 +456,7 @@ function ProposalDocument(opts: PdfOptions) {
   const timeStr      = fmtTime(sigTs)
   const createdStr   = fmtDate(proposal.created_at)
   const descBlocks   = proposal.description ? parseHtml(proposal.description) : []
+  const termsBlocks  = proposal.business_terms?.trim() ? parseHtml(proposal.business_terms) : []
 
   // ── Iron Grid row helpers ─────────────────────────────────────────────────────
   // Each row: label in a fixed right-aligned View, value in a fixed left-aligned View.
@@ -893,6 +894,17 @@ function ProposalDocument(opts: PdfOptions) {
             </>
           )}
         </View>
+
+        {/* ── Business Terms & Conditions (from creator's Profile) ── */}
+        {termsBlocks.length > 0 && (
+          <>
+            <View style={s.sectionDivider} />
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>{isHe ? 'תנאים והתניות של העסק' : 'BUSINESS TERMS & CONDITIONS'}</Text>
+              <HtmlBlocks blocks={termsBlocks} s={s} />
+            </View>
+          </>
+        )}
 
         <View style={s.pageFooter} fixed>
           <Text style={s.pageFooterBrand}>DealSpace</Text>

@@ -62,6 +62,12 @@ interface CheckoutClimaxProps {
   isDocumentOnly?: boolean
   /** Hide the grand total row (menu-style proposals) */
   hideGrandTotal?: boolean
+  /** Rich-text HTML business terms from creator's Profile — if non-empty, requires separate consent */
+  businessTerms?: string
+  /** Whether client has consented to the business terms */
+  businessTermsConsent?: boolean
+  /** Callback to update business terms consent */
+  onBusinessTermsConsentChange?: (v: boolean) => void
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -90,10 +96,12 @@ export function CheckoutClimax({
   financials, resolvedAddOns, globalDiscountPct = 0, basePrice = 0,
   clientDetailsConfirmed = false, onScrollToDetails, onOpenLegalTerms,
   isDocumentOnly = false, hideGrandTotal = false,
+  businessTerms = '', businessTermsConsent = false, onBusinessTermsConsentChange,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
-  const canSign = clientDetailsConfirmed && signatureConfirmed && legalConsent
+  const businessTermsRequired = !!(businessTerms?.trim())
+  const canSign = clientDetailsConfirmed && signatureConfirmed && legalConsent && (!businessTermsRequired || businessTermsConsent)
 
   // Revision request state
   const [revisionOpen, setRevisionOpen] = useState(false)
@@ -590,6 +598,55 @@ export function CheckoutClimax({
                               .
                             </>
                           )}
+                        </p>
+                      </motion.label>
+                    )}
+                  </AnimatePresence>
+
+                  {/* ── Business Terms consent (shown after signature drawn, only when terms exist) ── */}
+                  <AnimatePresence>
+                    {signatureConfirmed && businessTermsRequired && (
+                      <motion.label
+                        key="business-terms-consent"
+                        htmlFor="business-terms-consent"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-start gap-3 cursor-pointer mb-3 rounded-xl px-3 py-2.5"
+                        style={{
+                          background: businessTermsConsent ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.025)',
+                          border: businessTermsConsent ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                          transition: 'background 0.2s, border-color 0.2s',
+                        }}
+                      >
+                        <div className="flex-none mt-0.5">
+                          <input
+                            id="business-terms-consent"
+                            type="checkbox"
+                            checked={businessTermsConsent}
+                            onChange={e => onBusinessTermsConsentChange?.(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div
+                            className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
+                            style={{
+                              background: businessTermsConsent ? '#6366f1' : 'rgba(255,255,255,0.05)',
+                              borderColor: businessTermsConsent ? '#6366f1' : 'rgba(255,255,255,0.15)',
+                              boxShadow: businessTermsConsent ? '0 0 8px rgba(99,102,241,0.4)' : 'none',
+                            }}
+                          >
+                            {businessTermsConsent && (
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[11px] leading-relaxed" style={{ color: businessTermsConsent ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
+                          {isHe
+                            ? 'קראתי והסכמתי לתנאים והתניות של העסק המפורטים לעיל.'
+                            : 'I have read and agree to the business terms and conditions listed above.'}
                         </p>
                       </motion.label>
                     )}

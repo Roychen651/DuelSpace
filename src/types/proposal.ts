@@ -76,8 +76,8 @@ export interface Proposal {
   section_time?: Record<string, number> | null
   /** Client's revision request — set by request_proposal_revision RPC */
   revision_notes?: string | null
-  /** Optional video pitch URL (YouTube, Vimeo, or Loom) */
-  video_url?: string | null
+  /** Rich-text HTML business terms frozen into the proposal from creator's Profile (Sprint 44.9) */
+  business_terms?: string | null
   /** Social proof testimonials shown in the Deal Room before pricing */
   testimonials?: Testimonial[] | null
   /** Global discount applied to the subtotal, after per-item discounts (0–100) */

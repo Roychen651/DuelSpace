@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, FileText, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock } from 'lucide-react'
+import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore, useBillingStatus } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
@@ -270,9 +270,6 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     </button>
                     <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Bookmark size={13} className="flex-none" />{isHe ? 'שירותים שמורים' : 'Saved Services'}
-                    </button>
-                    <button onClick={() => navigate('/contracts')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
-                      <FileText size={13} className="flex-none" />{isHe ? 'ספריית חוזים' : 'Contracts'}
                     </button>
                     <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}

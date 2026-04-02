@@ -3,8 +3,8 @@ import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, Minus, GripVertical, Trash2, ToggleLeft, ToggleRight,
-  ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
-  Film, Quote, MessageSquarePlus, Percent, Tag, Library, Settings2,
+  ChevronDown, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
+  Quote, MessageSquarePlus, Percent, Tag, Library, Settings2,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
@@ -15,10 +15,6 @@ import { PremiumDatePicker, PremiumSlider } from '../ui/PremiumInputs'
 import { ReusableServices } from './ReusableServices'
 import { AIGhostwriter } from './AIGhostwriter'
 import { RichTextEditor } from './RichTextEditor'
-import {
-  CONTRACT_TEMPLATES, CATEGORY_LABELS, interpolateTemplate,
-  type ContractTemplate,
-} from '../../lib/contractTemplates'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID } from '../../lib/successTemplates'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -358,168 +354,6 @@ function AddOnRow({
   )
 }
 
-// ─── Contract Template Picker ─────────────────────────────────────────────────
-
-function ContractTemplatePicker({
-  locale,
-  onSelect,
-}: {
-  locale: string
-  onSelect: (body: string) => void
-}) {
-  const isHe = locale === 'he'
-  const [open, setOpen] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<ContractTemplate['category'] | 'all'>('all')
-  const [activeTemplate, setActiveTemplate] = useState<ContractTemplate | null>(null)
-  const [vars, setVars] = useState<Record<string, string>>({})
-
-  const categories = Array.from(new Set(CONTRACT_TEMPLATES.map(t => t.category)))
-  const filtered = activeCategory === 'all'
-    ? CONTRACT_TEMPLATES
-    : CONTRACT_TEMPLATES.filter(t => t.category === activeCategory)
-
-  const handleSelectTemplate = (tmpl: ContractTemplate) => {
-    setActiveTemplate(tmpl)
-    const defaults: Record<string, string> = {}
-    tmpl.variables.forEach(v => { defaults[v.key] = v.defaultValue ?? '' })
-    setVars(defaults)
-  }
-
-  const handleInsert = () => {
-    if (!activeTemplate) return
-    const body = interpolateTemplate(activeTemplate.bodyHe, vars)
-    onSelect(body)
-    setOpen(false)
-    setActiveTemplate(null)
-    setVars({})
-  }
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all"
-        style={{
-          background: open ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.05)',
-          border: '1px solid rgba(99,102,241,0.25)',
-          color: '#818cf8',
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <FileCheck size={13} />
-          {isHe ? 'בחר תבנית חוזה מקצועי' : 'Attach Contract Template'}
-        </div>
-        <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div
-              className="mt-2 rounded-2xl p-4 space-y-3"
-              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              {!activeTemplate ? (
-                <>
-                  {/* Category tabs */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setActiveCategory('all')}
-                      className="rounded-lg px-2.5 py-1 text-[10px] font-bold transition"
-                      style={{
-                        background: activeCategory === 'all' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-                        color: activeCategory === 'all' ? '#818cf8' : 'rgba(255,255,255,0.35)',
-                      }}
-                    >
-                      {isHe ? 'הכל' : 'All'}
-                    </button>
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setActiveCategory(cat)}
-                        className="rounded-lg px-2.5 py-1 text-[10px] font-bold transition"
-                        style={{
-                          background: activeCategory === cat ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-                          color: activeCategory === cat ? '#818cf8' : 'rgba(255,255,255,0.35)',
-                        }}
-                      >
-                        {isHe ? CATEGORY_LABELS[cat].he : CATEGORY_LABELS[cat].en}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Template list */}
-                  <div className="space-y-1.5 max-h-52 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}>
-                    {filtered.map(tmpl => (
-                      <button
-                        key={tmpl.id}
-                        type="button"
-                        onClick={() => handleSelectTemplate(tmpl)}
-                        className="flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2.5 text-start transition"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.3)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
-                      >
-                        <span className="text-xs font-semibold text-white/80">{tmpl.titleHe}</span>
-                        <span className="text-[10px] text-white/35">{tmpl.descHe}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                /* Variable fill form */
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white/70">{activeTemplate.titleHe}</span>
-                    <button type="button" onClick={() => setActiveTemplate(null)} className="text-[10px] text-white/30 hover:text-white/60">
-                      {isHe ? '← חזור' : '← Back'}
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 max-h-44 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                    {activeTemplate.variables.map(v => (
-                      <div key={v.key} className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-white/35">
-                          {isHe ? v.labelHe : v.labelEn}
-                        </label>
-                        <input
-                          className={inputClass + ' text-sm'}
-                          placeholder={v.defaultValue ?? ''}
-                          value={vars[v.key] ?? ''}
-                          onChange={e => setVars(prev => ({ ...prev, [v.key]: e.target.value }))}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleInsert}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white transition"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-                  >
-                    <FileCheck size={12} />
-                    {isHe ? 'הוסף חוזה להצעה' : 'Add Contract to Proposal'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
 // ─── Main EditorPanel ─────────────────────────────────────────────────────────
 
 export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinanciallyLocked = false, needsRevision = false, revisionNotes }: EditorPanelProps) {
@@ -570,7 +404,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
       webhook_url:    m['webhook_url']    ?? '',
     }
     const brandColor = m['brand_color'] ?? null
-    onChange({ creator_info: info, brand_color: brandColor })
+    onChange({ creator_info: info, brand_color: brandColor, business_terms: m['business_terms'] ?? '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -993,29 +827,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           />
         </Field>
 
-        {/* Video pitch URL */}
-        <Field
-          label={isHe ? 'וידאו פיץ׳ (YouTube / Vimeo / Loom)' : 'Video Pitch (YouTube / Vimeo / Loom)'}
-        >
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-              <Film size={14} className="text-slate-400 dark:text-white/30" />
-            </div>
-            <input
-              className={inputClass + ' ps-10'}
-              type="url"
-              placeholder="https://youtu.be/..."
-              value={draft.video_url ?? ''}
-              onChange={e => onChange({ video_url: e.target.value || null })}
-            />
-          </div>
-          <p className="text-[12px] text-slate-500 dark:text-zinc-500 mt-2 leading-relaxed">
-            {isHe
-              ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
-              : 'Displayed cinematically to the client before pricing'}
-          </p>
-        </Field>
-
         {/* Testimonials */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -1122,46 +933,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           minDate={new Date()}
         />
 
-        {/* Contract template + clear button — locked when sent/viewed (unlocked on needs_revision) */}
-        <div className="flex items-start gap-2" style={{ opacity: isFinanciallyLocked && !needsRevision ? 0.5 : 1 }}>
-          <div className="flex-1" style={{ pointerEvents: isFinanciallyLocked && !needsRevision ? 'none' : 'auto' }}>
-            <ContractTemplatePicker
-              locale={locale}
-              onSelect={body => {
-                const existing = draft.description ?? ''
-                onChange({ description: existing ? `${existing}\n\n---\n${body}` : body })
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            disabled={isFinanciallyLocked && !needsRevision}
-            onClick={() => {
-              if (isFinanciallyLocked && !needsRevision) return
-              const msg = isHe ? 'האם למחוק את טקסט החוזה?' : 'Clear contract text?'
-              if (window.confirm(msg)) onChange({ description: '' })
-            }}
-            title={isHe ? (isFinanciallyLocked && !needsRevision ? 'נעול לאחר שליחה' : 'מחק תוכן') : (isFinanciallyLocked && !needsRevision ? 'Locked after sending' : 'Clear content')}
-            className="flex h-[42px] w-10 flex-none items-center justify-center rounded-xl transition-colors"
-            style={{
-              background: 'rgba(239,68,68,0.06)',
-              border: '1px solid rgba(239,68,68,0.18)',
-              color: 'rgba(239,68,68,0.5)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(239,68,68,0.12)'
-              e.currentTarget.style.color = 'rgba(239,68,68,0.85)'
-              e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(239,68,68,0.06)'
-              e.currentTarget.style.color = 'rgba(239,68,68,0.5)'
-              e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)'
-            }}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
       </Section>
 
       {/* ── Pricing (hidden in document-only mode) ──────────────────────── */}

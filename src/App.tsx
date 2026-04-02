@@ -19,7 +19,6 @@ import Legal from './pages/Legal'
 import TermsOfService from './pages/TermsOfService'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import AccessibilityStatement from './pages/AccessibilityStatement'
-import ContractLibrary from './pages/ContractLibrary'
 import ServicesLibrary from './pages/ServicesLibrary'
 import Integrations from './pages/Integrations'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -78,7 +77,6 @@ function AnimatedRoutes() {
             {/* Protected — with shared Navbar via ProtectedLayout */}
             <Route path="/dashboard" element={<ProtectedRoute><ProtectedLayout><Dashboard /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProtectedLayout><Profile /></ProtectedLayout></ProtectedRoute>} />
-            <Route path="/contracts" element={<ProtectedRoute><ProtectedLayout><ContractLibrary /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/services" element={<ProtectedRoute><ProtectedLayout><ServicesLibrary /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/integrations" element={<ProtectedRoute><ProtectedLayout><Integrations /></ProtectedLayout></ProtectedRoute>} />
 
