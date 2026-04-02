@@ -1290,68 +1290,60 @@ const AVATAR_GLOWS = [
   'rgba(34,197,94,0.4)',
 ]
 
-// Pure CSS transition card — no Framer Motion wrapper (prevents blank flash in marquee)
 function TestimonialCard({ t, i }: { t: { name: string; role: string; text: string; stars: number }; i: number }) {
   const idx = i % AVATAR_GRADS.length
   return (
     <div
-      className="relative rounded-3xl overflow-hidden flex-none"
+      className="relative rounded-2xl overflow-hidden w-full"
       style={{
-        width: 310,
-        padding: '22px 24px 20px',
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.02) 100%)',
+        padding: '20px',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)',
         border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.35)',
-        transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.3)',
+        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease',
         cursor: 'default',
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.025)'
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 56px rgba(0,0,0,0.5), 0 0 40px ${AVATAR_GLOWS[idx]}`
+        const el = e.currentTarget as HTMLDivElement
+        el.style.transform = 'translateY(-4px)'
+        el.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.1), 0 16px 48px rgba(0,0,0,0.45), 0 0 32px ${AVATAR_GLOWS[idx]}`
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.transform = ''
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.35)'
+        const el = e.currentTarget as HTMLDivElement
+        el.style.transform = ''
+        el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 24px rgba(0,0,0,0.3)'
       }}
     >
+      {/* Colored glow orb — top corner */}
+      <div className="pointer-events-none absolute -top-4 -end-4 h-20 w-20 rounded-full" style={{ background: `radial-gradient(circle, ${AVATAR_GLOWS[idx]} 0%, transparent 70%)`, filter: 'blur(14px)' }} />
       {/* Top shimmer line */}
-      <div className="pointer-events-none absolute top-0 left-8 right-8 h-px" style={{ background: `linear-gradient(90deg, transparent, ${AVATAR_GLOWS[idx].replace('0.45', '0.5').replace('0.4', '0.5')}, transparent)` }} />
-      {/* Glow orb — top-right corner */}
-      <div className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full" style={{ background: `radial-gradient(circle, ${AVATAR_GLOWS[idx]} 0%, transparent 70%)`, filter: 'blur(18px)' }} />
+      <div className="pointer-events-none absolute top-0 inset-x-8 h-px" style={{ background: `linear-gradient(90deg, transparent, ${AVATAR_GLOWS[idx]}, transparent)` }} />
 
-      {/* Big decorative quote mark */}
-      <div
-        className="absolute top-3 end-5 select-none pointer-events-none leading-none"
-        style={{ fontSize: 80, fontWeight: 900, color: 'rgba(99,102,241,0.1)', fontFamily: 'var(--font-accent)', lineHeight: 1 }}
-        aria-hidden
-      >"</div>
-
-      {/* Stars */}
-      <div className="flex gap-0.5 mb-3 relative z-10">
-        {Array.from({ length: t.stars }).map((_, s) => (
-          <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37', filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.6))' }} />
-        ))}
-      </div>
-
-      {/* Quote text */}
-      <p className="relative z-10 text-[12.5px] text-white/65 leading-relaxed mb-5" style={{ minHeight: 60 }}>"{t.text}"</p>
-
-      {/* Author row */}
-      <div className="flex items-center gap-3 mt-auto relative z-10">
+      {/* Author row at top */}
+      <div className="flex items-center gap-3 mb-3 relative z-10">
         <div
-          className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-none"
+          className="h-10 w-10 rounded-full flex items-center justify-center text-[14px] font-black text-white flex-none"
           style={{
             background: AVATAR_GRADS[idx],
-            boxShadow: `0 0 0 2px rgba(255,255,255,0.1), 0 0 14px ${AVATAR_GLOWS[idx]}`,
+            boxShadow: `0 0 0 2px rgba(255,255,255,0.12), 0 0 16px ${AVATAR_GLOWS[idx]}`,
           }}
         >
           {t.name[0]}
         </div>
-        <div>
-          <p className="text-[12px] font-bold text-white/90 leading-tight">{t.name}</p>
-          <p className="text-[10px] text-white/38 leading-tight mt-0.5">{t.role}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-white leading-tight">{t.name}</p>
+          <p className="text-[11px] text-white/40 leading-tight mt-0.5 truncate">{t.role}</p>
+        </div>
+        {/* Stars */}
+        <div className="flex gap-px flex-none">
+          {Array.from({ length: t.stars }).map((_, s) => (
+            <Star key={s} size={11} fill="#d4af37" style={{ color: '#d4af37', filter: 'drop-shadow(0 0 3px rgba(212,175,55,0.7))' }} />
+          ))}
         </div>
       </div>
+
+      {/* Quote text */}
+      <p className="relative z-10 text-[13px] text-white/68 leading-relaxed" dir="auto">"{t.text}"</p>
     </div>
   )
 }
@@ -1365,11 +1357,8 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
 
       <div className="max-w-5xl mx-auto">
-        {/* Heading */}
-        <motion.div
-          className="text-center mb-12"
-          variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}
-        >
+        {/* Heading — always visible, no animation (cards below stagger in) */}
+        <div className="text-center mb-10">
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {c.socialsLabel}
           </p>
@@ -1379,12 +1368,12 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
             ))}
           </div>
           <p className="text-white/35 text-[12px] mt-1">4.9 / 5 &nbsp;·&nbsp; 500+ {c.socialsLabel.includes('משתמש') ? 'עצמאיים ואנשי מכירות' : 'freelancers & agencies'}</p>
-        </motion.div>
+        </div>
 
-        {/* Static masonry grid — always visible, no blank states */}
+        {/* Masonry grid — stagger-in on scroll */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
+          variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }}
         >
           {c.testimonials.map((t, i) => (
             <motion.div key={i} variants={itemFade}>
@@ -1409,7 +1398,6 @@ const TIER_ACCENT = ['#818cf8', '#c084fc', '#d4af37']
 function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void }) {
   return (
     <section className="relative py-10 sm:py-28 px-4 sm:px-6 overflow-hidden">
-      {/* Deep aurora behind Pro card */}
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 60% 50%, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)' }} />
 
@@ -1417,7 +1405,7 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
         {/* Heading */}
         <motion.div
           className="text-center mb-10 sm:mb-14"
-          variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}
+          variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
         >
           <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
             {c.pricingLabel}
@@ -1426,157 +1414,169 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
           <p className="text-white/40 text-[13px] sm:text-[14px]">{c.pricingSub}</p>
         </motion.div>
 
-        {/* Cards grid */}
+        {/* Cards — Pro first on mobile (order CSS), standard order on desktop */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 items-start"
           variants={container} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
         >
           {c.tiers.map((tier, i) => {
             const isPro = i === 1
+            const isFree = i === 0
+            // Mobile order: Pro(1) → Free(2) → Premium(3); Desktop: Free(1) → Pro(2) → Premium(3)
+            const orderClass = isPro ? 'order-1 md:order-2' : isFree ? 'order-2 md:order-1' : 'order-3'
+
             return (
               <motion.div
                 key={tier.name}
                 variants={itemFade}
-                className={`relative rounded-3xl${isPro ? ' md:-top-3' : ''}`}
+                className={`relative rounded-[22px] ${orderClass}${isPro ? ' md:-top-3' : ''}`}
                 style={{ position: 'relative' as const }}
               >
-                {/* Pro: expanded aurora glow (bleeds outside card) */}
+                {/* Pro: aurora glow behind card */}
                 {isPro && (
                   <div
-                    className="pointer-events-none absolute -inset-8 rounded-[2rem]"
-                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.4) 0%, rgba(99,102,241,0.22) 40%, transparent 70%)', filter: 'blur(36px)' }}
+                    className="pointer-events-none absolute -inset-6 rounded-[2rem]"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.38) 0%, rgba(99,102,241,0.2) 45%, transparent 70%)', filter: 'blur(32px)' }}
                   />
                 )}
 
-                {/* Spinning conic border wrapper — active for Pro only */}
-                <div style={{
-                  position: 'relative',
-                  padding: isPro ? '1.5px' : '0',
-                  borderRadius: '25px',
-                  overflow: 'hidden',
-                  zIndex: 1,
-                }}>
+                {/* Spinning conic border wrapper — Pro only */}
+                <div style={{ position: 'relative', padding: isPro ? '1.5px' : '0', borderRadius: '22px', overflow: 'hidden', zIndex: 1 }}>
                   {isPro && (
-                    <div style={{
-                      position: 'absolute',
-                      inset: '-80%',
-                      background: 'conic-gradient(from 0deg, #6366f1, #a855f7, #ec4899, #6366f1)',
-                      animation: 'lp-spin-border 4s linear infinite',
-                    }} />
+                    <div style={{ position: 'absolute', inset: '-80%', background: 'conic-gradient(from 0deg, #6366f1, #a855f7, #ec4899, #6366f1)', animation: 'lp-spin-border 4s linear infinite' }} />
                   )}
 
-                <Tilt3D
-                  className="relative rounded-3xl p-4 sm:p-6 h-full flex flex-col"
-                  style={{
-                    background: isPro
-                      ? 'linear-gradient(160deg, rgba(18,8,38,0.97) 0%, rgba(12,5,26,0.98) 100%)'
-                      : 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                    border: isPro ? 'none' : `1px solid ${TIER_BORDER[i]}`,
-                    boxShadow: isPro
-                      ? '0 0 60px rgba(168,85,247,0.22), inset 0 1px 0 rgba(255,255,255,0.1)'
-                      : 'inset 0 1px 0 rgba(255,255,255,0.06)',
-                    position: 'relative' as const,
-                    zIndex: 1,
-                  }}
-                >
-                  {/* Top highlight line */}
-                  <div className="pointer-events-none absolute top-0 inset-x-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}55, transparent)` }} />
+                  {/* Card body — plain div, no Tilt3D (Tilt3D + child whileHover causes flicker) */}
+                  <div
+                    className="relative rounded-[21px] p-5 sm:p-6 h-full flex flex-col"
+                    style={{
+                      background: isPro
+                        ? 'linear-gradient(150deg, rgba(30,12,55,0.98) 0%, rgba(14,6,30,0.99) 100%)'
+                        : 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)',
+                      border: isPro ? 'none' : `1px solid ${TIER_BORDER[i]}`,
+                      boxShadow: isPro
+                        ? '0 0 50px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.08)'
+                        : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    {/* Top accent line */}
+                    <div className="pointer-events-none absolute top-0 inset-x-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}60, transparent)` }} />
 
-                  {/* Popular badge */}
-                  {isPro && (
-                    <div className="flex justify-center mb-4">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black"
-                        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.2))', border: '1px solid rgba(168,85,247,0.45)', color: '#e9d5ff', boxShadow: '0 0 18px rgba(168,85,247,0.3)' }}
-                      >
-                        <Star size={9} fill="#c084fc" style={{ color: '#c084fc' }} />
-                        {c.pricingPopular}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Tier name + price */}
-                  <div className="mb-4 sm:mb-5">
-                    <p className="text-[12px] font-black uppercase tracking-[0.18em] mb-2" style={{ color: TIER_ACCENT[i] }}>{tier.name}</p>
-                    <div className="flex items-end gap-1 mb-1" dir="ltr">
-                      <span className={`${isPro ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-black text-white tracking-tight`}>{tier.price}</span>
-                      <span className="text-[12px] text-white/35 mb-1">{tier.period}</span>
-                    </div>
-                    <p className="text-[11px] sm:text-[12px] text-white/40">{tier.sub}</p>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-px mb-4 sm:mb-5" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}30, transparent)` }} />
-
-                  {/* Features */}
-                  <ul className="space-y-2.5 sm:space-y-3 flex-1 mb-5 sm:mb-6">
-                    {tier.features.map((f) => (
-                      <li key={f.text} className="flex items-start gap-2">
-                        <div
-                          className="mt-0.5 flex-none h-4 w-4 sm:h-5 sm:w-5 rounded-full flex items-center justify-center"
-                          style={{
-                            background: f.ok ? `${TIER_ACCENT[i]}22` : 'rgba(255,255,255,0.04)',
-                            border: `1px solid ${f.ok ? `${TIER_ACCENT[i]}44` : 'rgba(255,255,255,0.08)'}`,
-                          }}
+                    {/* Popular badge */}
+                    {isPro && (
+                      <div className="flex justify-center mb-4">
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black"
+                          style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(99,102,241,0.22))', border: '1px solid rgba(168,85,247,0.5)', color: '#e9d5ff', boxShadow: '0 0 20px rgba(168,85,247,0.35)' }}
                         >
-                          {f.ok
-                            ? <Check size={9} style={{ color: TIER_ACCENT[i] }} />
-                            : <X size={9} style={{ color: 'rgba(255,255,255,0.2)' }} />
-                          }
-                        </div>
-                        <span className="text-[11px] sm:text-[12px] leading-snug" style={{ color: f.ok ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)' }}>{f.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+                          <Star size={9} fill="#c084fc" style={{ color: '#c084fc' }} />
+                          {c.pricingPopular}
+                        </span>
+                      </div>
+                    )}
 
-                  {/* CTA button */}
-                  {isPro ? (
-                    <motion.button
-                      onClick={onCta}
-                      className="relative w-full py-2.5 sm:py-3 rounded-xl text-[13px] font-bold text-white overflow-hidden"
-                      style={{
-                        background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #a855f7 100%)',
-                        boxShadow: '0 2px 20px rgba(99,102,241,0.3)',
-                      }}
-                      whileHover={{
-                        scale: 1.025,
-                        boxShadow: '0 6px 36px rgba(99,102,241,0.55), 0 0 0 1px rgba(168,85,247,0.35)',
-                        transition: { duration: 0.18 },
-                      }}
-                      whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
-                    >
-                      {c.pricingCta} →
-                    </motion.button>
-                  ) : i === 0 ? (
-                    <motion.button
-                      onClick={onCta}
-                      className="w-full py-2.5 sm:py-3 rounded-xl text-[13px] font-bold"
-                      style={{ border: '1px solid rgba(99,102,241,0.28)', color: '#a5b4fc', background: 'transparent' }}
-                      whileHover={{
-                        scale: 1.025,
-                        boxShadow: '0 4px 24px rgba(99,102,241,0.2)',
-                        transition: { duration: 0.18 },
-                      }}
-                      whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
-                    >
-                      {c.pricingFreeCta}
-                    </motion.button>
-                  ) : (
-                    <motion.button
-                      onClick={onCta}
-                      className="w-full py-2.5 sm:py-3 rounded-xl text-[13px] font-bold"
-                      style={{ border: '1px solid rgba(212,175,55,0.28)', color: '#d4af37', background: 'transparent' }}
-                      whileHover={{
-                        scale: 1.025,
-                        boxShadow: '0 4px 24px rgba(212,175,55,0.18)',
-                        transition: { duration: 0.18 },
-                      }}
-                      whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
-                    >
-                      {c.pricingCta} →
-                    </motion.button>
-                  )}
-                </Tilt3D>
+                    {/* Tier name + price */}
+                    <div className="mb-4">
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: TIER_ACCENT[i] }}>{tier.name}</p>
+                      <div className="flex items-end gap-1 mb-1" dir="ltr">
+                        <span className={`${isPro ? 'text-[44px] sm:text-[52px]' : 'text-[32px] sm:text-[40px]'} font-black text-white leading-none tracking-tight`}>{tier.price}</span>
+                        <span className="text-[12px] text-white/35 pb-1">{tier.period}</span>
+                      </div>
+                      <p className="text-[11px] text-white/38">{tier.sub}</p>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}28, transparent)` }} />
+
+                    {/* Features */}
+                    <ul className="space-y-2.5 flex-1 mb-5">
+                      {tier.features.map((f) => (
+                        <li key={f.text} className="flex items-center gap-2.5">
+                          <div
+                            className="flex-none h-4 w-4 rounded-full flex items-center justify-center"
+                            style={{
+                              background: f.ok ? `${TIER_ACCENT[i]}20` : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${f.ok ? `${TIER_ACCENT[i]}40` : 'rgba(255,255,255,0.07)'}`,
+                            }}
+                          >
+                            {f.ok
+                              ? <Check size={9} style={{ color: TIER_ACCENT[i] }} />
+                              : <X size={9} style={{ color: 'rgba(255,255,255,0.18)' }} />
+                            }
+                          </div>
+                          <span className="text-[12px] leading-snug" style={{ color: f.ok ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.22)' }}>{f.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA — CSS hover only, whileTap for press (no whileHover = no flicker) */}
+                    {isPro ? (
+                      <motion.button
+                        onClick={onCta}
+                        className="w-full py-3 rounded-xl text-[13px] font-bold text-white"
+                        style={{
+                          background: 'linear-gradient(135deg, #5b5de8 0%, #7b35e8 50%, #9f40e8 100%)',
+                          boxShadow: '0 2px 18px rgba(99,102,241,0.28)',
+                          transition: 'box-shadow 0.2s ease, transform 0.15s ease',
+                        }}
+                        onMouseEnter={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.boxShadow = '0 4px 32px rgba(99,102,241,0.52), 0 0 0 1px rgba(168,85,247,0.4)'
+                          el.style.transform = 'translateY(-1px)'
+                        }}
+                        onMouseLeave={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.boxShadow = '0 2px 18px rgba(99,102,241,0.28)'
+                          el.style.transform = ''
+                        }}
+                        whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
+                      >
+                        {c.pricingCta} →
+                      </motion.button>
+                    ) : isFree ? (
+                      <motion.button
+                        onClick={onCta}
+                        className="w-full py-2.5 rounded-xl text-[13px] font-semibold"
+                        style={{ border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(165,180,252,0.8)', background: 'transparent', transition: 'border-color 0.2s, color 0.2s, box-shadow 0.2s' }}
+                        onMouseEnter={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.borderColor = 'rgba(99,102,241,0.5)'
+                          el.style.color = '#a5b4fc'
+                          el.style.boxShadow = '0 2px 16px rgba(99,102,241,0.12)'
+                        }}
+                        onMouseLeave={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.borderColor = 'rgba(99,102,241,0.22)'
+                          el.style.color = 'rgba(165,180,252,0.8)'
+                          el.style.boxShadow = ''
+                        }}
+                        whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
+                      >
+                        {c.pricingFreeCta}
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        onClick={onCta}
+                        className="w-full py-2.5 rounded-xl text-[13px] font-semibold"
+                        style={{ border: '1px solid rgba(212,175,55,0.22)', color: 'rgba(212,175,55,0.8)', background: 'transparent', transition: 'border-color 0.2s, color 0.2s, box-shadow 0.2s' }}
+                        onMouseEnter={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.borderColor = 'rgba(212,175,55,0.45)'
+                          el.style.color = '#d4af37'
+                          el.style.boxShadow = '0 2px 16px rgba(212,175,55,0.1)'
+                        }}
+                        onMouseLeave={e => {
+                          const el = e.currentTarget as HTMLButtonElement
+                          el.style.borderColor = 'rgba(212,175,55,0.22)'
+                          el.style.color = 'rgba(212,175,55,0.8)'
+                          el.style.boxShadow = ''
+                        }}
+                        whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
+                      >
+                        {c.pricingCta} →
+                      </motion.button>
+                    )}
+                  </div>
                 </div>{/* /spinning border wrapper */}
               </motion.div>
             )
