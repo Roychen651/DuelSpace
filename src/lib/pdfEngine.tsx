@@ -561,6 +561,13 @@ function ProposalDocument(opts: PdfOptions) {
           </View>
         )}
 
+        {/* B'H marker */}
+        {proposal.display_bsd && (
+          <Text style={{ position:'absolute', top:12, right:16, fontSize:9, fontWeight:700, color:'#9CA3AF', textAlign:'right' }}>
+            {'\u05D1\u05E1\u05F4\u05D3'}
+          </Text>
+        )}
+
         {/* Hero strip — brand color */}
         <View style={s.coverHero}>
           <View style={s.coverHeroInner}>
@@ -575,7 +582,9 @@ function ProposalDocument(opts: PdfOptions) {
             )}
             <Text style={s.coverCompany}>{companyName}</Text>
             <Text style={s.coverDocLabel}>
-              {isHe ? 'הסכם התקשרות והצעת מחיר' : 'PROPOSAL & SERVICE AGREEMENT'}
+              {proposal.is_document_only
+                ? (isHe ? 'הסכם התקשרות' : 'SERVICE AGREEMENT')
+                : (isHe ? 'הסכם התקשרות והצעת מחיר' : 'PROPOSAL & SERVICE AGREEMENT')}
             </Text>
           </View>
         </View>
@@ -690,7 +699,7 @@ function ProposalDocument(opts: PdfOptions) {
         ) : null}
 
         {/* ── Pricing breakdown ──────────────────────────────────────── */}
-        <View style={s.section}>
+        {!proposal.is_document_only && <View style={s.section}>
           <Text style={s.sectionTitle}>{isHe ? 'פירוט מחירים ושירותים' : 'SERVICES & PRICING'}</Text>
 
           <View style={s.tableHeader}>
@@ -729,10 +738,10 @@ function ProposalDocument(opts: PdfOptions) {
               </View>
             )
           })}
-        </View>
+        </View>}
 
         {/* ── Discount + VAT ─────────────────────────────────────────── */}
-        {(totalSavings > 0 || proposal.include_vat) && (
+        {!proposal.is_document_only && (totalSavings > 0 || proposal.include_vat) && (
           <View style={s.vatBox} wrap={false}>
             {totalSavings > 0 && (
               <>
@@ -779,17 +788,17 @@ function ProposalDocument(opts: PdfOptions) {
         )}
 
         {/* ── Grand total ──────────────────────────────────────────── */}
-        <View style={s.totalBox} wrap={false}>
+        {!proposal.is_document_only && !proposal.hide_grand_total && <View style={s.totalBox} wrap={false}>
           <Text style={s.totalLabel}>
             {isHe
               ? (proposal.include_vat ? 'סה״כ לתשלום (כולל מע״מ)' : 'סה״כ להשקעה')
               : (proposal.include_vat ? 'Grand Total (incl. VAT)' : 'Total Investment')}
           </Text>
           <Text style={s.totalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
-        </View>
+        </View>}
 
         {/* ── Payment milestones ──────────────────────────────────────── */}
-        {milestones.length > 0 && (
+        {!proposal.is_document_only && milestones.length > 0 && (
           <>
             <View style={[s.section,{marginTop:8}]}>
               <Text style={s.sectionTitle}>

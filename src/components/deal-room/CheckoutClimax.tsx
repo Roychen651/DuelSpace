@@ -58,6 +58,10 @@ interface CheckoutClimaxProps {
   onScrollToDetails?: () => void
   /** Opens the LegalTermsModal from DealRoom */
   onOpenLegalTerms?: () => void
+  /** Document-only mode — hide all financial displays, change CTA text */
+  isDocumentOnly?: boolean
+  /** Hide the grand total row (menu-style proposals) */
+  hideGrandTotal?: boolean
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -85,6 +89,7 @@ export function CheckoutClimax({
   onRequestRevision, revisionSent = false, originalTotal = 0,
   financials, resolvedAddOns, globalDiscountPct = 0, basePrice = 0,
   clientDetailsConfirmed = false, onScrollToDetails, onOpenLegalTerms,
+  isDocumentOnly = false, hideGrandTotal = false,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -115,7 +120,8 @@ export function CheckoutClimax({
     : 0
 
   // Whether to render the itemized receipt section
-  const showReceipt = !!(financials && (trueSavings > 0 || includeVat))
+  const hideFinancials = isDocumentOnly || hideGrandTotal
+  const showReceipt = !hideFinancials && !!(financials && (trueSavings > 0 || includeVat))
 
   return (
     <>
@@ -182,6 +188,7 @@ export function CheckoutClimax({
             />
 
             {/* ── Total row ───────────────────────────────────────────────── */}
+            {!hideFinancials && (
             <div className="flex items-baseline justify-between mb-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-0.5">
@@ -223,6 +230,7 @@ export function CheckoutClimax({
                 </span>
               </div>
             </div>
+            )}
 
             {/* ── Itemized receipt breakdown ────────────────────────────────── */}
             {showReceipt && financials && (
@@ -640,7 +648,9 @@ export function CheckoutClimax({
                           ) : (
                             <>
                               <ShieldCheck size={16} />
-                              {isHe ? '✓ אשר וחתום על ההצעה' : '✓ Approve & Sign Proposal'}
+                              {isDocumentOnly
+                                ? (isHe ? '✓ חתום על המסמך' : '✓ Sign Document')
+                                : (isHe ? '✓ אשר וחתום על ההצעה' : '✓ Approve & Sign Proposal')}
                             </>
                           )}
                         </span>

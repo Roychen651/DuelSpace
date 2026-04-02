@@ -98,6 +98,12 @@ export interface Proposal {
   email_opened_at?: string | null
   /** Base64 PNG data URL of the client's drawn signature — stored atomically with accept_proposal (Sprint 41) */
   signature_data_url?: string | null
+  /** Show בס"ד at the top of the document (Sprint 43) */
+  display_bsd: boolean
+  /** Hide the grand total from the client in Deal Room + PDF (Sprint 43) */
+  hide_grand_total: boolean
+  /** Document-only mode — strips all financial blocks, turning it into a pure e-signing tool (Sprint 43) */
+  is_document_only: boolean
   /**
    * Soft-delete flag — Sprint 29 Archive Engine.
    * When true the proposal is hidden from the active view but NEVER removed from the DB.

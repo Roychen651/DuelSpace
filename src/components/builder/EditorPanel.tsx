@@ -4,7 +4,7 @@ import {
   User, Mail, Briefcase, FileText, DollarSign,
   Plus, Minus, GripVertical, Trash2, ToggleLeft, ToggleRight,
   ChevronDown, FileCheck, Receipt, Lock, Milestone, ShieldCheck, Sparkles, SlidersHorizontal, Info,
-  Film, Quote, MessageSquarePlus, Percent, Tag, Library,
+  Film, Quote, MessageSquarePlus, Percent, Tag, Library, Settings2,
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
@@ -745,6 +745,133 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         />
       )}
 
+      {/* ── Document Mode Toggle ──────────────────────────────────────── */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+              style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.18)' }}
+            >
+              <span className="text-indigo-400"><FileText size={15} /></span>
+            </div>
+            <span className="text-base font-semibold text-white">
+              {isHe ? 'סוג מסמך' : 'Document Mode'}
+            </span>
+          </div>
+          {/* Segmented control */}
+          <div
+            className="relative flex rounded-xl overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <button
+              type="button"
+              onClick={() => onChange({ is_document_only: false })}
+              className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
+              style={{
+                color: !draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                background: !draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
+              }}
+            >
+              <DollarSign size={12} />
+              {isHe ? 'הצעת מחיר' : 'Proposal'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ is_document_only: true })}
+              className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
+              style={{
+                color: draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                background: draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
+              }}
+            >
+              <FileText size={12} />
+              {isHe ? 'מסמך משפטי' : 'Legal Document'}
+            </button>
+          </div>
+          <p className="text-[12px] text-zinc-500 leading-relaxed">
+            {draft.is_document_only
+              ? (isHe ? 'מצב מסמך — ללא תמחור, תוספות ואבני דרך. מתאים לחוזים, הסכמים והתחייבויות.' : 'Document mode — no pricing, add-ons, or milestones. Ideal for contracts, agreements, and NDAs.')
+              : (isHe ? 'מצב הצעת מחיר — כולל תמחור, תוספות ולוח תשלומים אינטראקטיבי.' : 'Proposal mode — includes pricing, add-ons, and interactive payment schedule.')}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Document Settings (BSD, Hide Total) ────────────────────────── */}
+      <Section
+        title={isHe ? 'הגדרות מסמך' : 'Document Settings'}
+        icon={<Settings2 size={15} />}
+        defaultOpen={false}
+      >
+        {/* B'H toggle */}
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-300"
+          style={{
+            background: draft.display_bsd
+              ? 'linear-gradient(135deg, rgba(212,175,55,0.10) 0%, rgba(212,175,55,0.04) 100%)'
+              : 'rgba(255,255,255,0.03)',
+            border: draft.display_bsd ? '1px solid rgba(212,175,55,0.25)' : '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: draft.display_bsd ? '#fbbf24' : 'rgba(255,255,255,0.5)' }}>
+              בס&quot;ד
+            </span>
+            <span className="text-xs text-white/40">
+              {isHe ? 'הוסף בס"ד בראש המסמך' : 'Show B\'H at top of document'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange({ display_bsd: !draft.display_bsd })}
+            className="transition-colors"
+            style={{ color: draft.display_bsd ? '#d4af37' : 'rgba(255,255,255,0.2)' }}
+          >
+            {draft.display_bsd ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+          </button>
+        </div>
+
+        {/* Hide Grand Total toggle — only shown in Proposal mode */}
+        {!draft.is_document_only && (
+          <div
+            className="flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-300"
+            style={{
+              background: draft.hide_grand_total
+                ? 'linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(168,85,247,0.06) 100%)'
+                : 'rgba(255,255,255,0.03)',
+              border: draft.hide_grand_total ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold text-white/70">
+                  {isHe ? 'הסתר סה"כ' : 'Hide Grand Total'}
+                </p>
+                <Tip content={isHe
+                  ? 'הסתר את סכום הסה"כ מהלקוח. מתאים להצעות בסגנון תפריט בהם הלקוח בוחר פריטים ללא הלם מחיר.'
+                  : 'Hide the grand total from the client. Ideal for menu-style proposals where clients pick items without sticker shock.'
+                }>
+                  <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+                    <Info size={14} />
+                  </button>
+                </Tip>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange({ hide_grand_total: !draft.hide_grand_total })}
+              className="transition-colors"
+              style={{ color: draft.hide_grand_total ? '#6366f1' : 'rgba(255,255,255,0.2)' }}
+            >
+              {draft.hide_grand_total ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+            </button>
+          </div>
+        )}
+      </Section>
+
       {/* ── Client Details ──────────────────────────────────────────────── */}
       <Section
         title={isHe ? 'פרטי לקוח' : 'Client Details'}
@@ -1019,8 +1146,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         </div>
       </Section>
 
-      {/* ── Pricing ─────────────────────────────────────────────────────── */}
-      <Section
+      {/* ── Pricing (hidden in document-only mode) ──────────────────────── */}
+      {!draft.is_document_only && <Section
         title={isHe ? 'תמחור בסיסי' : 'Base Pricing'}
         icon={<DollarSign size={15} />}
       >
@@ -1207,10 +1334,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             </div>
           </div>
         )}
-      </Section>
+      </Section>}
 
-      {/* ── Add-ons ─────────────────────────────────────────────────────── */}
-      <div
+      {/* ── Add-ons (hidden in document-only mode) ──────────────────────── */}
+      {!draft.is_document_only && <div
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
@@ -1320,10 +1447,10 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
-      {/* ── Payment Milestones ──────────────────────────────────────────── */}
-      <Section
+      {/* ── Payment Milestones (hidden in document-only mode) ──────────── */}
+      {!draft.is_document_only && <Section
         title={isHe ? 'אבני דרך לתשלום' : 'Payment Milestones'}
         icon={<Milestone size={15} />}
         defaultOpen={false}
@@ -1519,7 +1646,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             {isHe ? 'הוסף אבן דרך' : 'Add Milestone'}
           </motion.button>
         )}
-      </Section>
+      </Section>}
 
       {/* ── AI Ghostwriter ───────────────────────────────────────────────── */}
       <AIGhostwriter

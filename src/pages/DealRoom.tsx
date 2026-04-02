@@ -884,6 +884,15 @@ export default function DealRoom() {
         setAccepting(false)
         return
       }
+      // Patch local proposal with client details so the PDF includes them
+      setProposal(prev => prev ? {
+        ...prev,
+        client_name: clientDetails.full_name || prev.client_name,
+        client_company_name: clientDetails.company_name || prev.client_company_name,
+        client_tax_id: clientDetails.tax_id || prev.client_tax_id,
+        client_address: clientDetails.billing_address || prev.client_address,
+        client_signer_role: clientDetails.signer_role || prev.client_signer_role,
+      } : prev)
     }
 
     // ── Forensic capture — IP + User-Agent (Migration 23) ─────────────────
@@ -962,6 +971,15 @@ export default function DealRoom() {
         p_address:      clientDetails.billing_address,
         p_signer_role:  clientDetails.signer_role,
       })
+      // Patch local proposal with client details
+      setProposal(prev => prev ? {
+        ...prev,
+        client_name: clientDetails.full_name || prev.client_name,
+        client_company_name: clientDetails.company_name || prev.client_company_name,
+        client_tax_id: clientDetails.tax_id || prev.client_tax_id,
+        client_address: clientDetails.billing_address || prev.client_address,
+        client_signer_role: clientDetails.signer_role || prev.client_signer_role,
+      } : prev)
     }
     const { data: success } = await supabase.rpc('request_proposal_revision', { p_token: token, p_notes: notes })
     if (!success) {
@@ -1259,6 +1277,13 @@ export default function DealRoom() {
           animate="visible"
           className="mb-8"
         >
+          {/* B'H marker */}
+          {proposal.display_bsd && (
+            <p className="text-[11px] text-white/25 font-medium text-end mb-2" style={{ direction: 'rtl' }}>
+              בס&quot;ד
+            </p>
+          )}
+
           {/* Brand bar */}
           <motion.div variants={slideUp} className="flex items-center gap-2 mb-8">
             <div
@@ -1360,7 +1385,7 @@ export default function DealRoom() {
         )}
 
         {/* ── Base package card ─────────────────────────────────────────── */}
-        <motion.div
+        {!proposal.is_document_only && <motion.div
           ref={pricingSectionRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1434,10 +1459,10 @@ export default function DealRoom() {
               {formatCurrency(proposal.base_price, proposal.currency)}
             </p>
           </div>
-        </motion.div>
+        </motion.div>}
 
         {/* ── Add-ons section ───────────────────────────────────────────── */}
-        {proposal.add_ons.length > 0 && (
+        {!proposal.is_document_only && proposal.add_ons.length > 0 && (
           <div ref={addonsSectionRef} className="mt-6 mb-4">
             <motion.p
               className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3"
@@ -1479,7 +1504,7 @@ export default function DealRoom() {
         )}
 
         {/* ── Milestone timeline ────────────────────────────────────────── */}
-        {(proposal.payment_milestones ?? []).length > 0 && (
+        {!proposal.is_document_only && (proposal.payment_milestones ?? []).length > 0 && (
           <motion.div
             ref={milestonesSectionRef}
             initial={{ opacity: 0, y: 16 }}
@@ -1860,6 +1885,8 @@ export default function DealRoom() {
                   clientDetailsFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 }
                 onOpenLegalTerms={() => setLegalModalOpen(true)}
+                isDocumentOnly={proposal.is_document_only}
+                hideGrandTotal={proposal.hide_grand_total}
               />
             </div>
             {/* Accept error */}
@@ -1873,7 +1900,7 @@ export default function DealRoom() {
               </div>
             )}
             {/* Decline offer ghost button */}
-            {!accepted && !revisionSent && (
+            {!accepted && !revisionSent && !proposal.is_document_only && (
               <div className="relative z-20 flex justify-center pb-6" style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
                 <motion.button
                   type="button"

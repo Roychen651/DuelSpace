@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–40.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–43.
 
 ---
 
@@ -175,7 +175,7 @@ src/
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal (incl. signer_ip, signer_user_agent, delivery_email, email_sent_at, email_opened_at),
+│   └── proposal.ts          # Proposal (incl. display_bsd, hide_grand_total, is_document_only, signer_ip, signer_user_agent, delivery_email, email_sent_at, email_opened_at),
 │                            #   ProposalInsert, AddOn, PaymentMilestone, CreatorInfo, proposalTotal(), STATUS_META, …
 │
 └── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, AdminRoute, ErrorBoundary
@@ -200,7 +200,8 @@ supabase/
 │   ├── 21_admin_apex.sql              # admin_update_user_advanced(), admin_toggle_suspend(), refreshed get_admin_users_data with is_suspended + bonus_quota
 │   ├── 22_admin_v2.sql                # admin_save_note(), admin_get_user_proposals(), get_admin_users_data with phone + admin_notes
 │   ├── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
-│   └── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
+│   ├── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
+│   └── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
 └── functions/
     ├── admin-impersonate/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
@@ -368,6 +369,9 @@ if (eventType === 'UPDATE') {
 | `view_count` | integer | default 0 |
 | `last_viewed_at` | timestamptz | nullable |
 | `time_spent_seconds` | integer | default 0 |
+| `display_bsd` | boolean | default false — show בס"ד at top of document (Sprint 43) |
+| `hide_grand_total` | boolean | default false — hide grand total from client in Deal Room + PDF (Sprint 43) |
+| `is_document_only` | boolean | default false — strips all financial blocks, pure e-signing mode (Sprint 43) |
 | `is_archived` | boolean | default false — soft-delete, never physically removed |
 | `sent_at` | timestamptz | nullable — first transition away from 'draft' |
 | `accepted_at` | timestamptz | nullable — when client signed |
@@ -1895,6 +1899,50 @@ When `billingStatus === 'past_due'`, the "New Proposal" button:
 4. Copy signing secret → Supabase Dashboard → Edge Functions → Secrets → `STRIPE_WEBHOOK_SECRET`
 5. Also set: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_PREMIUM`
 6. Deploy: `supabase functions deploy stripe-webhook --project-ref aefyytktbpynkbxhzhyt`
+
+---
+
+## 31. Document-Only Mode & Lean Market Features (Sprint 43)
+
+### Three new proposal-level booleans
+
+| Field | Default | Purpose |
+|---|---|---|
+| `display_bsd` | `false` | Show בס"ד at the top-right of the document (cover page in PDF, top of card in LivePreview/DealRoom) — Israeli market psychological trigger |
+| `hide_grand_total` | `false` | Hides the animated grand total and VAT breakdown in Deal Room + LivePreview + PDF — for "menu-style" proposals that avoid sticker-shock |
+| `is_document_only` | `false` | Strips ALL financial blocks (base package, add-ons, milestones, pricing table, grand total) — turns the platform into a pure legal e-signing tool |
+
+### EditorPanel UI
+
+- **Document Mode segmented control** — sits between the read-only overlay and the Client Details section. Two modes: "Proposal" (default) and "Legal Document" (`is_document_only: true`). Uses indigo glow on active segment.
+- **Document Settings section** — contains BSD toggle and Hide Grand Total toggle. The Hide Grand Total toggle is hidden when `is_document_only` is true (no financial blocks exist to hide).
+- Pricing, Add-ons, and Payment Milestones sections are wrapped in `{!draft.is_document_only && ...}` guards.
+
+### Rendering guards — WYSIWYG parity
+
+LivePreview, DealRoom, and PDF all use the same conditional pattern:
+- `{!proposal.is_document_only && ...}` wraps base package card, add-ons, milestones
+- `{!proposal.hide_grand_total && !proposal.is_document_only && ...}` wraps the total display
+- BSD: `{proposal.display_bsd && <בס"ד marker>}` at the top of content
+
+### CheckoutClimax
+
+Two new props: `isDocumentOnly` and `hideGrandTotal`. When either is true:
+- Total row is hidden
+- Itemized receipt breakdown is hidden
+- CTA button text changes: "חתום על המסמך" / "Sign Document" (instead of "אשר וחתום על ההצעה" / "Approve & Sign Proposal")
+
+### PDF Engine
+
+- BSD marker rendered as absolute-positioned text at top-right of cover page
+- Cover doc label changes: "הסכם התקשרות" / "SERVICE AGREEMENT" (instead of "הסכם התקשרות והצעת מחיר" / "PROPOSAL & SERVICE AGREEMENT")
+- Pricing table, discount/VAT box, and milestones section wrapped in `{!proposal.is_document_only && ...}`
+- Grand total box wrapped in `{!proposal.is_document_only && !proposal.hide_grand_total && ...}`
+
+### DealRoom extras
+
+- "Decline Offer" button hidden when `is_document_only` (no financial offer to decline)
+- All existing `isFinanciallyLocked` logic from Sprint 42 is unaffected — document-only guards are additive
 
 ---
 

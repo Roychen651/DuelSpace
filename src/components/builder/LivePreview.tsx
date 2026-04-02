@@ -306,6 +306,13 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
 
             <div className={compact ? 'p-5' : 'p-7'}>
 
+              {/* ── B'H marker ──────────────────────────────────────── */}
+              {proposal.display_bsd && (
+                <p className="text-[11px] text-white/30 font-medium text-end mb-1" style={{ direction: 'rtl' }}>
+                  בס&quot;ד
+                </p>
+              )}
+
               {/* ── Brand bar ───────────────────────────────────────── */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -388,8 +395,8 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {/* ── Divider ───────────────────────────────────────────── */}
               <div className="h-px bg-white/[0.06] mb-5" />
 
-              {/* ── Base package ─────────────────────────────────────── */}
-              <div className="mb-4">
+              {/* ── Base package (hidden in document-only mode) ───────── */}
+              {!proposal.is_document_only && <div className="mb-4">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2">
                   {locale === 'he' ? 'חבילת בסיס' : 'Base Package'}
                 </p>
@@ -415,10 +422,10 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                     {formatCurrency(proposal.base_price, proposal.currency)}
                   </span>
                 </div>
-              </div>
+              </div>}
 
-              {/* ── Add-ons ───────────────────────────────────────────── */}
-              {proposal.add_ons.length > 0 && (
+              {/* ── Add-ons (hidden in document-only mode) ────────────── */}
+              {!proposal.is_document_only && proposal.add_ons.length > 0 && (
                 <div className="mb-5">
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2">
                     {locale === 'he' ? 'תוספות' : 'Add-ons'}
@@ -440,8 +447,8 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                 </div>
               )}
 
-              {/* ── Payment milestones ───────────────────────────────── */}
-              {proposal.payment_milestones && proposal.payment_milestones.length > 0 && (
+              {/* ── Payment milestones (hidden in document-only mode) ── */}
+              {!proposal.is_document_only && proposal.payment_milestones && proposal.payment_milestones.length > 0 && (
                 <div className="mb-5">
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2 flex items-center gap-1.5">
                     <Milestone size={10} className="text-indigo-400/60" />
@@ -528,6 +535,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               <div className="h-px bg-white/[0.06] mb-5" />
 
               {/* ── Total price (slot machine) ────────────────────────── */}
+              {!proposal.hide_grand_total && !proposal.is_document_only && (
               <div className="flex items-end justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-1">
@@ -599,6 +607,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   )}
                 </div>
               </div>
+              )}
 
               {/* ── CTA (preview only — not functional in builder) ────── */}
               {!compact && (
@@ -613,7 +622,9 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   >
                     <Lock size={11} style={{ opacity: 0.4 }} />
                     <span style={{ opacity: 0.5 }}>
-                      {locale === 'he' ? 'אשר וחתום על ההצעה' : 'Approve & Sign Proposal'}
+                      {proposal.is_document_only
+                        ? (locale === 'he' ? 'חתום על המסמך' : 'Sign Document')
+                        : (locale === 'he' ? 'אשר וחתום על ההצעה' : 'Approve & Sign Proposal')}
                     </span>
                   </div>
                   <p className="mt-2 text-center text-[10px] text-white/20">
