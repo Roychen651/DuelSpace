@@ -900,7 +900,7 @@ function ProposalDocument(opts: PdfOptions) {
           <>
             <View style={s.sectionDivider} />
             <View style={s.section}>
-              <Text style={s.sectionTitle}>{isHe ? 'תנאים והתניות של העסק' : 'BUSINESS TERMS & CONDITIONS'}</Text>
+              <Text style={s.sectionTitle}>{isHe ? 'תנאי העסק' : 'BUSINESS TERMS'}</Text>
               <HtmlBlocks blocks={termsBlocks} s={s} />
             </View>
           </>

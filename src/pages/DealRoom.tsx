@@ -1744,8 +1744,8 @@ export default function DealRoom() {
           </motion.div>
         )}
 
-        {/* ── Business Terms display — shown above checkout when terms exist ── */}
-        {!!(proposal.business_terms?.trim()) && !accepted && (
+        {/* ── Business Terms display — always visible when terms exist (before + after signing) ── */}
+        {!!(proposal.business_terms?.trim()) && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1758,7 +1758,7 @@ export default function DealRoom() {
           >
             <div className="px-5 pt-4 pb-1">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
-                {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
+                {locale === 'he' ? 'תנאי העסק' : 'Business Terms'}
               </p>
             </div>
             <div
