@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–43.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–44.9.
 
 ---
 
@@ -117,9 +117,8 @@ src/
 │   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar; DunningBanner when billing_status=past_due
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
-│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT
+│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT, global business terms
 │   ├── ServicesLibrary.tsx  # /services — services catalog CRUD (Supabase-backed via useServicesStore)
-│   ├── ContractLibrary.tsx  # /contracts — contract template management
 │   ├── Integrations.tsx     # /integrations — Webhook automations hub; free-tier paywall + paid webhook form
 │   ├── Legal.tsx            # /security — security policy page
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
@@ -133,11 +132,11 @@ src/
 │   ├── layout/
 │   │   └── AdminRoute.tsx        # Three-layer auth guard: idle spinner → unauthenticated → wrong email → /dashboard
 │   ├── builder/
-│   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, contract picker, AI Ghostwriter
+│   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, AI Ghostwriter
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
 │   │   ├── AIGhostwriter.tsx     # AI description generator (contextual, bilingual)
 │   │   ├── ReusableServices.tsx  # Pick from saved services library to add to proposal
-│   │   ├── RichTextEditor.tsx    # TipTap-based rich text editor (contract body)
+│   │   ├── RichTextEditor.tsx    # TipTap-based rich text editor (proposal description + Profile business terms)
 │   └── ReusableServices.tsx  # Services injection modal — multi-select + bulk inject into proposal
 │   ├── deal-room/
 │   │   ├── PremiumSliderCard.tsx  # Interactive add-on card with range slider
@@ -167,15 +166,15 @@ src/
 ├── lib/
 │   ├── supabase.ts            # Supabase client singleton
 │   ├── i18n.ts                # Zustand i18n store, He/En translations, dir/lang on <html>
-│   ├── pdfEngine.tsx          # @react-pdf/renderer v4 — 3-page enterprise White Paper PDF (Cover + Content + Cert), Iron Grid architecture
-│   ├── contractTemplates.ts   # Built-in contract template definitions
+│   ├── pdfEngine.tsx          # @react-pdf/renderer v4 — enterprise White Paper PDF (Cover + Content + Business Terms + Cert), Iron Grid architecture
 │   ├── successTemplates.ts    # Post-signature success screen template definitions
 │   ├── financialMath.ts       # VAT, rounding, milestone math helpers
 │   ├── automations.ts         # triggerPostSignatureAutomations — POSTs deal payload to creator's webhook_url
+│   ├── knowledgeBase.ts       # Help Center FAQ items — bilingual KBItem[] with categories
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
 ├── types/
-│   └── proposal.ts          # Proposal (incl. display_bsd, hide_grand_total, is_document_only, signer_ip, signer_user_agent, delivery_email, email_sent_at, email_opened_at),
+│   └── proposal.ts          # Proposal (incl. display_bsd, hide_grand_total, is_document_only, business_terms, signer_ip, signer_user_agent, delivery_email, email_sent_at, email_opened_at),
 │                            #   ProposalInsert, AddOn, PaymentMilestone, CreatorInfo, proposalTotal(), STATUS_META, …
 │
 └── App.tsx                  # BrowserRouter, routes, ProtectedRoute, PublicRoute, AdminRoute, ErrorBoundary
@@ -201,7 +200,9 @@ supabase/
 │   ├── 22_admin_v2.sql                # admin_save_note(), admin_get_user_proposals(), get_admin_users_data with phone + admin_notes
 │   ├── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
 │   ├── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
-│   └── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
+│   ├── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
+│   ├── 30_prices_include_vat.sql      # prices_include_vat boolean column (Sprint 44)
+│   └── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
 └── functions/
     ├── admin-impersonate/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
@@ -224,7 +225,6 @@ supabase/
 /proposals/new             → ProposalBuilder     (ProtectedRoute)
 /proposals/:id             → ProposalBuilder     (ProtectedRoute)
 /services                  → ServicesLibrary      (ProtectedRoute)
-/contracts                 → ContractLibrary      (ProtectedRoute)
 /integrations              → Integrations        (ProtectedRoute — webhook automations hub)
 /deal/:token               → DealRoom            (fully public, no auth)
 /profile                   → Profile             (ProtectedRoute)
@@ -372,6 +372,8 @@ if (eventType === 'UPDATE') {
 | `display_bsd` | boolean | default false — show בס"ד at top of document (Sprint 43) |
 | `hide_grand_total` | boolean | default false — hide grand total from client in Deal Room + PDF (Sprint 43) |
 | `is_document_only` | boolean | default false — strips all financial blocks, pure e-signing mode (Sprint 43) |
+| `prices_include_vat` | boolean | default false — when true, entered prices already include VAT; system back-calculates pre-VAT (Sprint 44) |
+| `business_terms` | text | NOT NULL default '' — creator's global business terms (TipTap HTML), frozen into proposal by EditorPanel useEffect (Sprint 44.9) |
 | `is_archived` | boolean | default false — soft-delete, never physically removed |
 | `sent_at` | timestamptz | nullable — first transition away from 'draft' |
 | `accepted_at` | timestamptz | nullable — when client signed |
@@ -728,7 +730,7 @@ Each section is a rounded-3xl card with `background: rgba(255,255,255,0.02)` and
 3. **Pricing** — base price + currency in 2-column grid, VAT toggle (`include_vat`), date picker (`expires_at`)
 4. **Add-ons** — drag-to-reorder (`Reorder.Group`), price inputs, clientAdjustable pill (green glow when open)
 5. **Payment Milestones** — milestone rows (name + percentage), sum indicator, validation
-6. **Contract** — contract template picker (from ContractLibrary), access code (`access_code`)
+6. **Settings** — access code (`access_code`), document settings (BSD toggle, hide grand total toggle)
 
 ### EditorPanel `inputClass` pattern (Sprint 13.8)
 ```ts
@@ -784,16 +786,20 @@ Debounced 1500ms on every `handleChange`. On Send, the debounce is flushed synch
 `draftRef` and `proposalIdRef` are kept in sync with their state counterparts to give stable references inside setTimeout/async callbacks without stale closures.
 
 ### Creator info auto-injection
-`EditorPanel` reads `user.user_metadata` in a `useEffect` and calls `onChange({ creator_info, brand_color })` on mount and whenever `user` changes. This ensures every saved proposal carries the latest business identity, which the PDF engine and Deal Room use without requiring auth.
+`EditorPanel` reads `user.user_metadata` in a `useEffect` and calls `onChange({ creator_info, brand_color, business_terms })` on mount and whenever `user` changes. This ensures every saved proposal carries the latest business identity and business terms, which the PDF engine and Deal Room use without requiring auth.
 
-Fields injected (as of Sprint 31):
+Fields injected (as of Sprint 44.9):
 ```ts
 const info: CreatorInfo = {
   full_name, company_name, tax_id, address, phone, signatory_name,
   logo_url,        // company logo URL — shown in Deal Room + PDF
   webhook_url,     // automation webhook — used by triggerPostSignatureAutomations
 }
-onChange({ creator_info: info, brand_color: m['brand_color'] ?? null })
+onChange({
+  creator_info: info,
+  brand_color: m['brand_color'] ?? null,
+  business_terms: m['business_terms'] ?? '',  // frozen into proposal at save time
+})
 ```
 
 ---
@@ -814,10 +820,12 @@ DealRoom.tsx
   ↓ render proposal header + countdown expiry banner
   ↓ PremiumSliderCard[]  ← one per add-on (client can toggle/adjust)
   ↓ MilestoneTimeline    ← if payment_milestones.length > 0
+  ↓ Business Terms block ← if proposal.business_terms is non-empty (always visible, even after signing)
   ↓ ClientDetailsForm    ← if !clientDetails && !accepted (capture legal identity before signing)
   ↓ Legal consent checkbox ← if clientDetails && !accepted
+  ↓ Business terms consent checkbox ← if clientDetails && !accepted && business_terms non-empty
   ↓ CheckoutClimax        ← sticky bottom: animated VAT-aware total + SignaturePad + CTA
-      → disabled until: clientDetails captured + legalConsent checked + signature drawn + confirmed
+      → disabled until: clientDetails captured + legalConsent checked + businessTermsConsent (if terms exist) + signature drawn + confirmed
   ↓ on accept:
       supabase.rpc('save_client_details', { p_token, ...clientDetails })
       supabase.rpc('accept_proposal', { p_token })
@@ -845,7 +853,7 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 
 ## 15. Profile Page
 
-`/profile` (ProtectedRoute) — seven sections:
+`/profile` (ProtectedRoute) — eight sections:
 
 1. **Avatar** — upload to Supabase Storage, `updateProfile({ avatar_url })`
 2. **Display Name** — `updateProfile({ full_name })`
@@ -853,7 +861,8 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 4. **Business Identity** (Building2 icon) — company_name, tax_id, phone, address, signatory_name — saved directly via `supabase.auth.updateUser({ data: biz })` (not through auth store)
 5. **Brand Color** (Palette icon) — 12 preset swatches + custom hex input + native `<input type="color">` (sr-only) + live preview chip — saved via `supabase.auth.updateUser({ data: { brand_color } })`
 6. **Company Logo** (ImageIcon) — upload to Supabase Storage bucket `avatars/logos/${user.id}.ext`, saves URL to `user_metadata.logo_url`. Displayed in Deal Room above project title (white filter for dark bg) and on PDF cover page. Section sits between Brand Color and Password.
-7. **VAT Rate** (Percent icon) — decimal input persisted to `localStorage('dealspace:vat-rate')`, default `0.18`
+7. **Global Business Terms** (FileText icon) — TipTap `RichTextEditor` for formatted business terms (h1/h2/h3, bold, italic, lists). Saved to `user_metadata.business_terms` via `supabase.auth.updateUser({ data: { business_terms } })`. EditorPanel auto-injects this into every saved proposal. In the Deal Room, shown as "תנאי העסק / Business Terms" section (always visible, including after signing). Client must check a consent checkbox before `canSign` is true. Included in PDF on a new page. Section sits between Company Logo and VAT Rate.
+8. **VAT Rate** (Percent icon) — decimal input persisted to `localStorage('dealspace:vat-rate')`, default `0.18`
 
 ### user_metadata fields (auth.users)
 These live in `user.user_metadata` and are read by EditorPanel to populate `creator_info`:
@@ -863,15 +872,16 @@ These live in `user.user_metadata` and are read by EditorPanel to populate `crea
 - `tax_id`
 - `address`
 - `phone`
-- `signatory_name` — printed name for contract signature block
+- `signatory_name` — printed name for signature block
 - `brand_color` — hex string, e.g. `#6366f1`
 - `logo_url` — company logo URL (uploaded to Supabase Storage)
+- `business_terms` — TipTap HTML string — creator's global legal/business terms; frozen into each proposal by EditorPanel on save
 
 ---
 
 ## 16. PDF Engine (`src/lib/pdfEngine.tsx`)
 
-Sprints 23–25 complete overhaul. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) 3-page enterprise **White Paper** PDF.
+Sprints 23–25 complete overhaul + Sprint 44.9. Built with `@react-pdf/renderer` v4. Generates a bilingual (He/En) enterprise **White Paper** PDF (4 pages when business terms are present).
 
 ### Design philosophy — White Paper
 - **Backgrounds:** white `#FFFFFF`, surface `#F9FAFB`, never dark/neon
@@ -956,7 +966,7 @@ PartyField({ label, value })                 // Iron Grid row inside party box
 ### TipTap HTML parser
 `parseHtml()` handles `<h1–h3>`, `<p>`, `<li>`, `<strong>`, `<b>`, `<em>`, `<i>` via regex with full HTML entity decoding. Returns `HtmlBlock[]` rendered as nested `<Text>` nodes. Falls back to plain-text strip if no block tags found.
 
-### 3-page document structure
+### Document structure (up to 4 pages)
 
 **Page 1 — Cover**
 - Brand-color hero strip: company logo (if `creator_info.logo_url` exists) OR initials badge, company name, doc type label — all center-aligned
@@ -967,8 +977,27 @@ PartyField({ label, value })                 // Iron Grid row inside party box
 - `paddingTop: 48` / `paddingBottom: 40` to clear fixed header/footer
 - **Fixed header**: brand accent bar | company | project | page X/Y
 - **Fixed footer**: DealSpace | dealspace.app | token
-- Sections: Parties (Iron Grid fields), Description (HTML-parsed), Services & Pricing (brand-header table, alternating rows), VAT box, Grand Total (brand left accent bar), Milestones (brand header, alternating rows), Terms
+- Sections: Parties (Iron Grid fields), Description (HTML-parsed), Services & Pricing (brand-header table, alternating rows), VAT box, Grand Total (brand left accent bar), Milestones (brand header, alternating rows)
 - All critical rows use `wrap={false}`
+
+**Business Terms — New Page (conditional)**
+- Rendered only when `proposal.business_terms?.trim()` is non-empty
+- Forced onto a new page via `<View break style={s.section}>` — the `break` is a JSX prop on the View, NOT a CSS `breakBefore` style property
+- Section title: `'תנאי העסק'` (he) / `'BUSINESS TERMS'` (en) using brand color
+- Body: `HtmlBlocks` fed from `parseHtml(proposal.business_terms)` — same HTML parser used for the description
+
+```tsx
+// ✅ Correct — break is a JSX prop
+{termsBlocks.length > 0 && (
+  <View break style={s.section}>
+    <Text style={s.sectionTitle}>{isHe ? 'תנאי העסק' : 'BUSINESS TERMS'}</Text>
+    <HtmlBlocks blocks={termsBlocks} s={s} />
+  </View>
+)}
+
+// ❌ WRONG — breakBefore is not in react-pdf's Style type
+<View style={{ ...s.section, breakBefore: 'page' }}>
+```
 
 **Last Page — Signature Certificate**
 - Brand-color hero with ✓ checkmark circle
@@ -1301,8 +1330,8 @@ All filter effects are combined into one `style.filter` string (never stacked la
 ### `HelpCenterDrawer`
 - **Controlled mode**: pass `open` + `onClose` props → no floating FAB rendered. Used from Dashboard Navbar.
 - **Uncontrolled mode**: no props → self-contained with desktop-only (`hidden sm:flex`) floating FAB. Used on non-Dashboard pages via App.tsx if needed.
-- 10 bilingual FAQ items (Hebrew + English, professional quality)
-- Category filter: All / Sending / Pricing / Legal / Settings
+- Bilingual FAQ items sourced from `src/lib/knowledgeBase.ts` (`KNOWLEDGE_BASE` array)
+- Category filter: All / Sending / Pricing / Legal / Settings / Services & Terms (updated Sprint 44.9)
 - Dashboard Navbar renders a `<HelpCircle>` button that opens the drawer in controlled mode
 
 ### Dashboard mobile layout
@@ -1946,6 +1975,278 @@ Two new props: `isDocumentOnly` and `hideGrandTotal`. When either is true:
 
 ---
 
+## 32. Israeli VAT Model & Sent-State Locking (Sprint 44)
+
+### Israeli VAT model — prices ALWAYS include VAT
+
+**Business context:** In Israel, all consumer-facing and B2B prices are quoted inclusive of VAT. A freelancer enters ₪12,000 as the project price — that IS what the client pays. The invoice then decomposes this total into a pre-VAT component and a VAT component. This is how KSP, Partner, and every Israeli business operates.
+
+**The `include_vat` toggle meaning:**
+- `include_vat = true` → "I am a VAT-registered business (עוסק מורשה)" — show the VAT breakdown to the client. Prices remain unchanged; VAT is **extracted from within** the entered amount.
+- `include_vat = false` → "I am VAT-exempt (עוסק פטור)" — no VAT exists. Total is exactly as entered, no VAT component shown.
+
+**Critical:** VAT is NEVER added on top of entered prices. The entered price IS the final price. The system only decomposes it.
+
+### Financial Math Engine (`src/lib/financialMath.ts`)
+
+`calculateFinancials()` is the single source of truth for all financial calculations across the entire app (EditorPanel, LivePreview, DealRoom, CheckoutClimax, PDF).
+
+```ts
+// Step 4: VAT — Israeli model
+if (proposal.include_vat) {
+  // Prices include VAT — grand total IS the entered sum, extract VAT from within
+  grandTotal = afterGlobalDiscount
+  beforeVat = netFromGross(grandTotal, vatRate)     // total / (1 + 0.18)
+  vatAmt = roundILS(grandTotal - beforeVat)
+} else {
+  // No VAT (עוסק פטור) — prices are final, no VAT component
+  beforeVat = afterGlobalDiscount
+  vatAmt = 0
+  grandTotal = beforeVat
+}
+```
+
+**Key functions:**
+```ts
+netFromGross(gross, rate)    // Strip VAT from gross → net: gross / (1 + rate)
+vatOnGross(gross, rate)      // Extract VAT component: gross - gross / (1 + rate)
+grossFromNet(net, rate)      // Add VAT to net → gross: net * (1 + rate)
+calcGrandTotal(...)          // No longer adds VAT — returns entered sum as-is
+calcOriginalTotal(...)       // Same — no VAT added on top
+```
+
+**`calcGrandTotal` and `calcOriginalTotal`** — the `_includeVat` and `_vatRate` parameters are prefixed with underscore (unused). These functions return the entered amount directly. All VAT logic lives exclusively in `calculateFinancials()`.
+
+### VAT display labels — "מתוכם מע"מ" pattern
+
+Every surface that shows VAT uses the "of which VAT" (מתוכם מע"מ) pattern — never "+VAT" or "VAT added":
+
+| Surface | Hebrew | English |
+|---|---|---|
+| EditorPanel add-on row | `מתוכם מע"מ 15 ₪` | `VAT incl. ₪15` |
+| EditorPanel VAT preview | `סה"כ: 100 ₪ (מתוכם מע"מ: 15 ₪)` | `Total: ₪100 (VAT incl.: ₪15)` |
+| EditorPanel VAT summary | `מתוכם מע"מ (18%)` | `Of which VAT (18%)` |
+| LivePreview | `כולל מע"מ (18%): 1,830 ₪` | `Incl. VAT (18%): ₪1,830` |
+| CheckoutClimax | `מתוכם מע״מ (18%)` | `Of which VAT (18%)` |
+| PDF Engine | `מתוכם מע"מ` | `Of which VAT` |
+| ServicesLibrary | `מתוכם מע"מ: 15 ₪` | `VAT incl.: ₪15` |
+| ReusableServices | `מתוכם מע"מ: 15 ₪` | `VAT incl.: ₪15` |
+
+### `prices_include_vat` column
+
+Migration 30 adds `prices_include_vat BOOLEAN NOT NULL DEFAULT FALSE` to the proposals table. This column exists in the schema and `Proposal` type but is currently a no-op — the VAT model is driven entirely by `include_vat`. The column was added for potential future use (e.g., supporting both net-price and gross-price entry modes).
+
+### Sent-state document locking
+
+After a proposal is sent (`status ∈ {sent, viewed, accepted}`), the business owner must NOT be able to:
+1. **Change the document type** (proposal ↔ legal document) — changing `is_document_only` after the client received it creates legal ambiguity
+
+These unlock only when the client sends a revision request (`status = needs_revision`).
+
+**Implementation — `structureLocked` guard:**
+```tsx
+// Inside EditorPanel, in the document mode segmented control section:
+const structureLocked = isFinanciallyLocked && !needsRevision
+```
+
+When `structureLocked`:
+- Document mode buttons get `disabled` + `cursor: not-allowed` + `opacity: 0.5`
+- A Lock icon overlay appears with "נעול לאחר שליחה" / "Locked after sending" text
+
+**Props driving the lock:**
+```ts
+interface EditorPanelProps {
+  isFinanciallyLocked?: boolean  // true when status ∈ {sent, viewed, accepted}
+  needsRevision?: boolean        // true when status === 'needs_revision'
+}
+```
+
+### Removed: secondary VAT toggle
+
+Sprint 44 removed the `prices_include_vat` secondary toggle from EditorPanel. Previously there were two toggles:
+1. "כלול מע"מ" (include VAT) — primary
+2. "מחירים כוללים מע"מ" (prices include VAT) — secondary, only visible when #1 was on
+
+This was poor UX. Now there is only the single "כלול מע"מ" toggle. When on, prices are always treated as gross (VAT-inclusive). The `applyVat` function is no longer used in EditorPanel, ReusableServices, or ServicesLibrary — only `vatOnGross` and `netFromGross` from `financialMath.ts`.
+
+### CheckoutClimax — simplified VAT section
+
+The `pricesIncludeVat` prop was removed from `CheckoutClimax`. VAT display is now unconditionally "of which VAT" format:
+
+```tsx
+{includeVat && (
+  <div>
+    <div>{isHe ? `מתוכם מע״מ (${pct}%)` : `Of which VAT (${pct}%)`} → {vatAmount}</div>
+    <div>{isHe ? 'לפני מע״מ' : 'Before VAT'} → {beforeVat}</div>
+  </div>
+)}
+```
+
+---
+
+## 33. Conversion & Urgency Engine (Sprint 44.5)
+
+### Dark mode — permanently locked
+
+`ThemeProvider.tsx` uses `forcedTheme="dark"` on `NextThemesProvider`. This overrides all system preferences and any user toggle — `.dark` is always present on `<html>`. The `ThemeToggle` component file exists but is not mounted anywhere. Do not re-introduce a theme switcher.
+
+```tsx
+// src/components/layout/ThemeProvider.tsx
+<NextThemesProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+```
+
+`ProtectedLayout.tsx` no longer imports or renders `<ThemeToggle>`.
+
+### Expiry Lock — DealRoom
+
+When `proposal.expires_at` is in the past and the proposal is not yet accepted or declined, DealRoom shows a prominent "expired" state:
+
+**`isExpired` computation** (at render level, after `brandColor`):
+```ts
+const isExpired = proposal.expires_at
+  ? new Date(proposal.expires_at).getTime() < Date.now()
+  : false
+```
+
+**Expiry banner** — rendered before the CountdownBanner, only when `isExpired && !accepted && !declined`:
+- Red glassmorphism card: `rgba(239,68,68,0.1)` bg, `rgba(239,68,68,0.28)` border, `0 0 40px rgba(239,68,68,0.08)` glow
+- `XCircle` icon in a red icon box
+- Headline shows exact expiry date: `toLocaleDateString('he-IL', ...)` for Hebrew, `toLocaleDateString('en-US', ...)` for English
+- Body: "Pricing and terms are no longer guaranteed. Please contact the sender to renew." (bilingual)
+- Entrance: `variants={slideUp}` (Framer Motion, consistent with DealRoom hero)
+
+**CountdownBanner** — suppressed when expired:
+```tsx
+{proposal.expires_at && !accepted && !isExpired && (
+  <motion.div variants={slideUp}>
+    <CountdownBanner expiresAt={proposal.expires_at} locale={locale} />
+  </motion.div>
+)}
+```
+
+**Pricing zone blur** — the base package card, add-ons, and milestone timeline are wrapped in a div that applies visual lock when expired:
+```tsx
+<div
+  style={isExpired && !accepted ? {
+    opacity: 0.4,
+    filter: 'blur(2px)',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    transition: 'opacity 0.4s, filter 0.4s',
+  } : {}}
+>
+  {/* base package, add-ons, milestone timeline */}
+</div>
+```
+
+**CheckoutClimax** — not modified. The IIFE in DealRoom already returns an "expired" block before CheckoutClimax renders when `isExpired && !accepted`, so CheckoutClimax is never in the DOM for expired+unsigned proposals.
+
+**No duplicate `isExpired`** — the outer `isExpired` const is used everywhere. The IIFE creates a child scope but must not redeclare it.
+
+### Smart Follow-Up — ProposalCard
+
+For `sent` or `viewed` proposals, the dropdown contains a "Follow Up via WhatsApp / מעקב ב-WhatsApp" item:
+
+```ts
+// ProposalCard.tsx — imports MessageCircle from lucide-react
+const handleFollowUp = () => {
+  const client = proposal.client_name || (locale === 'he' ? 'שם הלקוח' : 'there')
+  const text = locale === 'he'
+    ? `היי ${client}, רק רציתי לוודא שיצא לך לעבור על ההצעה / המסמך ששלחתי. \nאפשר לצפות ולאשר אותה מכל מכשיר ממש כאן:\n${shareUrl}\n\nאני זמין לכל שאלה!`
+    : `Hi ${client}, just checking in to see if you had a chance to review the document. \nYou can view and approve it securely right here:\n${shareUrl}\n\nLet me know if you have any questions!`
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+}
+```
+
+The `DropItem` is conditionally rendered: `(proposal.status === 'sent' || proposal.status === 'viewed')`. Icon: `<MessageCircle size={15} style={{ color: '#25D366' }} />`.
+
+### Premium Share Copy — SendModal
+
+WhatsApp share text in `SendModal.tsx` uses B2B-grade copy with bold project title and structured line breaks:
+
+```ts
+const waMsg = isHe
+  ? `היי ${clientDisplay},\nהכנתי עבורך את המסמך / הצעת המחיר: *${titleDisplay}*.\n\nאפשר לצפות בפרטים, לבחור אפשרויות ולחתום דיגיטלית באופן מאובטח בלינק הבא:\n${shareUrl}`
+  : `Hi ${clientDisplay},\nI've prepared the document / proposal for: *${titleDisplay}*.\n\nYou can review the details, customize options, and securely sign it online here:\n${shareUrl}`
+```
+
+`*project title*` renders in bold in WhatsApp. `clientDisplay` falls back to `'שם הלקוח'` (he) / `'there'` (en) when no client name is set.
+
+---
+
+## 34. Global Business Terms (Sprint 44.9)
+
+### Architecture
+
+Two-layer chain: Profile → EditorPanel auto-inject → proposal column → Deal Room + PDF.
+
+**Removed in Sprint 44.9:**
+- `ContractLibrary.tsx` (`/contracts` route) — entire page deleted
+- `contractTemplates.ts` — entire file deleted
+- `video_url` column — dropped in migration 31
+- Video Pitch field in EditorPanel — deleted
+- Contract template picker in EditorPanel — deleted
+
+**Added in Sprint 44.9:**
+- `business_terms TEXT NOT NULL DEFAULT ''` column on proposals (migration 31)
+- Global Business Terms section in `Profile.tsx` (section 7, sits between Company Logo and VAT Rate)
+- `business_terms` frozen into each proposal by EditorPanel useEffect on every save
+- Business Terms consent flow in DealRoom + CheckoutClimax
+- Business Terms page in PDF (new page via `<View break>`)
+- Updated `knowledgeBase.ts` FAQ items — contracts FAQ removed, business terms FAQ added
+
+### Business Terms display in DealRoom
+
+```tsx
+// Always visible when non-empty — even after signing (no !accepted guard)
+{!!(proposal.business_terms?.trim()) && (
+  <motion.div variants={slideUp} className="...">
+    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+      {locale === 'he' ? 'תנאי העסק' : 'Business Terms'}
+    </p>
+    <div
+      className="prose prose-invert prose-sm max-w-none text-white/60"
+      dangerouslySetInnerHTML={{ __html: proposal.business_terms }}
+    />
+  </motion.div>
+)}
+```
+
+**Why always visible (no `!accepted` guard):** A client who revisits a sealed deal after days or months should still be able to read the terms they agreed to. The terms are also always present in the downloadable signed PDF.
+
+### CheckoutClimax business terms consent
+
+```ts
+// Props added to CheckoutClimaxProps:
+businessTerms?: string
+businessTermsConsent?: boolean
+onBusinessTermsConsentChange?: (v: boolean) => void
+
+// canSign gate:
+const businessTermsRequired = !!(businessTerms?.trim())
+const canSign = clientDetailsConfirmed && signatureConfirmed && legalConsent
+  && (!businessTermsRequired || businessTermsConsent)
+```
+
+The consent checkbox appears via `AnimatePresence` only after the signature is drawn and only when terms exist. It is separate from and in addition to the existing DealSpace platform `legalConsent` checkbox.
+
+### knowledgeBase.ts — Help Center FAQ
+
+`src/lib/knowledgeBase.ts` contains `KNOWLEDGE_BASE: KBItem[]` and `KB_CATEGORIES`. The category previously named "Services & Contracts" / "שירותים וחוזים" was renamed to "Services & Terms" / "שירותים ותנאים" (Sprint 44.9). Contract-related FAQ items were removed and replaced with business terms items.
+
+```ts
+interface KBItem {
+  id: string
+  q_he: string
+  q_en: string
+  a_he: string
+  a_en: string
+  category: string
+}
+```
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -2003,3 +2304,19 @@ Two new props: `isDocumentOnly` and `hideGrandTotal`. When either is true:
 - **Do not skip the Stripe webhook signature verification** — `stripe.webhooks.constructEventAsync(body, signature, secret)` must always be the first step in the handler. Skipping it allows anyone to spoof Stripe events and grant themselves arbitrary plan tiers.
 - **Do not use `session.metadata.plan_tier` to determine the tier in `checkout.session.completed`** — Payment Links cannot set session metadata. Instead, retrieve the subscription and map the `price.id` to a tier using `PRICE_TO_TIER`. Configure `STRIPE_PRICE_PRO` and `STRIPE_PRICE_PREMIUM` in Supabase Edge Function secrets.
 - **Do not show `DunningBanner` or lock the create button based on `tier === 'free'`** — the lock is for `billing_status === 'past_due'` only. A `free` user who never had a subscription has `billing_status: null` and should never see the dunning UI.
+- **Do not add VAT on top of entered prices** — Israeli VAT model: all prices entered by the creator ALREADY include VAT. The system extracts VAT from within using `netFromGross()` / `vatOnGross()`. Never use `grossFromNet()` or `applyVat()` to inflate a displayed price. The grand total the client sees must ALWAYS equal the sum the creator entered.
+- **Do not show "+מע"מ = X" or "VAT = X" labels** — the correct pattern is "מתוכם מע"מ" / "Of which VAT" / "VAT incl." — indicating VAT is extracted from within, not added on top. This distinction is critical for Israeli business users who think in gross prices.
+- **Do not add a secondary VAT toggle** — Sprint 44 explicitly removed the two-toggle approach after user feedback. There is only one toggle: `include_vat`. When on, prices are gross. When off, no VAT exists. Do not re-introduce `prices_include_vat` as a separate UI control.
+- **Do not allow document type changes after sending** — once `isFinanciallyLocked && !needsRevision`, the document mode segmented control (proposal ↔ legal document) and contract template picker must be disabled. Changing document structure after the client received it creates legal ambiguity.
+- **Do not use `applyVat()` from `types/proposal.ts` for display purposes** — this function adds VAT on top (`amount * (1 + rate)`), which contradicts the Israeli gross-price model. For VAT extraction, use `vatOnGross()` and `netFromGross()` from `financialMath.ts`.
+- **Do not re-enable light mode or add a ThemeToggle** — the app is permanently locked to dark mode via `forcedTheme="dark"` in `ThemeProvider.tsx`. The `ThemeToggle` component exists but is intentionally not mounted. Do not re-add it to `ProtectedLayout` or any other layout.
+- **Do not re-declare `isExpired` inside the DealRoom IIFE** — `isExpired` is computed once at render level in `DealRoom.tsx`. The IIFE forms a child scope so there is no conflict, but re-declaring it creates two sources of truth. Use the outer-scope const throughout.
+- **Do not show the CountdownBanner when `isExpired`** — the countdown serves urgency for active proposals only. When a proposal is already expired, `CountdownBanner` must be suppressed and the red expiry banner shown instead. Render condition: `proposal.expires_at && !accepted && !isExpired`.
+- **Do not render the Follow-Up WhatsApp item for non-sent proposals** — the item only appears for `status === 'sent'` or `status === 'viewed'`. For `draft`, `accepted`, `rejected`, or `needs_revision` it must be absent.
+- **Do not hardcode a recipient phone number in the WhatsApp deep link** — use `https://wa.me/?text=...` (no phone number) so the user can select a contact from their own WhatsApp. Specifying a phone would expose the creator's contact info or fail for international numbers.
+- **Do not restore ContractLibrary or contractTemplates** — both were intentionally removed in Sprint 44.9. The `/contracts` route no longer exists. Contract template logic (`CONTRACT_TEMPLATES`, `CATEGORY_LABELS`, `interpolateTemplate`) is gone. Do not re-import these.
+- **Do not add a `video_url` field anywhere** — it was dropped from the proposals table in migration 31. The Video Pitch section was removed from EditorPanel. Any reference to `proposal.video_url` or `video_url` in types/proposal.ts is a regression.
+- **Do not add `!accepted` guard to the business terms render block in DealRoom** — terms must remain visible even after signing so the client can re-read what they agreed to. The signed PDF also includes the terms. Never hide them on sealed/revisited deal links.
+- **Do not use `breakBefore: 'page'` as a CSS style in react-pdf** — `breakBefore` is not in react-pdf's `Style` type. Page breaks are achieved via the `break` JSX prop on `<View>`: `<View break style={s.section}>`. Putting `breakBefore` in a style object causes a TypeScript compile error.
+- **Do not let business terms consent be optional when `proposal.business_terms` is non-empty** — the `canSign` condition in CheckoutClimax must include `(!businessTermsRequired || businessTermsConsent)`. Omitting this allows signing without consenting to the creator's business terms.
+- **Do not rename the business terms section to "תנאים והתניות"** — that exact label is already used for the DealSpace platform terms. The business terms section must be labelled `'תנאי העסק'` (he) / `'Business Terms'` (en) to avoid confusion.
