@@ -126,6 +126,17 @@ export function CheckoutClimax({
   return (
     <>
       <style>{`
+        /* Dual-mode glass card */
+        .checkout-glass {
+          background: linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%);
+          border: 1px solid rgba(255,255,255,0.1);
+          box-shadow: 0 -16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        :root:not(.dark) .checkout-glass {
+          background: rgba(255,255,255,0.92);
+          border: 1px solid rgba(226,232,240,0.8);
+          box-shadow: 0 -16px 48px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
         @keyframes checkout-glow-pulse {
           0%, 100% { box-shadow: 0 0 24px rgba(99,102,241,0.4); }
           50%       { box-shadow: 0 0 52px rgba(99,102,241,0.7), 0 0 90px rgba(168,85,247,0.3); }
@@ -153,9 +164,13 @@ export function CheckoutClimax({
         className="pointer-events-none h-24 -mb-24 relative z-10"
         style={{
           background:
-            'linear-gradient(to top, rgba(5,5,10,1) 0%, rgba(5,5,10,0.8) 50%, transparent 100%)',
+            'linear-gradient(to top, var(--checkout-fade, rgba(248,250,252,1)) 0%, var(--checkout-fade-mid, rgba(248,250,252,0.8)) 50%, transparent 100%)',
         }}
       />
+      <style>{`
+        :root { --checkout-fade: rgba(248,250,252,1); --checkout-fade-mid: rgba(248,250,252,0.8); }
+        .dark { --checkout-fade: rgba(5,5,10,1); --checkout-fade-mid: rgba(5,5,10,0.8); }
+      `}</style>
 
       <div
         className="sticky bottom-0 left-0 right-0 z-30"
@@ -164,15 +179,10 @@ export function CheckoutClimax({
         <div className="mx-auto max-w-2xl px-4 pb-4">
           {/* ── Glass card ────────────────────────────────────────────────── */}
           <motion.div
-            className="relative overflow-hidden rounded-2xl px-5 pt-4 pb-5"
+            className="checkout-glass relative overflow-hidden rounded-2xl px-5 pt-4 pb-5"
             style={{
-              background:
-                'linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(255,255,255,0.1)',
               backdropFilter: 'blur(40px) saturate(200%)',
               WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-              boxShadow:
-                '0 -16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)',
             }}
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -191,7 +201,7 @@ export function CheckoutClimax({
             {!hideFinancials && (
             <div className="flex items-baseline justify-between mb-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-0.5">
                   {isHe
                     ? (includeVat ? 'סה״כ כולל מע״מ' : 'סה״כ להשקעה')
                     : (includeVat ? 'Total incl. VAT' : 'Total Investment')}
@@ -235,14 +245,10 @@ export function CheckoutClimax({
             {/* ── Itemized receipt breakdown ────────────────────────────────── */}
             {showReceipt && financials && (
               <motion.div
-                className="mb-3 rounded-2xl overflow-hidden"
+                className="mb-3 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.07]"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut' as const }}
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
               >
                 {/* ── Per-item rows (base + add-ons) ─────────────────────── */}
                 {resolvedAddOns && (
@@ -252,14 +258,14 @@ export function CheckoutClimax({
                   >
                     {/* Base package */}
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-white/40">{isHe ? 'חבילת בסיס' : 'Base Package'}</span>
-                      <span className="text-[11px] text-white/55 tabular-nums">{formatCurrency(basePrice, currency)}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-white/40">{isHe ? 'חבילת בסיס' : 'Base Package'}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-white/55 tabular-nums">{formatCurrency(basePrice, currency)}</span>
                     </div>
                     {/* Enabled add-ons */}
                     {resolvedAddOns.filter(a => a.enabled).map(a => (
                       <div key={a.id} className="flex justify-between items-center gap-2">
                         <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                          <span className="text-[11px] text-white/40 truncate">
+                          <span className="text-[11px] text-slate-400 dark:text-white/40 truncate">
                             {a.label}{a.qty > 1 ? ` ×${a.qty}` : ''}
                           </span>
                           {a.discount_pct > 0 && (
@@ -305,7 +311,7 @@ export function CheckoutClimax({
                     {/* After-item-discounts subtotal — only shown when items had individual discounts */}
                     {financials.itemSavings > 0 && (
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] text-white/32">
+                        <span className="text-[11px] text-slate-400 dark:text-white/32">
                           {isHe ? 'סה״כ לאחר הנחות פרטניות' : 'Subtotal (after item discounts)'}
                         </span>
                         <span className="text-[11px] text-white/32 tabular-nums">
@@ -333,7 +339,7 @@ export function CheckoutClimax({
                 {includeVat && (
                   <div className="px-3.5 py-2.5 space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-white/35">
+                      <span className="text-[11px] text-slate-400 dark:text-white/35">
                         {isHe ? `מתוכם מע״מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
                       </span>
                       <span className="text-[11px] text-white/35 tabular-nums">
@@ -341,7 +347,7 @@ export function CheckoutClimax({
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-white/35">
+                      <span className="text-[11px] text-slate-400 dark:text-white/35">
                         {isHe ? 'לפני מע״מ' : 'Before VAT'}
                       </span>
                       <span className="text-[11px] text-white/35 tabular-nums">
@@ -727,7 +733,7 @@ export function CheckoutClimax({
                                     <Dialog.Title className="text-sm font-black text-white">
                                       {isHe ? 'מה תרצו לשנות?' : 'What Would You Like to Change?'}
                                     </Dialog.Title>
-                                    <Dialog.Description className="text-[10px] text-white/35 mt-0.5" dir={isHe ? 'rtl' : 'ltr'}>
+                                    <Dialog.Description className="text-[10px] text-slate-400 dark:text-white/35 mt-0.5" dir={isHe ? 'rtl' : 'ltr'}>
                                       {isHe
                                         ? 'כתבו לנו מה תרצו להתאים ונחזור עם גרסה מעודכנת'
                                         : 'Describe what to adjust and we\'ll send an updated version'}
@@ -811,35 +817,34 @@ export function CheckoutClimax({
 
             {/* Israeli-law legal armor — always visible */}
             <div
-              className="mt-3 rounded-xl px-3.5 py-3 space-y-1.5"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+              className="mt-3 rounded-xl px-3.5 py-3 space-y-1.5 bg-slate-50 border border-slate-100 dark:bg-white/[0.02] dark:border-white/[0.05]"
             >
               {isHe ? (
                 <>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }} dir="rtl">
-                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>תוקף מחייב: </span>
+                  <p className="text-[9px] leading-relaxed text-slate-400 dark:text-white/[0.22]" dir="rtl">
+                    <span className="font-bold text-slate-500 dark:text-white/[0.35]">תוקף מחייב: </span>
                     חתימה דיגיטלית על הצעה זו מהווה קיבול כדין ויוצרת הסכם מחייב בין הצדדים, בהתאם לחוק החוזים (חלק כללי), תשל&quot;ג-1973.
                   </p>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }} dir="rtl">
-                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>חתימה אלקטרונית: </span>
+                  <p className="text-[9px] leading-relaxed text-slate-400 dark:text-white/[0.22]" dir="rtl">
+                    <span className="font-bold text-slate-500 dark:text-white/[0.35]">חתימה אלקטרונית: </span>
                     חתימה זו קבילה ותקפה בהתאם לחוק חתימה אלקטרונית, התשס&quot;א-2001.
                   </p>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.18)' }} dir="rtl">
-                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.28)' }}>הגבלת אחריות: </span>
+                  <p className="text-[9px] leading-relaxed text-slate-300 dark:text-white/[0.18]" dir="rtl">
+                    <span className="font-bold text-slate-400 dark:text-white/[0.28]">הגבלת אחריות: </span>
                     DealSpace משמשת ככלי טכנולוגי בלבד ואינה צד להסכם. סמכות שיפוט בלעדית: בתי משפט מוסמכים בישראל.
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }}>
-                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>Binding Agreement: </span>
+                  <p className="text-[9px] leading-relaxed text-slate-400 dark:text-white/[0.22]">
+                    <span className="font-bold text-slate-500 dark:text-white/[0.35]">Binding Agreement: </span>
                     Signing constitutes a legally binding agreement per the Contracts Law (General Part), 5733-1973.
                   </p>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.22)' }}>
-                    <span className="font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>E-Signature: </span>
+                  <p className="text-[9px] leading-relaxed text-slate-400 dark:text-white/[0.22]">
+                    <span className="font-bold text-slate-500 dark:text-white/[0.35]">E-Signature: </span>
                     Valid under the Electronic Signature Law, 5761-2001. Exclusive jurisdiction: competent courts in Israel.
                   </p>
-                  <p className="text-[9px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.18)' }}>
+                  <p className="text-[9px] leading-relaxed text-slate-300 dark:text-white/[0.18]">
                     DealSpace provides technology infrastructure only and is not a party to this agreement or any dispute between the parties.
                   </p>
                 </>

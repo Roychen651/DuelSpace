@@ -119,11 +119,10 @@ export function GlobalFooter() {
   return (
     <footer
       dir={isHe ? 'rtl' : 'ltr'}
-      className="relative z-10"
-      style={{ background: '#030305' }}
+      className="relative z-10 bg-white dark:bg-[#030305]"
     >
       {/* Gradient rule */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.35) 40%, rgba(168,85,247,0.35) 60%, transparent 100%)' }} />
+      <div className="h-px bg-gradient-to-r from-transparent via-indigo-400/25 to-transparent dark:from-transparent dark:via-indigo-500/35 dark:to-transparent" />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-6 pt-8 pb-7">
 
@@ -137,16 +136,16 @@ export function GlobalFooter() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2.5">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
+                className="flex h-8 w-8 items-center justify-center rounded-xl flex-none shadow-[0_0_14px_rgba(99,102,241,0.25)] dark:shadow-[0_0_14px_rgba(99,102,241,0.45)]"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
               >
                 <Zap size={14} className="text-white" />
               </div>
               <div>
-                <span className="text-[14px] font-black tracking-tight text-white" style={{ letterSpacing: '-0.02em' }}>
+                <span className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white" style={{ letterSpacing: '-0.02em' }}>
                   DealSpace
                 </span>
-                <span className="ms-1.5 text-[11px] text-white/30 font-normal">{c.tagline}</span>
+                <span className="ms-1.5 text-[11px] text-slate-400 dark:text-white/30 font-normal">{c.tagline}</span>
               </div>
             </div>
 

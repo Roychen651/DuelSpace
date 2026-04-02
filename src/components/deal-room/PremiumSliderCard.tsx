@@ -38,7 +38,11 @@ export function PremiumSliderCard({
       layout
     >
       <div
-        className="relative rounded-2xl p-5 transition-all duration-300"
+        className={`relative rounded-2xl p-5 transition-all duration-300 ${
+          enabled
+            ? 'border dark:border-transparent'
+            : 'border dark:border-transparent'
+        }`}
         style={{
           background: enabled
             ? 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.06) 100%)'

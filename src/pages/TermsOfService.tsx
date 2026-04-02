@@ -235,9 +235,8 @@ export default function TermsOfService() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col"
+      className="relative min-h-dvh flex flex-col bg-[#05050A] text-[#f0f0f8]"
       dir={isHe ? 'rtl' : 'ltr'}
-      style={{ background: '#05050A', color: '#f0f0f8' }}
     >
       <style>{`
         @keyframes tos-fade-up {

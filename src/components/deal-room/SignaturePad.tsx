@@ -114,7 +114,7 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PenLine size={13} style={{ color: '#818cf8' }} />
-          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/45">
             {isHe ? 'חתימה אלקטרונית' : 'Electronic Signature'}
           </span>
         </div>
@@ -122,11 +122,9 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
           <motion.button
             type="button"
             onClick={handleClear}
-            className="flex items-center gap-1 text-[10px] font-semibold transition"
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            className="flex items-center gap-1 text-[10px] font-semibold transition text-slate-400 dark:text-white/30 hover:text-red-400"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            whileHover={{ color: '#f87171' }}
           >
             <RotateCcw size={11} />
             {isHe ? 'נקה' : 'Clear'}
@@ -137,19 +135,19 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
       {/* Canvas area */}
       <motion.div
         ref={containerRef}
-        className="relative rounded-2xl overflow-hidden"
+        className={`relative rounded-2xl overflow-hidden bg-slate-50 dark:bg-white/[0.02] ${
+          isDrawing
+            ? 'ring-4 ring-amber-500/15 dark:ring-amber-500/15'
+            : confirmed
+              ? 'ring-4 ring-emerald-500/10'
+              : ''
+        }`}
         style={{
-          background: 'rgba(255,255,255,0.02)',
           border: isDrawing
             ? '1px solid rgba(212,175,55,0.6)'
             : confirmed
               ? '1px solid rgba(34,197,94,0.4)'
-              : '1px solid rgba(255,255,255,0.1)',
-          boxShadow: isDrawing
-            ? '0 0 0 3px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.04)'
-            : confirmed
-              ? '0 0 0 3px rgba(34,197,94,0.1)'
-              : 'none',
+              : '1px solid rgba(226,232,240,0.8)',
           transition: 'border 0.2s, box-shadow 0.2s',
           cursor: 'crosshair',
         }}
@@ -163,8 +161,8 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <PenLine size={20} style={{ color: 'rgba(255,255,255,0.12)' }} />
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              <PenLine size={20} className="text-slate-300 dark:text-white/12" />
+              <p className="text-xs text-slate-300 dark:text-white/20">
                 {isHe ? 'חתמו כאן' : 'Sign here'}
               </p>
             </motion.div>
@@ -173,8 +171,7 @@ export function SignaturePad({ onConfirm, onClear, locale = 'en' }: SignaturePad
 
         {/* Baseline */}
         <div
-          className="pointer-events-none absolute bottom-10 inset-x-6"
-          style={{ height: 1, background: 'rgba(255,255,255,0.08)' }}
+          className="pointer-events-none absolute bottom-10 inset-x-6 h-px bg-slate-200 dark:bg-white/[0.08]"
         />
 
         <canvas

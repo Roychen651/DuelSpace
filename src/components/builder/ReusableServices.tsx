@@ -115,19 +115,13 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
               animate="visible"
               exit="exit"
               dir={isHe ? 'rtl' : 'ltr'}
-              className="w-full max-w-lg flex flex-col rounded-3xl overflow-hidden"
-              style={{
-                background: 'linear-gradient(160deg, rgba(22,22,36,0.99) 0%, rgba(12,12,22,0.99) 100%)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07)',
-                maxHeight: '82vh',
-              }}
+              className="reuse-panel w-full max-w-lg flex flex-col rounded-3xl overflow-hidden"
+              style={{ maxHeight: '82vh' }}
             >
 
               {/* ── Header ── */}
               <div
-                className="flex items-center gap-3 px-5 py-4 flex-none"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+                className="flex items-center gap-3 px-5 py-4 flex-none border-b border-slate-100 dark:border-white/[0.07]"
               >
                 <div
                   className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
@@ -139,10 +133,10 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                   <Layers size={14} className="text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-white">
+                  <p className="text-sm font-black text-slate-800 dark:text-white">
                     {isHe ? 'ספריית שירותים' : 'Services Library'}
                   </p>
-                  <p className="text-[10px] text-white/35">
+                  <p className="text-[10px] text-slate-400 dark:text-white/35">
                     {isHe ? 'בחר שירותים להוספה להצעה' : 'Select services to inject into the proposal'}
                   </p>
                 </div>
@@ -185,7 +179,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                       value={query}
                       onChange={e => setQuery(e.target.value)}
                       placeholder={isHe ? 'חיפוש שירות…' : 'Search services…'}
-                      className="w-full rounded-xl border bg-white/[0.05] py-2 text-sm text-white placeholder-white/20 outline-none transition-all"
+                      className="w-full rounded-xl border bg-slate-50 dark:bg-white/[0.05] py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all"
                       style={{
                         border: '1px solid rgba(255,255,255,0.09)',
                         paddingInlineStart: 36,
@@ -225,14 +219,14 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                 {/* Empty / no results */}
                 {!loading && filtered.length === 0 && (
                   <div className="flex flex-col items-center gap-3 py-10 text-center">
-                    <Layers size={28} className="text-white/15" />
-                    <p className="text-sm text-white/30">
+                    <Layers size={28} className="text-slate-300 dark:text-white/15" />
+                    <p className="text-sm text-slate-400 dark:text-white/30">
                       {query
                         ? (isHe ? 'לא נמצאו תוצאות' : 'No results found')
                         : (isHe ? 'עדיין אין שירותים שמורים' : 'No saved services yet')}
                     </p>
                     {!query && (
-                      <p className="text-xs text-white/20">
+                      <p className="text-xs text-slate-400 dark:text-white/20">
                         {isHe ? 'הוסף שירותים בדף ספריית השירותים' : 'Add services in the Services Library page'}
                       </p>
                     )}
@@ -278,9 +272,9 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
 
                         {/* Name + desc */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white/90 truncate">{service.label}</p>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-white/90 truncate">{service.label}</p>
                           {service.description && (
-                            <p className="text-xs text-white/35 truncate">{service.description}</p>
+                            <p className="text-xs text-slate-400 dark:text-white/35 truncate">{service.description}</p>
                           )}
                         </div>
 
@@ -306,8 +300,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
 
               {/* ── Sticky bottom CTA ── */}
               <div
-                className="flex-none px-5 pb-5 pt-3 space-y-2"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+                className="flex-none px-5 pb-5 pt-3 space-y-2 border-t border-slate-100 dark:border-white/[0.07]"
               >
                 {selected.size > 0 && (
                   <motion.p

@@ -39,19 +39,14 @@ export function MilestoneTimeline({ milestones, grandTotal, currency, locale }: 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: 'easeOut' as const }}
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-      }}
+      className="milestone-card rounded-2xl overflow-hidden"
     >
       {/* Header */}
-      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35 mb-0.5">
+      <div className="px-5 pt-5 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/35 mb-0.5">
           {isHe ? 'לוח תשלומים' : 'Payment Schedule'}
         </p>
-        <p className="text-sm font-semibold text-white/70">
+        <p className="text-sm font-semibold text-slate-600 dark:text-white/70">
           {isHe ? 'אבני דרך לתשלום' : 'Billing Milestones'}
         </p>
       </div>
@@ -104,16 +99,12 @@ export function MilestoneTimeline({ milestones, grandTotal, currency, locale }: 
 
                   {/* Content */}
                   <div
-                    className="flex-1 rounded-xl px-3.5 py-3"
-                    style={{
-                      background: 'rgba(255,255,255,0.025)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}
+                    className="flex-1 rounded-xl px-3.5 py-3 bg-slate-50 border border-slate-100 dark:bg-white/[0.025] dark:border-white/[0.06]"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white/90 truncate">{m.name}</p>
-                        <p className="text-[10px] text-white/35 mt-0.5">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white/90 truncate">{m.name}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-white/35 mt-0.5">
                           {m.percentage}%{' '}
                           {isHe ? 'מהסכום הכולל' : 'of total'}
                         </p>
@@ -132,8 +123,7 @@ export function MilestoneTimeline({ milestones, grandTotal, currency, locale }: 
 
                     {/* Mini progress bar */}
                     <div
-                      className="mt-2 h-1 rounded-full overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.06)' }}
+                      className="mt-2 h-1 rounded-full overflow-hidden bg-slate-200 dark:bg-white/[0.06]"
                     >
                       <motion.div
                         className="h-full rounded-full"

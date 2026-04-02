@@ -39,12 +39,11 @@ function CategoryTabs({
     <div className="flex items-center gap-2 flex-wrap">
       <button
         onClick={() => onSelect(null)}
-        className="rounded-xl px-3 py-1.5 text-xs font-bold transition-all"
-        style={{
-          background: selected === null ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
-          border: selected === null ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.08)',
-          color: selected === null ? '#818cf8' : 'rgba(255,255,255,0.45)',
-        }}
+        className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all border ${
+          selected === null
+            ? 'bg-indigo-500/[0.18] border-indigo-500/40 text-indigo-500 dark:text-indigo-400'
+            : 'bg-slate-100 border-slate-200 text-slate-400 dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-white/45'
+        }`}
       >
         {isHe ? 'הכל' : 'All'}
       </button>
@@ -52,12 +51,11 @@ function CategoryTabs({
         <button
           key={key}
           onClick={() => onSelect(key)}
-          className="rounded-xl px-3 py-1.5 text-xs font-bold transition-all"
-          style={{
-            background: selected === key ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
-            border: selected === key ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.08)',
-            color: selected === key ? '#818cf8' : 'rgba(255,255,255,0.45)',
-          }}
+          className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all border ${
+            selected === key
+              ? 'bg-indigo-500/[0.18] border-indigo-500/40 text-indigo-500 dark:text-indigo-400'
+              : 'bg-slate-100 border-slate-200 text-slate-400 dark:bg-white/[0.05] dark:border-white/[0.08] dark:text-white/45'
+          }`}
         >
           {isHe ? label.he : label.en}
         </button>
@@ -81,12 +79,12 @@ function VariableEditor({
 
   return (
     <div className="space-y-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">
         {isHe ? 'מלא פרטים לחוזה' : 'Fill contract details'}
       </p>
       {template.variables.map(v => (
         <div key={v.key} className="space-y-1">
-          <label className="block text-[10px] font-semibold text-white/40 uppercase tracking-wider">
+          <label className="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-wider">
             {isHe ? v.labelHe : v.labelEn}
           </label>
           <input
@@ -94,12 +92,9 @@ function VariableEditor({
             value={values[v.key] ?? v.defaultValue ?? ''}
             onChange={e => onChange(v.key, e.target.value)}
             placeholder={isHe ? v.labelHe : v.labelEn}
-            className="w-full rounded-xl border bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/20 outline-none transition-all"
-            style={{
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
+            className="w-full rounded-xl border bg-slate-50 border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-300 outline-none transition-all dark:bg-white/[0.05] dark:border-white/10 dark:text-white dark:placeholder-white/20"
             onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)' }}
-            onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
+            onBlur={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = 'none' }}
           />
         </div>
       ))}
@@ -141,11 +136,7 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
+      className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm dark:bg-[rgba(255,255,255,0.03)] dark:border-white/[0.08] dark:shadow-none"
     >
       {/* Header */}
       <button
@@ -154,8 +145,7 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
         className="w-full flex items-start gap-3 px-5 py-4 text-start"
       >
         <div
-          className="flex-none mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl"
-          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}
+          className="flex-none mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/[0.12] border border-indigo-500/20"
         >
           <FileText size={14} className="text-indigo-400" />
         </div>

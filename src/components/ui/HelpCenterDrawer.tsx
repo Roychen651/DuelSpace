@@ -86,10 +86,8 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
             transition={{ type: 'spring', stiffness: 360, damping: 32 }}
           >
             <div
-              className="flex flex-col h-full"
+              className="help-drawer-inner flex flex-col h-full"
               style={{
-                background: 'linear-gradient(180deg, #0c0c1e 0%, #080812 100%)',
-                borderInlineStart: '1px solid rgba(255,255,255,0.07)',
                 boxShadow: isHe ? '32px 0 80px rgba(0,0,0,0.8)' : '-32px 0 80px rgba(0,0,0,0.8)',
               }}
             >
@@ -114,10 +112,10 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                       <BookOpen size={15} className="text-indigo-400" />
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white/90 tracking-tight">
+                      <p className="text-sm font-black text-slate-800 dark:text-white/90 tracking-tight">
                         DealSpace Academy
                       </p>
-                      <p className="text-[10px] text-white/30 mt-0.5">
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 mt-0.5">
                         {isHe ? `${KNOWLEDGE_BASE.length} מדריכים ותשובות` : `${KNOWLEDGE_BASE.length} guides & answers`}
                       </p>
                     </div>
@@ -125,7 +123,7 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 hover:bg-white/5 hover:text-white/70 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-white/30 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white/70 transition-colors"
                   >
                     <X size={14} />
                   </button>
@@ -210,12 +208,12 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                             className="flex-none mt-0.5 h-1.5 w-1.5 rounded-full"
                             style={{ background: accentColor, boxShadow: `0 0 4px ${accentColor}` }}
                           />
-                          <span className="text-[12.5px] font-semibold text-white/80 leading-snug">
+                          <span className="text-[12.5px] font-semibold text-slate-700 dark:text-white/80 leading-snug">
                             {isHe ? q_he : q_en}
                           </span>
                         </div>
                         <motion.span
-                          className="flex-none text-white/25 mt-0.5"
+                          className="flex-none text-slate-400 dark:text-white/25 mt-0.5"
                           animate={{ rotate: isExpanded ? 180 : 0 }}
                           transition={{ duration: 0.18 }}
                         >
@@ -233,10 +231,10 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                             style={{ overflow: 'hidden' }}
                           >
                             <div
-                              className="mx-4 mb-4 rounded-xl px-4 py-3"
-                              style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${accentColor}18` }}
+                              className="mx-4 mb-4 rounded-xl px-4 py-3 bg-slate-50 dark:bg-black/25"
+                              style={{ border: `1px solid ${accentColor}18` }}
                             >
-                              <p className="text-[12px] leading-relaxed text-white/55">
+                              <p className="text-[12px] leading-relaxed text-slate-600 dark:text-white/55">
                                 {isHe ? a_he : a_en}
                               </p>
                             </div>
@@ -253,10 +251,10 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                 className="flex-none px-5 py-3 flex items-center justify-between"
                 style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
               >
-                <p className="text-[9px] text-white/18">
+                <p className="text-[9px] text-slate-400 dark:text-white/[0.18]">
                   {isHe ? 'DealSpace — הצעות מחיר דיגיטליות לישראל' : 'DealSpace — Digital Proposals for Israel'}
                 </p>
-                <div className="flex items-center gap-1 text-[9px] text-white/20">
+                <div className="flex items-center gap-1 text-[9px] text-slate-400 dark:text-white/20">
                   <Zap size={8} className="text-indigo-400/50" />
                   <span>v2.2</span>
                 </div>

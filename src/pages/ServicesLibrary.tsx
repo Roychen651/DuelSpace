@@ -18,13 +18,14 @@ function focusInput(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>)
   e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'
 }
 function blurInput(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
-  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+  const isDark = document.documentElement.classList.contains('dark')
+  e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgb(226,232,240)'
   e.currentTarget.style.boxShadow = 'none'
 }
 
 const inputBase = [
-  'w-full rounded-xl border bg-white/[0.05] px-3 py-2.5 text-sm text-white placeholder-white/20',
-  'outline-none transition-all border-white/[0.1]',
+  'w-full rounded-xl border bg-slate-50 dark:bg-white/[0.05] px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20',
+  'outline-none transition-all border-slate-200 dark:border-white/[0.1]',
 ].join(' ')
 
 // ─── Service Form Modal ───────────────────────────────────────────────────────
@@ -68,12 +69,7 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.97 }}
         transition={{ type: 'spring' as const, stiffness: 380, damping: 28 }}
-        className="w-full max-w-md rounded-3xl p-6 space-y-4"
-        style={{
-          background: 'linear-gradient(160deg, rgba(22,22,36,0.99) 0%, rgba(12,12,22,0.99) 100%)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.07)',
-        }}
+        className="svc-modal w-full max-w-md rounded-3xl p-6 space-y-4"
       >
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -400,6 +396,92 @@ export default function ServicesLibrary() {
         }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { display: none; }
+        .svc-modal {
+          background: #ffffff;
+          border: 1px solid rgb(226,232,240);
+          box-shadow: 0 40px 100px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+        }
+        :is(.dark) .svc-modal {
+          background: linear-gradient(160deg, rgba(22,22,36,0.99) 0%, rgba(12,12,22,0.99) 100%);
+          border: 1px solid rgba(255,255,255,0.1);
+          box-shadow: 0 40px 100px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.07);
+        }
+        .svc-row {
+          background: linear-gradient(160deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.005) 100%);
+          border: 1px solid rgb(226,232,240);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        :is(.dark) .svc-row {
+          background: linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%);
+          border: 1px solid rgba(255,255,255,0.08);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .svc-stat {
+          background: rgba(0,0,0,0.02);
+          border: 1px solid rgb(226,232,240);
+        }
+        :is(.dark) .svc-stat {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+        }
+        .svc-skeleton {
+          background: rgb(226,232,240);
+        }
+        :is(.dark) .svc-skeleton {
+          background: rgba(255,255,255,0.08);
+        }
+        .svc-skeleton-row {
+          background: rgba(0,0,0,0.03);
+        }
+        :is(.dark) .svc-skeleton-row {
+          background: rgba(255,255,255,0.04);
+        }
+        .svc-vat-row {
+          background: rgba(99,102,241,0.06);
+          border: 1px solid rgba(99,102,241,0.12);
+        }
+        :is(.dark) .svc-vat-row {
+          background: rgba(99,102,241,0.08);
+          border: 1px solid rgba(99,102,241,0.15);
+        }
+        .svc-close-btn {
+          background: rgba(0,0,0,0.04);
+        }
+        :is(.dark) .svc-close-btn {
+          background: rgba(255,255,255,0.05);
+        }
+        .svc-cancel-btn {
+          border: 1px solid rgb(226,232,240);
+        }
+        :is(.dark) .svc-cancel-btn {
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+        .svc-vat-pill {
+          background: rgba(99,102,241,0.06);
+          border: 1px solid rgba(99,102,241,0.15);
+        }
+        :is(.dark) .svc-vat-pill {
+          background: rgba(99,102,241,0.12);
+          border: 1px solid rgba(99,102,241,0.2);
+        }
+        .svc-vat-pill-off {
+          background: rgba(0,0,0,0.03);
+          border: 1px solid rgba(99,102,241,0.12);
+        }
+        :is(.dark) .svc-vat-pill-off {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(99,102,241,0.2);
+        }
+        .svc-empty-orb {
+          background: linear-gradient(145deg, rgba(212,175,55,0.08) 0%, rgba(245,158,11,0.04) 100%);
+          border: 1px solid rgba(212,175,55,0.2);
+          box-shadow: 0 0 48px rgba(212,175,55,0.08);
+        }
+        :is(.dark) .svc-empty-orb {
+          background: linear-gradient(145deg, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.07) 100%);
+          border: 1px solid rgba(212,175,55,0.25);
+          box-shadow: 0 0 48px rgba(212,175,55,0.12);
+        }
       `}</style>
 
       {/* Background glow */}

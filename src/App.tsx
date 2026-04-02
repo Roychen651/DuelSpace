@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useProposalStore } from './stores/useProposalStore'
 import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
 import { ProtectedLayout } from './components/layout/ProtectedLayout'
+import { ThemeProvider } from './components/layout/ThemeProvider'
 import { AdminRoute } from './components/layout/AdminRoute'
 import AuthPage from './pages/Auth'
 import AuthCallback from './pages/AuthCallback'
@@ -29,7 +30,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 function Spinner() {
   return (
-    <div style={{ background: '#040608', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="bg-slate-50 dark:bg-[#040608]" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.2)', borderTopColor: '#818cf8', animation: 'spin 0.9s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
@@ -136,8 +137,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <AppInner />
-    </ErrorBoundary>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <AppInner />
+      </ErrorBoundary>
+    </ThemeProvider>
   )
 }

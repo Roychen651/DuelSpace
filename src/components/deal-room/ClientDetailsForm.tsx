@@ -38,7 +38,7 @@ function FormInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
+      <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/40">
         {icon}
         {label}
         {required && <span style={{ color: '#818cf8' }}>*</span>}
@@ -48,22 +48,7 @@ function FormInput({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-300"
-        style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
-        onFocus={e => {
-          e.currentTarget.style.border = '1px solid rgba(99,102,241,0.65)'
-          e.currentTarget.style.background = 'rgba(255,255,255,0.07)'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
-        }}
-        onBlur={e => {
-          e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'
-          e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-          e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)'
-        }}
+        className="w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-300 bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/[0.12] dark:bg-white/[0.05] dark:border-white/[0.1] dark:focus:bg-white/[0.07] dark:focus:border-indigo-500/[0.65]"
       />
     </div>
   )
@@ -123,20 +108,7 @@ function SealedCard({
         {onEdit && (
           <button
             onClick={onEdit}
-            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all"
-            style={{
-              color: 'rgba(255,255,255,0.4)',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = 'rgba(255,255,255,0.75)'
-              e.currentTarget.style.background = 'rgba(255,255,255,0.09)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
-              e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-            }}
+            className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all text-slate-400 bg-slate-100 border border-slate-200 hover:text-slate-600 hover:bg-slate-200 dark:text-white/40 dark:bg-white/[0.05] dark:border-white/[0.08] dark:hover:text-white/75 dark:hover:bg-white/[0.09]"
           >
             <PenLine size={10} />
             {isHe ? 'ערוך' : 'Edit'}
@@ -174,11 +146,11 @@ function SealedCard({
           } : null,
         ].filter(Boolean).map((row, i) => (
           <div key={i} className="min-w-0">
-            <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-white/30 mb-0.5">
+            <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-0.5">
               {row!.icon}
               {row!.label}
             </p>
-            <p className="text-[12px] font-semibold text-white/75 truncate">{row!.value}</p>
+            <p className="text-[12px] font-semibold text-slate-700 dark:text-white/75 truncate">{row!.value}</p>
           </div>
         ))}
       </div>
@@ -229,29 +201,25 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
           transition={{ duration: 0.45, ease: 'easeOut' as const }}
-          className="rounded-2xl overflow-hidden"
+          className="client-form-card rounded-2xl overflow-hidden bg-white border border-indigo-100 shadow-lg dark:bg-transparent dark:border-transparent dark:shadow-none"
           style={{
-            background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-            border: '1px solid rgba(99,102,241,0.28)',
-            boxShadow: '0 0 0 1px rgba(99,102,241,0.06), 0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07)',
             backdropFilter: 'blur(32px)',
             WebkitBackdropFilter: 'blur(32px)',
           }}
         >
           {/* Header */}
-          <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="px-5 pt-5 pb-4 border-b border-slate-100 dark:border-white/[0.06]">
             <div className="flex items-center gap-2 mb-1">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-xl"
-                style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}
+                className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/[0.15] dark:border-indigo-500/[0.3]"
               >
-                <User size={13} className="text-indigo-400" />
+                <User size={13} className="text-indigo-500 dark:text-indigo-400" />
               </div>
-              <h3 className="text-sm font-bold text-white/90">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white/90">
                 {isHe ? 'פרטי הזהות שלך' : 'Your Identity Details'}
               </h3>
             </div>
-            <p className="text-[11px] text-white/35 leading-relaxed">
+            <p className="text-[11px] text-slate-400 dark:text-white/35 leading-relaxed">
               {isHe
                 ? 'הזן את פרטיך לפני החתימה. המידע נדרש לצרכים משפטיים ומאובטח.'
                 : 'Enter your details before signing. This information is required for legal purposes.'}
@@ -333,7 +301,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
               <ChevronRight size={15} />
             </motion.button>
 
-            <p className="text-center text-[10px] text-white/20">
+            <p className="text-center text-[10px] text-slate-400 dark:text-white/20">
               {isHe
                 ? 'פרטיך מאובטחים ומוצפנים. DealSpace אינה משתפת מידע זה עם צדדים שלישיים.'
                 : 'Your details are secured and encrypted. DealSpace does not share this information.'}

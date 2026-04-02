@@ -88,7 +88,7 @@ function CountdownBanner({ expiresAt, locale }: { expiresAt: string; locale: str
       >
         {pad(val)}
       </span>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-white/30 mt-0.5">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 mt-0.5">
         {l}
       </span>
     </div>
@@ -108,17 +108,17 @@ function CountdownBanner({ expiresAt, locale }: { expiresAt: string; locale: str
     >
       <div className="flex items-center gap-2">
         <Clock size={14} className="text-indigo-400 flex-none" />
-        <span className="text-xs font-semibold text-white/50">
+        <span className="text-xs font-semibold text-slate-500 dark:text-white/50">
           {isHe ? 'ההצעה תפקע בעוד' : 'Offer expires in'}
         </span>
       </div>
       <div className="flex items-center gap-2">
         {unit(timeLeft.d, isHe ? 'ימים' : 'd')}
-        <span className="text-white/30 font-black text-lg mb-3">:</span>
+        <span className="text-slate-300 dark:text-white/30 font-black text-lg mb-3">:</span>
         {unit(timeLeft.h, isHe ? 'שעות' : 'h')}
-        <span className="text-white/30 font-black text-lg mb-3">:</span>
+        <span className="text-slate-300 dark:text-white/30 font-black text-lg mb-3">:</span>
         {unit(timeLeft.m, isHe ? 'דקות' : 'm')}
-        <span className="text-white/30 font-black text-lg mb-3">:</span>
+        <span className="text-slate-300 dark:text-white/30 font-black text-lg mb-3">:</span>
         {unit(timeLeft.s, isHe ? 'שניות' : 's')}
       </div>
     </motion.div>
@@ -143,48 +143,43 @@ function AnimatedCounter({ value, currency }: { value: number; currency: string 
 function DealRoomAurora() {
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0" style={{ background: '#05050A' }} />
+      <div className="absolute inset-0 bg-slate-50 dark:bg-[#05050A]" />
       <div
-        className="absolute -top-1/4 -left-1/4 rounded-full"
+        className="absolute -top-1/4 -left-1/4 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_65%)] dark:bg-[radial-gradient(circle,rgba(99,102,241,0.18)_0%,transparent_65%)]"
         style={{
           width: '70vw', height: '70vw',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 65%)',
           filter: 'blur(80px)',
           animation: 'dr-float-a 22s ease-in-out infinite',
         }}
       />
       <div
-        className="absolute -bottom-1/4 -right-1/4 rounded-full"
+        className="absolute -bottom-1/4 -right-1/4 rounded-full bg-[radial-gradient(circle,rgba(168,85,247,0.06)_0%,transparent_62%)] dark:bg-[radial-gradient(circle,rgba(168,85,247,0.14)_0%,transparent_62%)]"
         style={{
           width: '60vw', height: '60vw',
-          background: 'radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 62%)',
           filter: 'blur(90px)',
           animation: 'dr-float-b 28s ease-in-out infinite',
         }}
       />
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.03)_0%,transparent_70%)] dark:bg-[radial-gradient(circle,rgba(99,102,241,0.06)_0%,transparent_70%)]"
         style={{
           width: '40vw', height: '40vw',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)',
           filter: 'blur(60px)',
           animation: 'dr-float-a 34s ease-in-out infinite reverse',
         }}
       />
-      {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.025]"
+        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
         style={{
           backgroundImage:
             'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
           backgroundSize: '52px 52px',
         }}
       />
-      {/* Cinematic film-grain noise — SVG feTurbulence overlay */}
       <svg
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-0 h-full w-full dark:opacity-10 opacity-[0.03]"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ mixBlendMode: 'overlay', opacity: 0.1 }}
+        style={{ mixBlendMode: 'overlay' }}
       >
         <filter id="dr-noise">
           <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
@@ -245,6 +240,16 @@ const pageKeyframes = `
   .dr-prose ul                         { list-style: disc inside; padding-inline-start: 1.1em; margin-bottom: 0.7em; }
   .dr-prose ol                         { list-style: decimal inside; padding-inline-start: 1.1em; margin-bottom: 0.7em; }
   .dr-prose li                         { margin-bottom: 0.25em; }
+
+  :root:not(.dark) .dr-prose strong,
+  :root:not(.dark) .dr-prose b        { color: #334155; }
+  :root:not(.dark) .dr-prose h1       { color: #1e293b; }
+  :root:not(.dark) .dr-prose h2       { color: #334155; }
+  :root:not(.dark) .dr-prose h3       { color: #475569; }
+  :root:not(.dark) .dr-prose mark     { background: rgba(255,215,0,0.25); }
+
+  .dr-title-gradient { background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.72) 100%); }
+  :root:not(.dark) .dr-title-gradient { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
 `
 
 // ─── Stagger container ────────────────────────────────────────────────────────
@@ -300,7 +305,7 @@ function CinematicVideoPlayer({
       transition={{ duration: 0.6, ease: 'easeOut' as const }}
       className="mb-8"
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3 flex items-center gap-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3 flex items-center gap-2">
         <span
           className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px]"
           style={{ background: `${brandColor}22`, color: brandColor }}
@@ -365,7 +370,7 @@ function SocialProofBlock({
       transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' as const }}
       className="mb-8"
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3">
         {isHe ? '⭐ לקוחות ממליצים' : '⭐ Client Testimonials'}
       </p>
 
@@ -399,7 +404,7 @@ function SocialProofBlock({
             </div>
 
             {/* Quote text */}
-            <p className="relative text-[13px] leading-relaxed text-white/60 mt-4 mb-4">
+            <p className="relative text-[13px] leading-relaxed text-slate-500 dark:text-white/60 mt-4 mb-4">
               {t.quote}
             </p>
 
@@ -412,9 +417,9 @@ function SocialProofBlock({
                 {t.author.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-bold text-white/70 leading-tight">{t.author}</p>
+                <p className="text-[12px] font-bold text-slate-700 dark:text-white/70 leading-tight">{t.author}</p>
                 {t.role && (
-                  <p className="text-[10px] text-white/32 mt-0.5">{t.role}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-white/32 mt-0.5">{t.role}</p>
                 )}
               </div>
             </div>
@@ -1063,8 +1068,9 @@ export default function DealRoom() {
   if (fetchStatus === 'loading') {
     return (
       <div
+        className="bg-slate-50 dark:bg-[#05050A]"
         style={{
-          background: '#05050A', minHeight: '100dvh',
+          minHeight: '100dvh',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
@@ -1085,8 +1091,9 @@ export default function DealRoom() {
   if (fetchStatus === 'notfound' || (!proposal && fetchStatus !== 'requires_code')) {
     return (
       <div
+        className="bg-slate-50 dark:bg-[#05050A]"
         style={{
-          background: '#05050A', minHeight: '100dvh',
+          minHeight: '100dvh',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32,
         }}
@@ -1098,7 +1105,7 @@ export default function DealRoom() {
         >
           <AlertCircle size={28} className="text-red-400" />
         </div>
-        <p className="text-white/60 text-sm font-medium text-center">
+        <p className="text-slate-500 dark:text-white/60 text-sm font-medium text-center">
           This deal room doesn't exist or the link has expired.
         </p>
       </div>
@@ -1110,8 +1117,9 @@ export default function DealRoom() {
     const isHe = locale === 'he'
     return (
       <div
+        className="bg-slate-50 dark:bg-[#05050A]"
         style={{
-          background: '#05050A', minHeight: '100dvh',
+          minHeight: '100dvh',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', padding: 32,
         }}
@@ -1136,10 +1144,10 @@ export default function DealRoom() {
             >
               <Lock size={24} className="text-white" />
             </div>
-            <h1 className="text-xl font-black text-white">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">
               {isHe ? 'גישה מוגבלת' : 'Access Required'}
             </h1>
-            <p className="text-center text-sm text-white/45">
+            <p className="text-center text-sm text-slate-500 dark:text-white/45">
               {isHe
                 ? 'הצעה זו מוגנת. בקש את קוד הגישה מבעל העסק.'
                 : 'This proposal is protected. Ask the business for the access code.'}
@@ -1148,15 +1156,13 @@ export default function DealRoom() {
 
           {/* Code input */}
           <div
-            className="rounded-2xl p-6 space-y-4"
+            className="rounded-2xl p-6 space-y-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08]"
             style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.08)',
               backdropFilter: 'blur(40px)',
             }}
           >
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-white/40">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/40">
                 {isHe ? 'קוד גישה' : 'Access Code'}
               </label>
               <input
@@ -1167,7 +1173,7 @@ export default function DealRoom() {
                 value={accessCode}
                 onChange={e => { setAccessCode(e.target.value); setCodeError(false) }}
                 onKeyDown={e => { if (e.key === 'Enter') handleCodeSubmit() }}
-                className="w-full rounded-2xl border bg-white/[0.05] px-4 py-3 text-center text-xl font-black tracking-[0.3em] text-white placeholder-white/20 outline-none transition-all"
+                className="w-full rounded-2xl border bg-slate-50 dark:bg-white/[0.05] px-4 py-3 text-center text-xl font-black tracking-[0.3em] text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-white/20 outline-none transition-all"
                 style={{
                   border: codeError
                     ? '1px solid rgba(248,113,113,0.5)'
@@ -1205,7 +1211,7 @@ export default function DealRoom() {
             </button>
           </div>
 
-          <p className="text-center text-[10px] text-white/20">Powered by DealSpace</p>
+          <p className="text-center text-[10px] text-slate-300 dark:text-white/20">Powered by DealSpace</p>
         </motion.div>
       </div>
     )
@@ -1222,8 +1228,7 @@ export default function DealRoom() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col"
-      style={{ background: '#05050A' }}
+      className="relative min-h-dvh flex flex-col bg-slate-50 dark:bg-[#05050A]"
       dir={dir}
     >
       <style>{pageKeyframes}</style>
@@ -1260,7 +1265,7 @@ export default function DealRoom() {
       <div className="fixed top-4 end-4 z-40">
         <button
           onClick={toggleLocale}
-          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/50 backdrop-blur-xl transition hover:border-white/20 hover:text-white/80"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-white/50 backdrop-blur-xl transition hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-white/80"
         >
           <Globe size={11} />
           {locale === 'he' ? 'EN' : 'עב'}
@@ -1279,7 +1284,7 @@ export default function DealRoom() {
         >
           {/* B'H marker */}
           {proposal.display_bsd && (
-            <p className="text-[11px] text-white/25 font-medium text-end mb-2" style={{ direction: 'rtl' }}>
+            <p className="text-[11px] text-slate-300 dark:text-white/25 font-medium text-end mb-2" style={{ direction: 'rtl' }}>
               בס&quot;ד
             </p>
           )}
@@ -1295,7 +1300,7 @@ export default function DealRoom() {
             >
               <Zap size={15} className="text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-white/60">DealSpace</span>
+            <span className="text-sm font-bold tracking-tight text-slate-500 dark:text-white/60">DealSpace</span>
           </motion.div>
 
           {/* Countdown — hidden once deal is signed */}
@@ -1310,10 +1315,8 @@ export default function DealRoom() {
             <motion.div variants={slideUp} className="mb-6 flex flex-col items-center gap-2">
               {proposal.creator_info.logo_url && (
                 <div
-                  className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden"
+                  className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/[0.12]"
                   style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.12)',
                     backdropFilter: 'blur(8px)',
                   }}
                 >
@@ -1325,7 +1328,7 @@ export default function DealRoom() {
                 </div>
               )}
               {proposal.creator_info.company_name && !proposal.creator_info.logo_url && (
-                <p className="text-sm font-bold text-white/60 tracking-tight">
+                <p className="text-sm font-bold text-slate-500 dark:text-white/60 tracking-tight">
                   {proposal.creator_info.company_name}
                 </p>
               )}
@@ -1336,7 +1339,7 @@ export default function DealRoom() {
           {proposal.client_name && (
             <motion.p
               variants={slideUp}
-              className="text-sm font-medium text-white/40 mb-2"
+              className="text-sm font-medium text-slate-400 dark:text-white/40 mb-2"
             >
               {locale === 'he' ? `שלום, ${proposal.client_name} 👋` : `Hello, ${proposal.client_name} 👋`}
             </motion.p>
@@ -1345,10 +1348,9 @@ export default function DealRoom() {
           {/* Project title */}
           <motion.h1
             variants={slideUp}
-            className="font-display text-3xl sm:text-4xl font-black leading-tight mb-4"
+            className="font-display text-3xl sm:text-4xl font-black leading-tight mb-4 dr-title-gradient"
             style={{
               letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.72) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -1360,7 +1362,7 @@ export default function DealRoom() {
           {proposal.description && (
             <motion.div
               variants={slideUp}
-              className="dr-prose text-[15px] text-white/50 leading-relaxed"
+              className="dr-prose text-[15px] text-slate-500 dark:text-white/50 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: parseSmartVariables(proposal.description, proposal, locale) }}
             />
           )}
@@ -1391,11 +1393,8 @@ export default function DealRoom() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
           whileTap={{ scale: 0.984, transition: { type: 'spring' as const, stiffness: 500, damping: 18 } }}
-          className="relative rounded-2xl p-5 mb-3 overflow-hidden cursor-default"
+          className="relative rounded-2xl p-5 mb-3 overflow-hidden cursor-default bg-white dark:bg-transparent border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none"
           style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             rotateX: baseTiltXSpring,

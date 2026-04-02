@@ -11,26 +11,66 @@
 @tailwind utilities;
 
 /* ── Design Tokens ───────────────────────────────────────────────────────── */
+
+/* ─ Light mode (default) ─ */
 :root {
-  /* OLED-deep background */
-  --background:      #05050A;
-  --foreground:      #f0f0f8;
+  /* Surface system — Apple/Stripe-level light */
+  --background:       #f8fafc;
+  --foreground:       #0f172a;
+  --surface:          #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-sunken:   #f1f5f9;
+
+  /* Text system */
+  --text-primary:     #0f172a;
+  --text-secondary:   #475569;
+  --text-tertiary:    #94a3b8;
+  --text-muted:       #cbd5e1;
+
+  /* Border & glass system */
+  --border:           #e2e8f0;
+  --border-subtle:    #f1f5f9;
+  --glass-bg:         rgba(255,255,255,0.7);
+  --glass-border:     rgba(226,232,240,0.5);
+  --glass-blur:       blur(24px) saturate(180%);
+
+  /* Nav */
+  --nav-bg:           rgba(248,250,252,0.92);
+  --nav-border:       rgba(226,232,240,0.6);
+  --nav-shadow:       0 1px 3px rgba(0,0,0,0.04), 0 1px 0 rgba(0,0,0,0.02);
+
+  /* Card system */
+  --card-bg:          #ffffff;
+  --card-border:      #e2e8f0;
+  --card-shadow:      0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --card-hover-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+
+  /* Input system */
+  --input-bg:         #ffffff;
+  --input-border:     #e2e8f0;
+  --input-focus-border: rgba(99,102,241,0.5);
+  --input-focus-ring: rgba(99,102,241,0.08);
+
+  /* Dropdown / overlay */
+  --dropdown-bg:      #ffffff;
+  --dropdown-border:  #e2e8f0;
+  --dropdown-shadow:  0 8px 30px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --overlay-bg:       rgba(0,0,0,0.3);
 
   /* Accent palette */
-  --indigo:          #6366f1;
-  --purple:          #a855f7;
-  --gold:            #d4af37;
-  --emerald:         #22c55e;
+  --indigo:           #6366f1;
+  --purple:           #a855f7;
+  --gold:             #d4af37;
+  --emerald:          #22c55e;
 
-  /* Glow helpers */
-  --glow-indigo:     rgba(99,102,241,0.45);
-  --glow-purple:     rgba(168,85,247,0.35);
-  --glow-gold:       rgba(212,175,55,0.35);
+  /* Glow helpers — subtle in light mode */
+  --glow-indigo:      rgba(99,102,241,0.2);
+  --glow-purple:      rgba(168,85,247,0.15);
+  --glow-gold:        rgba(212,175,55,0.15);
 
-  /* Glass system */
-  --glass-bg:        rgba(255,255,255,0.03);
-  --glass-border:    rgba(255,255,255,0.08);
-  --glass-blur:      blur(24px) saturate(180%);
+  /* Scrollbar */
+  --scrollbar-thumb:  rgba(0,0,0,0.12);
+  --scrollbar-hover:  rgba(0,0,0,0.22);
 
   /* Font stacks
      EN: Plus Jakarta Sans (premium geometric) — Latin glyphs only
@@ -40,6 +80,53 @@
   --font-display: 'Plus Jakarta Sans', 'Rubik', system-ui, sans-serif;
   --font-hebrew:  'Rubik', 'Plus Jakarta Sans', sans-serif;
   --font-accent:  'Syne', 'Plus Jakarta Sans', sans-serif;
+
+  color-scheme: light;
+}
+
+/* ─ Dark mode — preserves the EXACT existing aesthetic ─ */
+.dark {
+  --background:       #05050A;
+  --foreground:       #f0f0f8;
+  --surface:          #0a0a0a;
+  --surface-elevated: #111118;
+  --surface-sunken:   #040408;
+
+  --text-primary:     #f0f0f8;
+  --text-secondary:   #a1a1aa;
+  --text-tertiary:    rgba(255,255,255,0.35);
+  --text-muted:       rgba(255,255,255,0.2);
+
+  --border:           rgba(255,255,255,0.08);
+  --border-subtle:    rgba(255,255,255,0.04);
+  --glass-bg:         rgba(255,255,255,0.03);
+  --glass-border:     rgba(255,255,255,0.08);
+
+  --nav-bg:           linear-gradient(180deg, rgba(3,3,5,0.96) 0%, rgba(4,6,10,0.90) 100%);
+  --nav-border:       rgba(255,255,255,0.06);
+  --nav-shadow:       0 1px 0 rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.35);
+
+  --card-bg:          rgba(255,255,255,0.02);
+  --card-border:      rgba(255,255,255,0.07);
+  --card-shadow:      none;
+  --card-hover-shadow: 0 0 32px rgba(99,102,241,0.08);
+
+  --input-bg:         #0a0a0a;
+  --input-border:     rgba(255,255,255,0.08);
+  --input-focus-border: rgba(99,102,241,0.6);
+  --input-focus-ring: rgba(99,102,241,0.12);
+
+  --dropdown-bg:      linear-gradient(160deg, rgba(12,12,24,0.98) 0%, rgba(8,8,18,0.98) 100%);
+  --dropdown-border:  rgba(255,255,255,0.09);
+  --dropdown-shadow:  0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  --overlay-bg:       rgba(0,0,0,0.78);
+
+  --glow-indigo:      rgba(99,102,241,0.45);
+  --glow-purple:      rgba(168,85,247,0.35);
+  --glow-gold:        rgba(212,175,55,0.35);
+
+  --scrollbar-thumb:  rgba(255,255,255,0.09);
+  --scrollbar-hover:  rgba(255,255,255,0.18);
 
   color-scheme: dark;
 }
@@ -91,10 +178,10 @@ body {
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.09);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
 /* ── Focus rings ──────────────────────────────────────────────────────────── */
 :focus-visible {
@@ -106,7 +193,7 @@ body {
 /* ── Selection ────────────────────────────────────────────────────────────── */
 ::selection {
   background: rgba(99,102,241,0.28);
-  color: white;
+  color: var(--text-primary);
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
@@ -123,7 +210,101 @@ body {
   border:             1px solid var(--glass-border);
   backdrop-filter:    var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow:         var(--card-shadow);
+}
+.dark .glass-card {
   box-shadow:         inset 0 1px 1px rgba(255,255,255,0.05);
+}
+
+/* ── Profile page card system ────────────────────────────────────────────── */
+.profile-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+.dark .profile-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.profile-icon-badge {
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  color: #6366f1;
+}
+.dark .profile-icon-badge {
+  background: rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.25);
+  color: #818cf8;
+}
+.profile-input {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.03);
+}
+.profile-input:focus {
+  background: #ffffff;
+  border-color: rgba(99,102,241,0.6);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12), inset 0 1px 0 rgba(0,0,0,0.02);
+}
+.dark .profile-input {
+  background: #0a0a0a;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.dark .profile-input:focus {
+  background: #0f0f1a;
+  border-color: rgba(99,102,241,0.6);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.profile-input[data-error="true"] {
+  border-color: rgba(248,113,113,0.6) !important;
+}
+.profile-input[data-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── ReusableServices panel ──────────────────────────────────────────────── */
+.reuse-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.dark .reuse-panel {
+  background: linear-gradient(160deg, rgba(22,22,36,0.99) 0%, rgba(12,12,22,0.99) 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ── HelpCenterDrawer inner panel ────────────────────────────────────────── */
+.help-drawer-inner {
+  background: #ffffff;
+  border-inline-start: 1px solid #e2e8f0;
+}
+.dark .help-drawer-inner {
+  background: linear-gradient(180deg, #0c0c1e 0%, #080812 100%);
+  border-inline-start: 1px solid rgba(255,255,255,0.07);
+}
+
+/* ── ClientDetailsForm — dark mode glass card ────────────────────────────── */
+.dark .client-form-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%);
+  border: 1px solid rgba(99,102,241,0.28);
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.06), 0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ── MilestoneTimeline card ──────────────────────────────────────────────── */
+.milestone-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.dark .milestone-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 /* ── Custom range slider — Deal Room ─────────────────────────────────────── */

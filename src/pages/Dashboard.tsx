@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Columns, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react'
+import { Plus, TrendingUp, Send, Trophy, LayoutGrid, Search, List, FileDown, FileText, ChevronDown, Check, SlidersHorizontal, X, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useTier, useBillingStatus, FREE_PROPOSAL_LIMIT } from '../stores/useAuthStore'
@@ -8,7 +8,6 @@ import { useProposalStore } from '../stores/useProposalStore'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { ProposalCard, ProposalCardSkeleton } from '../components/dashboard/ProposalCard'
-import { KanbanBoard } from '../components/dashboard/KanbanBoard'
 import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
 import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 import { generateProposalPdf } from '../lib/pdfEngine'
@@ -75,7 +74,7 @@ function KPICard({
             style={{ background: color, boxShadow: `0 0 8px ${color}`, opacity: 0.55, animation: 'ds-pulse 2.5s ease-in-out infinite' }} />
         </div>
 
-        <p className="text-[2rem] font-black text-white tabular-nums tracking-tight leading-none mb-1.5">
+        <p className="text-[2rem] font-black text-slate-900 dark:text-white tabular-nums tracking-tight leading-none mb-1.5">
           <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
         </p>
 
@@ -83,7 +82,7 @@ function KPICard({
           <Tooltip.Root open={tipOpen} onOpenChange={setTipOpen}>
             <Tooltip.Trigger asChild>
               <p
-                className="flex items-center gap-1 text-xs text-white/40 font-medium w-fit select-none cursor-pointer"
+                className="flex items-center gap-1 text-xs text-slate-400 dark:text-white/40 font-medium w-fit select-none cursor-pointer"
                 onClick={() => setTipOpen(o => !o)}
               >
                 {label}
@@ -93,10 +92,12 @@ function KPICard({
               </p>
             </Tooltip.Trigger>
             <Tooltip.Portal>
-              <Tooltip.Content sideOffset={8} className="z-[200] max-w-[210px] rounded-xl px-3.5 py-2.5 text-[11.5px] leading-relaxed text-white/70"
-                style={{ background: 'rgba(3,3,5,0.97)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 12px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)', backdropFilter: 'blur(24px)' }}>
+              <Tooltip.Content sideOffset={8} className="z-[200] max-w-[210px] rounded-xl px-3.5 py-2.5 text-[11.5px] leading-relaxed
+                text-slate-600 bg-white border border-slate-200 shadow-lg
+                dark:text-white/70 dark:bg-[rgba(3,3,5,0.97)] dark:border-white/[0.09] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]"
+                style={{ backdropFilter: 'blur(24px)' }}>
                 {tooltip}
-                <Tooltip.Arrow style={{ fill: 'rgba(3,3,5,0.97)' }} />
+                <Tooltip.Arrow className="fill-white dark:fill-[rgba(3,3,5,0.97)]" />
               </Tooltip.Content>
             </Tooltip.Portal>
           </Tooltip.Root>
@@ -174,10 +175,10 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
 function DashboardAurora() {
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 bg-[#040608]" />
-      <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full"
+      <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
+      <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full opacity-50 dark:opacity-100"
         style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 20s ease-in-out infinite' }} />
-      <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full"
+      <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full opacity-50 dark:opacity-100"
         style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 25s ease-in-out infinite reverse' }} />
     </div>
   )
@@ -214,10 +215,10 @@ function DunningBanner({ isHe }: { isHe: boolean }) {
           <AlertTriangle size={16} style={{ color: '#f87171' }} />
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-black text-white leading-tight mb-0.5">
+          <p className="text-[13px] font-black text-slate-900 dark:text-white leading-tight mb-0.5">
             {isHe ? 'בעיה בחיוב — יצירת הצעות חסומה' : 'Billing issue — proposal creation locked'}
           </p>
-          <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="text-[12px] leading-relaxed text-slate-500 dark:text-white/50">
             {isHe
               ? 'לא הצלחנו לחייב את כרטיס האשראי שלך. אנא עדכן פרטי תשלום כדי להמשיך ליצור הצעות.'
               : "We couldn't process your last payment. Please update your billing details to continue creating proposals."}
@@ -253,7 +254,7 @@ function DunningBanner({ isHe }: { isHe: boolean }) {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewMode = 'grid' | 'kanban' | 'list'
+type ViewMode = 'grid' | 'list'
 type PipelineTab = 'all' | 'drafts' | 'pending' | 'won' | 'lost'
 type SortBy = 'newest' | 'oldest' | 'value'
 
@@ -267,9 +268,10 @@ export default function Dashboard() {
   const firstName = ((user?.user_metadata?.full_name as string | undefined) ?? '').split(' ')[0] || ''
   const navigate = useNavigate()
   const [wizardClosed, setWizardClosed] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>(() =>
-    (localStorage.getItem('dealspace:view-mode') as ViewMode | null) ?? 'grid'
-  )
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const stored = localStorage.getItem('dealspace:view-mode')
+    return stored === 'list' ? 'list' : 'grid'
+  })
   const [search, setSearch] = useState('')
   const [pipelineTab, setPipelineTab] = useState<PipelineTab>('all')
   const [sortBy, setSortBy] = useState<SortBy>('newest')
@@ -544,7 +546,7 @@ export default function Dashboard() {
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
           <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               {isHe
                 ? `שלום${firstName ? `, ${firstName}` : ''}`
                 : `Hello${firstName ? `, ${firstName}` : ''}`}
@@ -579,7 +581,7 @@ export default function Dashboard() {
               )
             })()}
           </div>
-          <p className="text-sm text-white/35">
+          <p className="text-sm text-slate-400 dark:text-white/35">
             {isHe ? 'כל הצעות המחיר שלך במקום אחד.' : 'All your proposals in one place.'}
           </p>
         </div>
@@ -617,8 +619,9 @@ export default function Dashboard() {
           {/* ── Pipeline Tab Bar ──────────────────────────────────────────── */}
           <div
             data-tour="pipeline-tabs"
-            className="flex items-center rounded-2xl p-1 ds-tab-scroll overflow-x-auto"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+            className="flex items-center rounded-2xl p-1 ds-tab-scroll overflow-x-auto
+              bg-white border border-slate-200
+              dark:bg-white/[0.04] dark:border-white/[0.07]"
           >
             {TABS.map(tab => {
               const active = pipelineTab === tab.key
@@ -703,22 +706,11 @@ export default function Dashboard() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={isHe ? 'חפש לפי לקוח, פרויקט, או אימייל…' : 'Search by client, project, or email…'}
-              className="w-full h-11 rounded-2xl ps-9 pe-10 text-[13px] font-medium text-white placeholder-white/25 outline-none transition-all duration-200"
-              style={{
-                background: '#0a0a0a',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              }}
-              onFocus={e => {
-                e.currentTarget.style.background = '#0d0d1a'
-                e.currentTarget.style.border = '1px solid rgba(99,102,241,0.45)'
-                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.04)'
-              }}
-              onBlur={e => {
-                e.currentTarget.style.background = '#0a0a0a'
-                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)'
-                e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)'
-              }}
+              className="w-full h-11 rounded-2xl ps-9 pe-10 text-[13px] font-medium outline-none transition-all duration-200
+                bg-white text-slate-900 placeholder-slate-300 border border-slate-200
+                dark:bg-[#0a0a0a] dark:text-white dark:placeholder-white/25 dark:border-white/[0.07]
+                focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10
+                dark:focus:border-indigo-500/45 dark:focus:ring-indigo-500/10"
             />
             <AnimatePresence>
               {search && (
@@ -880,13 +872,13 @@ export default function Dashboard() {
 
             {/* View toggle */}
             <div
-              className="flex items-center rounded-xl p-0.5 flex-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+              className="flex items-center rounded-xl p-0.5 flex-none
+                bg-white border border-slate-200
+                dark:bg-white/[0.04] dark:border-white/[0.07]"
             >
               {([
                 { mode: 'grid'   as ViewMode, icon: <LayoutGrid size={13} />, label_en: 'Grid',   label_he: 'רשת' },
                 { mode: 'list'   as ViewMode, icon: <List size={13} />,       label_en: 'List',   label_he: 'רשימה' },
-                { mode: 'kanban' as ViewMode, icon: <Columns size={13} />,    label_en: 'Kanban', label_he: 'קנבן' },
               ]).map(({ mode, icon, label_en, label_he }) => (
                 <button
                   key={mode}
@@ -909,11 +901,11 @@ export default function Dashboard() {
             <motion.button
               onClick={handleCsvExport}
               disabled={filteredProposals.length === 0}
-              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all duration-150 outline-none"
+              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all duration-150 outline-none
+                bg-white border border-slate-200 text-slate-400
+                dark:bg-white/[0.04] dark:border-white/[0.07] dark:text-white/35"
               style={{
-                background: csvFlash ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${csvFlash ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                color: csvFlash ? '#4ade80' : 'rgba(255,255,255,0.35)',
+                ...(csvFlash ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' } : {}),
                 opacity: filteredProposals.length === 0 ? 0.28 : 1,
                 cursor: filteredProposals.length === 0 ? 'default' : 'pointer',
                 boxShadow: csvFlash ? '0 0 18px rgba(74,222,128,0.18)' : 'none',
@@ -925,7 +917,7 @@ export default function Dashboard() {
             </motion.button>
 
             {/* Count */}
-            <span className="ms-auto text-[10px] font-semibold text-white/22 whitespace-nowrap tabular-nums">
+            <span className="ms-auto text-[10px] font-semibold text-slate-300 dark:text-white/22 whitespace-nowrap tabular-nums">
               {filteredProposals.length !== tabPool.length
                 ? `${filteredProposals.length} / ${tabPool.length}`
                 : `${tabPool.length} ${isHe ? 'הצעות' : 'proposals'}`}
@@ -947,38 +939,35 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
           >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <FileText size={20} className="text-white/20" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
+              bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]">
+              <FileText size={20} className="text-slate-300 dark:text-white/20" />
             </div>
-            <p className="text-sm font-semibold text-white/40">
+            <p className="text-sm font-semibold text-slate-400 dark:text-white/40">
               {isHe ? 'לא נמצאו הצעות בקטגוריה זו' : 'No proposals in this category'}
             </p>
-            <p className="text-xs text-white/20 mt-1">
+            <p className="text-xs text-slate-300 dark:text-white/20 mt-1">
               {search.trim()
                 ? (isHe ? 'נסה לשנות את מונחי החיפוש' : 'Try adjusting your search terms')
                 : (isHe ? 'נסה לעבור לטאב אחר' : 'Try switching to another tab')}
             </p>
           </motion.div>
-        ) : viewMode === 'kanban' ? (
-          <div data-tour="proposals-list">
-            <KanbanBoard proposals={filteredProposals} locale={locale} onEdit={handleEdit} />
-          </div>
         ) : viewMode === 'list' ? (
           <div data-tour="proposals-list">
             {/* Column header */}
-            <div className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl"
-              style={{ gridTemplateColumns: pipelineTab === 'lost' ? '28px 8px 1fr 96px 112px 90px 56px' : '8px 1fr 96px 112px 90px 56px', gap: '0 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl
+              bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.04]"
+              style={{ gridTemplateColumns: pipelineTab === 'lost' ? '28px 8px 1fr 96px 112px 90px 56px' : '8px 1fr 96px 112px 90px 56px', gap: '0 16px' }}>
               {pipelineTab === 'lost' && <div />}
               <div />
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20">{isHe ? 'פרויקט / לקוח' : 'Project / Client'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-center">{isHe ? 'סטטוס' : 'Status'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-end">{isHe ? 'סכום' : 'Amount'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-white/20 text-end">{isHe ? 'תאריך' : 'Date'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20">{isHe ? 'פרויקט / לקוח' : 'Project / Client'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-center">{isHe ? 'סטטוס' : 'Status'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-end">{isHe ? 'סכום' : 'Amount'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-end">{isHe ? 'תאריך' : 'Date'}</p>
               <div />
             </div>
 
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.07]">
               <AnimatePresence>
                 {filteredProposals.map((p, i) => {
                   const total = proposalTotal(p)
@@ -1018,10 +1007,10 @@ export default function Dashboard() {
                         )}
                         <div className="h-2 w-2 rounded-full flex-none" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-white/90 truncate leading-snug">
+                          <p className="text-[13px] font-semibold text-slate-800 dark:text-white/90 truncate leading-snug">
                             {p.project_title || (isHe ? 'הצעה חדשה' : 'New Proposal')}
                           </p>
-                          <p className="text-[11px] text-white/35 truncate mt-0.5">{p.client_name || '—'}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-white/35 truncate mt-0.5">{p.client_name || '—'}</p>
                         </div>
                         <div className="flex justify-center">
                           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
@@ -1033,7 +1022,7 @@ export default function Dashboard() {
                         <p className="text-[13px] font-bold tabular-nums text-end" style={{ color: meta.color, textShadow: `0 0 16px ${meta.glow}` }}>
                           {formatCurrency(total, p.currency)}
                         </p>
-                        <p className="text-[11px] text-white/30 text-end">{date}</p>
+                        <p className="text-[11px] text-slate-400 dark:text-white/30 text-end">{date}</p>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                           <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/8 hover:text-white/75" onClick={() => handleEdit(p.id)} title={isHe ? 'ערוך' : 'Edit'}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

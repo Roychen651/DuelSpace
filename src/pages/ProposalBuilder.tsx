@@ -362,8 +362,8 @@ export default function ProposalBuilder() {
 
   return (
     <div
-      className="flex flex-col"
-      style={{ background: '#030305', height: '100dvh', overflow: 'hidden' }}
+      className="flex flex-col bg-slate-50 dark:bg-[#030305]"
+      style={{ height: '100dvh', overflow: 'hidden' }}
       dir={locale === 'he' ? 'rtl' : 'ltr'}
     >
       <style>{`
@@ -379,19 +379,19 @@ export default function ProposalBuilder() {
 
       {/* ── Top bar ────────────────────────────────────────────────────────── */}
       <header
-        className="flex-none flex items-center justify-between px-4 py-3 z-20"
+        className="flex-none flex items-center justify-between px-4 py-3 z-20
+          bg-white/92 border-b border-slate-200/60
+          dark:bg-[rgba(3,3,5,0.9)] dark:border-white/[0.05]"
         style={{
-          background: 'rgba(3,3,5,0.9)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
         }}
       >
         {/* Left: back + title */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex-none flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition hover:bg-white/5 hover:text-white/80"
+            className="flex-none flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white/80"
             aria-label={locale === 'he' ? 'חזרה' : 'Back'}
           >
             <ArrowLeft size={16} />
@@ -406,7 +406,7 @@ export default function ProposalBuilder() {
             >
               <Zap size={13} className="text-white" />
             </div>
-            <span className="text-sm font-semibold text-white/80 truncate max-w-[90px] sm:max-w-[200px]">
+            <span className="text-sm font-semibold text-slate-700 dark:text-white/80 truncate max-w-[90px] sm:max-w-[200px]">
               {draft.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
             </span>
           </div>

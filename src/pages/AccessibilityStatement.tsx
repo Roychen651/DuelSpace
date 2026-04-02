@@ -321,9 +321,8 @@ export default function AccessibilityStatement() {
 
   return (
     <div
-      className="min-h-dvh"
+      className="min-h-dvh bg-[#05050A]"
       dir={isHe ? 'rtl' : 'ltr'}
-      style={{ background: '#05050A' }}
     >
       {/* Header */}
       <header

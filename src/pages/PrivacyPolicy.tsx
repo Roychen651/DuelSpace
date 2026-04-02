@@ -220,9 +220,8 @@ export default function PrivacyPolicy() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col"
+      className="relative min-h-dvh flex flex-col bg-[#05050A] text-[#f0f0f8]"
       dir={isHe ? 'rtl' : 'ltr'}
-      style={{ background: '#05050A', color: '#f0f0f8' }}
     >
       {/* Background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>

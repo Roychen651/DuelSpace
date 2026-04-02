@@ -9,6 +9,7 @@ import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
+import { ThemeToggle } from '../ui/ThemeToggle'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -102,18 +103,17 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#040608' }}>
+    <div className="min-h-dvh bg-slate-50 dark:bg-[#040608]">
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <nav
-        className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6"
+        className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6
+          bg-white/92 border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]
+          dark:bg-transparent dark:border-white/[0.06] dark:shadow-[0_1px_0_rgba(99,102,241,0.08),0_4px_24px_rgba(0,0,0,0.35)]"
         style={{
           height: 58,
-          background: 'linear-gradient(180deg, rgba(3,3,5,0.96) 0%, rgba(4,6,10,0.90) 100%)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          boxShadow: '0 1px 0 rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.35)',
         }}
       >
         {/* Left side: logo + optional back button */}
@@ -131,11 +131,11 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               <Zap size={15} className="text-white" />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-[14px] font-black tracking-tight text-white" style={{ letterSpacing: '-0.02em' }}>
+              <span className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white" style={{ letterSpacing: '-0.02em' }}>
                 {t('brand.name')}
               </span>
               {company && (
-                <span className="text-[10px] text-white/30 font-medium truncate max-w-[120px]">{company}</span>
+                <span className="text-[10px] text-slate-400 dark:text-white/30 font-medium truncate max-w-[120px]">{company}</span>
               )}
             </div>
           </button>
@@ -144,23 +144,10 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           {!isDashboard && (
             <motion.button
               onClick={() => navigate('/dashboard')}
-              className="hidden sm:flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
-              style={{
-                border: '1px solid rgba(99,102,241,0.25)',
-                background: 'rgba(99,102,241,0.06)',
-                color: 'rgba(165,170,255,0.7)',
-                boxShadow: '0 0 12px rgba(99,102,241,0.08)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(99,102,241,0.14)'
-                e.currentTarget.style.color = 'rgba(165,170,255,1)'
-                e.currentTarget.style.borderColor = 'rgba(99,102,241,0.45)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(99,102,241,0.06)'
-                e.currentTarget.style.color = 'rgba(165,170,255,0.7)'
-                e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'
-              }}
+              className="hidden sm:flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors
+                border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-600
+                dark:border-indigo-500/25 dark:bg-indigo-500/[0.06] dark:text-indigo-300/70 dark:hover:bg-indigo-500/[0.14] dark:hover:text-indigo-300"
+              style={{ boxShadow: '0 0 12px rgba(99,102,241,0.08)' }}
               whileTap={{ scale: 0.97 }}
             >
               {isRTL ? <ChevronRight size={11} /> : <ChevronLeft size={11} />}
@@ -175,19 +162,24 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           {/* Lang toggle */}
           <button
             onClick={() => setLocale(isHe ? 'en' : 'he')}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium text-white/35 transition-colors hover:text-white/70"
-            style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors
+              border border-slate-200 bg-white/80 text-slate-400 hover:text-slate-600
+              dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-white/35 dark:hover:text-white/70"
           >
             <Globe size={10} />
             {isHe ? 'EN' : 'עב'}
           </button>
 
+          {/* Theme toggle */}
+          <ThemeToggle />
+
           {/* Help Center */}
           <button
             data-tour="help-btn"
             onClick={() => setHelpOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:text-white/75"
-            style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors
+              border border-slate-200 bg-white/80 text-slate-400 hover:text-slate-600
+              dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-white/35 dark:hover:text-white/75"
             aria-label={isHe ? 'מרכז עזרה' : 'Help Center'}
             title={isHe ? 'מרכז עזרה' : 'Help Center'}
           >
@@ -204,7 +196,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               if (billingStatus === 'past_due') return
               navigate('/proposals/new')
             }}
-            className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-bold text-white"
+            className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-bold"
             style={{
               background: billingStatus === 'past_due'
                 ? 'rgba(255,255,255,0.06)'
@@ -234,13 +226,12 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           >
             <button
               data-tour="profile-avatar"
-              className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none"
+              className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none
+                border border-slate-200 hover:bg-slate-100
+                dark:border-white/[0.08] dark:hover:bg-white/[0.06]"
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: menuOpen ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                background: menuOpen ? undefined : undefined,
               }}
-              onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-              onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = menuOpen ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)' }}
             >
               {/* Avatar */}
               <div
@@ -251,7 +242,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               </div>
               {/* Name — desktop only */}
               {firstName && (
-                <span className="hidden md:block text-[12px] font-semibold text-white/70 pe-1 max-w-[90px] truncate">
+                <span className="hidden md:block text-[12px] font-semibold text-slate-600 dark:text-white/70 pe-1 max-w-[90px] truncate">
                   {firstName}
                 </span>
               )}
@@ -261,40 +252,40 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             {menuOpen && (
               <div className="absolute end-0 top-full pt-2 z-50">
                 <div
-                  className="flex flex-col rounded-2xl overflow-hidden"
+                  className="flex flex-col rounded-2xl overflow-hidden
+                    bg-white border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                    dark:border-white/[0.09] dark:shadow-[0_20px_60px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]"
                   style={{
                     width: 200,
-                    background: 'linear-gradient(160deg, rgba(12,12,24,0.98) 0%, rgba(8,8,18,0.98) 100%)',
-                    border: '1px solid rgba(255,255,255,0.09)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    border: '1px solid',
                     backdropFilter: 'blur(40px)',
                   }}
                 >
                   {/* Identity header */}
-                  <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <p className="text-[13px] font-semibold text-white/90 truncate">{name || user?.email}</p>
-                    {company && <p className="text-[11px] text-white/35 truncate mt-0.5">{company}</p>}
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-white/[0.06]">
+                    <p className="text-[13px] font-semibold text-slate-900 dark:text-white/90 truncate">{name || user?.email}</p>
+                    {company && <p className="text-[11px] text-slate-400 dark:text-white/35 truncate mt-0.5">{company}</p>}
                   </div>
 
                   {/* Menu items */}
                   <div className="p-1.5">
-                    <button onClick={() => navigate('/profile')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button onClick={() => navigate('/profile')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Settings size={13} className="flex-none" />{isHe ? 'פרופיל והגדרות' : 'Profile & Settings'}
                     </button>
-                    <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Bookmark size={13} className="flex-none" />{isHe ? 'שירותים שמורים' : 'Saved Services'}
                     </button>
-                    <button onClick={() => navigate('/contracts')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button onClick={() => navigate('/contracts')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <FileText size={13} className="flex-none" />{isHe ? 'ספריית חוזים' : 'Contracts'}
                     </button>
-                    <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/55 transition-colors hover:bg-white/5 hover:text-white/90 text-start">
+                    <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
                   </div>
 
                   {/* Sign out */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="p-1.5">
-                    <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-white/40 transition-colors hover:bg-red-500/8 hover:text-red-400 text-start">
+                  <div className="border-t border-slate-100 dark:border-white/[0.06] p-1.5">
+                    <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-400 dark:text-white/40 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/8 dark:hover:text-red-400 text-start">
                       <LogOut size={13} className="flex-none" />{isHe ? 'התנתק' : 'Sign Out'}
                     </button>
                   </div>
@@ -314,11 +305,10 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.96 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="fixed top-[66px] end-4 z-[9998] flex items-center gap-3 rounded-2xl px-4 py-3"
+            className="fixed top-[66px] end-4 z-[9998] flex items-center gap-3 rounded-2xl px-4 py-3
+              bg-white border border-emerald-200 shadow-lg
+              dark:bg-[rgba(8,18,12,0.96)] dark:border-emerald-500/30 dark:shadow-[0_0_32px_rgba(34,197,94,0.12),0_8px_24px_rgba(0,0,0,0.5)]"
             style={{
-              background: 'rgba(8,18,12,0.96)',
-              border: '1px solid rgba(34,197,94,0.3)',
-              boxShadow: '0 0 32px rgba(34,197,94,0.12), 0 8px 24px rgba(0,0,0,0.5)',
               backdropFilter: 'blur(20px)',
               maxWidth: 280,
             }}
@@ -332,10 +322,10 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               <span className="relative inline-flex h-3 w-3 rounded-full" style={{ background: '#22c55e' }} />
             </span>
             <div className="min-w-0">
-              <p className="text-[12px] font-bold text-emerald-400 leading-none mb-0.5">
+              <p className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 leading-none mb-0.5">
                 {isHe ? 'לקוח צופה עכשיו' : 'Client viewing now'}
               </p>
-              <p className="text-[11px] text-white/45 truncate">
+              <p className="text-[11px] text-slate-500 dark:text-white/45 truncate">
                 {isHe
                   ? `"${viewingToast.title}" — ${viewingToast.client}`
                   : `"${viewingToast.title}" — ${viewingToast.client}`}

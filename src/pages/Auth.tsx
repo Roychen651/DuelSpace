@@ -60,10 +60,10 @@ function GlobalStyles() {
 function LinearBackground() {
   return (
     <div className="pointer-events-none fixed inset-0" aria-hidden>
-      <div className="absolute inset-0" style={{ background: '#000000' }} />
+      <div className="absolute inset-0 bg-slate-50 dark:bg-black" />
       {/* Single centered glow — the only decoration */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4"
+        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 opacity-60 dark:opacity-100"
         style={{
           width: 700,
           height: 700,
@@ -81,13 +81,12 @@ function LinearBackground() {
 function GlassCard({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="w-full rounded-3xl p-8 sm:p-10"
+      className="w-full rounded-3xl p-8 sm:p-10
+        bg-white/80 border border-slate-200/60 shadow-xl
+        dark:bg-white/[0.02] dark:border-white/[0.05] dark:shadow-[0_32px_80px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.04)]"
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.05)',
         backdropFilter: 'blur(48px)',
         WebkitBackdropFilter: 'blur(48px)',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
       {children}
@@ -107,29 +106,22 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 function AuthInput({ label, icon, error, suffix, id, ...props }: InputProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-[11px] font-medium uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>
+      <label htmlFor={id} className="block text-[11px] font-medium uppercase tracking-widest text-slate-400 dark:text-white/35">
         {label}
       </label>
       <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <span className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center text-slate-300 dark:text-white/25">
           {icon}
         </span>
         <input
           id={id}
-          className="w-full rounded-xl py-3 pe-10 ps-10 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
+          className="w-full rounded-xl py-3 pe-10 ps-10 text-sm outline-none transition-all duration-200
+            bg-slate-50 text-slate-900 placeholder-slate-300 border border-slate-200
+            dark:bg-white/[0.03] dark:text-white dark:placeholder-white/20 dark:border-white/[0.07]
+            focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10
+            dark:focus:border-indigo-500/50 dark:focus:ring-indigo-500/8"
           style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.07)',
-          }}
-          onFocus={e => {
-            if (!error) {
-              e.currentTarget.style.border = '1px solid rgba(99,102,241,0.5)'
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.08)'
-            }
-          }}
-          onBlur={e => {
-            e.currentTarget.style.border = error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.07)'
-            e.currentTarget.style.boxShadow = 'none'
+            ...(error ? { borderColor: 'rgba(248,113,113,0.4)' } : {}),
           }}
           {...props}
         />
@@ -207,14 +199,9 @@ function GoogleButton({ onClick, loading, label }: { onClick: () => void; loadin
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50"
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        color: 'rgba(255,255,255,0.7)',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.14)'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-      onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+      className="flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:opacity-50
+        bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300
+        dark:bg-white/[0.04] dark:border-white/[0.08] dark:text-white/70 dark:hover:bg-white/[0.07] dark:hover:border-white/[0.14]"
     >
       {loading ? (
         <span
@@ -243,9 +230,9 @@ function GoogleIcon() {
 function OrDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
-      <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>{label}</span>
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
+      <div className="h-px flex-1 bg-slate-200 dark:bg-white/[0.07]" />
+      <span className="text-xs text-slate-300 dark:text-white/25">{label}</span>
+      <div className="h-px flex-1 bg-slate-200 dark:bg-white/[0.07]" />
     </div>
   )
 }
@@ -283,10 +270,9 @@ function LangToggle() {
     <button
       type="button"
       onClick={() => setLocale(other)}
-      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition"
-      style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)' }}
-      onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition
+        border border-slate-200 bg-white/80 text-slate-400 hover:text-slate-600
+        dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-white/40 dark:hover:text-white/75"
       aria-label={`Switch to ${other === 'he' ? 'עברית' : 'English'}`}
     >
       <Globe size={12} aria-hidden />
@@ -309,8 +295,9 @@ function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange:
 
   return (
     <div
-      className="relative flex rounded-xl p-1"
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+      className="relative flex rounded-xl p-1
+        bg-slate-100 border border-slate-200
+        dark:bg-white/[0.04] dark:border-white/[0.06]"
       role="tablist"
     >
       {(['signin', 'signup'] as const).map((tab) => (
@@ -320,7 +307,7 @@ function AuthTabs({ active, onChange }: { active: 'signin' | 'signup'; onChange:
           aria-selected={active === tab}
           onClick={() => onChange(tab)}
           className="relative z-10 flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors duration-200"
-          style={{ color: active === tab ? '#ffffff' : 'rgba(255,255,255,0.35)' }}
+          style={{ color: active === tab ? '#ffffff' : 'var(--text-tertiary)' }}
         >
           {t(`auth.tab.${tab}`)}
         </button>
@@ -831,7 +818,7 @@ export default function AuthPage() {
           >
             <Zap size={13} className="text-white" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-white">{t('brand.name')}</span>
+          <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">{t('brand.name')}</span>
         </a>
         <LangToggle />
       </header>
@@ -852,10 +839,10 @@ export default function AuthPage() {
               >
                 <Zap size={19} style={{ color: '#818cf8' }} />
               </div>
-              <h1 className="text-xl font-bold text-white mb-0.5">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-0.5">
                 {showTabs ? t('brand.name') : formTitle[mode]}
               </h1>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="text-sm text-slate-400 dark:text-white/35">
                 {showTabs
                   ? (tab === 'signin'
                       ? (locale === 'he' ? 'ברוך שובך' : 'Welcome back')
@@ -889,7 +876,7 @@ export default function AuthPage() {
           </GlassCard>
         </div>
 
-        <p className="mt-6 text-center text-[10px]" style={{ ...fadeIn(0.3), color: 'rgba(255,255,255,0.15)' }}>
+        <p className="mt-6 text-center text-[10px] text-slate-300 dark:text-white/15" style={fadeIn(0.3)}>
           {t('footer.legal')}
         </p>
       </main>

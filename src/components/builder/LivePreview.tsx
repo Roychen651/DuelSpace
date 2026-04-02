@@ -18,10 +18,10 @@ interface LivePreviewProps {
 function PreviewAurora() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0" style={{ background: '#060610' }} />
+      <div className="absolute inset-0 bg-slate-50 dark:bg-[#060610]" />
       {/* Indigo sphere — top left */}
       <div
-        className="absolute"
+        className="absolute hidden dark:block"
         style={{
           top: '-10%',
           left: '-5%',
@@ -35,7 +35,7 @@ function PreviewAurora() {
       />
       {/* Purple sphere — bottom right */}
       <div
-        className="absolute"
+        className="absolute hidden dark:block"
         style={{
           bottom: '-8%',
           right: '-8%',
@@ -49,7 +49,7 @@ function PreviewAurora() {
       />
       {/* Gold accent — center */}
       <div
-        className="absolute left-1/2 top-1/2"
+        className="absolute left-1/2 top-1/2 hidden dark:block"
         style={{
           transform: 'translate(-50%, -50%)',
           width: 300,
@@ -62,7 +62,7 @@ function PreviewAurora() {
       />
       {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.025]"
+        className="absolute inset-0 opacity-[0.025] hidden dark:block"
         style={{
           backgroundImage:
             'linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)',
@@ -124,16 +124,10 @@ function AddOnPreviewCard({
 }) {
   return (
     <div
-      className="relative rounded-xl p-3.5 transition-all duration-300"
-      style={{
-        background: enabled
-          ? 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.06) 100%)'
-          : 'rgba(255,255,255,0.025)',
-        border: enabled
-          ? '1px solid rgba(99,102,241,0.25)'
-          : '1px solid rgba(255,255,255,0.06)',
-        boxShadow: enabled ? '0 4px 20px rgba(99,102,241,0.12)' : 'none',
-      }}
+      className={[
+        'relative rounded-xl p-3.5 transition-all duration-300',
+        enabled ? 'lp-addon-enabled' : 'lp-addon-disabled',
+      ].join(' ')}
     >
       {/* Enabled glow accent */}
       {enabled && (
@@ -159,13 +153,15 @@ function AddOnPreviewCard({
           </div>
           <div className="min-w-0">
             <p
-              className="text-sm font-semibold leading-snug"
-              style={{ color: enabled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)' }}
+              className={[
+                'text-sm font-semibold leading-snug',
+                enabled ? 'text-slate-800 dark:text-white/95' : 'text-slate-400 dark:text-white/45',
+              ].join(' ')}
             >
               {label || (locale === 'he' ? 'תוספת ללא שם' : 'Unnamed add-on')}
             </p>
             {description && (
-              <p className="mt-0.5 text-[11px] leading-snug text-white/30 truncate">
+              <p className="mt-0.5 text-[11px] leading-snug text-slate-400 dark:text-white/30 truncate">
                 {description}
               </p>
             )}
@@ -173,13 +169,15 @@ function AddOnPreviewCard({
         </div>
         <div className="flex-none text-end">
           <p
-            className="text-sm font-bold tabular-nums"
-            style={{ color: enabled ? '#a78bfa' : 'rgba(255,255,255,0.25)' }}
+            className={[
+              'text-sm font-bold tabular-nums',
+              enabled ? 'text-indigo-500 dark:text-[#a78bfa]' : 'text-slate-300 dark:text-white/25',
+            ].join(' ')}
           >
             +{formatCurrency(price * (defaultQty ?? 1), currency)}
           </p>
           {(defaultQty ?? 1) > 1 && (
-            <p className="text-[10px] text-white/30 tabular-nums">
+            <p className="text-[10px] text-slate-400 dark:text-white/30 tabular-nums">
               {defaultQty}× {formatCurrency(price, currency)}
             </p>
           )}
@@ -240,10 +238,54 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
           30%  { transform: translateY(-3px); }
           100% { transform: translateY(0); }
         }
+        .lp-watermark-line-start {
+          background: linear-gradient(90deg, transparent, rgb(203 213 225));
+        }
+        :is(.dark) .lp-watermark-line-start {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08));
+        }
+        .lp-watermark-line-end {
+          background: linear-gradient(90deg, rgb(203 213 225), transparent);
+        }
+        :is(.dark) .lp-watermark-line-end {
+          background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+        }
+        .lp-addon-enabled {
+          background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.04) 100%);
+          border: 1px solid rgba(99,102,241,0.2);
+          box-shadow: 0 4px 20px rgba(99,102,241,0.06);
+        }
+        :is(.dark) .lp-addon-enabled {
+          background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.06) 100%);
+          border: 1px solid rgba(99,102,241,0.25);
+          box-shadow: 0 4px 20px rgba(99,102,241,0.12);
+        }
+        .lp-addon-disabled {
+          background: rgb(248 250 252);
+          border: 1px solid rgb(226 232 240);
+        }
+        :is(.dark) .lp-addon-disabled {
+          background: rgba(255,255,255,0.025);
+          border: 1px solid rgba(255,255,255,0.06);
+        }
+        .lp-card {
+          background: white;
+          border: 1px solid rgb(226 232 240);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+        }
+        :is(.dark) .lp-card {
+          background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+          border: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
         .lp-prose p { margin-bottom: 0.5em; }
-        .lp-prose strong, .lp-prose b { font-weight: 700; color: rgba(255,255,255,0.6); }
+        .lp-prose strong, .lp-prose b { font-weight: 700; color: rgb(71 85 105); }
+        :is(.dark .lp-prose) strong, :is(.dark .lp-prose) b { color: rgba(255,255,255,0.6); }
         .lp-prose em, .lp-prose i { font-style: italic; }
-        .lp-prose h1, .lp-prose h2, .lp-prose h3 { font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 0.4em; }
+        .lp-prose h1, .lp-prose h2, .lp-prose h3 { font-weight: 700; color: rgb(51 65 85); margin-bottom: 0.4em; }
+        :is(.dark .lp-prose) h1, :is(.dark .lp-prose) h2, :is(.dark .lp-prose) h3 { color: rgba(255,255,255,0.7); }
         .lp-prose ul, .lp-prose ol { padding-inline-start: 1.2em; margin-bottom: 0.5em; }
         .lp-prose li { margin-bottom: 0.2em; }
       `}</style>
@@ -265,10 +307,10 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
             <Eye size={24} className="text-indigo-400/60" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white/40 mb-1">
+            <p className="text-sm font-semibold text-slate-400 dark:text-white/40 mb-1">
               {locale === 'he' ? 'תצוגה מקדימה' : 'Live Preview'}
             </p>
-            <p className="text-xs text-white/20 leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-white/20 leading-relaxed">
               {locale === 'he'
                 ? 'מלאו את הפרטים משמאל ותצוגת הלקוח תתעדכן בזמן אמת'
                 : 'Fill in the details on the left and the client view will update in real time'}
@@ -286,14 +328,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
         >
           {/* ── Card ──────────────────────────────────────────────────── */}
           <div
-            className="relative rounded-3xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
-            }}
+            className="relative rounded-3xl overflow-hidden lp-card"
           >
             {/* ── Card header glow bar ─────────────────────────────── */}
             <div
@@ -308,7 +343,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
 
               {/* ── B'H marker ──────────────────────────────────────── */}
               {proposal.display_bsd && (
-                <p className="text-[11px] text-white/30 font-medium text-end mb-1" style={{ direction: 'rtl' }}>
+                <p className="text-[11px] text-slate-400 dark:text-white/30 font-medium text-end mb-1" style={{ direction: 'rtl' }}>
                   בס&quot;ד
                 </p>
               )}
@@ -325,7 +360,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   >
                     <Zap size={13} className="text-white" />
                   </div>
-                  <span className="text-xs font-bold tracking-tight text-white/60">DealSpace</span>
+                  <span className="text-xs font-bold tracking-tight text-slate-500 dark:text-white/60">DealSpace</span>
                 </div>
 
                 {/* Status badge */}
@@ -350,10 +385,8 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {proposal.creator_info?.logo_url && (
                 <div className="flex justify-center mb-5">
                   <div
-                    className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden"
+                    className="inline-flex items-center justify-center rounded-2xl px-4 py-2.5 overflow-hidden bg-slate-100 border border-slate-200 dark:bg-white/[0.08] dark:border-white/[0.12]"
                     style={{
-                      background: 'rgba(255,255,255,0.08)',
-                      border: '1px solid rgba(255,255,255,0.12)',
                       backdropFilter: 'blur(8px)',
                       WebkitBackdropFilter: 'blur(8px)',
                     }}
@@ -369,7 +402,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
 
               {/* ── Client greeting ──────────────────────────────────── */}
               {proposal.client_name && (
-                <p className="text-xs text-white/35 mb-1 font-medium">
+                <p className="text-xs text-slate-400 dark:text-white/35 mb-1 font-medium">
                   {locale === 'he' ? `שלום, ${proposal.client_name}` : `Hello, ${proposal.client_name}`}
                 </p>
               )}
@@ -377,7 +410,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {/* ── Project title ─────────────────────────────────────── */}
               <h2
                 className={[
-                  'font-bold leading-tight text-white mb-3',
+                  'font-bold leading-tight text-slate-900 dark:text-white mb-3',
                   compact ? 'text-lg' : 'text-2xl',
                 ].join(' ')}
               >
@@ -387,25 +420,21 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {/* ── Description ──────────────────────────────────────── */}
               {proposal.description && (
                 <div
-                  className="lp-prose text-sm text-white/45 leading-relaxed mb-5"
+                  className="lp-prose text-sm text-slate-500 dark:text-white/45 leading-relaxed mb-5"
                   dangerouslySetInnerHTML={{ __html: proposal.description }}
                 />
               )}
 
               {/* ── Divider ───────────────────────────────────────────── */}
-              <div className="h-px bg-white/[0.06] mb-5" />
+              <div className="h-px bg-slate-200 dark:bg-white/[0.06] mb-5" />
 
               {/* ── Base package (hidden in document-only mode) ───────── */}
               {!proposal.is_document_only && <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-2">
                   {locale === 'he' ? 'חבילת בסיס' : 'Base Package'}
                 </p>
                 <div
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }}
+                  className="flex items-center justify-between rounded-xl px-4 py-3 bg-slate-50 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]"
                 >
                   <div className="flex items-center gap-2.5">
                     <div
@@ -414,11 +443,11 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                     >
                       <Check size={11} className="text-indigo-400" strokeWidth={3} />
                     </div>
-                    <span className="text-sm font-medium text-white/70">
+                    <span className="text-sm font-medium text-slate-600 dark:text-white/70">
                       {proposal.project_title || (locale === 'he' ? 'שירות' : 'Service')}
                     </span>
                   </div>
-                  <span className="text-sm font-bold text-white/80 tabular-nums">
+                  <span className="text-sm font-bold text-slate-800 dark:text-white/80 tabular-nums">
                     {formatCurrency(proposal.base_price, proposal.currency)}
                   </span>
                 </div>
@@ -427,7 +456,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {/* ── Add-ons (hidden in document-only mode) ────────────── */}
               {!proposal.is_document_only && proposal.add_ons.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-2">
                     {locale === 'he' ? 'תוספות' : 'Add-ons'}
                   </p>
                   <div className="space-y-2">
@@ -450,7 +479,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {/* ── Payment milestones (hidden in document-only mode) ── */}
               {!proposal.is_document_only && proposal.payment_milestones && proposal.payment_milestones.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-2 flex items-center gap-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-2 flex items-center gap-1.5">
                     <Milestone size={10} className="text-indigo-400/60" />
                     {locale === 'he' ? 'לוח תשלומים' : 'Payment Schedule'}
                   </p>
@@ -458,11 +487,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                     {proposal.payment_milestones.map((m, i) => (
                       <div
                         key={m.id}
-                        className="flex items-center justify-between rounded-xl px-3.5 py-2.5"
-                        style={{
-                          background: 'rgba(99,102,241,0.06)',
-                          border: '1px solid rgba(99,102,241,0.1)',
-                        }}
+                        className="flex items-center justify-between rounded-xl px-3.5 py-2.5 bg-indigo-50 border border-indigo-100 dark:bg-[rgba(99,102,241,0.06)] dark:border-[rgba(99,102,241,0.1)]"
                       >
                         <div className="flex items-center gap-2.5">
                           <div
@@ -471,7 +496,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                           >
                             {i + 1}
                           </div>
-                          <span className="text-xs font-medium text-white/60">
+                          <span className="text-xs font-medium text-slate-600 dark:text-white/60">
                             {m.name || (locale === 'he' ? `תשלום ${i + 1}` : `Payment ${i + 1}`)}
                           </span>
                         </div>
@@ -532,21 +557,20 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               )}
 
               {/* ── Divider ───────────────────────────────────────────── */}
-              <div className="h-px bg-white/[0.06] mb-5" />
+              <div className="h-px bg-slate-200 dark:bg-white/[0.06] mb-5" />
 
               {/* ── Total price (slot machine) ────────────────────────── */}
               {!proposal.hide_grand_total && !proposal.is_document_only && (
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-1">
                     {locale === 'he' ? 'סה״כ לתשלום' : 'Total Investment'}
                   </p>
 
                   {/* Strikethrough anchor price */}
                   {totalSavings > 0 && (
                     <p
-                      className="text-sm font-bold tabular-nums line-through leading-none mb-0.5"
-                      style={{ color: 'rgba(255,255,255,0.22)' }}
+                      className="text-sm font-bold tabular-nums line-through leading-none mb-0.5 text-slate-300 dark:text-white/[0.22]"
                     >
                       {formatCurrency(fin.originalGrandTotal, proposal.currency)}
                     </p>
@@ -575,7 +599,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                         : `Saves: ${formatCurrency(totalSavings, proposal.currency)}`}
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-white/25">
+                    <p className="mt-1 text-[11px] text-slate-400 dark:text-white/25">
                       {proposal.include_vat
                         ? (locale === 'he'
                             ? `כולל מע"מ (${Math.round(vatRate * 100)}%): ${formatCurrency(fin.vatAmount, proposal.currency)}`
@@ -591,12 +615,12 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
 
                 {/* Meta info */}
                 <div className="flex flex-col items-end gap-1.5">
-                  <div className="flex items-center gap-1.5 text-[10px] text-white/25">
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-white/25">
                     <Eye size={10} />
                     <span>{proposal.view_count} {locale === 'he' ? 'צפיות' : 'views'}</span>
                   </div>
                   {proposal.expires_at && (
-                    <div className="flex items-center gap-1.5 text-[10px] text-white/25">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-white/25">
                       <Clock size={10} />
                       <span>
                         {locale === 'he' ? 'תוקף עד' : 'Expires'}{' '}
@@ -615,12 +639,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {!compact && (
                 <div className="mt-6">
                   <div
-                    className="relative w-full overflow-hidden rounded-xl py-3 text-center text-xs font-semibold cursor-not-allowed select-none flex items-center justify-center gap-2"
-                    style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px dashed rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.2)',
-                    }}
+                    className="relative w-full overflow-hidden rounded-xl py-3 text-center text-xs font-semibold cursor-not-allowed select-none flex items-center justify-center gap-2 bg-slate-50 border border-dashed border-slate-200 text-slate-300 dark:bg-white/[0.02] dark:border-white/10 dark:text-white/20"
                   >
                     <Lock size={11} style={{ opacity: 0.4 }} />
                     <span style={{ opacity: 0.5 }}>
@@ -629,7 +648,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                         : (locale === 'he' ? 'אשר וחתום על ההצעה' : 'Approve & Sign Proposal')}
                     </span>
                   </div>
-                  <p className="mt-2 text-center text-[10px] text-white/20">
+                  <p className="mt-2 text-center text-[10px] text-slate-400 dark:text-white/20">
                     {locale === 'he'
                       ? 'הכפתור יופעל בחדר הדיל של הלקוח בלבד'
                       : 'Button is only active in the client\'s Deal Room'}
@@ -647,8 +666,8 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <ExternalLink size={11} className="text-white/20" />
-              <p className="text-[10px] text-white/20 font-mono truncate max-w-[300px]">
+              <ExternalLink size={11} className="text-slate-400 dark:text-white/20" />
+              <p className="text-[10px] text-slate-400 dark:text-white/20 font-mono truncate max-w-[300px]">
                 {window.location.origin}/deal/{proposal.public_token || '…'}
               </p>
             </motion.div>
@@ -658,15 +677,13 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
           {!compact && (
             <div className="mt-6 flex items-center justify-center gap-2">
               <div
-                className="h-px flex-1 max-w-[80px]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08))' }}
+                className="h-px flex-1 max-w-[80px] lp-watermark-line-start"
               />
-              <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/15">
+              <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-slate-300 dark:text-white/15">
                 {locale === 'he' ? 'תצוגה מקדימה בלבד' : 'Live Preview'}
               </span>
               <div
-                className="h-px flex-1 max-w-[80px]"
-                style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.08), transparent)' }}
+                className="h-px flex-1 max-w-[80px] lp-watermark-line-end"
               />
             </div>
           )}

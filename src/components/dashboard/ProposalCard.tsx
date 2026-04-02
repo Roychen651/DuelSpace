@@ -101,12 +101,12 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
             />
             <span
               className="text-[8px] font-semibold leading-none"
-              style={{ color: ev.done ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)' }}
+              style={{ color: ev.done ? 'var(--text-secondary)' : 'var(--text-muted)' }}
             >
               {isHe ? ev.labelHe : ev.labelEn}
             </span>
             {ev.time && ev.done && (
-              <span className="text-[7px] text-white/25 leading-none">
+              <span className="text-[7px] text-slate-300 dark:text-white/25 leading-none">
                 {timeAgo(ev.time, locale)}
               </span>
             )}
@@ -133,23 +133,21 @@ function DropItem({
   onClick: () => void
   variant?: 'default' | 'danger'
 }) {
-  const dangerBg  = 'rgba(239,68,68,0.09)'
-  const defaultBg = 'rgba(255,255,255,0.06)'
-
   return (
     <DropdownMenu.Item
       onSelect={onClick}
-      className="flex items-center gap-3 outline-none cursor-pointer rounded-xl mx-1.5 select-none"
+      className="flex items-center gap-3 outline-none cursor-pointer rounded-xl mx-1.5 select-none
+        hover:bg-slate-50 dark:hover:bg-white/[0.06]"
       style={{
-        color: variant === 'danger' ? '#f87171' : 'rgba(255,255,255,0.82)',
+        color: variant === 'danger' ? '#f87171' : 'var(--text-primary)',
         padding: '10px 10px',          /* tall row → easy 44 px touch target */
         minHeight: 44,
       }}
       onPointerEnter={e => {
-        (e.currentTarget as HTMLElement).style.background = variant === 'danger' ? dangerBg : defaultBg
+        (e.currentTarget as HTMLElement).style.background = variant === 'danger' ? 'rgba(239,68,68,0.09)' : ''
       }}
       onPointerLeave={e => {
-        (e.currentTarget as HTMLElement).style.background = 'transparent'
+        (e.currentTarget as HTMLElement).style.background = ''
       }}
     >
       <span
@@ -254,7 +252,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
     <>
       <motion.div
         className="group relative rounded-2xl overflow-hidden cursor-pointer select-none h-full"
-        style={{ padding: '1px', background: hovered ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.07)' }}
+        style={{ padding: '1px' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         whileHover={{ scale: 1.02, y: -4 }}
@@ -295,9 +293,10 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
 
         {/* Card background */}
         <div
-          className="relative p-5 h-full flex flex-col"
+          className="relative p-5 h-full flex flex-col
+            bg-white dark:bg-[linear-gradient(135deg,#0e0e1c_0%,#07070f_100%)]
+            border border-slate-200 dark:border-transparent rounded-[0.9375rem]"
           style={{
-            background: 'linear-gradient(135deg, #0e0e1c 0%, #07070f 100%)',
             borderRadius: '0.9375rem',
             backdropFilter: 'blur(12px)',
           }}
@@ -364,12 +363,11 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                   align="end"
                   collisionPadding={12}
                   avoidCollisions
-                  className="z-[9997] rounded-2xl py-1.5 outline-none"
+                  className="z-[9997] rounded-2xl py-1.5 outline-none
+                    bg-white border border-slate-200 shadow-xl
+                    dark:bg-[rgba(10,10,20,0.97)] dark:border-white/10 dark:shadow-[0_24px_64px_rgba(0,0,0,0.8),0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.07)]"
                   style={{
                     width: 'min(72vw, 224px)',
-                    background: 'rgba(10,10,20,0.97)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07)',
                     backdropFilter: 'blur(64px)',
                     WebkitBackdropFilter: 'blur(64px)',
                   }}
@@ -398,7 +396,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                       onClick={handleDownloadPdf}
                     />
                   )}
-                  <DropdownMenu.Separator style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 14px' }} />
+                  <DropdownMenu.Separator className="h-px bg-slate-100 dark:bg-white/[0.07] mx-3.5 my-1" />
                   {isArchived ? (
                     // ── Archive view actions ───────────────────────────────
                     <>
@@ -430,10 +428,10 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
 
           {/* Client + title */}
           <div className="mb-4">
-            <p className="text-xs text-white/35 mb-0.5 font-medium uppercase tracking-widest truncate">
+            <p className="text-xs text-slate-400 dark:text-white/35 mb-0.5 font-medium uppercase tracking-widest truncate">
               {proposal.client_name || (locale === 'he' ? 'לקוח' : 'Client')}
             </p>
-            <h3 className="text-base font-semibold text-white leading-snug line-clamp-2">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white leading-snug line-clamp-2">
               {proposal.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
             </h3>
           </div>
@@ -559,7 +557,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                   {formatted}
                 </p>
                 {proposal.add_ons.filter(a => a.enabled).length > 0 && (
-                  <p className="text-[10px] text-white/30 mt-0.5">
+                  <p className="text-[10px] text-slate-400 dark:text-white/30 mt-0.5">
                     {locale === 'he'
                       ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`
                       : `+${proposal.add_ons.filter(a => a.enabled).length} add-ons`}
@@ -580,17 +578,17 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                     </span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-white/30">
+                <div className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-white/30">
                   <Eye size={10} />
                   <span>{proposal.view_count}</span>
                 </div>
                 {proposal.time_spent_seconds > 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-white/25">
+                  <div className="flex items-center gap-1 text-[10px] text-slate-300 dark:text-white/25">
                     <Timer size={10} />
                     <span>{formatTimeSpent(proposal.time_spent_seconds)}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-white/25">
+                <div className="flex items-center gap-1 text-[10px] text-slate-300 dark:text-white/25">
                   <Clock size={10} />
                   <span>{date}</span>
                 </div>

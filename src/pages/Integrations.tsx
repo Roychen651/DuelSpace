@@ -77,10 +77,10 @@ export default function Integrations() {
   const activeCount = proposals.filter(p => !p.is_archived).length
 
   const inputClass = [
-    'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-white placeholder-white/30',
+    'w-full bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30',
     'outline-none transition-all duration-200',
-    'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
-    'focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
+    'shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+    'focus:bg-white dark:focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
     !isPaid ? 'cursor-not-allowed opacity-40 select-none' : '',
   ].join(' ')
 
@@ -103,7 +103,7 @@ export default function Integrations() {
 
       {/* Aurora */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-[#040608]" />
+        <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
         <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 22s ease-in-out infinite' }} />
         <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full"
@@ -121,11 +121,11 @@ export default function Integrations() {
             >
               <Webhook size={18} className="text-white" />
             </div>
-            <h1 className="text-2xl font-black text-white" style={{ letterSpacing: '-0.025em' }}>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white" style={{ letterSpacing: '-0.025em' }}>
               {isHe ? 'אינטגרציות ואוטומציות' : 'Integrations & Automations'}
             </h1>
           </div>
-          <p className="text-[14px] text-white/45 leading-relaxed">
+          <p className="text-[14px] text-slate-500 dark:text-white/45 leading-relaxed">
             {isHe
               ? 'חבר את DealSpace לכלים שלך — קבל webhook בכל פעם שלקוח חותם על הצעה.'
               : 'Connect DealSpace to your tools — receive a webhook every time a client signs a proposal.'}
@@ -134,17 +134,14 @@ export default function Integrations() {
 
         {/* ── Webhook card ─────────────────────────────────────────────────── */}
         <div
-          className="relative overflow-hidden rounded-3xl"
+          className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm dark:bg-white/[0.02] dark:border-white/[0.06] dark:shadow-none"
           style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
             animation: 'int-fade-up 0.45s ease-out 0.12s both',
           }}
         >
           {/* Card header */}
           <div
-            className="flex items-center gap-3 px-6 py-5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-white/[0.05]"
           >
             <div
               className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"

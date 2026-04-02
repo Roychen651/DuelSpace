@@ -12,22 +12,12 @@ import { InfoTip } from '../components/ui/InfoTip'
 
 function Card({ children, title, icon, tip }: { children: React.ReactNode; title: string; icon: React.ReactNode; tip?: React.ReactNode }) {
   return (
-    <div
-      className="rounded-3xl p-7"
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-      }}
-    >
+    <div className="profile-card rounded-3xl p-7">
       <div className="flex items-center gap-3 mb-6">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8' }}
-        >
+        <div className="profile-icon-badge flex h-9 w-9 items-center justify-center rounded-xl">
           {icon}
         </div>
-        <h2 className="text-sm font-bold text-white/80 uppercase tracking-widest">{title}</h2>
+        <h2 className="text-sm font-bold text-slate-600 dark:text-white/80 uppercase tracking-widest">{title}</h2>
         {tip}
       </div>
       {children}
@@ -46,7 +36,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
+      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/40">
         {label}
       </label>
       <div className="relative">
@@ -56,14 +46,9 @@ function Field({
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200 disabled:opacity-40"
-          style={{
-            background: disabled ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
-            border: error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.1)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}
-          onFocus={e => { if (!error && !disabled) { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' } }}
-          onBlur={e => { e.currentTarget.style.border = error ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+          className="profile-input w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200 disabled:opacity-40"
+          data-error={error ? 'true' : undefined}
+          data-disabled={disabled ? 'true' : undefined}
         />
         {suffix && <span className="absolute inset-y-0 end-3 flex items-center">{suffix}</span>}
       </div>
@@ -176,15 +161,12 @@ function AvatarUpload({ user }: { user: { name: string; email: string; avatarUrl
         )}
       </div>
       <div>
-        <h3 className="text-base font-bold text-white mb-0.5">{user.name || user.email}</h3>
-        <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>{user.email}</p>
+        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-0.5">{user.name || user.email}</h3>
+        <p className="text-xs mb-3 text-slate-400 dark:text-white/35">{user.email}</p>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = 'white' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-white/[0.05] dark:border-white/[0.1] dark:text-white/60 dark:hover:bg-white/[0.09] dark:hover:text-white"
         >
           <Camera size={12} />
           Change Photo
@@ -393,7 +375,7 @@ export default function Profile() {
   if (!user) return null
 
   return (
-    <div className="min-h-dvh" dir={isHe ? 'rtl' : 'ltr'} style={{ background: '#030305' }}>
+    <div className="min-h-dvh bg-slate-50 dark:bg-[#030305]" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes ds-fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -430,7 +412,7 @@ export default function Profile() {
         {/* ── Business Identity ──────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.5, ease: 'easeOut' as const }}>
           <Card title={isHe ? 'זהות עסקית' : 'Business Identity'} icon={<Building2 size={16} />}>
-            <p className="text-xs text-white/35 -mt-2 mb-4 leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'פרטים אלה יוזרקו אוטומטית לחוזים ולקבצי PDF שלך — מלא פעם אחת, לעולם לא תצטרך להקליד שוב.'
                 : 'These details are automatically injected into your contracts and PDFs — fill once, never type again.'}
@@ -492,7 +474,7 @@ export default function Profile() {
             icon={<Palette size={16} />}
             tip={<InfoTip content={isHe ? 'הצבע שיעטוף את חדר העסקאות שלכם וייצור חוויה ממותגת אישית.' : 'The color that themes your entire Deal Room — button, sliders, and glow effects.'} />}
           >
-            <p className="text-xs text-white/35 -mt-2 mb-4 leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'הצבע יופיע בחדר הדיל של הלקוח — כפתור האישור, הסליידרים ואפקטי הגלו.'
                 : 'This color appears in your client\'s Deal Room — approve button, sliders, and glow effects.'}
@@ -514,10 +496,7 @@ export default function Profile() {
                       const v = e.target.value
                       if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBrandColor(v)
                     }}
-                    className="w-full rounded-2xl px-4 py-3 ps-11 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
-                    onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' }}
-                    onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                    className="profile-input w-full rounded-2xl px-4 py-3 ps-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200"
                     placeholder="#6366f1"
                     maxLength={7}
                   />
@@ -556,11 +535,11 @@ export default function Profile() {
                   className="h-3 w-3 rounded-full"
                   style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1', boxShadow: `0 0 8px ${brandColor}80` }}
                 />
-                <span className="text-[11px] text-white/40">
+                <span className="text-[11px] text-slate-400 dark:text-white/40">
                   {isHe ? 'תצוגה מקדימה של הצבע בחדר הדיל' : 'Preview of your brand color in Deal Room'}
                 </span>
                 <div
-                  className="ms-auto rounded-lg px-3 py-1 text-[11px] font-bold text-white"
+                  className="ms-auto rounded-lg px-3 py-1 text-[11px] font-bold text-slate-900 dark:text-white"
                   style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? `${brandColor}30` : 'rgba(99,102,241,0.2)', border: `1px solid ${/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1'}40` }}
                 >
                   {isHe ? 'אשר ✓' : 'Approve ✓'}
@@ -576,7 +555,7 @@ export default function Profile() {
             title={isHe ? 'לוגו החברה' : 'Company Logo'}
             icon={<ImageIcon size={16} />}
           >
-            <p className="text-xs text-white/35 -mt-2 mb-5 leading-relaxed">
+            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-5 leading-relaxed">
               {isHe
                 ? 'הלוגו יופיע בחדר הדיל ובעמוד השער של קובץ ה-PDF.'
                 : 'Your logo appears in the Deal Room and on the PDF cover page.'}
@@ -584,15 +563,11 @@ export default function Profile() {
             <div className="flex items-center gap-5">
               {/* Preview box */}
               <div
-                className="flex h-20 w-36 flex-none items-center justify-center rounded-2xl overflow-hidden"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                }}
+                className="flex h-20 w-36 flex-none items-center justify-center rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.08]"
               >
                 {logoUrl
                   ? <img src={logoUrl} alt="logo" className="max-h-full max-w-full object-contain p-2" />
-                  : <ImageIcon size={22} style={{ color: 'rgba(255,255,255,0.15)' }} />
+                  : <ImageIcon size={22} className="text-slate-300 dark:text-white/15" />
                 }
               </div>
               {/* Controls */}
@@ -627,7 +602,7 @@ export default function Profile() {
                     {logoError}
                   </p>
                 )}
-                <p className="text-[10px] text-white/25">
+                <p className="text-[10px] text-slate-400 dark:text-white/25">
                   {isHe ? 'PNG, SVG, או JPG — מומלץ רקע שקוף' : 'PNG, SVG, or JPG — transparent background recommended'}
                 </p>
                 <input
@@ -716,12 +691,9 @@ export default function Profile() {
                     type="number" inputMode="decimal" min={0} max={100} step={0.1}
                     value={vatRateInput}
                     onChange={e => setVatRateInput(e.target.value)}
-                    className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all duration-200"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
-                    onFocus={e => { e.currentTarget.style.border = '1px solid rgba(99,102,241,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.06)' }}
-                    onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+                    className="profile-input w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200"
                   />
-                  <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-white/30">%</span>
+                  <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-slate-400 dark:text-white/30">%</span>
                 </div>
                 <SaveButton loading={false} saved={vatSaved} label={isHe ? 'שמור מע"מ' : 'Save VAT'} />
               </div>

@@ -323,8 +323,7 @@ export default function Legal() {
 
   return (
     <div
-      className="relative min-h-dvh"
-      style={{ background: '#05050A' }}
+      className="relative min-h-dvh bg-[#05050A]"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       {/* ── Background ─────────────────────────────────────────────────────── */}

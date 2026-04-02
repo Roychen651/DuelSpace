@@ -86,11 +86,7 @@ function Section({
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.05)',
-      }}
+      className="rounded-2xl overflow-hidden bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]"
     >
       <button
         type="button"
@@ -112,7 +108,7 @@ function Section({
           >
             <span className="text-indigo-400">{icon}</span>
           </div>
-          <span className="text-base font-semibold text-white">{title}</span>
+          <span className="text-base font-semibold text-slate-900 dark:text-white">{title}</span>
           {badge && (
             <span className="rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs font-semibold text-indigo-400">
               {badge}
@@ -122,7 +118,7 @@ function Section({
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="text-white/30"
+          className="text-slate-400 dark:text-white/30"
         >
           <ChevronDown size={16} />
         </motion.span>
@@ -157,8 +153,8 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-300">
-        {icon && <span className="text-white/40">{icon}</span>}
+      <label className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-600 dark:text-zinc-300">
+        {icon && <span className="text-slate-400 dark:text-white/40">{icon}</span>}
         {label}
         {required && <span className="text-indigo-400 ms-0.5">*</span>}
       </label>
@@ -168,10 +164,10 @@ function Field({
 }
 
 const inputClass = [
-  'w-full bg-[#0a0a0a] border border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-white placeholder-white/30',
+  'w-full bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30',
   'outline-none transition-all duration-200',
-  'shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
-  'focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
+  'shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
+  'focus:bg-slate-50 dark:focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
 ].join(' ')
 
 
@@ -222,7 +218,7 @@ function AddOnRow({
         {/* Drag handle */}
         <button
           type="button"
-          className="mt-1 flex-none cursor-grab active:cursor-grabbing text-white/20 hover:text-white/50 transition-colors"
+          className="mt-1 flex-none cursor-grab active:cursor-grabbing text-slate-300 dark:text-white/20 hover:text-slate-500 dark:hover:text-white/50 transition-colors"
           aria-label="Drag to reorder"
           style={{ touchAction: 'none' }}
         >
@@ -272,7 +268,7 @@ function AddOnRow({
           {/* Per-item discount row */}
           <div className="flex items-center gap-2">
             <Tag size={11} className="text-emerald-400/60 flex-none" />
-            <span className="text-xs font-semibold text-white/40 flex-none">
+            <span className="text-xs font-semibold text-slate-400 dark:text-white/40 flex-none">
               {isHe ? 'הנחה' : 'Discount'}
             </span>
             <div className="relative flex-none">
@@ -294,7 +290,7 @@ function AddOnRow({
                 }}
               />
             </div>
-            <span className="text-[10px] text-white/30">%</span>
+            <span className="text-[10px] text-slate-400 dark:text-white/30">%</span>
             {(addOn.discount_pct ?? 0) > 0 && addOn.price > 0 && (
               <span className="text-xs font-semibold text-emerald-400">
                 → {formatCurrency(Math.round(addOn.price * (1 - (addOn.discount_pct ?? 0) / 100)), currency)}
@@ -305,7 +301,7 @@ function AddOnRow({
           {/* Quantity stepper — business sets the quantity */}
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={11} className="text-indigo-400/50 flex-none" />
-            <span className="text-xs font-semibold text-white/40 flex-none">
+            <span className="text-xs font-semibold text-slate-400 dark:text-white/40 flex-none">
               {isHe ? 'כמות' : 'Quantity'}
             </span>
             <div className="flex items-center gap-1">
@@ -313,18 +309,18 @@ function AddOnRow({
                 type="button"
                 disabled={isFinanciallyLocked || (addOn.default_quantity ?? 1) <= 1}
                 onClick={() => onChange({ ...addOn, default_quantity: Math.max(1, (addOn.default_quantity ?? 1) - 1) })}
-                className="flex h-5 w-5 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-25"
+                className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 dark:text-white/40 transition hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white disabled:opacity-25"
               >
                 <Minus size={9} />
               </button>
-              <span className="w-5 text-center text-xs font-bold text-white tabular-nums">
+              <span className="w-5 text-center text-xs font-bold text-slate-900 dark:text-white tabular-nums">
                 {addOn.default_quantity ?? 1}
               </span>
               <button
                 type="button"
                 disabled={isFinanciallyLocked || (addOn.default_quantity ?? 1) >= 10}
                 onClick={() => onChange({ ...addOn, default_quantity: Math.min(10, (addOn.default_quantity ?? 1) + 1) })}
-                className="flex h-5 w-5 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white disabled:opacity-25"
+                className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 dark:text-white/40 transition hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white disabled:opacity-25"
               >
                 <Plus size={9} />
               </button>
@@ -351,7 +347,7 @@ function AddOnRow({
           <button
             type="button"
             onClick={onDelete}
-            className="text-white/20 transition-colors hover:text-red-400"
+            className="text-slate-300 dark:text-white/20 transition-colors hover:text-red-400"
             aria-label="Delete"
           >
             <Trash2 size={13} />
@@ -739,8 +735,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
       {/* ── Read-only overlay (intercepts all pointer events when locked) ── */}
       {isLocked && (
         <div
-          className="pointer-events-auto absolute inset-0 z-10 cursor-not-allowed"
-          style={{ background: 'rgba(3,3,5,0.35)' }}
+          className="pointer-events-auto absolute inset-0 z-10 cursor-not-allowed bg-white/50 dark:bg-[rgba(3,3,5,0.35)]"
           title={isHe ? 'ההצעה נעולה לעריכה' : 'Proposal is locked for editing'}
           onClick={e => e.preventDefault()}
         />
@@ -748,8 +743,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
 
       {/* ── Document Mode Toggle ──────────────────────────────────────── */}
       <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+        className="rounded-2xl overflow-hidden bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]"
       >
         <div className="p-5 space-y-4">
           <div className="flex items-center gap-3">
@@ -759,7 +753,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             >
               <span className="text-indigo-400"><FileText size={15} /></span>
             </div>
-            <span className="text-base font-semibold text-white">
+            <span className="text-base font-semibold text-slate-900 dark:text-white">
               {isHe ? 'סוג מסמך' : 'Document Mode'}
             </span>
           </div>
@@ -814,7 +808,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               </div>
             )
           })()}
-          <p className="text-[12px] text-zinc-500 leading-relaxed">
+          <p className="text-[12px] text-slate-500 dark:text-zinc-500 leading-relaxed">
             {draft.is_document_only
               ? (isHe ? 'מצב מסמך — ללא תמחור, תוספות ואבני דרך. מתאים לחוזים, הסכמים והתחייבויות.' : 'Document mode — no pricing, add-ons, or milestones. Ideal for contracts, agreements, and NDAs.')
               : (isHe ? 'מצב הצעת מחיר — כולל תמחור, תוספות ולוח תשלומים אינטראקטיבי.' : 'Proposal mode — includes pricing, add-ons, and interactive payment schedule.')}
@@ -876,7 +870,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                   ? 'הסתר את סכום הסה"כ מהלקוח. מתאים להצעות בסגנון תפריט בהם הלקוח בוחר פריטים ללא הלם מחיר.'
                   : 'Hide the grand total from the client. Ideal for menu-style proposals where clients pick items without sticker shock.'
                 }>
-                  <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+                  <button type="button" className="text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
                     <Info size={14} />
                   </button>
                 </Tip>
@@ -904,7 +898,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           <Field label={isHe ? 'שם הלקוח' : 'Client Name'} required>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-                <User size={14} className="text-white/30" />
+                <User size={14} className="text-slate-400 dark:text-white/30" />
               </div>
               <input
                 className={inputClass + ' ps-10'}
@@ -918,7 +912,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           <Field label={isHe ? 'אימייל לקוח' : 'Client Email'}>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-                <Mail size={14} className="text-white/30" />
+                <Mail size={14} className="text-slate-400 dark:text-white/30" />
               </div>
               <input
                 className={inputClass + ' ps-10'}
@@ -936,7 +930,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         <Field label={isHe ? 'קוד גישה (אופציונלי)' : 'Access Code (optional)'}>
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-              <Lock size={14} className="text-white/25" />
+              <Lock size={14} className="text-slate-400 dark:text-white/25" />
             </div>
             <input
               className={inputClass + ' ps-10'}
@@ -958,7 +952,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               </div>
             )}
           </div>
-          <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed">
+          <p className="text-[12px] text-slate-500 dark:text-zinc-500 mt-2 leading-relaxed">
             {isHe
               ? 'אם מוגדר, הלקוח יצטרך להזין קוד זה לפני צפייה בהצעה'
               : 'If set, the client must enter this code before viewing the proposal'}
@@ -974,7 +968,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         <Field label={isHe ? 'שם הפרויקט' : 'Project Title'} required>
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-              <Briefcase size={14} className="text-white/30" />
+              <Briefcase size={14} className="text-slate-400 dark:text-white/30" />
             </div>
             <input
               className={inputClass + ' ps-10'}
@@ -1005,7 +999,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         >
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-              <Film size={14} className="text-white/30" />
+              <Film size={14} className="text-slate-400 dark:text-white/30" />
             </div>
             <input
               className={inputClass + ' ps-10'}
@@ -1015,7 +1009,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               onChange={e => onChange({ video_url: e.target.value || null })}
             />
           </div>
-          <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed">
+          <p className="text-[12px] text-slate-500 dark:text-zinc-500 mt-2 leading-relaxed">
             {isHe
               ? 'יוצג ללקוח בצורה קולנועית לפני התמחור'
               : 'Displayed cinematically to the client before pricing'}
@@ -1025,8 +1019,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         {/* Testimonials */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-1.5 text-sm font-semibold text-white/90">
-              <Quote size={13} className="text-white/50" />
+            <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-white/90">
+              <Quote size={13} className="text-slate-400 dark:text-white/50" />
               {isHe ? 'המלצות לקוחות' : 'Testimonials'}
             </label>
             {(draft.testimonials?.length ?? 0) < 3 && (
@@ -1049,7 +1043,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           </div>
 
           {(draft.testimonials ?? []).length === 0 && (
-            <p className="text-[12px] text-zinc-500 leading-relaxed">
+            <p className="text-[12px] text-slate-500 dark:text-zinc-500 leading-relaxed">
               {isHe
                 ? 'הוסף 1-3 המלצות — תוצגנה ללקוח לפני לוח התמחור להגברת אמון'
                 : 'Add 1-3 testimonials — shown before pricing to build client trust'}
@@ -1108,7 +1102,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                       testimonials: (draft.testimonials ?? []).filter((_, j) => j !== i),
                     })
                   }
-                  className="flex-none text-white/20 hover:text-red-400 transition-colors"
+                  className="flex-none text-slate-300 dark:text-white/20 hover:text-red-400 transition-colors"
                   aria-label="Delete testimonial"
                 >
                   <Trash2 size={13} />
@@ -1179,7 +1173,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           <Field label={isHe ? 'מחיר בסיס' : 'Base Price'} required>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 start-4 flex items-center">
-                <span className="text-sm font-bold text-white/30">
+                <span className="text-sm font-bold text-slate-400 dark:text-white/30">
                   {draft.currency === 'ILS' ? '₪' : draft.currency === 'EUR' ? '€' : '$'}
                 </span>
               </div>
@@ -1210,7 +1204,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 end-3 flex items-center">
-                <ChevronDown size={13} className="text-white/30" />
+                <ChevronDown size={13} className="text-slate-400 dark:text-white/30" />
               </div>
             </div>
           </Field>
@@ -1237,7 +1231,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                   ? `הדלק אם אתה עוסק מורשה. המחירים שאתה מזין כוללים מע"מ — המערכת תפרק את הפירוט אוטומטית ותציג אותו בחדר הדיל, בחוזה ובקובץ. ניתן לשנות את השיעור בפרופיל.`
                   : `Enable if you are a VAT-registered business. Prices you enter include VAT — the system extracts and shows the breakdown in the Deal Room, contract, and PDF. Change the rate in Profile.`
                 }>
-                  <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+                  <button type="button" className="text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
                     <Info size={14} />
                   </button>
                 </Tip>
@@ -1287,7 +1281,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                   ? 'הנחה שמוחלת על הסכום הכולל לאחר הנחות פריטים. כלי עוצמתי לסגירת עסקה בעקבות בקשת ניהול משא ומתן.'
                   : 'Discount applied to the full subtotal after per-item discounts. A powerful deal-closer after a negotiation request.'
                 }>
-                  <button type="button" className="text-white/20 hover:text-white/50 transition-colors p-1 rounded-lg touch-manipulation" tabIndex={0}>
+                  <button type="button" className="text-slate-400 dark:text-white/20 hover:text-slate-600 dark:hover:text-white/50 transition-colors p-1 rounded-lg touch-manipulation" tabIndex={0}>
                     <Info size={12} />
                   </button>
                 </Tip>
@@ -1343,7 +1337,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             className="rounded-xl px-5 py-4 space-y-2"
             style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
-            <div className="flex items-center justify-between text-sm text-white/55">
+            <div className="flex items-center justify-between text-sm text-slate-500 dark:text-white/55">
               <span>{isHe ? 'לפני מע"מ' : 'Before VAT'}</span>
               <span className="tabular-nums font-semibold">{formatCurrency(fin.beforeVat, draft.currency)}</span>
             </div>
@@ -1351,8 +1345,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               <span>{isHe ? `מתוכם מע"מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}</span>
               <span className="tabular-nums">{formatCurrency(fin.vatAmount, draft.currency)}</span>
             </div>
-            <div className="h-px bg-white/[0.06]" />
-            <div className="flex items-center justify-between text-base font-bold text-white/95">
+            <div className="h-px bg-slate-200 dark:bg-white/[0.06]" />
+            <div className="flex items-center justify-between text-base font-bold text-slate-900 dark:text-white/95">
               <span>{isHe ? 'סה"כ לתשלום' : 'Total (incl. VAT)'}</span>
               <span className="tabular-nums" style={{ color: '#818cf8' }}>{formatCurrency(grandTotal, draft.currency)}</span>
             </div>
@@ -1362,10 +1356,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
 
       {/* ── Add-ons (hidden in document-only mode) ──────────────────────── */}
       {!draft.is_document_only && <div
-        className="rounded-2xl overflow-hidden"
+        className="rounded-2xl overflow-hidden bg-white dark:bg-transparent border border-slate-200 dark:border-white/[0.08]"
         style={{
-          background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         }}
       >
@@ -1383,7 +1375,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             >
               <span className="text-indigo-400"><Plus size={15} /></span>
             </div>
-            <span className="text-base font-semibold text-white">
+            <span className="text-base font-semibold text-slate-900 dark:text-white">
               {isHe ? 'תוספות ושדרוגים' : 'Add-ons & Upgrades'}
             </span>
             {draft.add_ons.length > 0 && (
@@ -1395,7 +1387,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               ? 'טיפ: השתמש בסליידר (🟢) לכמויות כמו שעות עבודה, ובמתג הדלקה/כיבוי לשירותי כן/לא. הלקוח יכול להתאים בחדר הדיל.'
               : 'Tip: Use the slider (🟢) for quantities like hours, and the on/off toggle for yes/no services. The client can adjust in the Deal Room.'
             }>
-              <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+              <button type="button" className="text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
                 <Info size={14} />
               </button>
             </Tip>
@@ -1433,7 +1425,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           </Reorder.Group>
 
           {draft.add_ons.length === 0 && (
-            <p className="text-center text-sm text-white/35 py-5">
+            <p className="text-center text-sm text-slate-400 dark:text-white/35 py-5">
               {isHe
                 ? 'אין תוספות עדיין — הוסף שירותים אופציונליים ללקוח'
                 : 'No add-ons yet — add optional services for your client'}
@@ -1482,7 +1474,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
       >
         {/* Explanation */}
         <div className="flex items-start gap-2">
-          <p className="text-[13px] text-zinc-400 leading-relaxed flex-1">
+          <p className="text-[13px] text-slate-500 dark:text-zinc-400 leading-relaxed flex-1">
             {isHe
               ? 'חלק את התשלום לשלבים. לחץ "הוסף אבן דרך" כדי להתחיל. הסכום חייב להגיע בדיוק ל-100%.'
               : 'Split the payment into stages. Click "Add Milestone" to start. All percentages must total exactly 100%.'}
@@ -1491,7 +1483,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             ? 'חלוקת תשלומים מפחיתה סיכון לשני הצדדים. למשל: 30% מקדמה בחתימה, 40% באמצע הפרויקט, 30% במסירה הסופית. הלקוח רואה את לוח התשלומים בחדר הדיל.'
             : 'Splitting payments reduces risk for both parties. Example: 30% deposit at signing, 40% mid-project, 30% at final delivery. The client sees the schedule in the Deal Room.'
           }>
-            <button type="button" className="flex-none text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
+            <button type="button" className="flex-none text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
               <Info size={14} />
             </button>
           </Tip>
@@ -1500,7 +1492,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         {/* Quick presets — only shown when no milestones yet and not financially locked */}
         {milestones.length === 0 && !isFinanciallyLocked && (
           <div className="flex flex-wrap gap-2">
-            <p className="w-full text-xs font-bold uppercase tracking-widest text-white/35">
+            <p className="w-full text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/35">
               {isHe ? 'תבניות מהירות' : 'Quick presets'}
             </p>
             {[
@@ -1597,7 +1589,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                     />
                     {/* Amount preview */}
                     {milestoneAmt > 0 && (
-                      <span className="text-xs tabular-nums text-white/45 flex-none font-medium">
+                      <span className="text-xs tabular-nums text-slate-400 dark:text-white/45 flex-none font-medium">
                         {formatCurrency(milestoneAmt, draft.currency)}
                       </span>
                     )}
@@ -1612,13 +1604,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                         onChange={e => updateMilestone(m.id, { percentage: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
                         disabled={isFinanciallyLocked}
                       />
-                      <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-white/30 pointer-events-none">%</span>
+                      <span className="absolute inset-y-0 end-2 flex items-center text-[10px] text-slate-400 dark:text-white/30 pointer-events-none">%</span>
                     </div>
                     {!isFinanciallyLocked && (
                       <button
                         type="button"
                         onClick={() => deleteMilestone(m.id)}
-                        className="text-white/20 hover:text-red-400 transition-colors flex-none"
+                        className="text-slate-300 dark:text-white/20 hover:text-red-400 transition-colors flex-none"
                         aria-label="Delete milestone"
                       >
                         <Trash2 size={13} />
@@ -1687,7 +1679,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           ? (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_he ?? '')
           : (SUCCESS_TEMPLATES.find(t => t.id === activeTemplateId)?.label_en ?? '')}
       >
-        <p className="text-[12px] text-zinc-500 leading-relaxed mb-3">
+        <p className="text-[12px] text-slate-500 dark:text-zinc-500 leading-relaxed mb-3">
           {isHe
             ? 'בחר את ההודעה שתוצג ללקוח לאחר החתימה.'
             : 'Choose the message shown to the client after they sign.'}
