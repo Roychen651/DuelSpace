@@ -3,7 +3,7 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Plus, Trash2, Edit3, Save, Percent, Layers, X } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
-import { DEFAULT_VAT_RATE, applyVat, vatAmount, formatCurrency } from '../types/proposal'
+import { DEFAULT_VAT_RATE, formatCurrency } from '../types/proposal'
 import { useServicesStore, type Service, type ServiceInsert } from '../stores/useServicesStore'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -131,16 +131,11 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
               style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
             >
               <span className="text-[10px] text-white/35">
-                {isHe ? `כולל מע"מ (${Math.round(vatRate * 100)}%)` : `Incl. VAT (${Math.round(vatRate * 100)}%)`}
+                {isHe ? `מתוכם מע"מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-white/30 tabular-nums">
-                  +{formatCurrency(vatAmount(priceNum, vatRate), currency)}
-                </span>
-                <span className="text-sm font-black text-indigo-300 tabular-nums">
-                  {formatCurrency(applyVat(priceNum, vatRate), currency)}
-                </span>
-              </div>
+              <span className="text-[10px] text-white/30 tabular-nums">
+                {formatCurrency(Math.round(priceNum - priceNum / (1 + vatRate)), currency)}
+              </span>
             </motion.div>
           )}
 
@@ -214,20 +209,20 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
           >
             <span
               className="text-sm font-black tabular-nums"
-              style={{ color: showVat ? '#818cf8' : '#a5b4fc' }}
+              style={{ color: '#a5b4fc' }}
             >
-              {formatCurrency(showVat ? applyVat(service.price, vatRate) : service.price, 'ILS')}
+              {formatCurrency(service.price, 'ILS')}
             </span>
             <span className="text-[9px] font-semibold" style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.3)' }}>
               {showVat
                 ? (isHe ? `כולל מע"מ` : 'incl. VAT')
-                : (isHe ? `לפני מע"מ` : 'ex. VAT')}
+                : (isHe ? `ללא מע"מ` : 'no VAT')}
             </span>
             <Percent size={8} style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.2)' }} />
           </button>
           {showVat && (
             <span className="text-[10px] text-white/25 tabular-nums">
-              {isHe ? 'לפני מע"מ' : 'Base'}: {formatCurrency(service.price, 'ILS')}
+              {isHe ? 'מתוכם מע"מ' : 'VAT incl.'}: {formatCurrency(Math.round(service.price - service.price / (1 + vatRate)), 'ILS')}
             </span>
           )}
         </div>

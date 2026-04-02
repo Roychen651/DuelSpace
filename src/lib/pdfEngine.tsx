@@ -761,45 +761,22 @@ function ProposalDocument(opts: PdfOptions) {
             )}
             {proposal.include_vat && (
               <>
-                {proposal.prices_include_vat ? (
-                  <>
-                    {/* Prices include VAT — show "of which" breakdown */}
-                    <View style={s.vatRow}>
-                      <Text style={s.vatLabel}>
-                        {isHe ? `מתוכם מע״מ (${Math.round(vatRate*100)}%)` : `Of which VAT (${Math.round(vatRate*100)}%)`}
-                      </Text>
-                      <Text style={s.vatValue}>{fmtCurrencyPdf(fin.vatAmount, proposal.currency)}</Text>
-                    </View>
-                    <View style={s.vatRow}>
-                      <Text style={s.vatLabel}>{isHe ? 'לפני מע״מ' : 'Before VAT'}</Text>
-                      <Text style={s.vatValue}>{fmtCurrencyPdf(fin.beforeVat, proposal.currency)}</Text>
-                    </View>
-                    <View style={s.vatDivider} />
-                    <View style={s.vatRow}>
-                      <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
-                      <Text style={s.vatTotalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    {/* Prices are net — show "add VAT" breakdown */}
-                    <View style={s.vatRow}>
-                      <Text style={s.vatLabel}>{isHe ? 'סה״כ לפני מע״מ' : 'Subtotal (ex. VAT)'}</Text>
-                      <Text style={s.vatValue}>{fmtCurrencyPdf(fin.beforeVat, proposal.currency)}</Text>
-                    </View>
-                    <View style={s.vatRow}>
-                      <Text style={s.vatLabel}>
-                        {isHe ? `${Math.round(vatRate*100)}% מע״מ` : `VAT ${Math.round(vatRate*100)}%`}
-                      </Text>
-                      <Text style={s.vatValue}>{fmtCurrencyPdf(fin.vatAmount, proposal.currency)}</Text>
-                    </View>
-                    <View style={s.vatDivider} />
-                    <View style={s.vatRow}>
-                      <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
-                      <Text style={s.vatTotalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
-                    </View>
-                  </>
-                )}
+                {/* Prices always include VAT — show "of which" breakdown */}
+                <View style={s.vatRow}>
+                  <Text style={s.vatLabel}>
+                    {isHe ? `מתוכם מע״מ (${Math.round(vatRate*100)}%)` : `Of which VAT (${Math.round(vatRate*100)}%)`}
+                  </Text>
+                  <Text style={s.vatValue}>{fmtCurrencyPdf(fin.vatAmount, proposal.currency)}</Text>
+                </View>
+                <View style={s.vatRow}>
+                  <Text style={s.vatLabel}>{isHe ? 'לפני מע״מ' : 'Before VAT'}</Text>
+                  <Text style={s.vatValue}>{fmtCurrencyPdf(fin.beforeVat, proposal.currency)}</Text>
+                </View>
+                <View style={s.vatDivider} />
+                <View style={s.vatRow}>
+                  <Text style={s.vatTotalLabel}>{isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}</Text>
+                  <Text style={s.vatTotalValue}>{fmtCurrencyPdf(displayTotal, proposal.currency)}</Text>
+                </View>
               </>
             )}
             {totalSavings > 0 && !proposal.include_vat && (

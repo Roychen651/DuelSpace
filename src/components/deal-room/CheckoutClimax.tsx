@@ -62,8 +62,6 @@ interface CheckoutClimaxProps {
   isDocumentOnly?: boolean
   /** Hide the grand total row (menu-style proposals) */
   hideGrandTotal?: boolean
-  /** When true, entered prices already include VAT — show "of which VAT" instead of "+ VAT" */
-  pricesIncludeVat?: boolean
 }
 
 // ─── Slot-machine price span ──────────────────────────────────────────────────
@@ -91,7 +89,7 @@ export function CheckoutClimax({
   onRequestRevision, revisionSent = false, originalTotal = 0,
   financials, resolvedAddOns, globalDiscountPct = 0, basePrice = 0,
   clientDetailsConfirmed = false, onScrollToDetails, onOpenLegalTerms,
-  isDocumentOnly = false, hideGrandTotal = false, pricesIncludeVat = false,
+  isDocumentOnly = false, hideGrandTotal = false,
 }: CheckoutClimaxProps) {
   const isHe = locale === 'he'
   const signatureConfirmed = signature.trim().length >= 2
@@ -195,7 +193,7 @@ export function CheckoutClimax({
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-0.5">
                   {isHe
-                    ? (includeVat ? (pricesIncludeVat ? 'סה״כ כולל מע״מ' : 'סה״כ כולל מע״מ') : 'סה״כ להשקעה')
+                    ? (includeVat ? 'סה״כ כולל מע״מ' : 'סה״כ להשקעה')
                     : (includeVat ? 'Total incl. VAT' : 'Total Investment')}
                 </p>
                 {trueSavings > 0 && originalTotal > 0 && (
@@ -331,59 +329,25 @@ export function CheckoutClimax({
                   </div>
                 )}
 
-                {/* ── VAT section ─────────────────────────────────────────── */}
+                {/* ── VAT section — prices always include VAT ─────────────── */}
                 {includeVat && (
                   <div className="px-3.5 py-2.5 space-y-1.5">
-                    {pricesIncludeVat ? (
-                      <>
-                        {/* Prices include VAT — show "of which" breakdown */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-[11px] text-white/35">
-                            {isHe ? `מתוכם מע״מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
-                          </span>
-                          <span className="text-[11px] text-white/35 tabular-nums">
-                            {formatCurrency(financials.vatAmount, currency)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[11px] text-white/35">
-                            {isHe ? 'לפני מע״מ' : 'Before VAT'}
-                          </span>
-                          <span className="text-[11px] text-white/35 tabular-nums">
-                            {formatCurrency(financials.beforeVat, currency)}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Prices are net — show "add VAT" breakdown */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-[11px] text-white/35">{isHe ? 'לפני מע״מ' : 'Before VAT'}</span>
-                          <span className="text-[11px] text-white/35 tabular-nums">
-                            {formatCurrency(financials.beforeVat, currency)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[11px] text-white/35">
-                            {isHe ? `מע״מ (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}
-                          </span>
-                          <span className="text-[11px] text-white/35 tabular-nums">
-                            +{formatCurrency(financials.vatAmount, currency)}
-                          </span>
-                        </div>
-                        <div
-                          className="flex justify-between items-center pt-1.5"
-                          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
-                        >
-                          <span className="text-[12px] font-bold text-white/65">
-                            {isHe ? 'סה״כ כולל מע״מ' : 'Total incl. VAT'}
-                          </span>
-                          <span className="text-[12px] font-bold text-white/65 tabular-nums">
-                            {formatCurrency(financials.grandTotal, currency)}
-                          </span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white/35">
+                        {isHe ? `מתוכם מע״מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
+                      </span>
+                      <span className="text-[11px] text-white/35 tabular-nums">
+                        {formatCurrency(financials.vatAmount, currency)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] text-white/35">
+                        {isHe ? 'לפני מע״מ' : 'Before VAT'}
+                      </span>
+                      <span className="text-[11px] text-white/35 tabular-nums">
+                        {formatCurrency(financials.beforeVat, currency)}
+                      </span>
+                    </div>
                   </div>
                 )}
 

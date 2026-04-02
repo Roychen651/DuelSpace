@@ -1887,7 +1887,6 @@ export default function DealRoom() {
                 onOpenLegalTerms={() => setLegalModalOpen(true)}
                 isDocumentOnly={proposal.is_document_only}
                 hideGrandTotal={proposal.hide_grand_total}
-                pricesIncludeVat={proposal.prices_include_vat === true}
               />
             </div>
             {/* Accept error */}

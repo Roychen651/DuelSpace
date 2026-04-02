@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ProposalInsert, AddOn, PaymentMilestone, Testimonial } from '../../types/proposal'
-import { DEFAULT_VAT_RATE, applyVat, formatCurrency, milestonesValid } from '../../types/proposal'
+import { DEFAULT_VAT_RATE, formatCurrency, milestonesValid } from '../../types/proposal'
 import { calculateFinancials } from '../../lib/financialMath'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { PremiumDatePicker, PremiumSlider } from '../ui/PremiumInputs'
@@ -198,7 +198,8 @@ function AddOnRow({
   isFinanciallyLocked?: boolean
 }) {
   const isHe = locale === 'he'
-  const vatTotal = addOn.price > 0 ? applyVat(addOn.price, vatRate) : 0
+  // Prices are always VAT-inclusive — extract the VAT component from within
+  const vatComponent = addOn.price > 0 ? Math.round(addOn.price - addOn.price / (1 + vatRate)) : 0
 
   return (
     <Reorder.Item
@@ -248,7 +249,7 @@ function AddOnRow({
                   placeholder="0"
                   value={addOn.price || ''}
                   onChange={e => onChange({ ...addOn, price: Number(e.target.value) || 0 })}
-                  title={isHe ? 'מחיר לפני מע"מ' : 'Price before VAT'}
+                  title={isHe ? 'מחיר כולל מע"מ' : 'Price incl. VAT'}
                   disabled={isFinanciallyLocked}
                 />
                 {showVat && addOn.price > 0 && (
@@ -256,7 +257,7 @@ function AddOnRow({
                     className="rounded-lg px-2 py-0.5 text-[11px] text-center font-semibold tabular-nums"
                     style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}
                   >
-                    +{isHe ? 'מע"מ' : 'VAT'} = {formatCurrency(vatTotal, currency)}
+                    {isHe ? 'מתוכם מע"מ' : 'VAT incl.'} {formatCurrency(vatComponent, currency)}
                   </div>
                 )}
               </div>
@@ -529,7 +530,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
   const isHe = locale === 'he'
   const vatRate = getVatRate()
   const showVat = draft.include_vat
-  const pricesIncludeVat = draft.prices_include_vat === true && showVat
 
   // Discount-aware totals via unified engine
   const fin         = calculateFinancials(draft as Parameters<typeof calculateFinancials>[0], undefined, vatRate)
@@ -1234,8 +1234,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                   {isHe ? `כלול מע"מ (${Math.round(vatRate * 100)}%)` : `Include VAT (${Math.round(vatRate * 100)}%)`}
                 </p>
                 <Tip content={isHe
-                  ? `הדלק אם אתה עוסק מורשה. המערכת תוסיף ${Math.round(vatRate * 100)}% אוטומטית לסכום הכולל ותציג פירוט מלא בחדר הדיל ובחוזה. ניתן לשנות את השיעור בפרופיל.`
-                  : `Enable if you are a registered VAT business. The system auto-adds ${Math.round(vatRate * 100)}% to the total and shows a full breakdown in the Deal Room and contract. Change the rate in Profile.`
+                  ? `הדלק אם אתה עוסק מורשה. המחירים שאתה מזין כוללים מע"מ — המערכת תפרק את הפירוט אוטומטית ותציג אותו בחדר הדיל, בחוזה ובקובץ. ניתן לשנות את השיעור בפרופיל.`
+                  : `Enable if you are a VAT-registered business. Prices you enter include VAT — the system extracts and shows the breakdown in the Deal Room, contract, and PDF. Change the rate in Profile.`
                 }>
                   <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1.5 rounded-lg touch-manipulation" tabIndex={0}>
                     <Info size={14} />
@@ -1244,13 +1244,9 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               </div>
               {showVat && draft.base_price > 0 && (
                 <p className="text-xs text-indigo-400/70 mt-0.5">
-                  {pricesIncludeVat
-                    ? (isHe
-                        ? `סה"כ: ${formatCurrency(draft.base_price, draft.currency)} (מתוכם מע"מ: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`
-                        : `Total: ${formatCurrency(draft.base_price, draft.currency)} (VAT included: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`)
-                    : (isHe
-                        ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`
-                        : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`)}
+                  {isHe
+                    ? `סה"כ: ${formatCurrency(draft.base_price, draft.currency)} (מתוכם מע"מ: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`
+                    : `Total: ${formatCurrency(draft.base_price, draft.currency)} (VAT included: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`}
                 </p>
               )}
             </div>
@@ -1269,56 +1265,6 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             {showVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
           </button>
         </div>
-
-        {/* Prices include VAT toggle — only shown when VAT is enabled */}
-        {showVat && (
-          <div
-            className="flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-300"
-            style={{
-              background: pricesIncludeVat
-                ? 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(16,185,129,0.04) 100%)'
-                : 'rgba(255,255,255,0.02)',
-              border: pricesIncludeVat ? '1px solid rgba(34,197,94,0.22)' : '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <DollarSign size={12} className={pricesIncludeVat ? 'text-emerald-400' : 'text-white/25'} />
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-semibold" style={{ color: pricesIncludeVat ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.45)' }}>
-                    {isHe ? 'מחירים כוללים מע"מ' : 'Prices include VAT'}
-                  </p>
-                  <Tip content={isHe
-                    ? 'כשמופעל, המחירים שאתה מזין כבר כוללים מע"מ. המערכת תפרק את המע"מ מתוך הסכום ותציג פירוט ללקוח. לדוגמה: הזנת 12,000 ₪ → הלקוח רואה: סה"כ 12,000 ₪ (מתוכם מע"מ 1,830 ₪).'
-                    : 'When enabled, the prices you enter already include VAT. The system will extract the VAT from the total and show a breakdown. Example: you enter ₪12,000 → client sees: Total ₪12,000 (of which VAT ₪1,830).'
-                  }>
-                    <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1 rounded-lg touch-manipulation" tabIndex={0}>
-                      <Info size={12} />
-                    </button>
-                  </Tip>
-                </div>
-                {pricesIncludeVat && (
-                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(74,222,128,0.6)' }}>
-                    {isHe ? 'הסכום שתזין הוא מה שהלקוח משלם' : 'The amount you enter is what the client pays'}
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => !isFinanciallyLocked && onChange({ prices_include_vat: !draft.prices_include_vat })}
-              className="transition-colors"
-              style={{
-                color: pricesIncludeVat ? '#22c55e' : 'rgba(255,255,255,0.2)',
-                opacity: isFinanciallyLocked ? 0.5 : 1,
-                cursor: isFinanciallyLocked ? 'not-allowed' : 'pointer',
-              }}
-              disabled={isFinanciallyLocked}
-            >
-              {pricesIncludeVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-            </button>
-          </div>
-        )}
 
         {/* Global Discount slider */}
         <div
@@ -1402,7 +1348,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               <span className="tabular-nums font-semibold">{formatCurrency(fin.beforeVat, draft.currency)}</span>
             </div>
             <div className="flex items-center justify-between text-sm text-indigo-400/80">
-              <span>{isHe ? `מע"מ ${Math.round(vatRate * 100)}%` : `VAT ${Math.round(vatRate * 100)}%`}</span>
+              <span>{isHe ? `מתוכם מע"מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}</span>
               <span className="tabular-nums">{formatCurrency(fin.vatAmount, draft.currency)}</span>
             </div>
             <div className="h-px bg-white/[0.06]" />

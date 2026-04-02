@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { X, Check, Search, Layers, Zap, Percent } from 'lucide-react'
 import { useServicesStore } from '../../stores/useServicesStore'
-import { formatCurrency, applyVat, DEFAULT_VAT_RATE } from '../../types/proposal'
+import { formatCurrency, DEFAULT_VAT_RATE } from '../../types/proposal'
 import type { AddOn } from '../../types/proposal'
 
 function getVatRate(): number {
@@ -290,11 +290,11 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                             className="text-sm font-black tabular-nums transition-colors"
                             style={{ color: isChecked ? '#d4af37' : 'rgba(255,255,255,0.5)' }}
                           >
-                            {formatCurrency(showVat ? applyVat(service.price, vatRate) : service.price, currency)}
+                            {formatCurrency(service.price, currency)}
                           </p>
                           {showVat && (
                             <p className="text-[9px] text-white/25 tabular-nums">
-                              {isHe ? `לפני מע"מ: ` : 'ex. VAT: '}{formatCurrency(service.price, currency)}
+                              {isHe ? `מתוכם מע"מ: ` : 'VAT incl.: '}{formatCurrency(Math.round(service.price - service.price / (1 + vatRate)), currency)}
                             </p>
                           )}
                         </div>

@@ -120,38 +120,36 @@ export function applyGlobalDiscount(subtotal: number, globalDiscountPct = 0): nu
 }
 
 /**
- * Grand Total = Total Before VAT + optional VAT
+ * Grand Total — prices always include VAT when includeVat=true.
+ * No VAT is added on top; the entered total IS the final amount.
  * Canonical entry point — use this everywhere instead of ad-hoc math.
  */
 export function calcGrandTotal(
   basePrice: number,
   items: DiscountLineItem[],
   globalDiscountPct = 0,
-  includeVat = false,
-  vatRate = ISRAELI_VAT_RATE,
+  _includeVat = false,
+  _vatRate = ISRAELI_VAT_RATE,
 ): number {
   const subtotal = calcDiscountedSubtotal(basePrice, items)
-  const beforeVat = applyGlobalDiscount(subtotal, globalDiscountPct)
-  const vat = includeVat ? vatOnNet(beforeVat, vatRate) : 0
-  return roundILS(beforeVat + vat)
+  return applyGlobalDiscount(subtotal, globalDiscountPct)
 }
 
 /**
  * Undiscounted total — all items at full price, no global discount.
  * Used for the strikethrough "original price" display.
+ * Prices always include VAT — no extra VAT added.
  */
 export function calcOriginalTotal(
   basePrice: number,
   items: DiscountLineItem[],
-  includeVat = false,
-  vatRate = ISRAELI_VAT_RATE,
+  _includeVat = false,
+  _vatRate = ISRAELI_VAT_RATE,
 ): number {
   const addOnsTotal = items
     .filter(i => i.enabled)
     .reduce((sum, i) => sum + i.price * (i.qty ?? 1), 0)
-  const subtotal = roundILS(basePrice + addOnsTotal)
-  const vat = includeVat ? vatOnNet(subtotal, vatRate) : 0
-  return roundILS(subtotal + vat)
+  return roundILS(basePrice + addOnsTotal)
 }
 
 /** Absolute savings = original total − discounted total. Always ≥ 0. */
@@ -195,13 +193,11 @@ export function calculateFinancials(
     add_ons: Array<{ id: string; price: number; enabled: boolean; discount_pct?: number; default_quantity?: number }>
     global_discount_pct?: number | null
     include_vat?: boolean
-    prices_include_vat?: boolean
   },
   lineItems?: Record<string, { enabled: boolean; qty: number }>,
   vatRate = ISRAELI_VAT_RATE,
 ): Financials {
   const globalDiscountPct = proposal.global_discount_pct || 0
-  const pricesIncludeVat = proposal.prices_include_vat === true && proposal.include_vat === true
 
   // Resolve active add-ons with optional client overrides (toggle only — qty is fixed by creator).
   const resolved = proposal.add_ons.map(a => ({
@@ -229,31 +225,27 @@ export function calculateFinancials(
   const globalSavings = roundILS(discountedSubtotal - afterGlobalDiscount)
 
   // ── Step 4: VAT ────────────────────────────────────────────────────────────
-  // Two modes:
-  //   A) prices_include_vat = false (default): prices are NET → VAT added on top
-  //   B) prices_include_vat = true: prices are GROSS → VAT extracted from within
+  // Israeli VAT model: prices entered by the creator ALWAYS include VAT.
+  // When include_vat is true, we extract the VAT from within the total.
+  // When include_vat is false (עוסק פטור), no VAT exists — total is as entered.
   let beforeVat: number
   let vatAmt: number
   let grandTotal: number
 
-  if (pricesIncludeVat) {
-    // Entered prices already include VAT — the grand total IS the entered sum
+  if (proposal.include_vat) {
+    // Prices include VAT — grand total IS the entered sum, extract VAT from within
     grandTotal = afterGlobalDiscount
     beforeVat = netFromGross(grandTotal, vatRate)
     vatAmt = roundILS(grandTotal - beforeVat)
   } else {
+    // No VAT (עוסק פטור) — prices are final, no VAT component
     beforeVat = afterGlobalDiscount
-    vatAmt = proposal.include_vat ? vatOnNet(beforeVat, vatRate) : 0
-    grandTotal = roundILS(beforeVat + vatAmt)
+    vatAmt = 0
+    grandTotal = beforeVat
   }
 
-  // Original grand total (for strikethrough)
-  const originalVat = pricesIncludeVat
-    ? vatOnGross(originalSubtotal, vatRate)
-    : (proposal.include_vat ? vatOnNet(originalSubtotal, vatRate) : 0)
-  const originalGrandTotal = pricesIncludeVat
-    ? originalSubtotal  // gross prices → original IS the total
-    : roundILS(originalSubtotal + originalVat)
+  // Original grand total (for strikethrough) — same as original subtotal since prices include VAT
+  const originalGrandTotal = originalSubtotal
 
   return {
     originalSubtotal,
