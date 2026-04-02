@@ -43,7 +43,7 @@ const copy = {
     ],
 
     // Marquee
-    marqueeItems: ['94% שיעור אישור', 'סגירה מהירה פי 2', '₪2.3M+ עסקאות', '500+ פרילנסרים', 'דירוג 4.9/5', 'חתימה דיגיטלית חוקית', 'מסמך מוסמך אוטומטי', 'ללא כרטיס אשראי'],
+    marqueeItems: ['94% שיעור אישור', 'סגירה מהירה פי 2', '₪2.3M+ עסקאות', '500+ עצמאיים', 'דירוג 4.9/5', 'חתימה דיגיטלית חוקית', 'PDF מאושר לכל עסקה', 'ללא כרטיס אשראי'],
 
     // How It Works
     howLabel: 'שלושה שלבים. עסקה אחת.',
@@ -80,12 +80,12 @@ const copy = {
     featuresLabel: 'כל מה שצריך. כלום מיותר.',
     featuresH2: 'הכלים שיסגרו לכם עסקאות.',
     bento: [
-      { icon: 'lock',    tag: 'נעילת תפוגה',      title: 'FOMO שמניע לסגירה — מובנה בתוך ההצעה', body: 'הגדירו תאריך תפוגה. כשהזמן עובר, המחירים נעולים ויש עיכוב ויזואלי. לקוחות חותמים מהר יותר כשיש לחץ אמיתי.',                wide: true  },
-      { icon: 'eye',     tag: 'אינטליגנציית עסקה', title: 'דעו בדיוק מתי — ופנו ברגע הנכון',       body: 'קבלו התראה כשפתחו, כמה זמן בילו, ואישור קריאת אימייל. פנו בדיוק ברגע שהלקוח חם.',               wide: false },
-      { icon: 'whatsapp', tag: 'פולואו-אפ WhatsApp', title: 'מעקב חכם בלחיצה אחת',                 body: 'קישור מובנה לשליחת הצעה ב-WhatsApp עם טקסט מנצח — שם הלקוח, שם הפרויקט, קישור ישיר לחדר.',      wide: false },
-      { icon: 'sign',    tag: 'חתימה דיגיטלית',    title: 'חתמו ב-60 שניות',                        body: 'חתימה ייחודית, מסמך מאומת ורשומת ביקורת מלאה. הכל חוקי לפי חוק החתימה האלקטרונית.',            wide: true  },
-      { icon: 'terms',   tag: 'תנאי עסק גלובליים',  title: 'תנאים שמוקפאים לתוך כל הצעה אוטומטית', body: 'הגדירו פעם אחת בפרופיל. DealSpace מזריק אותם לכל הצעה שנשלחת — הלקוח מאשר, PDF מאושר כולל תנאים.', wide: false },
-      { icon: 'vat',     tag: 'מנוע מע"מ ישראלי',   title: 'מחירים כוללים מע"מ — תמיד',             body: 'מזינים מחיר גולמי, המערכת מחשבת מתוכם מע"מ אוטומטית. ללא הפתעות, ללא "פלוס מע"מ" — בדיוק כמו שהשוק מכיר.',   wide: false },
+      { icon: 'lock',    tag: 'נעילת זמן',          title: 'לחץ אמיתי שמניע לסגירה',                body: 'הגדירו תאריך תפוגה. ככל שהזמן מתקצר — הלחץ עולה, הלקוח חותם.',                                   wide: true  },
+      { icon: 'eye',     tag: 'מעקב חכם',            title: 'דעו ברגע שהלקוח פתח',                  body: 'קבלו התראה מיידית כשפתחו, כמה זמן בילו בהצעה — ופנו בדיוק ברגע שהעניין בשיאו.',                 wide: false },
+      { icon: 'whatsapp', tag: 'מעקב ב-WhatsApp',   title: 'הודעה אחת — והם חוזרים',               body: 'לחצו שליחה — DealSpace מייצר הודעה אישית עם שם הלקוח, שם הפרויקט וקישור ישיר לחדר.',             wide: false },
+      { icon: 'sign',    tag: 'חתימה דיגיטלית',     title: 'חתמו ב-60 שניות',                       body: 'חתימה ייחודית, מסמך מאומת ורשומת ביקורת מלאה. חוקי לפי חוק החתימה האלקטרונית.',                 wide: true  },
+      { icon: 'terms',   tag: 'תנאי עסק קבועים',    title: 'תנאי ההתקשרות שלכם — בכל הצעה',        body: 'הגדירו תנאים פעם אחת בפרופיל. הם יצורפו לכל הצעה שתשלחו — הלקוח מאשר, ה-PDF כולל הכל.',         wide: false },
+      { icon: 'vat',     tag: 'מנוע מע"מ',           title: 'הזינו מחיר סופי — לא "פלוס מע"מ"',     body: 'בישראל מדברים במחיר כולל. הזינו את הסכום הסופי — DealSpace מחשב מתוכם מע"מ אוטומטית.',            wide: false },
     ],
 
     // Social Proof
@@ -109,8 +109,8 @@ const copy = {
 
     // Pricing section
     pricingLabel: 'תמחור פשוט ושקוף',
-    pricingH2: 'צמחו ב-DealSpace',
-    pricingSub: 'בחרו תוכנית. שדרגו בכל עת. ביטול ללא עלויות.',
+    pricingH2: 'תוכנית לכל שלב בדרך',
+    pricingSub: 'בחרו. שדרגו בכל עת. ביטול ללא עלות.',
     pricingPopular: 'הכי פופולרי',
     pricingCta: 'התחילו עכשיו',
     pricingFreeCta: 'חינם לנצח',
@@ -119,45 +119,45 @@ const copy = {
         name: 'חינם',
         price: '₪0',
         period: '/חודש',
-        sub: 'לפרילנסרים שמתחילים',
+        sub: 'לשלב ההתחלה',
         features: [
-          { text: '5 הצעות בחודש', ok: true },
-          { text: 'אנליטיקה בסיסית', ok: true },
-          { text: 'תבניות סטנדרטיות', ok: true },
-          { text: 'חתימה דיגיטלית חוקית', ok: true },
-          { text: 'מיתוג DealSpace', ok: false },
-          { text: 'ספריית שירותים', ok: false },
-          { text: 'WhatsApp פולואו-אפ', ok: false },
+          { text: 'עד 5 הצעות פעילות', ok: true },
+          { text: 'Deal Room + חתימה דיגיטלית', ok: true },
+          { text: 'יצוא PDF', ok: true },
+          { text: 'אנליטיקות בסיסיות', ok: true },
+          { text: 'הסרת מיתוג DealSpace', ok: false },
+          { text: 'ספריית שירותים שמורים', ok: false },
+          { text: 'מעקב ב-WhatsApp', ok: false },
         ],
       },
       {
-        name: 'Pro',
-        price: '₪149',
+        name: 'פרו',
+        price: '₪19',
         period: '/חודש',
         sub: 'לפרילנסרים רציניים',
         features: [
           { text: 'הצעות ללא הגבלה', ok: true },
+          { text: 'הכל כלול בחינם', ok: true },
           { text: 'מיתוג מותאם אישית (לוגו + צבע)', ok: true },
-          { text: 'ספריית שירותים שמורים', ok: true },
-          { text: 'WhatsApp פולואו-אפ מובנה', ok: true },
-          { text: 'אינטליגנציית עסקה מלאה', ok: true },
+          { text: 'מעקב ב-WhatsApp מובנה', ok: true },
+          { text: 'מידע על הצעות בזמן אמת', ok: true },
           { text: 'Webhooks ואוטומציות', ok: false },
-          { text: 'מסמך משפטי (DocuSign Killer)', ok: false },
+          { text: 'מסמך משפטי לחתימה', ok: false },
         ],
       },
       {
-        name: 'Unlimited',
-        price: '₪349',
+        name: 'פרימיום',
+        price: '₪39',
         period: '/חודש',
-        sub: 'לסוכנויות ועסקים',
+        sub: 'לסוכנויות ועצמאיים מתקדמים',
         features: [
-          { text: 'הכל ב-Pro', ok: true },
-          { text: 'Webhook אוטומציות (Make/Zapier/n8n)', ok: true },
-          { text: 'מצב מסמך משפטי (DocuSign Killer)', ok: true },
-          { text: 'נתיב ביקורת פורנזי (IP + UA)', ok: true },
+          { text: 'הצעות ללא הגבלה', ok: true },
+          { text: 'הכל כלול בפרו', ok: true },
+          { text: 'Webhooks + אוטומציות (Make/Zapier/n8n)', ok: true },
+          { text: 'מסמך משפטי לחתימה', ok: true },
           { text: 'תנאי עסק גלובליים', ok: true },
           { text: 'תמיכה בעדיפות גבוהה', ok: true },
-          { text: 'ללא הגבלת הכל', ok: true },
+          { text: 'השפעה על מפת הדרכים', ok: true },
         ],
       },
     ],
@@ -249,7 +249,7 @@ const copy = {
 
     // Pricing section
     pricingLabel: 'Simple, transparent pricing',
-    pricingH2: 'Grow with DealSpace',
+    pricingH2: 'A plan for every stage',
     pricingSub: 'Pick a plan. Upgrade anytime. Cancel with zero hassle.',
     pricingPopular: 'Most Popular',
     pricingCta: 'Get started',
@@ -259,12 +259,12 @@ const copy = {
         name: 'Free',
         price: '$0',
         period: '/mo',
-        sub: 'For freelancers getting started',
+        sub: 'Just getting started',
         features: [
-          { text: '5 proposals per month', ok: true },
+          { text: 'Up to 5 active proposals', ok: true },
+          { text: 'Deal Room + e-signature', ok: true },
+          { text: 'PDF export', ok: true },
           { text: 'Basic analytics', ok: true },
-          { text: 'Standard templates', ok: true },
-          { text: 'Legally binding e-signature', ok: true },
           { text: 'Remove DealSpace branding', ok: false },
           { text: 'Services library', ok: false },
           { text: 'WhatsApp follow-up', ok: false },
@@ -272,32 +272,32 @@ const copy = {
       },
       {
         name: 'Pro',
-        price: '$39',
+        price: '$19',
         period: '/mo',
         sub: 'For serious freelancers',
         features: [
           { text: 'Unlimited proposals', ok: true },
+          { text: 'Everything in Free', ok: true },
           { text: 'Custom branding (logo + color)', ok: true },
-          { text: 'Saved services library', ok: true },
           { text: 'Built-in WhatsApp follow-up', ok: true },
-          { text: 'Full deal intelligence', ok: true },
+          { text: 'Real-time deal intelligence', ok: true },
           { text: 'Webhooks & automations', ok: false },
-          { text: 'Legal Document mode (DocuSign Killer)', ok: false },
+          { text: 'Legal Document mode', ok: false },
         ],
       },
       {
-        name: 'Unlimited',
-        price: '$89',
+        name: 'Premium',
+        price: '$39',
         period: '/mo',
-        sub: 'For agencies & businesses',
+        sub: 'For agencies & power users',
         features: [
+          { text: 'Unlimited proposals', ok: true },
           { text: 'Everything in Pro', ok: true },
-          { text: 'Webhook automations (Make/Zapier/n8n)', ok: true },
+          { text: 'Webhooks + automations (Make/Zapier/n8n)', ok: true },
           { text: 'Legal Document mode (DocuSign Killer)', ok: true },
-          { text: 'Forensic audit trail (IP + UA)', ok: true },
           { text: 'Global business terms engine', ok: true },
           { text: 'Priority support', ok: true },
-          { text: 'Truly unlimited everything', ok: true },
+          { text: 'Influence the roadmap', ok: true },
         ],
       },
     ],
@@ -632,8 +632,8 @@ function MarqueeBand({ items, isRTL }: { items: string[]; isRTL: boolean }) {
         padding: '16px 0',
       }}
     >
-      <div className="pointer-events-none absolute inset-y-0 start-0 w-24 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
-      <div className="pointer-events-none absolute inset-y-0 end-0 w-24 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+      <div className="pointer-events-none absolute inset-y-0 start-0 w-8 sm:w-24 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+      <div className="pointer-events-none absolute inset-y-0 end-0 w-8 sm:w-24 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
       <div
         dir="ltr"
         style={{
@@ -1297,50 +1297,90 @@ const AVATAR_GRADS = [
   'linear-gradient(135deg, #22c55e, #6366f1)',
 ]
 
+const AVATAR_GLOWS = [
+  'rgba(99,102,241,0.45)',
+  'rgba(168,85,247,0.45)',
+  'rgba(236,72,153,0.4)',
+  'rgba(34,197,94,0.4)',
+  'rgba(212,175,55,0.4)',
+  'rgba(34,197,94,0.4)',
+]
+
+// Pure CSS transition card — no Framer Motion wrapper (prevents blank flash in marquee)
 function TestimonialCard({ t, i }: { t: { name: string; role: string; text: string; stars: number }; i: number }) {
+  const idx = i % AVATAR_GRADS.length
   return (
-    <motion.div
-      className="relative rounded-3xl p-5 overflow-hidden flex-none"
+    <div
+      className="relative rounded-3xl overflow-hidden flex-none"
       style={{
-        width: 300,
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-        border: '1px solid rgba(255,255,255,0.09)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.3)',
+        width: 310,
+        padding: '22px 24px 20px',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.02) 100%)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.35)',
+        transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease',
+        cursor: 'default',
       }}
-      whileHover={{ scale: 1.03, y: -4, transition: { type: 'spring' as const, stiffness: 300, damping: 20 } }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.025)'
+        ;(e.currentTarget as HTMLDivElement).style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 56px rgba(0,0,0,0.5), 0 0 40px ${AVATAR_GLOWS[idx]}`
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.transform = ''
+        ;(e.currentTarget as HTMLDivElement).style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.35)'
+      }}
     >
-      <div className="pointer-events-none absolute top-0 left-6 right-6 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
-      {/* Glow orb behind avatar */}
-      <div className="pointer-events-none absolute -top-4 -start-4 h-20 w-20 rounded-full" style={{ background: `radial-gradient(circle, ${AVATAR_GRADS[i % AVATAR_GRADS.length].includes('d4af37') ? 'rgba(212,175,55,0.2)' : 'rgba(99,102,241,0.2)'} 0%, transparent 70%)`, filter: 'blur(16px)' }} />
+      {/* Top shimmer line */}
+      <div className="pointer-events-none absolute top-0 left-8 right-8 h-px" style={{ background: `linear-gradient(90deg, transparent, ${AVATAR_GLOWS[idx].replace('0.45', '0.5').replace('0.4', '0.5')}, transparent)` }} />
+      {/* Glow orb — top-right corner */}
+      <div className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full" style={{ background: `radial-gradient(circle, ${AVATAR_GLOWS[idx]} 0%, transparent 70%)`, filter: 'blur(18px)' }} />
+
+      {/* Big decorative quote mark */}
+      <div
+        className="absolute top-3 end-5 select-none pointer-events-none leading-none"
+        style={{ fontSize: 80, fontWeight: 900, color: 'rgba(99,102,241,0.1)', fontFamily: 'var(--font-accent)', lineHeight: 1 }}
+        aria-hidden
+      >"</div>
+
+      {/* Stars */}
       <div className="flex gap-0.5 mb-3 relative z-10">
-        {Array.from({ length: t.stars }).map((_, s) => <Star key={s} size={11} fill="#d4af37" style={{ color: '#d4af37' }} />)}
+        {Array.from({ length: t.stars }).map((_, s) => (
+          <Star key={s} size={12} fill="#d4af37" style={{ color: '#d4af37', filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.6))' }} />
+        ))}
       </div>
-      <p className="relative z-10 text-[12px] text-white/60 leading-relaxed mb-4">"{t.text}"</p>
-      <div className="flex items-center gap-2.5 mt-auto">
+
+      {/* Quote text */}
+      <p className="relative z-10 text-[12.5px] text-white/65 leading-relaxed mb-5" style={{ minHeight: 60 }}>"{t.text}"</p>
+
+      {/* Author row */}
+      <div className="flex items-center gap-3 mt-auto relative z-10">
         <div
-          className="h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white flex-none"
-          style={{ background: AVATAR_GRADS[i % AVATAR_GRADS.length], boxShadow: '0 0 12px rgba(99,102,241,0.4)' }}
+          className="h-9 w-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-none"
+          style={{
+            background: AVATAR_GRADS[idx],
+            boxShadow: `0 0 0 2px rgba(255,255,255,0.1), 0 0 14px ${AVATAR_GLOWS[idx]}`,
+          }}
         >
           {t.name[0]}
         </div>
         <div>
-          <p className="text-[12px] font-bold text-white/90">{t.name}</p>
-          <p className="text-[10px] text-white/35">{t.role}</p>
+          <p className="text-[12px] font-bold text-white/90 leading-tight">{t.name}</p>
+          <p className="text-[10px] text-white/38 leading-tight mt-0.5">{t.role}</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
-  // Split testimonials into two rows for bidirectional scroll
-  const row1 = [...c.testimonials, ...c.testimonials, ...c.testimonials]
-  const row2 = [...c.testimonials.slice().reverse(), ...c.testimonials.slice().reverse(), ...c.testimonials.slice().reverse()]
+  // 2 copies per row → lp-marquee moves -50% = perfect seamless loop
+  const row1 = [...c.testimonials, ...c.testimonials]
+  const row2 = [...c.testimonials.slice().reverse(), ...c.testimonials.slice().reverse()]
 
   return (
     <section className="relative py-16 sm:py-24 overflow-hidden">
-      {/* Subtle section bg */}
-      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%)' }} />
+      {/* Section bg */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.18), transparent)' }} />
 
@@ -1352,20 +1392,22 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
         <p className="text-[11px] font-black uppercase tracking-[0.22em] mb-3" style={{ background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 40%, #c084fc 60%, #6366f1 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
           {c.socialsLabel}
         </p>
-        <div className="flex items-center justify-center gap-1 mb-2">
-          {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={18} fill="#d4af37" style={{ color: '#d4af37' }} />)}
+        <div className="flex items-center justify-center gap-0.5 mb-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} size={20} fill="#d4af37" style={{ color: '#d4af37', filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.7))' }} />
+          ))}
         </div>
-        <p className="text-white/30 text-[12px]">4.9 / 5 · 500+ {c.socialsLabel.includes('משתמש') ? 'משתמשים' : 'users'}</p>
+        <p className="text-white/35 text-[12px] mt-1">4.9 / 5 &nbsp;·&nbsp; 500+ {c.socialsLabel.includes('משתמש') ? 'עצמאיים ואנשי מכירות' : 'freelancers & agencies'}</p>
       </motion.div>
 
       {/* Row 1 — scrolls left */}
-      <div className="relative mb-4">
-        <div className="pointer-events-none absolute inset-y-0 start-0 w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
-        <div className="pointer-events-none absolute inset-y-0 end-0 w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+      <div className="relative overflow-hidden mb-5">
+        <div className="pointer-events-none absolute inset-y-0 start-0 w-8 sm:w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+        <div className="pointer-events-none absolute inset-y-0 end-0 w-8 sm:w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
         <div
           dir="ltr"
           className="flex gap-4"
-          style={{ width: 'max-content', animation: 'lp-marquee 38s linear infinite', paddingInline: 16 }}
+          style={{ width: 'max-content', animation: 'lp-marquee 40s linear infinite', paddingInline: 16, willChange: 'transform' }}
         >
           {row1.map((t, i) => (
             <TestimonialCard key={`r1-${i}`} t={t} i={i % AVATAR_GRADS.length} />
@@ -1373,17 +1415,17 @@ function TestimonialsSection({ c }: { c: typeof copy['he'] }) {
         </div>
       </div>
 
-      {/* Row 2 — scrolls right */}
-      <div className="relative hidden sm:block">
-        <div className="pointer-events-none absolute inset-y-0 start-0 w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
-        <div className="pointer-events-none absolute inset-y-0 end-0 w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
+      {/* Row 2 — scrolls right (visible on all screens) */}
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-y-0 start-0 w-8 sm:w-20 z-10" style={{ background: 'linear-gradient(to right, #030305 0%, transparent 100%)' }} />
+        <div className="pointer-events-none absolute inset-y-0 end-0 w-8 sm:w-20 z-10" style={{ background: 'linear-gradient(to left, #030305 0%, transparent 100%)' }} />
         <div
           dir="ltr"
           className="flex gap-4"
-          style={{ width: 'max-content', animation: 'lp-marquee-rtl 42s linear infinite', paddingInline: 16 }}
+          style={{ width: 'max-content', animation: 'lp-marquee-rtl 44s linear infinite', paddingInline: 16, willChange: 'transform' }}
         >
           {row2.map((t, i) => (
-            <TestimonialCard key={`r2-${i}`} t={t} i={(i + 2) % AVATAR_GRADS.length} />
+            <TestimonialCard key={`r2-${i}`} t={t} i={(i + 3) % AVATAR_GRADS.length} />
           ))}
         </div>
       </div>
@@ -1431,18 +1473,33 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
               <motion.div
                 key={tier.name}
                 variants={itemFade}
-                className="relative rounded-3xl overflow-hidden"
-                style={{
-                  transform: isPro ? 'translateY(-12px)' : undefined,
-                }}
+                className="relative rounded-3xl"
+                style={{ position: 'relative' as const, top: isPro ? -12 : 0 }}
               >
-                {/* Pro: animated aurora glow behind card */}
+                {/* Pro: expanded aurora glow (bleeds outside card) */}
                 {isPro && (
                   <div
-                    className="pointer-events-none absolute -inset-4 rounded-[2rem]"
-                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.35) 0%, rgba(99,102,241,0.2) 40%, transparent 70%)', filter: 'blur(24px)', animation: 'lp-badge-pulse 3s ease-in-out infinite' }}
+                    className="pointer-events-none absolute -inset-8 rounded-[2rem]"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.45) 0%, rgba(99,102,241,0.28) 40%, transparent 70%)', filter: 'blur(36px)', animation: 'lp-badge-pulse 3s ease-in-out infinite' }}
                   />
                 )}
+
+                {/* Spinning conic border wrapper — active for Pro only */}
+                <div style={{
+                  position: 'relative',
+                  padding: isPro ? '1.5px' : '0',
+                  borderRadius: '25px',
+                  overflow: 'hidden',
+                  zIndex: 1,
+                }}>
+                  {isPro && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: '-80%',
+                      background: 'conic-gradient(from 0deg, #6366f1, #a855f7, #ec4899, #6366f1)',
+                      animation: 'lp-spin-border 4s linear infinite',
+                    }} />
+                  )}
 
                 <Tilt3D
                   className="relative rounded-3xl p-6 h-full flex flex-col"
@@ -1450,10 +1507,12 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
                     background: isPro
                       ? 'linear-gradient(160deg, rgba(168,85,247,0.16) 0%, rgba(99,102,241,0.1) 50%, rgba(255,255,255,0.03) 100%)'
                       : 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                    border: `1px solid ${TIER_BORDER[i]}`,
+                    border: isPro ? 'none' : `1px solid ${TIER_BORDER[i]}`,
                     boxShadow: isPro
-                      ? '0 0 60px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.1)'
+                      ? '0 0 80px rgba(168,85,247,0.3), 0 0 40px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
                       : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                    position: 'relative' as const,
+                    zIndex: 1,
                   }}
                 >
                   {/* Top highlight line */}
@@ -1476,7 +1535,7 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
                   <div className="mb-5">
                     <p className="text-[12px] font-black uppercase tracking-[0.18em] mb-2" style={{ color: TIER_ACCENT[i] }}>{tier.name}</p>
                     <div className="flex items-end gap-1 mb-1" dir="ltr">
-                      <span className="text-4xl font-black text-white tracking-tight">{tier.price}</span>
+                      <span className={`${isPro ? 'text-5xl' : 'text-4xl'} font-black text-white tracking-tight`}>{tier.price}</span>
                       <span className="text-[13px] text-white/35 mb-1">{tier.period}</span>
                     </div>
                     <p className="text-[12px] text-white/40">{tier.sub}</p>
@@ -1490,15 +1549,16 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
                     {tier.features.map((f) => (
                       <li key={f.text} className="flex items-start gap-2.5">
                         <div
-                          className="mt-0.5 flex-none h-4 w-4 rounded-full flex items-center justify-center"
+                          className="mt-0.5 flex-none h-5 w-5 rounded-full flex items-center justify-center"
                           style={{
                             background: f.ok ? `${TIER_ACCENT[i]}22` : 'rgba(255,255,255,0.04)',
                             border: `1px solid ${f.ok ? `${TIER_ACCENT[i]}44` : 'rgba(255,255,255,0.08)'}`,
+                            boxShadow: f.ok && isPro ? `0 0 8px ${TIER_ACCENT[i]}55` : 'none',
                           }}
                         >
                           {f.ok
-                            ? <Check size={9} style={{ color: TIER_ACCENT[i] }} />
-                            : <X size={9} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                            ? <Check size={10} style={{ color: TIER_ACCENT[i] }} />
+                            : <X size={10} style={{ color: 'rgba(255,255,255,0.2)' }} />
                           }
                         </div>
                         <span className="text-[12px] leading-snug" style={{ color: f.ok ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>{f.text}</span>
@@ -1542,6 +1602,7 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
                     </motion.button>
                   )}
                 </Tilt3D>
+                </div>{/* /spinning border wrapper */}
               </motion.div>
             )
           })}
