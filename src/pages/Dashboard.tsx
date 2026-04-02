@@ -1096,13 +1096,16 @@ export default function Dashboard() {
           </div>
         ) : (
           <div data-tour="proposals-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {filteredProposals.map((p, i) => (
                 <motion.div
                   key={p.id}
+                  layout
                   className="relative"
-                  style={{ animation: `ds-fade-up 0.4s ease-out ${0.35 + i * 0.06}s both` }}
-                  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                  initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.18, ease: 'easeOut' as const } }}
+                  transition={{ duration: 0.3, delay: i * 0.05, ease: 'easeOut' as const }}
                 >
                   {/* Selection overlay ring */}
                   {pipelineTab === 'lost' && selectedIds.has(p.id) && (
@@ -1145,11 +1148,10 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 64 }}
             transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
-            style={{ width: 'min(480px, calc(100vw - 32px))' }}
+            className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4"
           >
             <div
-              className="flex items-center gap-3 rounded-2xl px-4 py-3"
+              className="w-full max-w-[480px] flex items-center gap-2 sm:gap-3 rounded-2xl px-3 sm:px-4 py-3"
               style={{
                 background: 'linear-gradient(135deg, rgba(16,8,8,0.97) 0%, rgba(24,8,8,0.97) 100%)',
                 border: '1px solid rgba(248,113,113,0.3)',
@@ -1209,7 +1211,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={handleBulkDelete}
                     disabled={bulkDeleting}
-                    className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-black"
+                    className="flex-none flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-1.5 text-xs font-black whitespace-nowrap"
                     style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', border: '1px solid rgba(239,68,68,0.5)', color: 'white', boxShadow: '0 0 20px rgba(239,68,68,0.3)', opacity: bulkDeleting ? 0.6 : 1 }}
                     whileHover={bulkDeleting ? {} : { scale: 1.04 }}
                     whileTap={bulkDeleting ? {} : { scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
