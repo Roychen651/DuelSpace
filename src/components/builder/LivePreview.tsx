@@ -577,7 +577,11 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                   ) : (
                     <p className="mt-1 text-[11px] text-white/25">
                       {proposal.include_vat
-                        ? (locale === 'he' ? `כולל מע"מ ${Math.round(vatRate * 100)}%` : `Incl. VAT ${Math.round(vatRate * 100)}%`)
+                        ? (proposal.prices_include_vat
+                            ? (locale === 'he'
+                                ? `כולל מע"מ (${Math.round(vatRate * 100)}%): ${formatCurrency(fin.vatAmount, proposal.currency)}`
+                                : `Incl. VAT (${Math.round(vatRate * 100)}%): ${formatCurrency(fin.vatAmount, proposal.currency)}`)
+                            : (locale === 'he' ? `כולל מע"מ ${Math.round(vatRate * 100)}%` : `Incl. VAT ${Math.round(vatRate * 100)}%`))
                         : proposal.add_ons.filter(a => a.enabled).length > 0
                           ? (locale === 'he'
                               ? `כולל ${proposal.add_ons.filter(a => a.enabled).length} תוספות`

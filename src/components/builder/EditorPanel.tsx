@@ -529,6 +529,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
   const isHe = locale === 'he'
   const vatRate = getVatRate()
   const showVat = draft.include_vat
+  const pricesIncludeVat = draft.prices_include_vat === true && showVat
 
   // Discount-aware totals via unified engine
   const fin         = calculateFinancials(draft as Parameters<typeof calculateFinancials>[0], undefined, vatRate)
@@ -762,36 +763,57 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               {isHe ? 'סוג מסמך' : 'Document Mode'}
             </span>
           </div>
-          {/* Segmented control */}
-          <div
-            className="relative flex rounded-xl overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <button
-              type="button"
-              onClick={() => onChange({ is_document_only: false })}
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
-              style={{
-                color: !draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
-                background: !draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
-              }}
-            >
-              <DollarSign size={12} />
-              {isHe ? 'הצעת מחיר' : 'Proposal'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange({ is_document_only: true })}
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
-              style={{
-                color: draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
-                background: draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
-              }}
-            >
-              <FileText size={12} />
-              {isHe ? 'מסמך משפטי' : 'Legal Document'}
-            </button>
-          </div>
+          {/* Segmented control — locked when sent/viewed (unlocked on needs_revision) */}
+          {(() => {
+            const structureLocked = isFinanciallyLocked && !needsRevision
+            return (
+              <div
+                className="relative flex rounded-xl overflow-hidden"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  opacity: structureLocked ? 0.5 : 1,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => !structureLocked && onChange({ is_document_only: false })}
+                  disabled={structureLocked}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
+                  style={{
+                    color: !draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                    background: !draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
+                    cursor: structureLocked ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <DollarSign size={12} />
+                  {isHe ? 'הצעת מחיר' : 'Proposal'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => !structureLocked && onChange({ is_document_only: true })}
+                  disabled={structureLocked}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-semibold transition-all relative z-10"
+                  style={{
+                    color: draft.is_document_only ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                    background: draft.is_document_only ? 'rgba(99,102,241,0.15)' : 'transparent',
+                    cursor: structureLocked ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <FileText size={12} />
+                  {isHe ? 'מסמך משפטי' : 'Legal Document'}
+                </button>
+                {structureLocked && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                    <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+                      <Lock size={10} />
+                      <span>{isHe ? 'נעול לאחר שליחה' : 'Locked after sending'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
           <p className="text-[12px] text-zinc-500 leading-relaxed">
             {draft.is_document_only
               ? (isHe ? 'מצב מסמך — ללא תמחור, תוספות ואבני דרך. מתאים לחוזים, הסכמים והתחייבויות.' : 'Document mode — no pricing, add-ons, or milestones. Ideal for contracts, agreements, and NDAs.')
@@ -1106,9 +1128,9 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           minDate={new Date()}
         />
 
-        {/* Contract template + clear button */}
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
+        {/* Contract template + clear button — locked when sent/viewed (unlocked on needs_revision) */}
+        <div className="flex items-start gap-2" style={{ opacity: isFinanciallyLocked && !needsRevision ? 0.5 : 1 }}>
+          <div className="flex-1" style={{ pointerEvents: isFinanciallyLocked && !needsRevision ? 'none' : 'auto' }}>
             <ContractTemplatePicker
               locale={locale}
               onSelect={body => {
@@ -1119,11 +1141,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           </div>
           <button
             type="button"
+            disabled={isFinanciallyLocked && !needsRevision}
             onClick={() => {
+              if (isFinanciallyLocked && !needsRevision) return
               const msg = isHe ? 'האם למחוק את טקסט החוזה?' : 'Clear contract text?'
               if (window.confirm(msg)) onChange({ description: '' })
             }}
-            title={isHe ? 'מחק תוכן' : 'Clear content'}
+            title={isHe ? (isFinanciallyLocked && !needsRevision ? 'נעול לאחר שליחה' : 'מחק תוכן') : (isFinanciallyLocked && !needsRevision ? 'Locked after sending' : 'Clear content')}
             className="flex h-[42px] w-10 flex-none items-center justify-center rounded-xl transition-colors"
             style={{
               background: 'rgba(239,68,68,0.06)',
@@ -1220,9 +1244,13 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               </div>
               {showVat && draft.base_price > 0 && (
                 <p className="text-xs text-indigo-400/70 mt-0.5">
-                  {isHe
-                    ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`
-                    : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`}
+                  {pricesIncludeVat
+                    ? (isHe
+                        ? `סה"כ: ${formatCurrency(draft.base_price, draft.currency)} (מתוכם מע"מ: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`
+                        : `Total: ${formatCurrency(draft.base_price, draft.currency)} (VAT included: ${formatCurrency(Math.round(draft.base_price - draft.base_price / (1 + vatRate)), draft.currency)})`)
+                    : (isHe
+                        ? `בסיס: ${formatCurrency(draft.base_price, draft.currency)} → כולל מע"מ: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`
+                        : `Base: ${formatCurrency(draft.base_price, draft.currency)} → with VAT: ${formatCurrency(applyVat(draft.base_price, vatRate), draft.currency)}`)}
                 </p>
               )}
             </div>
@@ -1241,6 +1269,56 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             {showVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
           </button>
         </div>
+
+        {/* Prices include VAT toggle — only shown when VAT is enabled */}
+        {showVat && (
+          <div
+            className="flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-300"
+            style={{
+              background: pricesIncludeVat
+                ? 'linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(16,185,129,0.04) 100%)'
+                : 'rgba(255,255,255,0.02)',
+              border: pricesIncludeVat ? '1px solid rgba(34,197,94,0.22)' : '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <DollarSign size={12} className={pricesIncludeVat ? 'text-emerald-400' : 'text-white/25'} />
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold" style={{ color: pricesIncludeVat ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.45)' }}>
+                    {isHe ? 'מחירים כוללים מע"מ' : 'Prices include VAT'}
+                  </p>
+                  <Tip content={isHe
+                    ? 'כשמופעל, המחירים שאתה מזין כבר כוללים מע"מ. המערכת תפרק את המע"מ מתוך הסכום ותציג פירוט ללקוח. לדוגמה: הזנת 12,000 ₪ → הלקוח רואה: סה"כ 12,000 ₪ (מתוכם מע"מ 1,830 ₪).'
+                    : 'When enabled, the prices you enter already include VAT. The system will extract the VAT from the total and show a breakdown. Example: you enter ₪12,000 → client sees: Total ₪12,000 (of which VAT ₪1,830).'
+                  }>
+                    <button type="button" className="text-white/25 hover:text-white/60 transition-colors p-1 rounded-lg touch-manipulation" tabIndex={0}>
+                      <Info size={12} />
+                    </button>
+                  </Tip>
+                </div>
+                {pricesIncludeVat && (
+                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(74,222,128,0.6)' }}>
+                    {isHe ? 'הסכום שתזין הוא מה שהלקוח משלם' : 'The amount you enter is what the client pays'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => !isFinanciallyLocked && onChange({ prices_include_vat: !draft.prices_include_vat })}
+              className="transition-colors"
+              style={{
+                color: pricesIncludeVat ? '#22c55e' : 'rgba(255,255,255,0.2)',
+                opacity: isFinanciallyLocked ? 0.5 : 1,
+                cursor: isFinanciallyLocked ? 'not-allowed' : 'pointer',
+              }}
+              disabled={isFinanciallyLocked}
+            >
+              {pricesIncludeVat ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+            </button>
+          </div>
+        )}
 
         {/* Global Discount slider */}
         <div

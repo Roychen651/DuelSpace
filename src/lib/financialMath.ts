@@ -195,11 +195,13 @@ export function calculateFinancials(
     add_ons: Array<{ id: string; price: number; enabled: boolean; discount_pct?: number; default_quantity?: number }>
     global_discount_pct?: number | null
     include_vat?: boolean
+    prices_include_vat?: boolean
   },
   lineItems?: Record<string, { enabled: boolean; qty: number }>,
   vatRate = ISRAELI_VAT_RATE,
 ): Financials {
   const globalDiscountPct = proposal.global_discount_pct || 0
+  const pricesIncludeVat = proposal.prices_include_vat === true && proposal.include_vat === true
 
   // Resolve active add-ons with optional client overrides (toggle only — qty is fixed by creator).
   const resolved = proposal.add_ons.map(a => ({
@@ -214,8 +216,6 @@ export function calculateFinancials(
     .filter(a => a.enabled)
     .reduce((sum, a) => sum + a.price * a.qty, 0)
   const originalSubtotal = roundILS(proposal.base_price + addOnsOriginal)
-  const originalVat = proposal.include_vat ? vatOnNet(originalSubtotal, vatRate) : 0
-  const originalGrandTotal = roundILS(originalSubtotal + originalVat)
 
   // ── Step 2: per-item discounts ─────────────────────────────────────────────
   const addOnsItemDiscounted = resolved
@@ -225,12 +225,35 @@ export function calculateFinancials(
   const itemSavings = roundILS(originalSubtotal - discountedSubtotal)
 
   // ── Step 3: global discount ────────────────────────────────────────────────
-  const beforeVat = applyGlobalDiscount(discountedSubtotal, globalDiscountPct)
-  const globalSavings = roundILS(discountedSubtotal - beforeVat)
+  const afterGlobalDiscount = applyGlobalDiscount(discountedSubtotal, globalDiscountPct)
+  const globalSavings = roundILS(discountedSubtotal - afterGlobalDiscount)
 
   // ── Step 4: VAT ────────────────────────────────────────────────────────────
-  const vatAmount = proposal.include_vat ? vatOnNet(beforeVat, vatRate) : 0
-  const grandTotal = roundILS(beforeVat + vatAmount)
+  // Two modes:
+  //   A) prices_include_vat = false (default): prices are NET → VAT added on top
+  //   B) prices_include_vat = true: prices are GROSS → VAT extracted from within
+  let beforeVat: number
+  let vatAmt: number
+  let grandTotal: number
+
+  if (pricesIncludeVat) {
+    // Entered prices already include VAT — the grand total IS the entered sum
+    grandTotal = afterGlobalDiscount
+    beforeVat = netFromGross(grandTotal, vatRate)
+    vatAmt = roundILS(grandTotal - beforeVat)
+  } else {
+    beforeVat = afterGlobalDiscount
+    vatAmt = proposal.include_vat ? vatOnNet(beforeVat, vatRate) : 0
+    grandTotal = roundILS(beforeVat + vatAmt)
+  }
+
+  // Original grand total (for strikethrough)
+  const originalVat = pricesIncludeVat
+    ? vatOnGross(originalSubtotal, vatRate)
+    : (proposal.include_vat ? vatOnNet(originalSubtotal, vatRate) : 0)
+  const originalGrandTotal = pricesIncludeVat
+    ? originalSubtotal  // gross prices → original IS the total
+    : roundILS(originalSubtotal + originalVat)
 
   return {
     originalSubtotal,
@@ -240,7 +263,7 @@ export function calculateFinancials(
     totalSavings: roundILS(itemSavings + globalSavings),
     discountedSubtotal,
     beforeVat,
-    vatAmount,
+    vatAmount: vatAmt,
     grandTotal,
   }
 }

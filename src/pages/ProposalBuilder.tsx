@@ -32,6 +32,7 @@ const BLANK_DRAFT: ProposalInsert = {
   expires_at: null,
   last_viewed_at: null,
   include_vat: false,
+  prices_include_vat: false,
   display_bsd: false,
   hide_grand_total: false,
   is_document_only: false,

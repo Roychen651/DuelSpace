@@ -104,6 +104,8 @@ export interface Proposal {
   hide_grand_total: boolean
   /** Document-only mode — strips all financial blocks, turning it into a pure e-signing tool (Sprint 43) */
   is_document_only: boolean
+  /** When true, entered prices already include VAT — system back-calculates pre-VAT for display (Sprint 44) */
+  prices_include_vat: boolean
   /**
    * Soft-delete flag — Sprint 29 Archive Engine.
    * When true the proposal is hidden from the active view but NEVER removed from the DB.
