@@ -388,7 +388,7 @@ export default function ServicesLibrary() {
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: '#030305' }} dir={isHe ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-slate-50 dark:bg-[#030305]" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes ds-fade-up {
           from { opacity: 0; transform: translateY(16px); }
@@ -503,10 +503,10 @@ export default function ServicesLibrary() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="text-xl font-black text-white">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">
               {isHe ? 'ספריית שירותים' : 'Services Library'}
             </h1>
-            <p className="text-xs text-white/35 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-white/35 mt-0.5">
               {isHe
                 ? 'ניהול שירותים שמורים לשימוש חוזר בהצעות'
                 : 'Manage saved services for reuse in proposals'}
@@ -532,23 +532,17 @@ export default function ServicesLibrary() {
           custom={1} variants={cardIn} initial="hidden" animate="visible"
           className="grid grid-cols-2 gap-3"
         >
-          <div
-            className="rounded-2xl p-4"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <p className="text-xs text-white/35 mb-1">{isHe ? 'שירותים שמורים' : 'Saved services'}</p>
+          <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm dark:bg-white/[0.04] dark:border-white/[0.07] dark:shadow-none">
+            <p className="text-xs text-slate-500 dark:text-white/35 mb-1">{isHe ? 'שירותים שמורים' : 'Saved services'}</p>
             {loading && services.length === 0
-              ? <div className="h-8 w-10 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              : <p className="text-2xl font-black text-white">{services.length}</p>
+              ? <div className="h-8 w-10 rounded-lg animate-pulse bg-slate-200 dark:bg-white/[0.08]" />
+              : <p className="text-2xl font-black text-slate-900 dark:text-white">{services.length}</p>
             }
           </div>
-          <div
-            className="rounded-2xl p-4"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <p className="text-xs text-white/35 mb-1">{isHe ? 'שווי קטלוג' : 'Catalog value'}</p>
+          <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm dark:bg-white/[0.04] dark:border-white/[0.07] dark:shadow-none">
+            <p className="text-xs text-slate-500 dark:text-white/35 mb-1">{isHe ? 'שווי קטלוג' : 'Catalog value'}</p>
             {loading && services.length === 0
-              ? <div className="h-8 w-24 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              ? <div className="h-8 w-24 rounded-lg animate-pulse bg-slate-200 dark:bg-white/[0.08]" />
               : <p className="text-xl font-black text-amber-400 tabular-nums">{formatCurrency(totalValue, 'ILS')}</p>
             }
           </div>

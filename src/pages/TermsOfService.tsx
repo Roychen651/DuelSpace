@@ -8,12 +8,7 @@ import { GlobalFooter } from '../components/ui/GlobalFooter'
 // ─── Legal Prose Styles ────────────────────────────────────────────────────────
 // Manually approximated since @tailwindcss/typography is not installed.
 
-const CARD_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.038) 0%, rgba(255,255,255,0.012) 100%)',
-  border: '1px solid rgba(255,255,255,0.07)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-  borderRadius: '1.25rem',
-}
+const CARD_CLS = 'bg-white border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
 
 // ─── Clause Data ──────────────────────────────────────────────────────────────
 
@@ -235,7 +230,7 @@ export default function TermsOfService() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col bg-[#05050A] text-[#f0f0f8]"
+      className="relative min-h-dvh flex flex-col bg-slate-50 text-slate-900 dark:bg-[#05050A] dark:text-[#f0f0f8]"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       <style>{`
@@ -261,13 +256,13 @@ export default function TermsOfService() {
       <div className="relative z-10 flex items-center justify-between px-6 py-5 max-w-3xl mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm font-medium text-white/40 transition hover:text-white/80"
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-white/40 transition hover:text-slate-700 dark:hover:text-white/80"
         >
           <ArrowRight size={14} className={isHe ? '' : 'rotate-180'} />
           {isHe ? 'חזרה' : 'Back'}
         </button>
 
-        <div className="flex items-center gap-1 rounded-xl p-1" style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}>
+        <div className="flex items-center gap-1 rounded-xl p-1 border border-slate-200 bg-white/80 dark:border-white/[0.07] dark:bg-white/[0.03]">
           {([
             { path: '/terms',   label_he: 'תנאי שירות', label_en: 'Terms',   active: true },
             { path: '/privacy', label_he: 'פרטיות',     label_en: 'Privacy', active: false },
@@ -276,11 +271,7 @@ export default function TermsOfService() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path, { replace: true })}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-              style={{
-                background: tab.active ? 'rgba(99,102,241,0.18)' : 'transparent',
-                color: tab.active ? '#c4b5fd' : 'rgba(255,255,255,0.3)',
-              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab.active ? 'bg-indigo-500/[0.18] text-indigo-500 dark:text-violet-300' : 'text-slate-400 dark:text-white/30'}`}
             >
               {isHe ? tab.label_he : tab.label_en}
             </button>
@@ -300,17 +291,17 @@ export default function TermsOfService() {
             <FileText size={20} style={{ color: '#818cf8' }} />
           </div>
           <h1
-            className="text-3xl sm:text-4xl font-black text-white mb-3"
+            className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3"
             style={{ letterSpacing: '-0.02em' }}
           >
             {isHe ? 'תנאי שירות' : 'Terms of Service'}
           </h1>
-          <p className="text-sm text-white/40 mb-1">
+          <p className="text-sm text-slate-500 dark:text-white/40 mb-1">
             {isHe
               ? 'בבקשה קרא בעיון לפני השימוש בפלטפורמה'
               : 'Please read carefully before using the platform'}
           </p>
-          <p className="text-xs text-white/22">
+          <p className="text-xs text-slate-400 dark:text-white/22">
             {isHe ? 'תוקף מיום 1 בינואר 2026 | גרסה 2.0' : 'Effective January 1, 2026 | Version 2.0'}
           </p>
         </div>
@@ -323,8 +314,7 @@ export default function TermsOfService() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.38, ease: 'easeOut' as const, delay: 0.04 + i * 0.035 }}
-              style={CARD_STYLE}
-              className="p-6"
+              className={`p-6 ${CARD_CLS}`}
             >
               {/* Clause heading */}
               <div className="flex items-start gap-3 mb-4">
@@ -351,7 +341,7 @@ export default function TermsOfService() {
                 {(isHe ? clause.body_he : clause.body_en).map((para, j) => (
                   <p
                     key={j}
-                    className="text-[13.5px] leading-relaxed text-white/55"
+                    className="text-[13.5px] leading-relaxed text-slate-600 dark:text-white/55"
                     style={{ fontWeight: j === 0 && clause.num === '5' ? 600 : 400 }}
                   >
                     {para}
@@ -369,18 +359,15 @@ export default function TermsOfService() {
             style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
             <Shield size={13} className="text-indigo-400 flex-none" />
-            <span className="text-xs font-medium text-white/45">
+            <span className="text-xs font-medium text-slate-600 dark:text-white/45">
               {isHe
                 ? 'שאלות משפטיות? פנה אלינו בכתובת legal@dealspace.app'
                 : 'Legal questions? Contact us at legal@dealspace.app'}
             </span>
           </div>
-          <div
-            className="flex items-center gap-2 rounded-2xl px-4 py-3"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <Lock size={13} style={{ color: 'rgba(255,255,255,0.3)' }} className="flex-none" />
-            <span className="text-xs font-medium text-white/35">
+          <div className="flex items-center gap-2 rounded-2xl px-4 py-3 bg-white border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]">
+            <Lock size={13} className="text-slate-400 dark:text-white/30 flex-none" />
+            <span className="text-xs font-medium text-slate-500 dark:text-white/35">
               {isHe ? 'כפוף לדיני מדינת ישראל | סמכות שיפוט: תל אביב-יפו' : 'Governed by Israeli Law | Jurisdiction: Tel Aviv-Jaffa'}
             </span>
           </div>

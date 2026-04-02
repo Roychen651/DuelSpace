@@ -323,7 +323,7 @@ export default function Legal() {
 
   return (
     <div
-      className="relative min-h-dvh bg-[#05050A]"
+      className="relative min-h-dvh bg-slate-50 dark:bg-[#05050A]"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       {/* ── Background ─────────────────────────────────────────────────────── */}
@@ -346,23 +346,19 @@ export default function Legal() {
       <div className="relative z-10 flex items-center justify-between px-6 py-5 max-w-3xl mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm font-medium text-white/40 transition hover:text-white/80"
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-white/40 transition hover:text-slate-700 dark:hover:text-white/80"
         >
           <ArrowRight size={14} className={isHe ? '' : 'rotate-180'} />
           {isHe ? 'חזרה' : 'Back'}
         </button>
 
         {/* Toggle between terms / privacy / security */}
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white/80 dark:border-white/[0.07] dark:bg-white/[0.03] p-1">
           {(['terms', 'privacy', 'security'] as const).map(t => (
             <button
               key={t}
               onClick={() => navigate(`/${t}`, { replace: true })}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-              style={{
-                background: type === t ? 'rgba(99,102,241,0.18)' : 'transparent',
-                color: type === t ? '#c4b5fd' : 'rgba(255,255,255,0.3)',
-              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${type === t ? 'bg-indigo-500/[0.18] text-indigo-500 dark:text-violet-300' : 'text-slate-400 dark:text-white/30'}`}
             >
               {t === 'terms'
                 ? (isHe ? 'תנאי שירות' : 'Terms')
@@ -398,13 +394,13 @@ export default function Legal() {
           </div>
 
           <h1
-            className="text-3xl sm:text-4xl font-black text-white mb-3"
+            className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3"
             style={{ letterSpacing: '-0.02em' }}
           >
             {c.title}
           </h1>
-          <p className="text-sm text-white/40 mb-1">{c.subtitle}</p>
-          <p className="text-xs text-white/25">{c.effective}</p>
+          <p className="text-sm text-slate-500 dark:text-white/40 mb-1">{c.subtitle}</p>
+          <p className="text-xs text-slate-400 dark:text-white/25">{c.effective}</p>
         </motion.div>
 
         {/* Sections */}
@@ -413,12 +409,7 @@ export default function Legal() {
             <motion.div
               key={section.title}
               {...fadeUp(0.05 + i * 0.04)}
-              className="rounded-2xl p-6"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
+              className="rounded-2xl p-6 bg-white border border-slate-200 shadow-sm dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.015] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
             >
               <h2
                 className="text-sm font-bold mb-3"
@@ -426,7 +417,7 @@ export default function Legal() {
               >
                 {section.title}
               </h2>
-              <p className="text-sm leading-relaxed text-white/55">
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-white/55">
                 {section.body}
               </p>
             </motion.div>
@@ -446,7 +437,7 @@ export default function Legal() {
             }}
           >
             <Zap size={13} className="text-indigo-400" />
-            <span className="text-xs font-medium text-white/50">
+            <span className="text-xs font-medium text-slate-600 dark:text-white/50">
               {isHe
                 ? 'שאלות? פנה אלינו בכתובת legal@dealspace.app'
                 : 'Questions? Contact us at legal@dealspace.app'}

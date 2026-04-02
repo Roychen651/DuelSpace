@@ -150,14 +150,14 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
           <FileText size={14} className="text-indigo-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold text-white/90">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-white/90">
             {isHe ? template.titleHe : template.titleEn}
           </h3>
-          <p className="text-xs text-white/35 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-white/35 mt-0.5">
             {isHe ? template.descHe : (template.titleEn)}
           </p>
         </div>
-        <span className="text-white/30 flex-none mt-1">
+        <span className="text-slate-400 dark:text-white/30 flex-none mt-1">
           {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </span>
       </button>
@@ -204,7 +204,7 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
                         <button
                           type="button"
                           onClick={() => setEditingVars(false)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 hover:text-white/60"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/30 hover:text-slate-600 dark:hover:text-white/60"
                         >
                           <CloseIcon size={12} />
                         </button>
@@ -242,13 +242,13 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
               {/* Contract preview */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">
                     {isHe ? 'תצוגת חוזה' : 'Contract preview'}
                   </p>
                   <button
                     type="button"
                     onClick={() => setShowFull(v => !v)}
-                    className="flex items-center gap-1 text-[11px] font-semibold transition text-white/30 hover:text-white/60"
+                    className="flex items-center gap-1 text-[11px] font-semibold transition text-slate-400 dark:text-white/30 hover:text-slate-600 dark:hover:text-white/60"
                   >
                     {showFull ? <EyeOff size={11} /> : <Eye size={11} />}
                     {isHe ? (showFull ? 'קצר' : 'הצג הכל') : (showFull ? 'Collapse' : 'View full')}
@@ -256,10 +256,8 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
                 </div>
 
                 <div
-                  className="rounded-xl p-4 text-[12px] leading-relaxed text-white/55 font-mono whitespace-pre-wrap overflow-y-auto transition-all"
+                  className="rounded-xl p-4 text-[12px] leading-relaxed text-slate-700 dark:text-white/55 font-mono whitespace-pre-wrap overflow-y-auto transition-all bg-slate-100 border border-slate-200 dark:bg-black/30 dark:border-white/[0.06]"
                   style={{
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(255,255,255,0.06)',
                     maxHeight: showFull ? '600px' : '200px',
                     scrollbarWidth: 'thin',
                     scrollbarColor: 'rgba(99,102,241,0.3) transparent',
@@ -272,7 +270,7 @@ function ContractCard({ template, defaults, onSaveDefaults, locale }: ContractCa
 
               {/* Legal disclaimer */}
               <div
-                className="rounded-xl px-3.5 py-3 text-[11px] leading-relaxed text-white/30"
+                className="rounded-xl px-3.5 py-3 text-[11px] leading-relaxed text-slate-500 dark:text-white/30"
                 style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.12)' }}
               >
                 <span className="text-amber-400/60 font-bold">{isHe ? '⚠ אזהרה משפטית: ' : '⚠ Legal Notice: '}</span>
@@ -324,8 +322,7 @@ export default function ContractLibrary() {
 
   return (
     <div
-      className="min-h-dvh"
-      style={{ background: '#030305' }}
+      className="min-h-dvh bg-slate-50 dark:bg-[#030305]"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       <style>{`@keyframes ds-fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }`}</style>
@@ -341,14 +338,14 @@ export default function ContractLibrary() {
         {/* Intro */}
         <div style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-black text-white">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">
               {isHe ? 'חוזים מקצועיים בעברית' : 'Professional Hebrew Contracts'}
             </h1>
             <span className="rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-400 border border-indigo-500/20">
               {templates.length} {isHe ? 'תבניות' : 'templates'}
             </span>
           </div>
-          <p className="text-sm text-white/35 leading-relaxed">
+          <p className="text-sm text-slate-500 dark:text-white/35 leading-relaxed">
             {isHe
               ? 'תבניות חוזה מותאמות לחוק הישראלי. מלא פרטים, העתק, והכנס להצעה.'
               : 'Contract templates adapted for Israeli law. Fill details, copy, and insert into proposals.'}

@@ -254,7 +254,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                 <div
                   className="flex flex-col rounded-2xl overflow-hidden
                     bg-white border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.08)]
-                    dark:border-white/[0.09] dark:shadow-[0_20px_60px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]"
+                    dark:bg-[#0d0d14] dark:border-white/[0.09] dark:shadow-[0_20px_60px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]"
                   style={{
                     width: 200,
                     border: '1px solid',

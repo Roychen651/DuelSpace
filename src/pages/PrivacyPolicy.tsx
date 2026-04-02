@@ -7,12 +7,7 @@ import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Shared Card Style ────────────────────────────────────────────────────────
 
-const CARD_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.038) 0%, rgba(255,255,255,0.012) 100%)',
-  border: '1px solid rgba(255,255,255,0.07)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-  borderRadius: '1.25rem',
-}
+const CARD_CLS = 'bg-white border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
 
 // ─── Clause Data ──────────────────────────────────────────────────────────────
 
@@ -220,7 +215,7 @@ export default function PrivacyPolicy() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col bg-[#05050A] text-[#f0f0f8]"
+      className="relative min-h-dvh flex flex-col bg-slate-50 text-slate-900 dark:bg-[#05050A] dark:text-[#f0f0f8]"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       {/* Background glow */}
@@ -239,13 +234,13 @@ export default function PrivacyPolicy() {
       <div className="relative z-10 flex items-center justify-between px-6 py-5 max-w-3xl mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm font-medium text-white/40 transition hover:text-white/80"
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-white/40 transition hover:text-slate-700 dark:hover:text-white/80"
         >
           <ArrowRight size={14} className={isHe ? '' : 'rotate-180'} />
           {isHe ? 'חזרה' : 'Back'}
         </button>
 
-        <div className="flex items-center gap-1 rounded-xl p-1" style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}>
+        <div className="flex items-center gap-1 rounded-xl p-1 border border-slate-200 bg-white/80 dark:border-white/[0.07] dark:bg-white/[0.03]">
           {([
             { path: '/terms',    label_he: 'תנאי שירות', label_en: 'Terms',    active: false },
             { path: '/privacy',  label_he: 'פרטיות',     label_en: 'Privacy',  active: true },
@@ -254,11 +249,7 @@ export default function PrivacyPolicy() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path, { replace: true })}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-              style={{
-                background: tab.active ? 'rgba(168,85,247,0.18)' : 'transparent',
-                color: tab.active ? '#e9d5ff' : 'rgba(255,255,255,0.3)',
-              }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab.active ? 'bg-purple-500/[0.18] text-purple-600 dark:text-purple-200' : 'text-slate-400 dark:text-white/30'}`}
             >
               {isHe ? tab.label_he : tab.label_en}
             </button>
@@ -288,17 +279,17 @@ export default function PrivacyPolicy() {
             <Shield size={20} style={{ color: '#c084fc' }} />
           </div>
           <h1
-            className="text-3xl sm:text-4xl font-black text-white mb-3"
+            className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3"
             style={{ letterSpacing: '-0.02em' }}
           >
             {isHe ? 'מדיניות פרטיות' : 'Privacy Policy'}
           </h1>
-          <p className="text-sm text-white/40 mb-1">
+          <p className="text-sm text-slate-500 dark:text-white/40 mb-1">
             {isHe
               ? 'כיצד אנו אוספים, משתמשים ומגנים על המידע שלך'
               : 'How we collect, use, and protect your information'}
           </p>
-          <p className="text-xs text-white/22">
+          <p className="text-xs text-slate-400 dark:text-white/22">
             {isHe ? 'תוקף מיום 1 בינואר 2026 | גרסה 2.0' : 'Effective January 1, 2026 | Version 2.0'}
           </p>
         </div>
@@ -311,8 +302,7 @@ export default function PrivacyPolicy() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.38, ease: 'easeOut' as const, delay: 0.04 + i * 0.035 }}
-              style={CARD_STYLE}
-              className="p-6"
+              className={`p-6 ${CARD_CLS}`}
             >
               {/* Clause heading */}
               <div className="flex items-start gap-3 mb-4">
@@ -337,7 +327,7 @@ export default function PrivacyPolicy() {
               {/* Body paragraphs */}
               <div className="space-y-3">
                 {(isHe ? clause.body_he : clause.body_en).map((para, j) => (
-                  <p key={j} className="text-[13.5px] leading-relaxed text-white/55">
+                  <p key={j} className="text-[13.5px] leading-relaxed text-slate-600 dark:text-white/55">
                     {para}
                   </p>
                 ))}
@@ -353,18 +343,15 @@ export default function PrivacyPolicy() {
             style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)' }}
           >
             <Shield size={13} style={{ color: '#c084fc' }} className="flex-none" />
-            <span className="text-xs font-medium text-white/45">
+            <span className="text-xs font-medium text-slate-600 dark:text-white/45">
               {isHe
                 ? 'שאלות על פרטיות? פנה אלינו בכתובת privacy@dealspace.app'
                 : 'Privacy questions? Contact us at privacy@dealspace.app'}
             </span>
           </div>
-          <div
-            className="flex items-center gap-2 rounded-2xl px-4 py-3"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-          >
-            <Lock size={13} style={{ color: 'rgba(255,255,255,0.3)' }} className="flex-none" />
-            <span className="text-xs font-medium text-white/35">
+          <div className="flex items-center gap-2 rounded-2xl px-4 py-3 bg-white border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]">
+            <Lock size={13} className="text-slate-400 dark:text-white/30 flex-none" />
+            <span className="text-xs font-medium text-slate-500 dark:text-white/35">
               {isHe ? 'עומדת בחוק הגנת הפרטיות ו-GDPR' : 'Compliant with Israeli Privacy Law & GDPR'}
             </span>
           </div>
