@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–48.5 (Legal Pages Overhaul + Knowledge Base Rebuild).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–48.6 (Footer Routing & UI Overhaul).
 
 ---
 
@@ -2852,3 +2852,7 @@ const CARD_CLS = 'bg-white dark:bg-transparent dark:bg-gradient-to-br ...'
 - **Do not use `bg-white` alone on glass cards inside dark-mode pages** — `bg-white` sets `background-color: white`; `dark:bg-gradient-to-br` sets only `background-image`. Since `background-color` is a different CSS property, it bleeds through the gradient, making cards appear solid white with invisible dark-mode text. Always pair with `dark:bg-transparent` to nullify the background-color in dark mode: `className="bg-white dark:bg-transparent dark:bg-gradient-to-br ..."`. This bug affected all four legal pages (TermsOfService, PrivacyPolicy, Legal, AccessibilityStatement) and was fixed in Sprint 48.
 - **Do not hardcode hex colors for section headings on legal/public pages** — hardcoded values like `color: '#c4b5fd'` bypass Tailwind's dark-mode awareness and can cause a flash of unstyled content (FOUC) on page load. Use Tailwind `dark:text-*` classes instead (e.g., `className="text-gray-900 dark:text-violet-300"`).
 - **Do not add an `id` field to `KBItem` objects in `knowledgeBase.ts`** — the `KBItem` interface only has `category`, `q_he`, `q_en`, `a_he`, `a_en`. There is no `id` field. The `HelpCenterDrawer` uses array index for keys. Adding `id` to items without adding it to the interface causes `tsc -b` to fail.
+- **Do not add `/contracts` links to `GlobalFooter`** — `ContractLibrary.tsx` and the `/contracts` route were permanently deleted in Sprint 44.9. The footer's link arrays are the authoritative list of valid app routes; a dead link in the footer is a runtime 404 on every page load. The correct Product column links are `/proposals/new`, `/dashboard`, `/services`, `/integrations`.
+- **Do not use `navigate()` for `mailto:` links in `GlobalFooter`** — `navigate()` is for in-app SPA routes. Calling `navigate('mailto:support@dealspace.app')` pushes a broken entry into the history stack and never opens an email client. Always use `window.location.href = path` for `mailto:` destinations, gated by `path.startsWith('mailto:')` in the `handleLink()` dispatcher.
+- **Do not use `/#help` or other fragment-anchor links in `GlobalFooter`** — the Help Center is a controlled `<Drawer>` component, not a page section with a stable `id`. Fragment anchors like `/#help` silently resolve to the page root on every route and give no feedback to the user. Use `#top` (handled by `window.scrollTo({ top: 0 })`) or `mailto:support@dealspace.app` for help-related footer links.
+- **Do not duplicate footer columns** — before Sprint 48.6, `col3` (Resources) and `col4` (Legal) contained nearly identical links (Security + Accessibility in both), wasting a column slot. Each column must cover a distinct navigation intent: Product (app features), Legal & Trust (compliance pages), Support (contact + account). Do not re-add overlapping links across columns.
