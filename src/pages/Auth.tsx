@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence, type Transition } from 'framer-motion'
 import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight, Globe, CheckCircle2, XCircle, MailCheck } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
 import type { Locale } from '../lib/i18n'
 import { evaluatePassword, validatePassword } from '../lib/passwordValidation'
+import { supabase } from '../lib/supabase'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -237,29 +238,6 @@ function OrDivider({ label }: { label: string }) {
   )
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-
-function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 5000); return () => clearTimeout(t) }, [onClose])
-  return (
-    <motion.div
-      className="fixed top-4 end-4 z-50 max-w-sm rounded-xl px-4 py-3 text-sm font-medium shadow-xl"
-      style={{
-        background: type === 'success' ? 'rgba(34,197,94,0.08)' : 'rgba(248,113,113,0.08)',
-        border: type === 'success' ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(248,113,113,0.2)',
-        color: type === 'success' ? '#4ade80' : '#f87171',
-      }}
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={MODE_TRANSITION}
-      role="alert"
-      aria-live="polite"
-    >
-      {message}
-    </motion.div>
-  )
-}
 
 // ─── Language Switcher ────────────────────────────────────────────────────────
 
@@ -388,14 +366,15 @@ function SignInForm({ onForgot, onMagic }: { onForgot: () => void; onMagic: () =
 
       <AnimatePresence>
         {error && (
-          <motion.p
+          <motion.div
             key={error}
-            className="rounded-xl px-3 py-2.5 text-xs"
-            style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171', animation: 'ds-shake 0.4s ease-out' }}
+            className="flex items-start gap-3 rounded-xl px-4 py-3.5"
+            style={{ background: 'rgba(248,113,113,0.09)', border: '1px solid rgba(248,113,113,0.28)', animation: 'ds-shake 0.4s ease-out' }}
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }} transition={MODE_TRANSITION} role="alert">
-            {t(error) || error}
-          </motion.p>
+            <XCircle size={15} className="mt-0.5 flex-none" style={{ color: '#f87171' }} />
+            <p className="text-xs leading-relaxed" style={{ color: '#f87171' }}>{t(error) || error}</p>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -472,160 +451,230 @@ function PasswordStrengthMeter({ password, locale }: { password: string; locale:
 
 function SignUpForm() {
   const { t, locale } = useI18n()
-  const { signUpWithEmail, signInWithGoogle, status, error, clearError } = useAuthStore()
-  const [toast, setToast] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
+  const { signInWithGoogle } = useAuthStore()
+  const [name, setName]                 = useState('')
+  const [email, setEmail]               = useState('')
+  const [password, setPassword]         = useState('')
+  const [showPw, setShowPw]             = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({})
-  const loading = status === 'loading'
+  const [fieldErrors, setFieldErrors]   = useState<{ name?: string; email?: string; password?: string }>({})
+  const [loading, setLoading]           = useState(false)
+  const [formError, setFormError]       = useState<string | null>(null)
+  const [checkEmail, setCheckEmail]     = useState(false)
   const isHe = locale === 'he'
 
   const validate = () => {
     const errs: typeof fieldErrors = {}
-    if (!name.trim()) errs.name = locale === 'he' ? 'שדה חובה' : 'Required'
+    if (!name.trim()) errs.name = isHe ? 'שדה חובה' : 'Required'
     if (!email || !/\S+@\S+\.\S+/.test(email)) errs.email = t('auth.error.generic')
     const pwError = validatePassword(password)
     if (pwError) errs.password = t(pwError)
-    setFieldErrors(errs); return Object.keys(errs).length === 0
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); clearError()
+    e.preventDefault()
+    setFormError(null)
     if (!validate()) return
-    await signUpWithEmail(email, password, name)
-    if (!error) setToast(t('auth.success.signUp'))
+    setLoading(true)
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name } },
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setFormError(error.message)
+      return
+    }
+
+    // Email Enumeration Protection: Supabase returns a fake success with empty
+    // identities array when the email already exists in the system.
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setFormError(
+        isHe
+          ? 'כתובת המייל הזו כבר רשומה במערכת. אנא התחברו או השתמשו בגוגל.'
+          : 'This email is already registered. Please sign in or use Google.'
+      )
+      return
+    }
+
+    setCheckEmail(true)
   }
 
+  // ── "Check Your Email" success state ─────────────────────────────────────
+  if (checkEmail) {
+    return (
+      <motion.div
+        className="flex flex-col items-center gap-6 py-2 text-center"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' as const }}
+      >
+        {/* Glowing mail icon */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.08 }}
+          className="flex h-20 w-20 items-center justify-center rounded-3xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(34,197,94,0.12))',
+            border: '1px solid rgba(99,102,241,0.3)',
+            boxShadow: '0 0 56px rgba(99,102,241,0.35), 0 0 96px rgba(34,197,94,0.08)',
+          }}
+        >
+          <MailCheck size={34} style={{ color: '#818cf8' }} />
+        </motion.div>
+
+        <div className="space-y-2.5">
+          <h2 className="text-[22px] font-black tracking-tight text-white">
+            {isHe ? 'בדקו את תיבת המייל' : 'Check your inbox'}
+          </h2>
+          <p className="mx-auto max-w-[290px] text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            {isHe
+              ? `שלחנו קישור אימות ל־${email}. לחצו עליו כדי להפעיל את החשבון ולהתחיל לסגור עסקאות.`
+              : `We've sent a verification link to ${email}. Click it to activate your account and start closing deals.`}
+          </p>
+        </div>
+
+        <div
+          className="w-full rounded-xl px-4 py-3 text-[11.5px] leading-relaxed"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            color: 'rgba(255,255,255,0.28)',
+          }}
+        >
+          {isHe ? 'לא קיבלתם? בדקו גם בתיקיית הספאם.' : "Didn't receive it? Check your spam folder too."}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setCheckEmail(false)}
+          className="text-sm transition"
+          style={{ color: 'rgba(99,102,241,0.7)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#a5b4fc' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(99,102,241,0.7)' }}
+        >
+          {isHe ? '← חזרה להתחברות' : '← Back to sign in'}
+        </button>
+      </motion.div>
+    )
+  }
+
+  // ── Sign Up Form ──────────────────────────────────────────────────────────
   return (
-    <>
-      <AnimatePresence>
-        {toast && <Toast message={toast} type="success" onClose={() => setToast(null)} />}
-      </AnimatePresence>
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <div style={fadeUp(0.05)}>
-          <AuthInput id="signup-name" label={t('auth.field.fullName')} type="text"
-            autoComplete="name" placeholder={t('auth.field.fullName.placeholder')}
-            value={name} onChange={(e) => setName(e.target.value)}
-            icon={<User size={15} />} error={fieldErrors.name} />
-        </div>
-        <div style={fadeUp(0.10)}>
-          <AuthInput id="signup-email" label={t('auth.field.email')} type="email"
-            autoComplete="email" placeholder={t('auth.field.email.placeholder')}
-            value={email} onChange={(e) => setEmail(e.target.value)}
-            icon={<Mail size={15} />} error={fieldErrors.email} />
-        </div>
-        <div style={fadeUp(0.15)}>
-          <AuthInput id="signup-password" label={t('auth.field.password')}
-            type={showPw ? 'text' : 'password'} autoComplete="new-password"
-            placeholder={t('auth.field.password.placeholder')}
-            value={password} onChange={(e) => setPassword(e.target.value)}
-            icon={<Lock size={15} />} error={fieldErrors.password}
-            suffix={
-              <button type="button" onClick={() => setShowPw(!showPw)}
-                className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
-                aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
-                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            } />
-          <AnimatePresence>
-            {password && <PasswordStrengthMeter password={password} locale={locale} />}
-          </AnimatePresence>
-        </div>
-
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <div style={fadeUp(0.05)}>
+        <AuthInput id="signup-name" label={t('auth.field.fullName')} type="text"
+          autoComplete="name" placeholder={t('auth.field.fullName.placeholder')}
+          value={name} onChange={(e) => setName(e.target.value)}
+          icon={<User size={15} />} error={fieldErrors.name} />
+      </div>
+      <div style={fadeUp(0.10)}>
+        <AuthInput id="signup-email" label={t('auth.field.email')} type="email"
+          autoComplete="email" placeholder={t('auth.field.email.placeholder')}
+          value={email} onChange={(e) => setEmail(e.target.value)}
+          icon={<Mail size={15} />} error={fieldErrors.email} />
+      </div>
+      <div style={fadeUp(0.15)}>
+        <AuthInput id="signup-password" label={t('auth.field.password')}
+          type={showPw ? 'text' : 'password'} autoComplete="new-password"
+          placeholder={t('auth.field.password.placeholder')}
+          value={password} onChange={(e) => setPassword(e.target.value)}
+          icon={<Lock size={15} />} error={fieldErrors.password}
+          suffix={
+            <button type="button" onClick={() => setShowPw(!showPw)}
+              className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}
+              aria-label={showPw ? t('auth.field.password.hide') : t('auth.field.password.show')}>
+              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          } />
         <AnimatePresence>
-          {error && (
-            <motion.p
-              className="rounded-xl px-3 py-2.5 text-xs"
-              style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171' }}
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0 }} transition={MODE_TRANSITION} role="alert">
-              {t(error) || error}
-            </motion.p>
-          )}
+          {password && <PasswordStrengthMeter password={password} locale={locale} />}
         </AnimatePresence>
+      </div>
 
-        {/* ── Compliance checkbox — mandatory, Israeli Privacy Protection Regulations ── */}
-        <div style={fadeUp(0.19)}>
-          <label
-            className="flex items-start gap-3 cursor-pointer group select-none"
-            dir={isHe ? 'rtl' : 'ltr'}
-          >
-            <div className="relative flex-none mt-0.5">
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={termsAccepted}
-                onChange={e => setTermsAccepted(e.target.checked)}
-                aria-required="true"
-              />
-              <div
-                className="flex h-4 w-4 items-center justify-center rounded transition-all duration-150"
-                style={{
-                  background: termsAccepted ? '#6366f1' : 'rgba(255,255,255,0.04)',
-                  border: termsAccepted ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: termsAccepted ? '0 0 10px rgba(99,102,241,0.35)' : 'none',
-                }}
-              >
-                {termsAccepted && (
-                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden>
-                    <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <span className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {isHe ? (
-                <>
-                  קראתי והסכמתי ל
-                  <a href="/terms" target="_blank" rel="noopener noreferrer"
-                    className="underline transition-colors"
-                    style={{ color: 'rgba(165,170,255,0.75)' }}
-                    onClick={e => e.stopPropagation()}
-                  >תנאי השימוש</a>
-                  {' '}ול
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
-                    className="underline transition-colors"
-                    style={{ color: 'rgba(165,170,255,0.75)' }}
-                    onClick={e => e.stopPropagation()}
-                  >מדיניות הפרטיות</a>
-                  {' '}של DealSpace
-                </>
-              ) : (
-                <>
-                  I have read and agree to DealSpace&apos;s{' '}
-                  <a href="/terms" target="_blank" rel="noopener noreferrer"
-                    className="underline transition-colors"
-                    style={{ color: 'rgba(165,170,255,0.75)' }}
-                    onClick={e => e.stopPropagation()}
-                  >Terms of Service</a>
-                  {' '}and{' '}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer"
-                    className="underline transition-colors"
-                    style={{ color: 'rgba(165,170,255,0.75)' }}
-                    onClick={e => e.stopPropagation()}
-                  >Privacy Policy</a>
-                </>
+      <AnimatePresence>
+        {formError && (
+          <motion.div
+            key={formError}
+            className="flex items-start gap-3 rounded-xl px-4 py-3.5"
+            style={{ background: 'rgba(248,113,113,0.09)', border: '1px solid rgba(248,113,113,0.28)', animation: 'ds-shake 0.4s ease-out' }}
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }} transition={MODE_TRANSITION} role="alert">
+            <XCircle size={15} className="mt-0.5 flex-none" style={{ color: '#f87171' }} />
+            <p className="text-xs leading-relaxed" style={{ color: '#f87171' }}>{formError}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Compliance checkbox — mandatory, Israeli Privacy Protection Regulations ── */}
+      <div style={fadeUp(0.19)}>
+        <label className="flex cursor-pointer select-none items-start gap-3 group" dir={isHe ? 'rtl' : 'ltr'}>
+          <div className="relative mt-0.5 flex-none">
+            <input type="checkbox" className="sr-only" checked={termsAccepted}
+              onChange={e => setTermsAccepted(e.target.checked)} aria-required="true" />
+            <div
+              className="flex h-4 w-4 items-center justify-center rounded transition-all duration-150"
+              style={{
+                background: termsAccepted ? '#6366f1' : 'rgba(255,255,255,0.04)',
+                border: termsAccepted ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.15)',
+                boxShadow: termsAccepted ? '0 0 10px rgba(99,102,241,0.35)' : 'none',
+              }}
+            >
+              {termsAccepted && (
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden>
+                  <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               )}
-            </span>
-          </label>
-        </div>
+            </div>
+          </div>
+          <span className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            {isHe ? (
+              <>
+                קראתי והסכמתי ל
+                <a href="/terms" target="_blank" rel="noopener noreferrer"
+                  className="underline transition-colors" style={{ color: 'rgba(165,170,255,0.75)' }}
+                  onClick={e => e.stopPropagation()}>תנאי השימוש</a>
+                {' '}ול
+                <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                  className="underline transition-colors" style={{ color: 'rgba(165,170,255,0.75)' }}
+                  onClick={e => e.stopPropagation()}>מדיניות הפרטיות</a>
+                {' '}של DealSpace
+              </>
+            ) : (
+              <>
+                I have read and agree to DealSpace&apos;s{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer"
+                  className="underline transition-colors" style={{ color: 'rgba(165,170,255,0.75)' }}
+                  onClick={e => e.stopPropagation()}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                  className="underline transition-colors" style={{ color: 'rgba(165,170,255,0.75)' }}
+                  onClick={e => e.stopPropagation()}>Privacy Policy</a>
+              </>
+            )}
+          </span>
+        </label>
+      </div>
 
-        <div style={fadeUp(0.22)}>
-          <PrimaryButton loading={loading} disabled={!termsAccepted}>
-            {loading ? t('auth.action.signUp.loading') : <>{t('auth.action.signUp')} <ArrowRight size={15} /></>}
-          </PrimaryButton>
-        </div>
-        <div style={fadeUp(0.27)}><OrDivider label={t('auth.divider.or')} /></div>
-        <div style={fadeUp(0.30)}>
-          <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
-        </div>
-      </form>
-    </>
+      <div style={fadeUp(0.22)}>
+        <PrimaryButton loading={loading} disabled={!termsAccepted}>
+          {loading ? t('auth.action.signUp.loading') : <>{t('auth.action.signUp')} <ArrowRight size={15} /></>}
+        </PrimaryButton>
+      </div>
+      <div style={fadeUp(0.27)}><OrDivider label={t('auth.divider.or')} /></div>
+      <div style={fadeUp(0.30)}>
+        <GoogleButton onClick={signInWithGoogle} loading={loading} label={t('auth.action.google')} />
+      </div>
+    </form>
   )
 }
 

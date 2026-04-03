@@ -154,8 +154,9 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
         onClick={e => e.stopPropagation()}
       >
         <div
-          className="relative w-full max-w-[460px] rounded-3xl overflow-hidden"
+          className="relative flex flex-col w-full max-w-[460px] rounded-3xl overflow-hidden"
           style={{
+            maxHeight: 'min(88vh, 700px)',
             background: 'linear-gradient(160deg, rgba(18,18,30,0.99) 0%, rgba(8,8,18,0.99) 100%)',
             border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 32px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -169,7 +170,7 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
             style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 65%)', filter: 'blur(32px)' }} />
 
           {/* ── Step indicator ─────────────────────────────────────────── */}
-          <div className="relative flex items-center justify-between px-7 pt-7 pb-5">
+          <div className="relative flex-none flex items-center justify-between px-7 pt-7 pb-5">
             <div className="flex items-center gap-2">
               {[1, 2, 3].map(n => (
                 <div
@@ -196,7 +197,7 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
           </div>
 
           {/* ── Step content ───────────────────────────────────────────── */}
-          <div className="relative" style={{ minHeight: step === 3 ? 460 : 320 }}>
+          <div className="flex-1 overflow-y-auto min-h-0">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
@@ -204,7 +205,7 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="absolute inset-x-0 top-0 px-7 pb-8"
+                className="px-7 pb-8"
               >
                 {/* ── Step 1: Welcome ─────────────────────────────────── */}
                 {step === 1 && (
@@ -500,7 +501,10 @@ export function OnboardingWizard({ onClose }: OnboardingWizardProps) {
 
           {/* ── Footer nav (steps 1 & 2) ─────────────────────────────────── */}
           {step < 3 && (
-            <div className="relative flex items-center justify-between px-7 pb-7 pt-2 gap-3">
+            <div
+              className="relative flex-none flex items-center justify-between px-7 pb-7 pt-4 gap-3"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(3,3,5,0.6)', backdropFilter: 'blur(8px)' }}
+            >
               <button
                 type="button"
                 onClick={step === 1 ? handleSkip : goBack}
