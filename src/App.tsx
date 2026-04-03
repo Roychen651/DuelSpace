@@ -25,6 +25,8 @@ import Billing from './pages/Billing'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ImpersonateCallback from './pages/ImpersonateCallback'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { AnalyticsProvider } from './components/layout/AnalyticsProvider'
+import { ScrollToTop } from './components/layout/ScrollToTop'
 
 // ─── Route Guards ─────────────────────────────────────────────────────────────
 
@@ -130,6 +132,8 @@ function AppInner() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
+      <AnalyticsProvider />
       <AnimatedRoutes />
     </BrowserRouter>
   )
