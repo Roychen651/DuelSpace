@@ -609,7 +609,7 @@ Each page/component injects custom keyframes via a `<style>` tag inside JSX. Nam
 
 ---
 
-## 12. LandingPage Architecture (Sprints 16–47)
+## 12. LandingPage Architecture (Sprints 16–50.6)
 
 `LandingPage.tsx` is a self-contained ~1800-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
 
@@ -709,16 +709,37 @@ function ScrambleCounter({ value, inView }: { value: string; inView: boolean }) 
 }
 ```
 
-### Scroll-linked VS divider
-In `ProblemSolutionSection`, the divider line between "Old Way" and "Deal Room" draws as the section scrolls into view:
+### VS divider — `whileInView` (Sprint 50.6)
+
+In `ProblemSolutionSection`, the divider animates on viewport entry using `whileInView` — **not** scroll-linked `useScroll`. The previous scroll-linked approach got "stuck" because Lenis smooth scroll diverges from the real browser scroll position, and simultaneous `whileInView` layout shifts from the side cards confused the `useScroll` target offsets.
+
 ```tsx
-const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start 0.9', 'center center'] })
-const topLine    = useSpring(useTransform(scrollYProgress, [0.05, 0.45], [0, 1]), { stiffness: 60, damping: 16 })
-const vsScale    = useTransform(scrollYProgress, [0.40, 0.65], [0, 1])
-const vsRotate   = useTransform(scrollYProgress, [0.40, 0.65], [-180, 0])
-const bottomLine = useSpring(useTransform(scrollYProgress, [0.60, 0.90], [0, 1]), { stiffness: 60, damping: 16 })
-// Lines use: style={{ scaleY: topLine/bottomLine, transformOrigin: 'top center' }}
+// Top line
+<motion.div
+  initial={{ scaleY: 0, opacity: 0 }}
+  whileInView={{ scaleY: 1, opacity: 1 }}
+  viewport={{ once: true, margin: '-60px' }}
+  transition={{ duration: 0.65, ease: 'easeOut' as const }}
+  style={{ background: 'linear-gradient(...)', transformOrigin: 'top center' }}
+/>
+// VS badge — spring pops in after 0.35s delay
+<motion.div
+  initial={{ scale: 0, rotate: -180 }}
+  whileInView={{ scale: 1, rotate: 0 }}
+  viewport={{ once: true, margin: '-60px' }}
+  transition={{ type: 'spring' as const, stiffness: 200, damping: 22, delay: 0.35 }}
+/>
+// Bottom line — after 0.7s delay
+<motion.div
+  initial={{ scaleY: 0, opacity: 0 }}
+  whileInView={{ scaleY: 1, opacity: 1 }}
+  viewport={{ once: true, margin: '-60px' }}
+  transition={{ duration: 0.65, ease: 'easeOut' as const, delay: 0.7 }}
+  style={{ background: 'linear-gradient(...)', transformOrigin: 'top center' }}
+/>
 ```
+
+`once: true` ensures the animation fires exactly once and holds. No `sectionRef`, no `useScroll`, no `useTransform` needed here.
 
 ### Haptic tap states
 All CTAs and interactive elements use spring squish:
@@ -1383,6 +1404,29 @@ Mobile: compact 2-column grid of the 8 product+legal links, no headings.
 
 Link hover uses `ltr:hover:translate-x-0.5 rtl:hover:-translate-x-0.5` for direction-aware subtle shift. `handleLink()` dispatches: `mailto:` → `window.location.href`, `#top` → `window.scrollTo`, else → `navigate()`.
 
+### Safari GPU jank — `willChange: 'transform'` on aurora blobs (Sprint 50.6)
+
+Safari uses the CPU renderer for `filter: blur()` by default. On animated elements (keyframe `@keyframes` that move position/opacity), this causes severe FPS drops and choppy scrolling on Safari vs Chrome.
+
+**Fix:** Add `willChange: 'transform'` as an inline style on every animated blur element. This forces Safari to promote the element to a GPU compositor layer ahead of time, so blur recalculation happens on the GPU rather than the main JS thread.
+
+Applied to:
+- `LandingPage.tsx` — 5 aurora orbs in `HeroSection` + lp-float-mockup wrapper + CTA glow elements
+- `Dashboard.tsx` — 2 aurora blobs (`ds-float` keyframe animation)
+- `Integrations.tsx` — 2 aurora blobs (`int-float` keyframe animation)
+
+```tsx
+// Pattern to apply to any CSS-animated blur element:
+style={{
+  background: 'radial-gradient(...)',
+  filter: 'blur(72px)',
+  animation: 'lp-aurora-1 28s ease-in-out infinite',
+  willChange: 'transform',   // ← forces GPU compositor layer on Safari
+}}
+```
+
+**Do not add `willChange: 'transform'` to static elements** — it wastes GPU memory and can actually hurt performance. Only add it to elements with active CSS `animation:` or Framer Motion transforms.
+
 ### GlobalFooter z-index vs fixed aurora
 Every Dashboard-style page has a `DashboardAurora` component with `position: fixed; inset: 0`. Non-positioned elements (like `<footer>`) paint BELOW positioned elements in the CSS stacking order, making the footer visually invisible. The fix: `GlobalFooter`'s `<footer>` element has `className="relative z-10"`, which places it above the fixed aurora. Any page with a fixed full-screen background must ensure its footer or content sections have `relative z-index` set.
 
@@ -1544,7 +1588,56 @@ git push origin main
 
 ---
 
-## 22. Git & Deployment Workflow
+## 22. Performance & Bundle Splitting (Sprint 50.6)
+
+### Route-based code splitting — `React.lazy` + `Suspense`
+
+`App.tsx` uses `React.lazy()` for every page import. Vite automatically creates a separate JS chunk per page. Initial load only downloads the landing page chunk (~24KB gzip) instead of the full 3.5MB single bundle.
+
+```tsx
+// App.tsx
+import { lazy, Suspense } from 'react'
+
+const LandingPage         = lazy(() => import('./pages/LandingPage'))
+const Dashboard           = lazy(() => import('./pages/Dashboard'))
+const ProposalBuilder     = lazy(() => import('./pages/ProposalBuilder'))
+// … all other pages lazy too
+
+// All routes wrapped in:
+<Suspense fallback={<Spinner />}>
+  <Routes location={location}>...</Routes>
+</Suspense>
+```
+
+**Chunk sizes (gzip):**
+- `LandingPage` — ~24KB (fast landing page)
+- `index/vendor` — ~135KB (React, Zustand, FM, router)
+- `Dashboard`, `Profile`, `Billing`, `Integrations` — small (~20–40KB each)
+- `ProposalBuilder` — heavy (includes TipTap ~116KB)
+- `DealRoom` — includes pdfEngine (~523KB) — only loads when client visits deal link
+
+**`Spinner` fallback:** The inline `Spinner` component in `App.tsx` uses the same `#040608` dark background to prevent a flash of white during chunk load. It matches `bg-slate-50 dark:bg-[#040608]`.
+
+**Do not remove `React.lazy`** — reverting to static imports collapses all page code into a single chunk, restoring the 3.5MB cold load. The lazy boundary + `Suspense` is the entire reason the site loads fast.
+
+---
+
+## 23. Public Assets (`public/`)
+
+| File | Purpose |
+|---|---|
+| `favicon.svg` | Browser tab icon — purple Zap bolt with complex glass filter |
+| `apple-touch-icon.png` | iOS home screen icon (180×180) — deep dark indigo background, violet bolt with glow halo + white shine |
+| `og-image.jpg` | Social share image (1200×630) — "Proposals that close." headline + Deal Room UI mockup. Referenced by `og:image` + `twitter:image` in `index.html` |
+| `icons.svg` | Sprite sheet |
+| `robots.txt` | Crawler directives |
+| `sitemap.xml` | Technical SEO sitemap |
+
+**`og-image.jpg` must exist** — `index.html` hardcodes `https://dealspace.app/og-image.jpg` for both Open Graph and Twitter Card meta tags. Missing this file means blank previews when users share the site on social media. The current file is an SVG-rendered 1200×630 dark banner.
+
+---
+
+## 24. Git & Deployment Workflow
 
 - **Branch:** `main` is the single branch. All commits go to `main`.
 - **Vercel:** Auto-deploys every push to `main`.
@@ -1562,7 +1655,7 @@ git push origin main
 
 ---
 
-## 23. Accessibility Engine (Sprint 12)
+## 25. Accessibility Engine (Sprint 12)
 
 ### `useAccessibilityStore` — 14 states
 Persisted under `ds:a11y:*` localStorage keys. `applyToDom()` runs on boot and on every state change via `store.subscribe()`.
@@ -1725,7 +1818,7 @@ All numeric fields also carry the appropriate `inputMode`:
 
 ---
 
-## 24. Services Catalog & Injection Engine (Sprint 27)
+## 26. Services Catalog & Injection Engine (Sprint 27)
 
 ### Architecture overview
 
@@ -2644,9 +2737,30 @@ Centralized upgrade modal used from:
 
 Props: `{ open, onClose, activeCount, currentTier }`
 
+**Plan presentation (Sprint 50.6):**
+- **Pro** — `popular: true`, indigo spinning-border treatment, "Most Popular" badge
+- **Premium** — `popular: false`, gold accent (`#d4af37`), no spinning border
+
 Upgrade flow: button click → `buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)` → `window.location.href = url`. This passes `client_reference_id` (Supabase user UUID) to Stripe so the `stripe-webhook` edge function can identify the user on `checkout.session.completed`.
 
-Downgrade/manage flow: button → `window.location.href = STRIPE_CUSTOMER_PORTAL`
+Downgrade/manage flow: always renders a "Manage Subscription" button → `window.location.href = STRIPE_CUSTOMER_PORTAL` (or `alert()` in dev if env var missing). **Zero email fallbacks** — never conditionally hide the button behind `{STRIPE_CUSTOMER_PORTAL && ...}`.
+
+**Forced Event Handler Pattern (Sprint 50.6):** Every CTA always renders. Missing env vars only produce a `console.warn` + dev-mode `alert()`:
+```tsx
+const handleCta = () => {
+  if (isUpgrade) {
+    const baseLink = plan.id === 'pro' ? STRIPE_PRO_LINK : STRIPE_PREMIUM_LINK
+    if (!baseLink) {
+      if (import.meta.env.DEV) alert(`VITE_STRIPE_${...}_LINK not set`)
+      return
+    }
+    window.location.href = buildCheckoutUrl(baseLink, userId, userEmail)
+    return
+  }
+  if (STRIPE_CUSTOMER_PORTAL) window.location.href = STRIPE_CUSTOMER_PORTAL
+  else if (import.meta.env.DEV) alert('VITE_STRIPE_CUSTOMER_PORTAL not set')
+}
+```
 
 ### VAT compliance badge (LandingPage `PricingSection`)
 
@@ -2750,11 +2864,12 @@ Every portal `<a>` uses `href={portalUrl}` and `onClick={handlePortalClick}`. Ne
 ### State B — Active paid, not canceling (`billingStatus === 'active'` && `!cancelAtEnd`)
 
 - Current Plan Card: tier name, price, next charge date (`periodEnd`), billing status pill (green "פעיל / Active")
-- Action Center — 3 distinct `<a>` buttons:
+- Action Center — **4 distinct `<a>` buttons** (Sprint 50.6):
   1. **Manage Subscription & Downgrade / ניהול מנוי ושנמוך** — tier-colored, `Settings` icon → `portalUrl`
-  2. **View Invoices & Receipts / חשבוניות וקבלות** — muted white, `Download` icon → `portalUrl`. Sub-text: "חשבוניות מס קבלה מופקות אוטומטית ע״י חשבונית ירוקה (Morning)"
-  3. **Cancel Subscription / ביטול מנוי** — danger-red (`rgba(239,68,68,0.04)` bg), `XCircle` icon → `portalUrl`. Sub-text: "הביטול ייכנס לתוקף בסוף מחזור החיוב / Cancellations take effect at the end of the billing cycle."
-- Lifecycle note below the 3 buttons: "שדרוגים מתעדכנים מיידית. ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי."
+  2. **Update Payment Method / עדכון אמצעי תשלום** — muted white, `CreditCard` icon → `portalUrl`. Sub-text: "שנה כרטיס אשראי או שיטת תשלום / Change credit card or payment method"
+  3. **View Invoices & Receipts / חשבוניות וקבלות** — muted white, `Download` icon → `portalUrl`. Sub-text: "חשבוניות מס קבלה מופקות אוטומטית ע״י חשבונית ירוקה (Morning)"
+  4. **Cancel Subscription / ביטול מנוי** — danger-red (`rgba(239,68,68,0.04)` bg), `XCircle` icon → `portalUrl`. Sub-text: "הביטול ייכנס לתוקף בסוף מחזור החיוב / Cancellations take effect at the end of the billing cycle."
+- Lifecycle note below the 4 buttons: "שדרוגים מתעדכנים מיידית. ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי."
 
 ### State C — Canceled at period end (`cancelAtEnd === true`)
 
@@ -2969,6 +3084,10 @@ Two new compliance elements added to the Billing page:
 - **Do not call `deleteAccount()` expecting an error return value** — `deleteAccount()` in `useAuthStore` returns `Promise<void>`. It does NOT return `{ error }` or any other object. Any `if (result?.error)` check is silently a no-op. Always wrap in `try/catch` and treat a thrown exception as the error signal. The same applies to calling it via `useAuthStore.getState().deleteAccount()` — destructure it directly from `useAuthStore()` in the component instead.
 - **Do not make the "Product & Operational Updates" communication preference toggle interactive** — this toggle exists solely to inform users that transactional/operational emails are mandatory per ToS. It must always appear visually locked/disabled (opacity reduced, `cursor: not-allowed`). It saves nothing, fires no network request, and changes no state. Making it toggle-able would imply users can opt out of password reset emails, billing alerts, etc. — which is legally and operationally incorrect.
 - **Do not use `{STRIPE_CUSTOMER_PORTAL && <a href={...}>...</a>}` in Billing.tsx** — conditional rendering hides the action from the UI entirely when the env var is missing in dev, making the billing page look broken. Always render the button with `href={portalUrl}` (where `portalUrl = STRIPE_CUSTOMER_PORTAL || '#'`) and `onClick={handlePortalClick}`. In dev mode, `handlePortalClick` calls `e.preventDefault()` + `alert()` if the env var is absent. This preserves the production UI design at all times.
-- **Do not collapse all billing management into one "Manage Subscription" link** — the Billing page implements a state machine with distinct actions per state. State B (active) has 3 separate buttons: Manage/Downgrade, View Invoices (with Morning note), Cancel (danger-styled). State C (cancelAtEnd) has a Reactivate button. State D (past_due) has an Update Payment button. Merging these into one generic link destroys the self-serve UX that eliminates support tickets.
+- **Do not collapse all billing management into one "Manage Subscription" link** — the Billing page implements a state machine with distinct actions per state. State B (active) has **4** separate buttons: Manage/Downgrade, Update Payment Method, View Invoices (with Morning note), Cancel (danger-styled). State C (cancelAtEnd) has a Reactivate button. State D (past_due) has an Update Payment button at the top. Merging these into one generic link destroys the self-serve UX that eliminates support tickets.
 - **Do not use `hardcoded left/right` CSS in toggle thumb styles** — profile section toggles use a computed property key `[isHe ? 'right' : 'left']` on the thumb's inline style. This ensures the thumb slides in the correct physical direction in both LTR and RTL layouts. Hardcoding `left` fails in RTL; hardcoding `right` fails in LTR.
 - **Do not use `GlobalFooter` col3 heading as "Legal & Trust"** — since Sprint 50.5 the heading is `'משפטי / Legal'` (he) and `'Legal'` (en). The "& Trust" / "ואמון" suffix was removed. Do not re-add it.
+- **Do not remove `React.lazy()` imports in `App.tsx`** — all page imports are lazy. Reverting to static imports collapses everything into one 3.5MB bundle, undoing the 6× initial load improvement from Sprint 50.6. Every page must remain lazy; the `<Suspense fallback={<Spinner />}>` wrapper is what enables this.
+- **Do not use `useScroll` + `useTransform` for the VS divider in `ProblemSolutionSection`** — the scroll-linked approach gets stuck because Lenis smooth scroll diverges from the real browser scroll position, and simultaneous `whileInView` layout shifts from the side cards confuse the `useScroll` target. The VS divider must use `whileInView` with staggered delays (`once: true`). Do not revert it to scroll-linked.
+- **Do not set `UpgradeModal` Pro as not-popular or Premium as most-popular** — since Sprint 50.6, Pro (`₪19`) is the "Most Popular" plan with the spinning conic-gradient border treatment. Premium (`₪39`) uses gold accent (`#d4af37`). Swapping the popular flag was intentional product positioning.
+- **Do not add email fallbacks to UpgradeModal CTA buttons** — the Forced Event Handler Pattern requires every button to always render. If a Stripe env var is missing, the handler calls `alert()` in dev only and silently returns in prod. Never replace buttons with `<div>` fallbacks or `mailto:` links.
