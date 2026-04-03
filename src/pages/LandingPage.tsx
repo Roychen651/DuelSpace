@@ -1395,7 +1395,7 @@ const TIER_BORDER = [
 ]
 const TIER_ACCENT = ['#818cf8', '#c084fc', '#d4af37']
 
-function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void }) {
+function PricingSection({ c, isHe, onCta }: { c: typeof copy['he']; isHe: boolean; onCta: () => void }) {
   return (
     <section className="relative py-10 sm:py-28 px-4 sm:px-6 overflow-hidden">
       <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 60% 50%, rgba(168,85,247,0.1) 0%, transparent 70%)' }} />
@@ -1480,6 +1480,12 @@ function PricingSection({ c, onCta }: { c: typeof copy['he']; onCta: () => void 
                         <span className={`${isPro ? 'text-[44px] sm:text-[52px]' : 'text-[32px] sm:text-[40px]'} font-black text-white leading-none tracking-tight`}>{tier.price}</span>
                         <span className="text-[12px] text-white/35 pb-1">{tier.period}</span>
                       </div>
+                      {/* VAT compliance badge — Israeli law requires all prices to state VAT inclusion */}
+                      {!isFree && (
+                        <p className="text-[10px] font-semibold mb-1" style={{ color: `${TIER_ACCENT[i]}99` }}>
+                          {isHe ? 'כולל מע"מ' : 'VAT incl.'}
+                        </p>
+                      )}
                       <p className="text-[11px] text-white/38">{tier.sub}</p>
                     </div>
 
@@ -1957,7 +1963,7 @@ export default function LandingPage() {
           <BentoGridSection  c={c} isHe={isHe} />
           <SocialProofNumbers isHe={isHe} />
           <TestimonialsSection c={c} />
-          <PricingSection    c={c} onCta={goSignup} />
+          <PricingSection    c={c} isHe={isHe} onCta={goSignup} />
           <FinalCTASection   c={c} isHe={isHe} onCta={goSignup} />
         </main>
 

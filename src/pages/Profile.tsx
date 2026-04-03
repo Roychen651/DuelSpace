@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText } from 'lucide-react'
-import { useAuthStore } from '../stores/useAuthStore'
+import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText, CreditCard, ExternalLink, Zap, Star, Infinity as InfinityIcon } from 'lucide-react'
+import { useAuthStore, useTier } from '../stores/useAuthStore'
+import { STRIPE_CUSTOMER_PORTAL, STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl } from '../lib/stripe'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
 import { useI18n } from '../lib/i18n'
@@ -209,6 +210,7 @@ export default function Profile() {
   const { user, updateProfile, updatePassword } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
+  const tier = useTier()
 
   const name = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email = user?.email ?? ''
@@ -713,6 +715,140 @@ export default function Profile() {
                 <SaveButton loading={pwSaving} saved={pwSaved} label={isHe ? 'עדכן סיסמה' : 'Update Password'} />
               </div>
             </form>
+          </Card>
+        </motion.div>
+
+        {/* ── Billing & Subscription ─────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.30, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'חיוב ומנוי' : 'Billing & Subscription'} icon={<CreditCard size={16} />}>
+            {/* Current plan badge */}
+            <div
+              className="flex items-center justify-between rounded-2xl px-4 py-3.5 mb-5"
+              style={{
+                background: tier === 'unlimited'
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.05))'
+                  : tier === 'pro'
+                  ? 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.06))'
+                  : 'rgba(255,255,255,0.03)',
+                border: tier === 'unlimited'
+                  ? '1px solid rgba(212,175,55,0.25)'
+                  : tier === 'pro'
+                  ? '1px solid rgba(99,102,241,0.25)'
+                  : '1px solid rgba(255,255,255,0.07)',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
+                  style={{
+                    background: tier === 'unlimited'
+                      ? 'rgba(212,175,55,0.15)'
+                      : tier === 'pro'
+                      ? 'rgba(99,102,241,0.15)'
+                      : 'rgba(255,255,255,0.06)',
+                    color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                    border: tier === 'unlimited'
+                      ? '1px solid rgba(212,175,55,0.3)'
+                      : tier === 'pro'
+                      ? '1px solid rgba(99,102,241,0.3)'
+                      : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {tier === 'unlimited' ? <InfinityIcon size={15} /> : tier === 'pro' ? <Zap size={15} /> : <Star size={15} />}
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-slate-900 dark:text-white/90">
+                    {tier === 'unlimited'
+                      ? (isHe ? 'תוכנית פרימיום' : 'Premium Plan')
+                      : tier === 'pro'
+                      ? (isHe ? 'תוכנית פרו' : 'Pro Plan')
+                      : (isHe ? 'תוכנית חינם' : 'Free Plan')}
+                  </p>
+                  <p className="text-[11px] text-slate-400 dark:text-white/35 mt-0.5">
+                    {tier === 'unlimited'
+                      ? (isHe ? '₪39 / חודש · כולל מע"מ' : '₪39 / month · VAT incl.')
+                      : tier === 'pro'
+                      ? (isHe ? '₪19 / חודש · כולל מע"מ' : '₪19 / month · VAT incl.')
+                      : (isHe ? 'ללא עלות' : 'No charge')}
+                  </p>
+                </div>
+              </div>
+              <span
+                className="flex-none rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
+                style={
+                  tier === 'unlimited'
+                    ? { background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }
+                    : tier === 'pro'
+                    ? { background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }
+                    : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }
+                }
+              >
+                {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
+              </span>
+            </div>
+
+            {/* CTA — paid: Stripe Customer Portal; free: upgrade links */}
+            {(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL ? (
+              <div className="space-y-3">
+                <motion.a
+                  href={STRIPE_CUSTOMER_PORTAL}
+                  className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
+                  whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                >
+                  <span className="flex items-center gap-2">
+                    <CreditCard size={14} />
+                    {isHe ? 'ניהול מנוי, חשבוניות וביטול' : 'Manage subscription, invoices & cancellation'}
+                  </span>
+                  <ExternalLink size={12} className="opacity-40" />
+                </motion.a>
+                <p className="text-[11px] text-slate-400 dark:text-white/30 leading-relaxed">
+                  {isHe
+                    ? 'שינוי תוכנית, עדכון אמצעי תשלום, הורדת חשבוניות וביטול — הכל דרך פורטל Stripe המאובטח.'
+                    : 'Change plan, update payment method, download invoices, or cancel — all via the secure Stripe portal.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-400 dark:text-white/35 leading-relaxed -mt-2 mb-3">
+                  {isHe
+                    ? 'שדרג לפרו כדי לבטל את מגבלת ההצעות, להפעיל Webhooks ולקבל תמיכה ישירה.'
+                    : 'Upgrade to Pro to remove proposal limits, unlock Webhooks, and get direct support.'}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {STRIPE_PRO_LINK && (
+                    <motion.a
+                      href={buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email)}
+                      className="flex flex-col items-center rounded-2xl px-3 py-3.5 text-center"
+                      style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', transition: 'background 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(99,102,241,0.18)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(99,102,241,0.1)' }}
+                      whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <Zap size={16} style={{ color: '#818cf8', marginBottom: 6 }} />
+                      <p className="text-[12px] font-bold" style={{ color: '#818cf8' }}>{isHe ? 'פרו' : 'Pro'}</p>
+                      <p className="text-[10px] text-white/35 mt-0.5">{isHe ? '₪19 / חודש · כולל מע"מ' : '₪19 / mo · VAT incl.'}</p>
+                    </motion.a>
+                  )}
+                  {STRIPE_PREMIUM_LINK && (
+                    <motion.a
+                      href={buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email)}
+                      className="flex flex-col items-center rounded-2xl px-3 py-3.5 text-center"
+                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.22)', transition: 'background 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.14)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.08)' }}
+                      whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <InfinityIcon size={16} style={{ color: '#d4af37', marginBottom: 6 }} />
+                      <p className="text-[12px] font-bold" style={{ color: '#d4af37' }}>{isHe ? 'פרימיום' : 'Premium'}</p>
+                      <p className="text-[10px] text-white/35 mt-0.5">{isHe ? '₪39 / חודש · כולל מע"מ' : '₪39 / mo · VAT incl.'}</p>
+                    </motion.a>
+                  )}
+                </div>
+              </div>
+            )}
           </Card>
         </motion.div>
 

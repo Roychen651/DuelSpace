@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock } from 'lucide-react'
+import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock, CreditCard } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore, useBillingStatus } from '../../stores/useAuthStore'
+import { useAuthStore, useBillingStatus, useTier } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
+import { STRIPE_CUSTOMER_PORTAL } from '../../lib/stripe'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   const [viewingToast, setViewingToast] = useState<{ title: string; client: string } | null>(null)
 
   const billingStatus = useBillingStatus()
+  const tier = useTier()
   const isDashboard = pathname === '/dashboard'
   const isHe = locale === 'he'
   const isRTL = isHe
@@ -259,7 +261,22 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                 >
                   {/* Identity header */}
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-white/[0.06]">
-                    <p className="text-[13px] font-semibold text-slate-900 dark:text-white/90 truncate">{name || user?.email}</p>
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <p className="text-[13px] font-semibold text-slate-900 dark:text-white/90 truncate">{name || user?.email}</p>
+                      {/* Tier badge */}
+                      <span
+                        className="flex-none rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider"
+                        style={
+                          tier === 'unlimited'
+                            ? { background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }
+                            : tier === 'pro'
+                            ? { background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }
+                            : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }
+                        }
+                      >
+                        {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
+                      </span>
+                    </div>
                     {company && <p className="text-[11px] text-slate-400 dark:text-white/35 truncate mt-0.5">{company}</p>}
                   </div>
 
@@ -274,6 +291,17 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
+                    {/* Manage Subscription — paid users only; directs to Stripe Customer Portal */}
+                    {(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL && (
+                      <button
+                        onClick={() => { window.location.href = STRIPE_CUSTOMER_PORTAL }}
+                        className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start"
+                        style={{ color: tier === 'unlimited' ? '#d4af37' : '#818cf8' }}
+                      >
+                        <CreditCard size={13} className="flex-none" />
+                        {isHe ? 'ניהול מנוי והתחייבויות' : 'Manage Subscription'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Sign out */}

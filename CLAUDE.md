@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–44.9.
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–47 (Monetization Engine).
 
 ---
 
@@ -591,9 +591,9 @@ Each page/component injects custom keyframes via a `<style>` tag inside JSX. Nam
 
 ---
 
-## 12. LandingPage Architecture (Sprint 16 — Awwwards Redesign)
+## 12. LandingPage Architecture (Sprints 16–47)
 
-`LandingPage.tsx` is a self-contained ~1600-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
+`LandingPage.tsx` is a self-contained ~1800-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
 
 ### Section structure
 ```
@@ -607,7 +607,8 @@ Each page/component injects custom keyframes via a `<style>` tag inside JSX. Nam
       <HowItWorksSection />         ← 3-step flow, horizontal connector beam, LTR step order
       <ProblemSolutionSection />    ← PDF vs Deal Room, scroll-linked SVG divider drawing
       <BentoFeaturesGrid />         ← 6-card bento grid (AI, signature, PDF, analytics, security, mobile)
-      <TestimonialsSection />       ← 3 testimonial cards
+      <TestimonialsSection />       ← Static masonry grid — 6 cards, 3-col on desktop (Sprint 47)
+      <PricingSection />            ← 3-tier pricing, Pro has spinning conic-gradient border (Sprint 47)
       <FinalCTASection />           ← Full-width conversion section
     </main>
     <GlobalFooter />
@@ -706,6 +707,192 @@ All CTAs and interactive elements use spring squish:
 ```tsx
 whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
 ```
+
+### MarqueeBand edge fades — `mask-image` approach (Sprint 47)
+
+**Problem (before):** Two absolutely-positioned `<div>`s with `background: linear-gradient(to right, #030305, transparent)` on each side. `#030305` is the page background colour — it creates visible dark "borders" on mobile when the user scrolls and sub-pixel rendering exposes the mismatch.
+
+**Fix:** Remove the overlay divs entirely. Apply a CSS `mask-image` to the scroll container itself:
+
+```tsx
+<div
+  className="relative overflow-hidden"
+  style={{
+    // ... other styles
+    WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+    maskImage:       'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+  }}
+>
+  {/* scrolling content — no side overlay divs */}
+</div>
+```
+
+This approach is purely opacity-based — no colour is introduced at the edges at any viewport width or background colour.
+
+Apply this same pattern to every horizontally-scrolling row that needs edge fades (MarqueeBand, any future ticker rows).
+
+### TestimonialsSection — static masonry grid (Sprint 47)
+
+**Problem (before):** `motion.div` wrappers with `whileHover` inside a CSS-animated marquee caused a blank flash on load. The heading had `initial="hidden"` (opacity 0 + y offset) which occupied invisible DOM space and created an apparent blank gap above the cards.
+
+**Current design (Sprint 47):**
+
+```tsx
+// Heading — plain <div>, always visible. NEVER use initial="hidden" here.
+<div className="text-center mb-10">
+  {/* shimmer label + headline + subtitle */}
+</div>
+
+// Grid — staggered whileInView reveal
+<motion.div
+  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+  variants={container}
+  initial="hidden"
+  whileInView="visible"
+  viewport={{ once: true, margin: '-40px' }}
+>
+  {c.testimonials.map((t, i) => (
+    <motion.div key={i} variants={itemFade}>
+      <TestimonialCard t={t} i={i} />
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+`TestimonialCard` is a **plain `<div>`** (not `motion.div`) with CSS transitions for hover:
+
+```tsx
+function TestimonialCard({ t, i }: { t: Testimonial; i: number }) {
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden w-full"
+      style={{
+        padding: '20px',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 100%)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease',
+        cursor: 'default',
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget
+        el.style.transform = 'translateY(-4px)'
+        el.style.boxShadow = `0 12px 40px ${glowColor}22`
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget
+        el.style.transform = ''
+        el.style.boxShadow = ''
+      }}
+    >
+      {/* Author row (avatar + name/role + stars) at top */}
+      <div className="flex items-center gap-3 mb-3 relative z-10">
+        <div className="h-10 w-10 rounded-full flex-none" style={{ background: grad }}>
+          <span>{initials}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-white">{t.name}</p>
+          <p className="text-[11px] text-white/40 truncate">{t.role}</p>
+        </div>
+        <div className="flex gap-px flex-none">{stars}</div>
+      </div>
+      {/* Quote */}
+      <p className="text-[13px] text-white/68 leading-relaxed relative z-10" dir="auto">
+        "{t.text}"
+      </p>
+    </div>
+  )
+}
+```
+
+Key rules:
+- Cards use `w-full` — never `width: 310` or `flex-none` (those are for horizontal marquee, not grid layout)
+- `dir="auto"` on the quote `<p>` — lets the browser detect Hebrew vs English per card
+- No `motion.div` on the card — Framer Motion `whileHover` bounding-box detection breaks inside CSS-animated marquees
+
+### PricingSection — spinning border, button hover, mobile order (Sprint 47)
+
+**Animated conic-gradient border on Pro card:**
+
+The `@keyframes lp-spin-border` keyframe lives in `src/index.css` (not inline JSX `<style>` tag, to keep LandingPage JSX clean):
+
+```css
+/* src/index.css */
+@keyframes lp-spin-border {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+```
+
+Wrapper structure:
+
+```tsx
+{/* Outer wrapper — creates the 1.5px coloured "border" via overflow:hidden + padding */}
+<div style={{
+  position: 'relative',
+  padding: isPro ? '1.5px' : '0',
+  borderRadius: '22px',
+  overflow: 'hidden',
+}}>
+  {/* Spinning conic gradient — becomes the visible border colour */}
+  {isPro && (
+    <div style={{
+      position: 'absolute',
+      inset: '-80%',           // oversized so corners are always covered
+      background: 'conic-gradient(from 0deg, #6366f1, #a855f7, #ec4899, #6366f1)',
+      animation: 'lp-spin-border 4s linear infinite',
+    }} />
+  )}
+  {/* Card fills the rest — sits above the spinning layer */}
+  <div className="relative rounded-[21px] p-5 sm:p-6 h-full flex flex-col"
+    style={{ background: isPro ? 'linear-gradient(150deg, rgba(30,12,55,0.98) ...' : '...' }}>
+    {/* ...card content... */}
+  </div>
+</div>
+```
+
+**Pro card elevation — CSS `top`, not FM `transform`:**
+
+Framer Motion owns the `transform` property on `motion.div`. Using inline `transform: translateY(-12px)` is silently overridden. Use CSS positioning instead:
+
+```tsx
+// ❌ Overridden by FM
+<motion.div style={{ transform: 'translateY(-12px)' }}>
+
+// ✅ Correct — Tailwind CSS top
+<motion.div className="md:-top-3" style={{ position: 'relative' }}>
+```
+
+**CTA button hover — `onMouseEnter/Leave` + `whileTap` only:**
+
+`Tilt3D` + child `motion.button` with `whileHover` creates a flicker loop (see §26). Pricing cards use a plain `div` wrapper (no `Tilt3D`) and buttons drive hover via DOM event handlers:
+
+```tsx
+<motion.button
+  onMouseEnter={e => {
+    const el = e.currentTarget as HTMLButtonElement
+    el.style.boxShadow = '0 4px 32px rgba(99,102,241,0.52)'
+    el.style.transform  = 'translateY(-1px)'
+  }}
+  onMouseLeave={e => {
+    const el = e.currentTarget as HTMLButtonElement
+    el.style.boxShadow = '...'
+    el.style.transform  = ''
+  }}
+  whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
+>
+  {label}
+</motion.button>
+```
+
+No `whileHover` on these buttons. No continuous CSS animations (`lp-shimmer`, `lp-badge-pulse`) on the button itself — these make the button look permanently pressed.
+
+**Mobile pricing card order — always cheap to expensive:**
+
+DOM order is Free (index 0) → Pro (index 1) → Premium (index 2). This is already cheap-to-expensive and is correct for mobile too. **Do not add CSS `order` overrides** — they reorder cards differently on mobile vs desktop and have caused regressions before.
+
+**Pricing currency is always ₪ regardless of UI locale:**
+
+DealSpace operates exclusively in the Israeli market. The English UI is for bilingual users who still pay in ILS. Prices in `copy.en.tiers` use `₪` (not `$`).
 
 ---
 
@@ -2247,6 +2434,178 @@ interface KBItem {
 
 ---
 
+## 35. LandingPage Copy — Pricing Tiers (Sprint 47)
+
+### Hebrew pricing tiers (`copy.he.tiers`)
+
+| i | name | price | period | sub | Popular? |
+|---|---|---|---|---|---|
+| 0 | `'חינם'` | `'₪0'` | `'/חודש'` | `'לשלב ההתחלה'` | — |
+| 1 | `'פרו'` | `'₪19'` | `'/חודש'` | `'לפרילנסרים רציניים'` | ✓ |
+| 2 | `'פרימיום'` | `'₪39'` | `'/חודש'` | `'לסוכנויות ועצמאיים מתקדמים'` | — |
+
+Features are **honest** — the real differentiator is proposals/month:
+
+```ts
+// Free
+features: [
+  { text: 'עד 5 הצעות בחודש',             ok: true  },
+  { text: 'Deal Room + חתימה דיגיטלית',    ok: true  },
+  { text: 'יצוא PDF',                      ok: true  },
+  { text: 'אנליטיקות ומעקב פתיחות',        ok: true  },
+  { text: 'Webhooks',                      ok: false },
+]
+
+// Pro (most popular)
+features: [
+  { text: 'עד 100 הצעות בחודש',           ok: true },
+  { text: 'הכל כולל חינם',                ok: true },
+  { text: 'Webhooks + אוטומציות',          ok: true },
+  { text: 'תמיכה ישירה',                  ok: true },
+]
+
+// Premium
+features: [
+  { text: 'הצעות ללא הגבלה',              ok: true },
+  { text: 'הכל כולל פרו',                 ok: true },
+  { text: 'תמיכה בעדיפות גבוהה',          ok: true },
+  { text: 'השפעה על מפת הדרכים',          ok: true },
+]
+```
+
+### English pricing tiers (`copy.en.tiers`)
+
+Prices are always ₪ — same values as Hebrew:
+
+```ts
+// Free: price: '₪0'
+// Pro:  price: '₪19'  ← most popular
+// Premium: price: '₪39'
+```
+
+Features mirror the Hebrew but use the honest proposal-count framing:
+- Free: `Up to 5 proposals/month`, `Deal Room + Digital Signature`, `PDF Export`, `Open-rate Analytics`, `Webhooks ✗`
+- Pro: `Up to 100 proposals/month`, `Everything in Free`, `Webhooks + Automations`, `Direct Support`
+- Premium: `Unlimited proposals`, `Everything in Pro`, `Priority Support`, `Roadmap Influence`
+
+### Marquee items (copy.he.marqueeItems)
+
+```ts
+'94% שיעור אישור', 'סגירה מהירה פי 2', '₪2.3M+ עסקאות', '500+ עצמאיים',
+'דירוג 4.9/5', 'חתימה דיגיטלית חוקית', 'PDF מאושר לכל עסקה', 'ללא כרטיס אשראי'
+```
+
+---
+
+## 36. Monetization Engine (Sprint 47)
+
+### Architecture overview
+
+Four-layer monetization system. No new backend was needed — Stripe routing and webhook handling were already in place from Sprint 40.
+
+**Files added/modified:**
+- `src/lib/stripe.ts` — constants + `buildCheckoutUrl()` helper (already existed from Sprint 40)
+- `src/components/dashboard/UpgradeModal.tsx` — centralized upgrade modal (already existed)
+- `src/pages/LandingPage.tsx` — VAT compliance badge on Pro/Premium pricing tiers
+- `src/components/layout/ProtectedLayout.tsx` — tier badge in navbar dropdown + "Manage Subscription" item
+- `src/pages/Profile.tsx` — Billing & Subscription section (plan info, upgrade CTAs, portal link)
+- `src/pages/Integrations.tsx` — hard paywall overlay for free tier (already existed)
+
+### `src/lib/stripe.ts`
+
+Central Stripe constants read from `.env.local`:
+
+```ts
+export const STRIPE_PRO_LINK        = import.meta.env.VITE_STRIPE_PRO_LINK        ?? ''
+export const STRIPE_PREMIUM_LINK    = import.meta.env.VITE_STRIPE_PREMIUM_LINK    ?? ''
+export const STRIPE_CUSTOMER_PORTAL = import.meta.env.VITE_STRIPE_CUSTOMER_PORTAL ?? ''
+
+// Builds a Stripe Payment Link URL with client_reference_id and prefilled_email
+export function buildCheckoutUrl(baseLink, userId, email?): string
+```
+
+Required `.env.local` entries:
+```
+VITE_STRIPE_PRO_LINK=https://buy.stripe.com/...
+VITE_STRIPE_PREMIUM_LINK=https://buy.stripe.com/...
+VITE_STRIPE_CUSTOMER_PORTAL=https://billing.stripe.com/p/login/...
+```
+
+### UpgradeModal (`src/components/dashboard/UpgradeModal.tsx`)
+
+Centralized upgrade modal used from:
+- `src/pages/Integrations.tsx` (paywall CTA button)
+- `src/pages/Dashboard.tsx` (quota limit CTA)
+
+Props: `{ open, onClose, activeCount, currentTier }`
+
+Upgrade flow: button click → `buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)` → `window.location.href = url`. This passes `client_reference_id` (Supabase user UUID) to Stripe so the `stripe-webhook` edge function can identify the user on `checkout.session.completed`.
+
+Downgrade/manage flow: button → `window.location.href = STRIPE_CUSTOMER_PORTAL`
+
+### VAT compliance badge (LandingPage `PricingSection`)
+
+Under Israeli consumer law, all B2B/B2C SaaS prices must disclose VAT inclusion. Pro and Premium pricing cards display a `"כולל מע"מ" / "VAT incl."` badge below the price using `TIER_ACCENT[i]` color at 60% opacity.
+
+`PricingSection` now accepts an `isHe: boolean` prop (passed from `LandingPage`). The badge renders only for `!isFree` (i.e., Pro and Premium cards). Free tier (₪0) has no VAT to disclose.
+
+```tsx
+{!isFree && (
+  <p className="text-[10px] font-semibold mb-1" style={{ color: `${TIER_ACCENT[i]}99` }}>
+    {isHe ? 'כולל מע"מ' : 'VAT incl.'}
+  </p>
+)}
+```
+
+### Tier badge in ProtectedLayout dropdown
+
+`useTier()` is imported and called in `ProtectedLayout`. The dropdown identity header shows a compact tier badge next to the user's name:
+
+```tsx
+// FREE → gray badge
+// pro  → indigo badge (#818cf8)
+// unlimited → gold badge (#d4af37)
+<span style={{ background: '...', color: '...', border: '...' }}>
+  {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
+</span>
+```
+
+**"Manage Subscription" menu item** — rendered only when `(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL`. Redirects to `STRIPE_CUSTOMER_PORTAL` via `window.location.href`. Color follows tier: indigo for Pro, gold for Premium. Free users never see this item (they have nothing to manage in Stripe).
+
+### Billing section in Profile (`/profile`)
+
+A new `Card` section ("חיוב ומנוי / Billing & Subscription") sits between Business Terms and VAT Rate. Layout:
+
+**Current plan row** — shows plan name, price, VAT note, and tier badge. Background/border/icon color all derive from `tier`.
+
+**CTA block — paid users** (`tier === 'pro' || tier === 'unlimited'`):
+- Single `<motion.a>` anchor → `STRIPE_CUSTOMER_PORTAL`
+- Label: "ניהול מנוי, חשבוניות וביטול" / "Manage subscription, invoices & cancellation"  
+- Opens portal in same tab (Consumer Protection Law: cancellation must be accessible)
+
+**CTA block — free users**:
+- Two side-by-side upgrade cards (2-col grid): Pro and Premium
+- Each card is `<motion.a>` → `buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)`
+- Price shown with VAT note: `"₪19 / חודש · כולל מע"מ"` etc.
+- Cards only render if `STRIPE_PRO_LINK` / `STRIPE_PREMIUM_LINK` env vars are set
+
+### Integrations paywall (`/integrations`)
+
+Already implemented before this sprint. Free tier sees a `backdropFilter: blur(8px)` glassmorphism overlay with Lock icon, description, and "שדרג ל-Pro / Upgrade to Pro" CTA that opens `UpgradeModal`.
+
+### Plan tier mapping
+
+```ts
+// PlanTier values from useAuthStore:
+'free'      → badge: 'FREE'    (gray)
+'pro'       → badge: 'PRO'     (indigo)
+'unlimited' → badge: 'PREMIUM' (gold)  ← internal name kept as 'unlimited' for backward compat
+```
+
+The UI uses 'PREMIUM' as the display name. Never change the internal `'unlimited'` PlanTier value — the Stripe webhook writes it and existing users have it in `user_metadata`.
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -2320,3 +2679,17 @@ interface KBItem {
 - **Do not use `breakBefore: 'page'` as a CSS style in react-pdf** — `breakBefore` is not in react-pdf's `Style` type. Page breaks are achieved via the `break` JSX prop on `<View>`: `<View break style={s.section}>`. Putting `breakBefore` in a style object causes a TypeScript compile error.
 - **Do not let business terms consent be optional when `proposal.business_terms` is non-empty** — the `canSign` condition in CheckoutClimax must include `(!businessTermsRequired || businessTermsConsent)`. Omitting this allows signing without consenting to the creator's business terms.
 - **Do not rename the business terms section to "תנאים והתניות"** — that exact label is already used for the DealSpace platform terms. The business terms section must be labelled `'תנאי העסק'` (he) / `'Business Terms'` (en) to avoid confusion.
+- **Do not use `Tilt3D` as a parent of a `motion.button` or any `motion.*` element that has `whileHover`** — `Tilt3D` applies a CSS `transform` to the wrapper on every `mousemove`. This continuously shifts the bounding box of the child. Framer Motion's `whileHover` uses `getBoundingClientRect` to detect hover entry/exit. When the bounding box moves, the cursor briefly "exits" the element even though the user's hand hasn't moved — creating a rapid enter/leave loop that makes the button appear to flicker or pulse continuously. Fix: remove `Tilt3D` from pricing cards entirely; drive hover effects with `onMouseEnter/Leave` CSS mutations instead.
+- **Do not use colour-based gradient overlays for edge fades in scrolling rows** — overlays that reference the page background colour (`#030305`) expose visible dark "borders" on mobile due to sub-pixel rendering differences across devices and viewport sizes. Use `mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)` on the scroll container itself — it is purely opacity-based and works on any background.
+- **Do not add `whileHover` to CTA buttons inside pricing/feature cards** — use `onMouseEnter/Leave` to mutate `style.transform` and `style.boxShadow` directly, combined with `whileTap` for press feedback. `whileHover` on a button whose parent is being transformed (e.g., a card tilt effect) creates bounding-box flicker as described above.
+- **Do not apply continuous CSS keyframe animations (shimmer, pulse, glow) directly to interactive buttons** — animations running on the button element itself (`animation: lp-shimmer 2s infinite`) make the button look permanently pressed or in a loading state. Reserve animated effects for decorative background layers (e.g., glow orbs, badge backdrops) that are `pointer-events: none`, not on the interactive element itself.
+- **Do not use `initial="hidden"` on section headings that sit above scrolling marquee content** — a heading with `opacity: 0` and a `y` offset occupies invisible DOM space before `whileInView` fires. This creates an apparent blank gap above the visible content. Render section headings as static `<div>` elements (always visible); reserve `whileInView` for the card grid below.
+- **Do not hardcode `$` as the currency symbol in LandingPage English copy** — DealSpace operates exclusively in the Israeli market. English-speaking users are bilingual Israelis who still pay in ILS. All pricing copy in `copy.en.tiers` must use `₪`, not `$`. Prices are always ₪0 / ₪19 / ₪39 regardless of UI locale.
+- **Do not use CSS `order` to change the visual sequence of pricing cards on mobile** — pricing cards must always display cheap-to-expensive (Free → Pro → Premium) on both mobile and desktop. The DOM order already reflects this. Adding `order-N` classes to show Pro first on mobile is a UX anti-pattern that contradicts how people evaluate pricing (ascending value, ascending price).
+- **Do not use `width: 310` + `flex-none` on testimonial cards when they are rendered in a CSS grid** — those properties are designed for horizontal marquee (overflow-x scroll). In a `grid` context they prevent the card from filling its grid cell, causing all cards to stack in the first column. In grid layouts, testimonial cards must be `w-full`.
+- **Do not change the `'unlimited'` PlanTier value** — `useTier()` returns `'free' | 'pro' | 'unlimited'`. The Stripe webhook writes `'unlimited'` to `user_metadata.plan_tier` and existing paid users have it stored. The UI displays this as "PREMIUM" but the stored value must remain `'unlimited'` for backward compat. Never rename it to `'premium'` in code.
+- **Do not show "Manage Subscription" to free users in the ProtectedLayout dropdown** — free users have no Stripe session to manage. The button is conditional on `(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL`. Showing it to free users would redirect them to an error page in the Stripe portal.
+- **Do not omit the VAT compliance badge on Pro/Premium pricing cards** — Israeli consumer law requires all prices to disclose VAT inclusion. The `"כולל מע"מ" / "VAT incl."` badge below the price on Pro (₪19) and Premium (₪39) cards is a legal requirement, not a design choice. Free tier (₪0) is exempt.
+- **Do not hardcode Stripe Payment Links or Customer Portal URL** — these live in `.env.local` as `VITE_STRIPE_PRO_LINK`, `VITE_STRIPE_PREMIUM_LINK`, `VITE_STRIPE_CUSTOMER_PORTAL`. Read via `src/lib/stripe.ts` constants. All Stripe-related components check `if (url)` or `if (STRIPE_CUSTOMER_PORTAL)` before enabling CTAs — never assume the env vars are set.
+- **Do not redirect users to Stripe without `client_reference_id`** — always use `buildCheckoutUrl(link, userId, email)` from `src/lib/stripe.ts`. The `client_reference_id` is the Supabase user UUID; it is the only reliable way the `stripe-webhook` edge function can identify which user just paid on `checkout.session.completed`.
+- **Do not open Stripe Payment Links in a new tab** — use `window.location.href = url` (same tab). This is the correct pattern for checkout flows. Opening in a new tab breaks the return-URL redirect and the user ends up with a dangling tab after completing payment.
