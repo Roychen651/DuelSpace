@@ -409,11 +409,16 @@ export default function Legal() {
             <motion.div
               key={section.title}
               {...fadeUp(0.05 + i * 0.04)}
-              className="rounded-2xl p-6 bg-white border border-slate-200 shadow-sm dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.015] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+              className="rounded-2xl p-6 bg-white dark:bg-transparent border border-slate-200 shadow-sm dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.015] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
             >
               <h2
-                className="text-sm font-bold mb-3"
-                style={{ color: type === 'terms' ? '#818cf8' : type === 'privacy' ? '#c084fc' : '#4ade80' }}
+                className={`text-sm font-bold mb-3 ${
+                  type === 'terms'
+                    ? 'text-indigo-700 dark:text-indigo-400'
+                    : type === 'privacy'
+                      ? 'text-purple-700 dark:text-purple-400'
+                      : 'text-emerald-700 dark:text-emerald-400'
+                }`}
               >
                 {section.title}
               </h2>

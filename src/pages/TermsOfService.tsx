@@ -7,7 +7,7 @@ import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Legal Prose Styles ────────────────────────────────────────────────────────
 
-const CARD_CLS = 'bg-white border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+const CARD_CLS = 'bg-white dark:bg-transparent border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
 
 // ─── Clause Data ──────────────────────────────────────────────────────────────
 
@@ -310,18 +310,16 @@ export default function TermsOfService() {
               {/* Clause heading */}
               <div className="flex items-start gap-3 mb-4">
                 <div
-                  className="flex-none flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-black"
+                  className="flex-none flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-black text-indigo-700 dark:text-indigo-300"
                   style={{
                     background: 'rgba(99,102,241,0.15)',
                     border: '1px solid rgba(99,102,241,0.3)',
-                    color: '#a5b4fc',
                   }}
                 >
                   {clause.num}
                 </div>
                 <h2
-                  className="text-[15px] font-bold leading-tight"
-                  style={{ color: '#c4b5fd' }}
+                  className="text-[15px] font-bold leading-tight text-violet-700 dark:text-violet-300"
                 >
                   {isHe ? clause.title_he : clause.title_en}
                 </h2>
