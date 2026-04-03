@@ -31,7 +31,7 @@ const COPY = {
       ],
     },
     col3: {
-      heading: 'משפטי ואמון',
+      heading: 'משפטי',
       links: [
         { label: 'תנאי שירות',     path: '/terms' },
         { label: 'מדיניות פרטיות', path: '/privacy' },
@@ -76,7 +76,7 @@ const COPY = {
       ],
     },
     col3: {
-      heading: 'Legal & Trust',
+      heading: 'Legal',
       links: [
         { label: 'Terms of Service',       path: '/terms' },
         { label: 'Privacy Policy',         path: '/privacy' },
@@ -250,7 +250,7 @@ export function GlobalFooter() {
 
             {/* Product */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col2.heading}</p>
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col2.heading}</p>
               <ul className="space-y-1">
                 {c.col2.links.map(link => (
                   <li key={link.label}>
@@ -262,9 +262,9 @@ export function GlobalFooter() {
               </ul>
             </div>
 
-            {/* Legal & Trust */}
+            {/* Legal */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col3.heading}</p>
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col3.heading}</p>
               <ul className="space-y-1">
                 {c.col3.links.map(link => (
                   <li key={link.label}>
@@ -278,7 +278,7 @@ export function GlobalFooter() {
 
             {/* Support */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col4.heading}</p>
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col4.heading}</p>
               <ul className="space-y-1">
                 {c.col4.links.map(link => (
                   <li key={link.label}>
