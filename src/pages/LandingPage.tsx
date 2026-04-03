@@ -756,19 +756,9 @@ function HowItWorksSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean })
 // ─── Problem vs Solution ───────────────────────────────────────────────────────
 
 function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
-  const sectionRef = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start 0.9', 'center center'],
-  })
-  // Top line draws first, then VS badge, then bottom line
-  const topLine    = useSpring(useTransform(scrollYProgress, [0.05, 0.45], [0, 1]), { stiffness: 60, damping: 16 })
-  const vsScale    = useTransform(scrollYProgress, [0.40, 0.65], [0, 1])
-  const vsRotate   = useTransform(scrollYProgress, [0.40, 0.65], [-180, 0])
-  const bottomLine = useSpring(useTransform(scrollYProgress, [0.60, 0.90], [0, 1]), { stiffness: 60, damping: 16 })
 
   return (
-    <section ref={sectionRef} className="relative py-16 sm:py-24 px-6">
+    <section className="relative py-16 sm:py-24 px-6">
       <div className="max-w-5xl mx-auto">
         <motion.div
           className="text-center mb-16"
@@ -821,25 +811,30 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
             </ul>
           </motion.div>
 
-          {/* VS Divider — scroll-linked drawing */}
+          {/* VS Divider — whileInView staggered reveal */}
           <div className="flex lg:flex-col items-center justify-center py-2 lg:py-0 lg:px-5">
-            {/* Top line — draws downward as section enters viewport */}
+            {/* Top line */}
             <motion.div
               className="flex-1 h-px lg:h-auto lg:w-px"
+              initial={{ scaleY: 0, opacity: 0 }}
+              whileInView={{ scaleY: 1, opacity: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.65, ease: 'easeOut' as const }}
               style={{
                 background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)',
-                scaleY: topLine,
                 transformOrigin: 'top center',
               }}
             />
-            {/* VS badge — springs in after top line completes */}
+            {/* VS badge */}
             <div className="relative flex-none mx-4 lg:mx-0 lg:my-5">
               <div className="absolute inset-0 rounded-full" style={{ background: 'rgba(99,102,241,0.25)', animation: 'lp-ping-ring 2.8s ease-out infinite' }} />
               <div className="absolute -inset-3 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)', filter: 'blur(10px)' }} />
               <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                whileInView={{ scale: 1, rotate: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ type: 'spring' as const, stiffness: 200, damping: 22, delay: 0.35 }}
                 style={{
-                  scale: vsScale,
-                  rotate: vsRotate,
                   width: 54, height: 54, borderRadius: '50%',
                   background: 'linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7)',
                   boxShadow: '0 0 0 1px rgba(255,255,255,0.15), 0 0 32px rgba(99,102,241,0.7), inset 0 1px 0 rgba(255,255,255,0.2)',
@@ -852,12 +847,15 @@ function ProblemSolutionSection({ c, isHe }: { c: typeof copy['he']; isHe: boole
                 VS
               </motion.div>
             </div>
-            {/* Bottom line — draws downward after badge */}
+            {/* Bottom line */}
             <motion.div
               className="flex-1 h-px lg:h-auto lg:w-px"
+              initial={{ scaleY: 0, opacity: 0 }}
+              whileInView={{ scaleY: 1, opacity: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.65, ease: 'easeOut' as const, delay: 0.7 }}
               style={{
                 background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.2), transparent)',
-                scaleY: bottomLine,
                 transformOrigin: 'top center',
               }}
             />
