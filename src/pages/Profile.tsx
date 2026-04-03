@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText, CreditCard, ExternalLink, Zap, Star, Infinity as InfinityIcon } from 'lucide-react'
+import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText, CreditCard, ExternalLink, Zap, Star, Infinity as InfinityIcon, BellRing, AlertTriangle, Trash2 } from 'lucide-react'
 import { useAuthStore, useTier } from '../stores/useAuthStore'
 import { STRIPE_CUSTOMER_PORTAL, STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl } from '../lib/stripe'
 import { supabase } from '../lib/supabase'
@@ -207,7 +207,7 @@ const PRESET_COLORS = [
 // ─── Main Profile ─────────────────────────────────────────────────────────────
 
 export default function Profile() {
-  const { user, updateProfile, updatePassword } = useAuthStore()
+  const { user, updateProfile, updatePassword, deleteAccount } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
   const tier = useTier()
@@ -348,6 +348,42 @@ export default function Profile() {
     const { error } = await supabase.auth.updateUser({ data: { business_terms: businessTerms } })
     setTermsSaving(false)
     if (!error) { setTermsSaved(true); setTimeout(() => setTermsSaved(false), 2500) }
+  }
+
+  // ── Communication preferences ─────────────────────────────────────────────
+  const [marketingOptIn, setMarketingOptIn] = useState<boolean>(
+    (user?.user_metadata?.marketing_opt_in as boolean | undefined) ?? true
+  )
+  const [prefsSaving, setPrefsSaving] = useState(false)
+  const [prefsSaved, setPrefsSaved] = useState(false)
+
+  const handleSavePrefs = async (newVal: boolean) => {
+    setMarketingOptIn(newVal)
+    setPrefsSaving(true)
+    const { error } = await supabase.auth.updateUser({ data: { marketing_opt_in: newVal } })
+    setPrefsSaving(false)
+    if (!error) { setPrefsSaved(true); setTimeout(() => setPrefsSaved(false), 2500) }
+  }
+
+  // ── Danger zone / account deletion ───────────────────────────────────────
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const deleteWord = isHe ? 'מחק' : 'DELETE'
+  const canDelete = deleteConfirmText === deleteWord
+
+  const handleDeleteAccount = async () => {
+    if (!canDelete) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteAccount()
+    } catch {
+      setDeleteError(isHe ? 'שגיאה במחיקת החשבון. נסה שוב.' : 'Failed to delete account. Please try again.')
+      setDeleting(false)
+    }
   }
 
   // ── Password form ─────────────────────────────────────────────────────────
@@ -936,6 +972,76 @@ export default function Profile() {
           </Card>
         </motion.div>
 
+        {/* ── Communication Preferences ──────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.5, ease: 'easeOut' as const }}>
+          <Card title={isHe ? 'העדפות תקשורת' : 'Communication Preferences'} icon={<BellRing size={16} />}>
+            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-5 leading-relaxed">
+              {isHe
+                ? 'נהל את סוגי האימיילים שאתה מקבל מ-DealSpace.'
+                : 'Control the types of emails you receive from DealSpace.'}
+            </p>
+            <div className="space-y-4">
+              {/* Marketing toggle */}
+              <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-white/80 mb-0.5">
+                    {isHe ? 'עדכונים שיווקיים והטבות' : 'Marketing & Offers'}
+                  </p>
+                  <p className="text-[11px] text-white/35 leading-relaxed">
+                    {isHe
+                      ? 'טיפים, תכונות חדשות, ומבצעים מיוחדים. ניתן לבטל בכל עת.'
+                      : 'Tips, new features, and special offers. Unsubscribe anytime.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={marketingOptIn}
+                  onClick={() => handleSavePrefs(!marketingOptIn)}
+                  disabled={prefsSaving}
+                  className="flex-none relative w-11 h-6 rounded-full transition-all duration-300 disabled:opacity-50"
+                  style={{
+                    background: marketingOptIn ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.1)',
+                    boxShadow: marketingOptIn ? '0 0 16px rgba(99,102,241,0.4)' : 'none',
+                  }}
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all duration-300"
+                    style={{ [isHe ? 'right' : 'left']: marketingOptIn ? '1.25rem' : '0.125rem' }}
+                  />
+                </button>
+              </div>
+
+              {/* Operational (locked) */}
+              <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-white/50 mb-0.5">
+                    {isHe ? 'עדכונים תפעוליים ומוצריים' : 'Product & Operational Updates'}
+                  </p>
+                  <p className="text-[11px] text-white/25 leading-relaxed">
+                    {isHe
+                      ? 'אישורי חיוב, התראות אבטחה ועדכוני שירות חיוניים. חובה לפי תנאי השירות.'
+                      : 'Billing confirmations, security alerts, and essential service updates. Required per Terms of Service.'}
+                  </p>
+                </div>
+                <div className="flex-none relative w-11 h-6 rounded-full cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', opacity: 0.45 }}>
+                  <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white"
+                    style={{ [isHe ? 'right' : 'left']: '1.25rem' }} />
+                </div>
+              </div>
+
+              {prefsSaved && (
+                <p className="text-[11px] text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 size={11} /> {isHe ? 'ההעדפות נשמרו' : 'Preferences saved'}
+                </p>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+
         {/* ── VAT Rate ───────────────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34, duration: 0.5, ease: 'easeOut' as const }}>
           <Card
@@ -964,6 +1070,144 @@ export default function Profile() {
             </form>
           </Card>
         </motion.div>
+
+        {/* ── Danger Zone ────────────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.40, duration: 0.5, ease: 'easeOut' as const }}>
+          <div className="rounded-3xl p-7"
+            style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
+                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <AlertTriangle size={16} style={{ color: '#f87171' }} />
+              </div>
+              <h2 className="text-sm font-bold uppercase tracking-widest" style={{ color: '#f87171' }}>
+                {isHe ? 'אזור סכנה' : 'Danger Zone'}
+              </h2>
+            </div>
+
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-white/70 mb-1">
+                  {isHe ? 'מחיקת חשבון לצמיתות' : 'Delete Account Permanently'}
+                </p>
+                <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(248,113,113,0.55)' }}>
+                  {isHe
+                    ? 'פעולה זו בלתי הפיכה. כל הנתונים שלך יימחקו לצמיתות.'
+                    : 'This action is irreversible. All your data will be permanently erased.'}
+                </p>
+              </div>
+              <motion.button
+                type="button"
+                onClick={() => { setDeleteModalOpen(true); setDeleteConfirmText(''); setDeleteError(null) }}
+                className="flex-none flex items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-bold"
+                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)' }}
+                whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+              >
+                <Trash2 size={13} />
+                {isHe ? 'מחק חשבון' : 'Delete Account'}
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Delete Confirmation Modal ───────────────────────────────────── */}
+        <AnimatePresence>
+          {deleteModalOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                className="fixed inset-0 z-50"
+                style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => !deleting && setDeleteModalOpen(false)}
+              />
+              {/* Modal */}
+              <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center p-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="w-full max-w-md rounded-3xl p-7"
+                  style={{ background: '#0f0a0a', border: '1px solid rgba(239,68,68,0.35)', boxShadow: '0 0 60px rgba(239,68,68,0.12), 0 32px 80px rgba(0,0,0,0.6)' }}
+                  initial={{ scale: 0.92, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.92, y: 20 }}
+                  transition={{ type: 'spring' as const, stiffness: 380, damping: 28 }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Icon */}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl mb-5"
+                    style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)' }}>
+                    <AlertTriangle size={20} style={{ color: '#f87171' }} />
+                  </div>
+
+                  <h3 className="text-[17px] font-black text-white mb-2" dir={isHe ? 'rtl' : 'ltr'}>
+                    {isHe ? 'האם אתם בטוחים לחלוטין?' : 'Are you absolutely sure?'}
+                  </h3>
+                  <p className="text-[12px] leading-relaxed mb-6" style={{ color: 'rgba(248,113,113,0.65)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                    {isHe
+                      ? 'פעולה זו אינה הפיכה. כל הצעות המחיר, נתוני הלקוחות והחוזים החתומים יימחקו לצמיתות. יש לבטל מנוי פעיל בעמוד החיוב לפני המחיקה.'
+                      : 'This action cannot be undone. All your proposals, client data, and signed contracts will be permanently deleted. Active subscriptions must be canceled from the Billing page first.'}
+                  </p>
+
+                  {/* Confirm input */}
+                  <div className="mb-5">
+                    <label className="block text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(248,113,113,0.7)' }}>
+                      {isHe ? `הקלד "${deleteWord}" לאישור` : `Type "${deleteWord}" to confirm`}
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={e => setDeleteConfirmText(e.target.value)}
+                      placeholder={deleteWord}
+                      className="w-full rounded-2xl px-4 py-3 text-sm text-white outline-none transition-all duration-200"
+                      style={{
+                        background: '#1a0808',
+                        border: `1px solid ${canDelete ? 'rgba(239,68,68,0.6)' : 'rgba(239,68,68,0.2)'}`,
+                        boxShadow: canDelete ? '0 0 16px rgba(239,68,68,0.15)' : 'none',
+                      }}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {deleteError && (
+                    <p className="text-[12px] text-red-400 mb-4">{deleteError}</p>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalOpen(false)}
+                      disabled={deleting}
+                      className="flex-1 rounded-2xl px-4 py-2.5 text-[13px] font-semibold text-white/50 disabled:opacity-40 transition"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    >
+                      {isHe ? 'ביטול' : 'Cancel'}
+                    </button>
+                    <motion.button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={!canDelete || deleting}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-black disabled:opacity-30 transition-all"
+                      style={{ background: canDelete ? 'rgba(239,68,68,0.9)' : 'rgba(239,68,68,0.3)', color: 'white', border: '1px solid rgba(239,68,68,0.6)' }}
+                      whileTap={canDelete ? { scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } } : {}}
+                    >
+                      {deleting
+                        ? <span className="h-4 w-4 rounded-full border-2 border-white/30" style={{ borderTopColor: 'white', animation: 'spin 0.8s linear infinite' }} />
+                        : <><Trash2 size={13} />{isHe ? 'מחק את החשבון שלי' : 'Delete My Account'}</>}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
       </main>
       <GlobalFooter />

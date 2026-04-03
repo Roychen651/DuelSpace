@@ -222,24 +222,44 @@ export default function Billing() {
             </div>
           )}
 
+          {/* Invoicing compliance box */}
+          {isPaid && (
+            <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3.5 mb-4"
+              style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)' }}>
+              <Info size={13} className="text-indigo-400/70 flex-none mt-0.5" />
+              <p className="text-[11px] text-white/40 leading-relaxed">
+                {isHe
+                  ? 'חשבונית מס/קבלה מוכרת למס (הכוללת מע"מ ומספר הקצאה) מופקת אוטומטית ונשלחת למייל שלכם לאחר כל חיוב חודשי באמצעות Morning (חשבונית ירוקה).'
+                  : 'A recognized Israeli Tax Invoice / Receipt is automatically generated and sent to your email after each successful charge via Morning (Green Invoice).'}
+              </p>
+            </div>
+          )}
+
           {/* Management CTA */}
           {isPaid && (
             STRIPE_CUSTOMER_PORTAL ? (
-              <a
-                href={STRIPE_CUSTOMER_PORTAL}
-                className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold transition-all"
-                style={{ background: `${tierColor}12`, border: `1px solid ${tierColor}30`, color: tierColor }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}22` }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}12` }}
-              >
-                <span className="flex items-center gap-2">
-                  <CreditCard size={14} />
+              <div className="space-y-2">
+                <a
+                  href={STRIPE_CUSTOMER_PORTAL}
+                  className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold transition-all"
+                  style={{ background: `${tierColor}12`, border: `1px solid ${tierColor}30`, color: tierColor }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}22` }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}12` }}
+                >
+                  <span className="flex items-center gap-2">
+                    <CreditCard size={14} />
+                    {isHe
+                      ? 'ניהול מנוי, חשבוניות, עדכון אמצעי תשלום וביטול'
+                      : 'Manage subscription, invoices, payment method & cancel'}
+                  </span>
+                  <ArrowUpRight size={14} className="opacity-50" />
+                </a>
+                <p className="text-[10.5px] leading-relaxed px-1" style={{ color: 'rgba(255,255,255,0.22)' }}>
                   {isHe
-                    ? 'ניהול מנוי, חשבוניות, עדכון אמצעי תשלום וביטול'
-                    : 'Manage subscription, invoices, payment method & cancel'}
-                </span>
-                <ArrowUpRight size={14} className="opacity-50" />
-              </a>
+                    ? 'שדרוגים מתעדכנים מיידית (חיוב יחסי). ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי. לא יינתנו החזרים יחסיים על תקופה שלא נוצלה.'
+                    : 'Upgrades are pro-rated and applied immediately. Downgrades and cancellations take effect at the end of the current billing cycle. No pro-rata refunds are provided.'}
+                </p>
+              </div>
             ) : (
               <div className="rounded-2xl px-4 py-3 text-[12px] text-white/35 leading-relaxed"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -407,15 +427,15 @@ export default function Billing() {
           </p>
         </motion.div>
 
-        {/* ── About DealSpace invoicing (future) ────────────────────────────── */}
+        {/* ── Israeli invoicing compliance note ─────────────────────────── */}
         <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.3 }}
           className="flex items-start gap-3 rounded-2xl px-5 py-4"
           style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)' }}>
           <Info size={14} className="text-indigo-400/70 flex-none mt-0.5" />
           <p className="text-[11px] text-white/30 leading-relaxed">
             {isHe
-              ? 'חשבוניות מס ממוספרות בהתאם לחוק (סעיף 47 לחוק מע"מ) — ייוצרו ויישלחו אוטומטית עם השקת חשבוניות ירוקה. בינתיים Stripe מספק קבלה לכל חיוב.'
-              : 'Sequentially numbered tax invoices per Israeli VAT law will be issued automatically upon חשבונית ירוקה launch. In the meantime, Stripe provides a receipt for every charge.'}
+              ? 'חשבונית מס/קבלה מוכרת למס (הכוללת מע"מ ומספר הקצאה) מופקת אוטומטית ונשלחת למייל שלכם לאחר כל חיוב חודשי באמצעות Morning (חשבונית ירוקה).'
+              : 'A recognized Israeli Tax Invoice / Receipt is automatically generated and sent to your email after each successful charge via Morning (Green Invoice).'}
           </p>
         </motion.div>
 
