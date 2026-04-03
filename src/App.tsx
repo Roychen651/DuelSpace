@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from './stores/useAuthStore'
@@ -7,26 +7,29 @@ import { AccessibilityWidget } from './components/ui/AccessibilityWidget'
 import { ProtectedLayout } from './components/layout/ProtectedLayout'
 import { ThemeProvider } from './components/layout/ThemeProvider'
 import { AdminRoute } from './components/layout/AdminRoute'
-import AuthPage from './pages/Auth'
-import AuthCallback from './pages/AuthCallback'
-import Dashboard from './pages/Dashboard'
-import ProposalBuilder from './pages/ProposalBuilder'
-import DealRoom from './pages/DealRoom'
-import LandingPage from './pages/LandingPage'
-import Profile from './pages/Profile'
-import ResetPassword from './pages/ResetPassword'
-import Legal from './pages/Legal'
-import TermsOfService from './pages/TermsOfService'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import AccessibilityStatement from './pages/AccessibilityStatement'
-import ServicesLibrary from './pages/ServicesLibrary'
-import Integrations from './pages/Integrations'
-import Billing from './pages/Billing'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import ImpersonateCallback from './pages/ImpersonateCallback'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { AnalyticsProvider } from './components/layout/AnalyticsProvider'
 import { ScrollToTop } from './components/layout/ScrollToTop'
+
+// ─── Lazy page imports — each page is its own JS chunk ────────────────────────
+
+const LandingPage            = lazy(() => import('./pages/LandingPage'))
+const AuthPage               = lazy(() => import('./pages/Auth'))
+const AuthCallback           = lazy(() => import('./pages/AuthCallback'))
+const ImpersonateCallback    = lazy(() => import('./pages/ImpersonateCallback'))
+const ResetPassword          = lazy(() => import('./pages/ResetPassword'))
+const Dashboard              = lazy(() => import('./pages/Dashboard'))
+const ProposalBuilder        = lazy(() => import('./pages/ProposalBuilder'))
+const DealRoom               = lazy(() => import('./pages/DealRoom'))
+const Profile                = lazy(() => import('./pages/Profile'))
+const ServicesLibrary        = lazy(() => import('./pages/ServicesLibrary'))
+const Integrations           = lazy(() => import('./pages/Integrations'))
+const Billing                = lazy(() => import('./pages/Billing'))
+const Legal                  = lazy(() => import('./pages/Legal'))
+const TermsOfService         = lazy(() => import('./pages/TermsOfService'))
+const PrivacyPolicy          = lazy(() => import('./pages/PrivacyPolicy'))
+const AccessibilityStatement = lazy(() => import('./pages/AccessibilityStatement'))
+const AdminDashboard         = lazy(() => import('./pages/admin/AdminDashboard'))
 
 // ─── Route Guards ─────────────────────────────────────────────────────────────
 
@@ -70,40 +73,42 @@ function AnimatedRoutes() {
           transition={{ duration: 0.18, ease: 'easeOut' as const }}
           style={{ minHeight: '100dvh' }}
         >
-          <Routes location={location}>
-            {/* Public */}
-            <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/auth/impersonate" element={<ImpersonateCallback />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Suspense fallback={<Spinner />}>
+            <Routes location={location}>
+              {/* Public */}
+              <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/impersonate" element={<ImpersonateCallback />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-            {/* Protected — with shared Navbar via ProtectedLayout */}
-            <Route path="/dashboard" element={<ProtectedRoute><ProtectedLayout><Dashboard /></ProtectedLayout></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProtectedLayout><Profile /></ProtectedLayout></ProtectedRoute>} />
-            <Route path="/services" element={<ProtectedRoute><ProtectedLayout><ServicesLibrary /></ProtectedLayout></ProtectedRoute>} />
-            <Route path="/integrations" element={<ProtectedRoute><ProtectedLayout><Integrations /></ProtectedLayout></ProtectedRoute>} />
-            <Route path="/billing" element={<ProtectedRoute><ProtectedLayout><Billing /></ProtectedLayout></ProtectedRoute>} />
+              {/* Protected — with shared Navbar via ProtectedLayout */}
+              <Route path="/dashboard" element={<ProtectedRoute><ProtectedLayout><Dashboard /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProtectedLayout><Profile /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/services" element={<ProtectedRoute><ProtectedLayout><ServicesLibrary /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/integrations" element={<ProtectedRoute><ProtectedLayout><Integrations /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><ProtectedLayout><Billing /></ProtectedLayout></ProtectedRoute>} />
 
-            {/* Protected — ProposalBuilder has its own header, no shared layout */}
-            <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
-            <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+              {/* Protected — ProposalBuilder has its own header, no shared layout */}
+              <Route path="/proposals/new" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
+              <Route path="/proposals/:id" element={<ProtectedRoute><ProposalBuilder /></ProtectedRoute>} />
 
-            {/* Public deal room — no auth required */}
-            <Route path="/deal/:token" element={<DealRoom />} />
+              {/* Public deal room — no auth required */}
+              <Route path="/deal/:token" element={<DealRoom />} />
 
-            {/* Legal — always public */}
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/security" element={<Legal />} />
-            <Route path="/accessibility" element={<AccessibilityStatement />} />
+              {/* Legal — always public */}
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/security" element={<Legal />} />
+              <Route path="/accessibility" element={<AccessibilityStatement />} />
 
-            {/* Admin — founder only */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              {/* Admin — founder only */}
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
-            {/* Landing — always public */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              {/* Landing — always public */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </motion.div>
       </AnimatePresence>
 
