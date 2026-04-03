@@ -103,7 +103,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50 dark:bg-[#040608]">
+    <div className="min-h-dvh overflow-x-hidden bg-slate-50 dark:bg-[#040608]">
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <nav

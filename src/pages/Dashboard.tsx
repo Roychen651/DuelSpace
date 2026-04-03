@@ -12,7 +12,7 @@ import { proposalTotal, formatCurrency, STATUS_META } from '../types/proposal'
 import { calculateFinancials, ISRAELI_VAT_RATE } from '../lib/financialMath'
 import { generateProposalPdf } from '../lib/pdfEngine'
 import { OnboardingWizard } from '../components/onboarding/OnboardingWizard'
-import { startDashboardTour } from '../lib/tourEngine'
+import { GuidedTour } from '../components/onboarding/GuidedTour'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { UpgradeModal } from '../components/dashboard/UpgradeModal'
 import { exportProposalsCsv } from '../lib/csvExport'
@@ -320,21 +320,6 @@ export default function Dashboard() {
   // Wizard: show for users who haven't completed onboarding
   const showWizard = !wizardClosed && Boolean(user) && user?.user_metadata?.has_completed_onboarding !== true
 
-  // Tour: auto-trigger for users who have onboarded but haven't seen the tour
-  useEffect(() => {
-    if (!user || loading || showWizard) return
-    const hasSeen = user.user_metadata?.has_seen_tour === true
-    const localSeen = localStorage.getItem('dealspace:tour-completed') === '1'
-    if (!hasSeen && !localSeen) {
-      const t = setTimeout(() => {
-        startDashboardTour(locale as 'he' | 'en')
-        localStorage.setItem('dealspace:tour-completed', '1')
-        supabase.rpc('mark_tour_seen').then(() => {})
-      }, 1500)
-      return () => clearTimeout(t)
-    }
-  }, [user, loading, locale, showWizard])
-
   // Clear selection when switching tabs
   useEffect(() => {
     setSelectedIds(new Set())
@@ -509,7 +494,7 @@ export default function Dashboard() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative min-h-dvh flex flex-col" dir={isHe ? 'rtl' : 'ltr'}>
+    <div className="relative min-h-dvh flex flex-col overflow-x-hidden" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes ds-fade-up {
           from { opacity: 0; transform: translateY(16px); }
@@ -1244,6 +1229,8 @@ export default function Dashboard() {
           <OnboardingWizard onClose={() => setWizardClosed(true)} />
         )}
       </AnimatePresence>
+
+      <GuidedTour locale={locale as 'he' | 'en'} enabled={!showWizard} />
     </div>
   )
 }
