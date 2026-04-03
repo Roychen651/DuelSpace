@@ -1321,6 +1321,16 @@ supabase migration repair --status applied <timestamp>
 ### GlobalFooter coverage
 `GlobalFooter` is imported individually into each page that needs it (Dashboard, LandingPage, DealRoom, Profile, ServicesLibrary, Integrations, Billing, TermsOfService, PrivacyPolicy, Legal/Security, AccessibilityStatement). It is NOT injected globally in App.tsx — ProposalBuilder uses a fixed-height split-screen layout that has no room for a footer, and adding it globally would break that layout.
 
+**GlobalFooter column structure (Sprint 48.6):**
+- **Brand col** — Zap logo, "DealSpace" name, description, language toggle
+- **Product / המוצר** — `/proposals/new`, `/dashboard`, `/services`, `/integrations`
+- **Legal & Trust / משפטי ואמון** — `/terms`, `/privacy`, `/security`, `/accessibility`
+- **Support / תמיכה וקשר** — `mailto:support@dealspace.app`, `/billing`, `#top` (scroll to top)
+
+Mobile: compact 2-column grid of the 8 product+legal links, no headings.
+
+Link hover uses `ltr:hover:translate-x-0.5 rtl:hover:-translate-x-0.5` for direction-aware subtle shift. `handleLink()` dispatches: `mailto:` → `window.location.href`, `#top` → `window.scrollTo`, else → `navigate()`.
+
 ### GlobalFooter z-index vs fixed aurora
 Every Dashboard-style page has a `DashboardAurora` component with `position: fixed; inset: 0`. Non-positioned elements (like `<footer>`) paint BELOW positioned elements in the CSS stacking order, making the footer visually invisible. The fix: `GlobalFooter`'s `<footer>` element has `className="relative z-10"`, which places it above the fixed aurora. Any page with a fixed full-screen background must ensure its footer or content sections have `relative z-index` set.
 

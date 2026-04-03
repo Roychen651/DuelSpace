@@ -2,97 +2,94 @@ import { useNavigate } from 'react-router-dom'
 import { Zap, Globe, Shield, Lock, CheckCircle2 } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
 
-// ─── Copy ──────────────────────────────────────────────────────────────────────
+// ─── Copy ─────────────────────────────────────────────────────────────────────
 
 const COPY = {
   he: {
-    tagline: 'סוגרים עסקאות בסטייל.',
+    tagline: 'סוגרים עסקאות מהר יותר.',
     description: 'פלטפורמת הצעות המחיר האינטראקטיביות לעצמאים ועסקים בישראל. מחליפה PDF סטטי בחדר עסקאות חי.',
     copyright: '© 2026 DealSpace Technologies Ltd. כל הזכויות שמורות.',
     langToggle: 'English',
-    /** Curated short list shown only on mobile — no section headers */
+    madeInIsrael: 'פותח בישראל 🇮🇱',
     mobileLinks: [
-      { label: 'יצירת הצעה', path: '/proposals/new' },
-      { label: 'תנאי שירות', path: '/terms' },
-      { label: 'ספריית חוזים', path: '/contracts' },
-      { label: 'מדיניות פרטיות', path: '/privacy' },
+      { label: 'הצעה חדשה',      path: '/proposals/new' },
+      { label: 'לוח הבקרה',      path: '/dashboard' },
       { label: 'ספריית שירותים', path: '/services' },
-      { label: 'אבטחת מידע', path: '/security' },
-      { label: 'מרכז העזרה', path: '/#help' },
-      { label: 'הצהרת נגישות', path: '/accessibility' },
+      { label: 'אינטגרציות',     path: '/integrations' },
+      { label: 'תנאי שירות',     path: '/terms' },
+      { label: 'מדיניות פרטיות', path: '/privacy' },
+      { label: 'אבטחת מידע',     path: '/security' },
+      { label: 'הצהרת נגישות',   path: '/accessibility' },
     ],
     col2: {
       heading: 'המוצר',
       links: [
-        { label: 'יצירת הצעה חדשה', path: '/proposals/new' },
-        { label: 'חתימה אלקטרונית', path: '/proposals/new' },
-        { label: 'תמחור ותוספות', path: '/proposals/new' },
-        { label: 'ספריית חוזים', path: '/contracts' },
+        { label: 'הצעה חדשה',      path: '/proposals/new' },
+        { label: 'לוח הבקרה',      path: '/dashboard' },
         { label: 'ספריית שירותים', path: '/services' },
+        { label: 'אינטגרציות',     path: '/integrations' },
       ],
     },
     col3: {
-      heading: 'משאבים',
+      heading: 'משפטי ואמון',
       links: [
-        { label: 'מרכז העזרה', path: '/#help' },
-        { label: 'ספריית תבניות', path: '/contracts' },
-        { label: 'מדיניות אבטחה', path: '/security' },
-        { label: 'הצהרת נגישות', path: '/accessibility' },
+        { label: 'תנאי שירות',     path: '/terms' },
+        { label: 'מדיניות פרטיות', path: '/privacy' },
+        { label: 'אבטחת מידע',     path: '/security' },
+        { label: 'הצהרת נגישות',   path: '/accessibility' },
       ],
     },
     col4: {
-      heading: 'חוק ואמינות',
+      heading: 'תמיכה וקשר',
       links: [
-        { label: 'תנאי שירות', path: '/terms' },
-        { label: 'מדיניות פרטיות', path: '/privacy' },
-        { label: 'אבטחת מידע', path: '/security' },
-        { label: 'הצהרת נגישות', path: '/accessibility' },
+        { label: 'צור קשר',       path: 'mailto:support@dealspace.app' },
+        { label: 'חיוב ומנוי',    path: '/billing' },
+        { label: 'מרכז עזרה',     path: '#top' },
       ],
     },
     trust: ['מאובטח על ידי Supabase', 'הצפנה 256-bit', 'נגיש WCAG 2.2 AA'],
     legalNote: 'DealSpace משמשת ככלי ליצירת הצעות מחיר בלבד ואינה מהווה ייעוץ משפטי, פיננסי או ייעוץ עסקי מכל סוג.',
   },
   en: {
-    tagline: 'Close deals in style.',
-    description: 'The interactive proposal platform for freelancers and agencies. Replaces static PDFs with a live deal room.',
+    tagline: 'Close deals faster.',
+    description: 'The interactive proposal platform for freelancers and agencies in Israel. Replaces static PDFs with a live deal room.',
     copyright: '© 2026 DealSpace Technologies Ltd. All rights reserved.',
     langToggle: 'עברית',
+    madeInIsrael: 'Made in Israel 🇮🇱',
     mobileLinks: [
-      { label: 'Create Proposal', path: '/proposals/new' },
+      { label: 'New Proposal',     path: '/proposals/new' },
+      { label: 'Dashboard',        path: '/dashboard' },
+      { label: 'Services Library', path: '/services' },
+      { label: 'Integrations',     path: '/integrations' },
       { label: 'Terms of Service', path: '/terms' },
-      { label: 'Contracts', path: '/contracts' },
-      { label: 'Privacy Policy', path: '/privacy' },
-      { label: 'Services', path: '/services' },
-      { label: 'Security', path: '/security' },
-      { label: 'Help Center', path: '/#help' },
-      { label: 'Accessibility', path: '/accessibility' },
+      { label: 'Privacy Policy',   path: '/privacy' },
+      { label: 'Security',         path: '/security' },
+      { label: 'Accessibility',    path: '/accessibility' },
     ],
     col2: {
       heading: 'Product',
       links: [
-        { label: 'Create Proposal', path: '/proposals/new' },
-        { label: 'E-Signatures', path: '/proposals/new' },
-        { label: 'Pricing & Add-ons', path: '/proposals/new' },
-        { label: 'Contract Library', path: '/contracts' },
+        { label: 'New Proposal',     path: '/proposals/new' },
+        { label: 'Dashboard',        path: '/dashboard' },
         { label: 'Services Library', path: '/services' },
+        { label: 'Integrations',     path: '/integrations' },
       ],
     },
     col3: {
-      heading: 'Resources',
+      heading: 'Legal & Trust',
       links: [
-        { label: 'Help Center', path: '/#help' },
-        { label: 'Templates Library', path: '/contracts' },
-        { label: 'Security Policy', path: '/security' },
-        { label: 'Accessibility Statement', path: '/accessibility' },
+        { label: 'Terms of Service',       path: '/terms' },
+        { label: 'Privacy Policy',         path: '/privacy' },
+        { label: 'Security',               path: '/security' },
+        { label: 'Accessibility',          path: '/accessibility' },
       ],
     },
     col4: {
-      heading: 'Legal & Trust',
+      heading: 'Support',
       links: [
-        { label: 'Terms of Service', path: '/terms' },
-        { label: 'Privacy Policy', path: '/privacy' },
-        { label: 'Security Policy', path: '/security' },
-        { label: 'Accessibility Statement', path: '/accessibility' },
+        { label: 'Contact Us',             path: 'mailto:support@dealspace.app' },
+        { label: 'Billing & Subscription', path: '/billing' },
+        { label: 'Help Center',            path: '#top' },
       ],
     },
     trust: ['Secured by Supabase', '256-bit Encryption', 'WCAG 2.2 AA'],
@@ -108,103 +105,122 @@ export function GlobalFooter() {
   const isHe = locale === 'he'
   const c = isHe ? COPY.he : COPY.en
 
-  const nav = (path: string) => {
-    if (path.startsWith('/#')) {
+  const handleLink = (path: string) => {
+    if (path.startsWith('mailto:')) {
+      window.location.href = path
+    } else if (path === '#top') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       navigate(path)
     }
   }
 
+  const TRUST_BADGES = [
+    { icon: <Shield size={10} style={{ color: '#818cf8' }} />, text: c.trust[0] },
+    { icon: <Lock size={10} style={{ color: '#818cf8' }} />, text: c.trust[1] },
+    { icon: <CheckCircle2 size={10} style={{ color: '#4ade80' }} />, text: c.trust[2] },
+  ]
+
+  // Shared link button class — RTL-aware hover translate
+  const linkCls = 'text-[13px] text-white/40 transition-[transform,color] duration-200 hover:text-white ltr:hover:translate-x-0.5 rtl:hover:-translate-x-0.5 text-start block py-0.5'
+
   return (
     <footer
       dir={isHe ? 'rtl' : 'ltr'}
-      className="relative z-10 bg-white dark:bg-[#030305]"
+      className="relative z-10"
+      style={{ background: 'rgba(3,3,5,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
     >
-      {/* Gradient rule */}
-      <div className="h-px bg-gradient-to-r from-transparent via-indigo-400/25 to-transparent dark:from-transparent dark:via-indigo-500/35 dark:to-transparent" />
+      {/* Top gradient border */}
+      <div
+        className="h-px w-full"
+        style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.35) 30%, rgba(168,85,247,0.35) 70%, transparent)' }}
+      />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-6 pt-8 pb-7">
 
-        {/* ══════════════════════════════════════════════════════════════════
+        {/* ════════════════════════════════════════════════════════════════
             MOBILE LAYOUT  (< md)
-            Compact brand row → 2-column link grid → trust row → copyright
-        ══════════════════════════════════════════════════════════════════ */}
+        ════════════════════════════════════════════════════════════════ */}
         <div className="md:hidden">
 
-          {/* Brand row — logo + name + lang toggle all on one line */}
-          <div className="flex items-center justify-between mb-1">
+          {/* Brand row */}
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-xl flex-none shadow-[0_0_14px_rgba(99,102,241,0.25)] dark:shadow-[0_0_14px_rgba(99,102,241,0.45)]"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+                className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
               >
                 <Zap size={14} className="text-white" />
               </div>
               <div>
-                <span className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white" style={{ letterSpacing: '-0.02em' }}>
+                <span className="text-[14px] font-black text-white" style={{ letterSpacing: '-0.02em' }}>
                   DealSpace
                 </span>
-                <span className="ms-1.5 text-[11px] text-slate-400 dark:text-white/30 font-normal">{c.tagline}</span>
+                <span className="ms-1.5 text-[11px] text-white/30 font-normal">{c.tagline}</span>
               </div>
             </div>
 
             <button
               onClick={() => setLocale(isHe ? 'en' : 'he')}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 dark:text-white/35 transition-colors hover:text-slate-600 dark:hover:text-white/65 flex-none border border-slate-200 dark:border-white/[0.08]"
+              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65 flex-none border border-white/[0.08]"
             >
               <Globe size={10} />
               {c.langToggle}
             </button>
           </div>
 
-          {/* Gradient rule */}
-          <div className="my-5 h-px bg-slate-200 dark:bg-white/[0.06]" />
+          {/* Divider */}
+          <div className="mb-5 h-px bg-white/[0.06]" />
 
-          {/* 2-column flat link grid — all 8 curated links, no headings */}
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3 mb-5">
+          {/* 2-column link grid — 8 links, no headings, py-2 touch targets */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 mb-5">
             {c.mobileLinks.map(link => (
               <button
                 key={link.label}
-                onClick={() => nav(link.path)}
-                className="text-start text-[12px] font-medium text-slate-500 dark:text-white/45 transition-colors hover:text-slate-800 dark:hover:text-white/80 py-0.5"
+                onClick={() => handleLink(link.path)}
+                className="text-start text-[12.5px] font-medium text-white/40 transition-colors hover:text-white py-2"
               >
                 {link.label}
               </button>
             ))}
           </div>
 
-          {/* Gradient rule */}
-          <div className="mb-4 h-px bg-slate-200 dark:bg-white/[0.06]" />
+          {/* Divider */}
+          <div className="mb-4 h-px bg-white/[0.06]" />
 
-          {/* Trust row — 3 compact pills */}
+          {/* Trust badges */}
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            {[
-              { icon: <Shield size={9} style={{ color: '#818cf8' }} />, text: c.trust[0] },
-              { icon: <Lock size={9} style={{ color: '#818cf8' }} />, text: c.trust[1] },
-              { icon: <CheckCircle2 size={9} style={{ color: '#4ade80' }} />, text: c.trust[2] },
-            ].map(badge => (
+            {TRUST_BADGES.map(badge => (
               <div
                 key={badge.text}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]"
+                className="flex items-center gap-1 rounded-full px-2.5 py-1"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
                 {badge.icon}
-                <span className="text-[9.5px] font-medium text-slate-500 dark:text-white/30 whitespace-nowrap">{badge.text}</span>
+                <span className="text-[9.5px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
               </div>
             ))}
           </div>
 
-          {/* Copyright */}
-          <p className="text-[10px] text-slate-400 dark:text-white/18" dir="ltr">{c.copyright}</p>
+          {/* Bottom row: copyright + Made in Israel */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-[10px] text-white/18" dir="ltr">{c.copyright}</p>
+            <span
+              className="text-[10px] font-medium text-white/28 rounded-full px-2.5 py-1"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              {c.madeInIsrael}
+            </span>
+          </div>
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            TABLET + DESKTOP LAYOUT  (md+)
-            Full 3-column link grid with section headings
-        ══════════════════════════════════════════════════════════════════ */}
+        {/* ════════════════════════════════════════════════════════════════
+            DESKTOP LAYOUT  (md+)
+            Brand col + 3 link columns
+        ════════════════════════════════════════════════════════════════ */}
         <div className="hidden md:block">
 
-          {/* Brand + columns row */}
+          {/* 4-column grid: brand + product + legal + support */}
           <div className="grid md:grid-cols-4 gap-10 mb-10">
 
             {/* Brand */}
@@ -212,20 +228,20 @@ export function GlobalFooter() {
               <div className="flex items-center gap-2.5 mb-3">
                 <div
                   className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.45)' }}
                 >
                   <Zap size={16} className="text-white" />
                 </div>
-                <span className="text-[16px] font-black tracking-tight text-slate-900 dark:text-white" style={{ letterSpacing: '-0.02em' }}>
+                <span className="text-[16px] font-black text-white" style={{ letterSpacing: '-0.02em' }}>
                   DealSpace
                 </span>
               </div>
-              <p className="text-[12px] leading-relaxed text-slate-500 dark:text-white/38 mb-5">
+              <p className="text-[12px] leading-relaxed text-white/38 mb-5">
                 {c.description}
               </p>
               <button
                 onClick={() => setLocale(isHe ? 'en' : 'he')}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-slate-400 dark:text-white/35 transition-colors hover:text-slate-600 dark:hover:text-white/65 border border-slate-200 dark:border-white/[0.08]"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65 border border-white/[0.08]"
               >
                 <Globe size={11} />
                 {c.langToggle}
@@ -234,11 +250,11 @@ export function GlobalFooter() {
 
             {/* Product */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-white/28">{c.col2.heading}</p>
-              <ul className="space-y-2.5">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col2.heading}</p>
+              <ul className="space-y-1">
                 {c.col2.links.map(link => (
                   <li key={link.label}>
-                    <button onClick={() => nav(link.path)} className="text-[13px] text-slate-500 dark:text-white/45 transition-colors hover:text-slate-800 dark:hover:text-white/82 text-start">
+                    <button onClick={() => handleLink(link.path)} className={linkCls}>
                       {link.label}
                     </button>
                   </li>
@@ -246,13 +262,13 @@ export function GlobalFooter() {
               </ul>
             </div>
 
-            {/* Resources */}
+            {/* Legal & Trust */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-white/28">{c.col3.heading}</p>
-              <ul className="space-y-2.5">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col3.heading}</p>
+              <ul className="space-y-1">
                 {c.col3.links.map(link => (
                   <li key={link.label}>
-                    <button onClick={() => nav(link.path)} className="text-[13px] text-slate-500 dark:text-white/45 transition-colors hover:text-slate-800 dark:hover:text-white/82 text-start">
+                    <button onClick={() => handleLink(link.path)} className={linkCls}>
                       {link.label}
                     </button>
                   </li>
@@ -260,13 +276,13 @@ export function GlobalFooter() {
               </ul>
             </div>
 
-            {/* Legal */}
+            {/* Support */}
             <div>
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-white/28">{c.col4.heading}</p>
-              <ul className="space-y-2.5">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-white/28">{c.col4.heading}</p>
+              <ul className="space-y-1">
                 {c.col4.links.map(link => (
                   <li key={link.label}>
-                    <button onClick={() => nav(link.path)} className="text-[13px] text-slate-500 dark:text-white/45 transition-colors hover:text-slate-800 dark:hover:text-white/82 text-start">
+                    <button onClick={() => handleLink(link.path)} className={linkCls}>
                       {link.label}
                     </button>
                   </li>
@@ -276,33 +292,45 @@ export function GlobalFooter() {
           </div>
 
           {/* Divider */}
-          <div className="mb-6 h-px bg-slate-200 dark:bg-white/[0.06]" />
+          <div
+            className="mb-6 h-px"
+            style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)' }}
+          />
 
-          {/* Bottom bar */}
-          <div className="flex items-center justify-between gap-6 flex-wrap">
+          {/* Bottom bar: trust badges | copyright + Made in Israel */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             {/* Trust badges */}
             <div className="flex items-center gap-2.5">
-              {[
-                { icon: <Shield size={10} style={{ color: '#818cf8' }} />, text: c.trust[0] },
-                { icon: <Lock size={10} style={{ color: '#818cf8' }} />, text: c.trust[1] },
-                { icon: <CheckCircle2 size={10} style={{ color: '#4ade80' }} />, text: c.trust[2] },
-              ].map(badge => (
+              {TRUST_BADGES.map(badge => (
                 <div
                   key={badge.text}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-slate-100 border border-slate-200 dark:bg-white/[0.035] dark:border-white/[0.07]"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                  style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}
                 >
                   {badge.icon}
-                  <span className="text-[10px] font-medium text-slate-500 dark:text-white/30 whitespace-nowrap">{badge.text}</span>
+                  <span className="text-[10px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
                 </div>
               ))}
             </div>
 
-            {/* Copyright */}
-            <p className="text-[11px] text-slate-400 dark:text-white/20" dir="ltr">{c.copyright}</p>
+            {/* Copyright + Made in Israel */}
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[10.5px] font-medium text-white/30 rounded-full px-3 py-1.5"
+                style={{
+                  background: 'rgba(255,255,255,0.035)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: '0 0 12px rgba(99,102,241,0.08)',
+                }}
+              >
+                {c.madeInIsrael}
+              </span>
+              <p className="text-[11px] text-white/20" dir="ltr">{c.copyright}</p>
+            </div>
           </div>
 
           {/* Legal note */}
-          <p className="mt-3 text-[10px] text-slate-400 dark:text-white/14 leading-relaxed">
+          <p className="mt-3 text-[10px] text-white/14 leading-relaxed">
             {c.legalNote}
           </p>
         </div>
