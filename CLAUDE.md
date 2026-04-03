@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–47.4 (Billing Management).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–48.5 (Legal Pages Overhaul + Knowledge Base Rebuild).
 
 ---
 
@@ -155,7 +155,7 @@ src/
 │   └── ui/
 │       ├── PremiumInputs.tsx      # Shared input primitives (Radix slider, date picker)
 │       ├── AccessibilityWidget.tsx # Draggable FAB + fixed panel, 14 a11y controls, IS 5568 / WCAG 2.2 AA
-│       ├── HelpCenterDrawer.tsx   # Side drawer with 10 bilingual FAQ items + category filter; controlled via props
+│       ├── HelpCenterDrawer.tsx   # Side drawer with 44 bilingual FAQ items, 5 categories; controlled via props
 │       └── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
 │
 ├── stores/
@@ -1293,7 +1293,6 @@ STRIPE_PRICE_PREMIUM=price_...                 # Stripe Price ID for Unlimited p
 | `dealspace:vat-rate` | decimal string e.g. `'0.18'` | Profile.tsx |
 | `dealspace:view-mode` | `'grid'` \| `'kanban'` | Dashboard.tsx |
 | `dealspace:demo-injected` | `'true'` | useProposalStore |
-| `dealspace:contract-defaults` | JSON string | ContractLibrary |
 | `ds:a11y:*` | various | useAccessibilityStore (14 keys) |
 
 ---
@@ -1320,7 +1319,7 @@ supabase migration repair --status applied <timestamp>
 ## 21. Known Patterns & Decisions
 
 ### GlobalFooter coverage
-`GlobalFooter` is imported individually into each page that needs it (Dashboard, LandingPage, DealRoom, Profile, ContractLibrary, ServicesLibrary, TermsOfService, PrivacyPolicy, Legal/Security, AccessibilityStatement). It is NOT injected globally in App.tsx — ProposalBuilder uses a fixed-height split-screen layout that has no room for a footer, and adding it globally would break that layout.
+`GlobalFooter` is imported individually into each page that needs it (Dashboard, LandingPage, DealRoom, Profile, ServicesLibrary, Integrations, Billing, TermsOfService, PrivacyPolicy, Legal/Security, AccessibilityStatement). It is NOT injected globally in App.tsx — ProposalBuilder uses a fixed-height split-screen layout that has no room for a footer, and adding it globally would break that layout.
 
 ### GlobalFooter z-index vs fixed aurora
 Every Dashboard-style page has a `DashboardAurora` component with `position: fixed; inset: 0`. Non-positioned elements (like `<footer>`) paint BELOW positioned elements in the CSS stacking order, making the footer visually invisible. The fix: `GlobalFooter`'s `<footer>` element has `className="relative z-10"`, which places it above the fixed aurora. Any page with a fixed full-screen background must ensure its footer or content sections have `relative z-index` set.
@@ -1536,7 +1535,7 @@ All filter effects are combined into one `style.filter` string (never stacked la
 - **Controlled mode**: pass `open` + `onClose` props → no floating FAB rendered. Used from Dashboard Navbar.
 - **Uncontrolled mode**: no props → self-contained with desktop-only (`hidden sm:flex`) floating FAB. Used on non-Dashboard pages via App.tsx if needed.
 - Bilingual FAQ items sourced from `src/lib/knowledgeBase.ts` (`KNOWLEDGE_BASE` array)
-- Category filter: All / Sending / Pricing / Legal / Settings / Services & Terms (updated Sprint 44.9)
+- Category filter: All / Getting Started / Building Proposals / Sending & Tracking / Legal & Terms / Settings & Billing (Sprint 48.5)
 - Dashboard Navbar renders a `<HelpCircle>` button that opens the drawer in controlled mode
 
 ### Dashboard mobile layout
@@ -2443,20 +2442,38 @@ const canSign = clientDetailsConfirmed && signatureConfirmed && legalConsent
 
 The consent checkbox appears via `AnimatePresence` only after the signature is drawn and only when terms exist. It is separate from and in addition to the existing DealSpace platform `legalConsent` checkbox.
 
-### knowledgeBase.ts — Help Center FAQ
+### knowledgeBase.ts — Help Center FAQ (Sprint 48.5)
 
-`src/lib/knowledgeBase.ts` contains `KNOWLEDGE_BASE: KBItem[]` and `KB_CATEGORIES`. The category previously named "Services & Contracts" / "שירותים וחוזים" was renamed to "Services & Terms" / "שירותים ותנאים" (Sprint 44.9). Contract-related FAQ items were removed and replaced with business terms items.
+`src/lib/knowledgeBase.ts` contains `KNOWLEDGE_BASE: KBItem[]` (44 items) and `KB_CATEGORIES` (5 categories). Sprint 48.5 fully rebuilt the knowledge base: dead features removed (Video Pitch, Contract Library, wrong quotas), all inaccurate items corrected (VAT model, plan limits, refund policy), and new items added for all features introduced since Sprint 44 (Business Terms, Expiry Lock, Document-Only Mode, Smart WhatsApp Follow-up, Billing/cancellation with firm no-refund policy).
 
 ```ts
 interface KBItem {
-  id: string
+  category: string   // NO 'id' field — category is the only metadata key
   q_he: string
   q_en: string
   a_he: string
   a_en: string
-  category: string
 }
 ```
+
+**KB_CATEGORIES (Sprint 48.5):**
+```ts
+export const KB_CATEGORIES = [
+  { key: 'getting_started',    label_he: 'התחלה מהירה',    label_en: 'Getting Started',     color: '#818cf8' },
+  { key: 'creating_proposals', label_he: 'בניית הצעות',    label_en: 'Building Proposals',   color: '#a78bfa' },
+  { key: 'sending_tracking',   label_he: 'שליחה ומעקב',    label_en: 'Sending & Tracking',   color: '#fbbf24' },
+  { key: 'legal_terms',        label_he: 'משפטי ותנאים',   label_en: 'Legal & Terms',         color: '#34d399' },
+  { key: 'settings_billing',   label_he: 'הגדרות וחיוב',   label_en: 'Settings & Billing',   color: '#f87171' },
+]
+```
+
+Item breakdown: 6 Getting Started, 8 Building Proposals, 8 Sending & Tracking, 9 Legal & Terms, 13 Settings & Billing.
+
+Key policy items verified against live codebase:
+- **Plan quotas:** Free = 5/month, Pro = 100/month, Premium = unlimited
+- **VAT model:** Israeli gross-price extraction (`netFromGross()`), "מתוכם מע"מ" pattern — VAT never added on top
+- **Cancellation:** end of current billing cycle, no partial/pro-rata refunds (firm policy, no exceptions)
+- **Webhooks:** Pro+ only (not Free)
 
 ---
 
@@ -2681,6 +2698,58 @@ The "חיוב ומנוי / Billing & Subscription" item in the `ProtectedLayout`
 
 ---
 
+## 38. Legal Pages Overhaul (Sprint 48)
+
+All four public legal pages were fully rewritten for production launch readiness:
+
+### TermsOfService.tsx (v3.0) — `/terms`
+
+Key clause additions:
+- **Clause 3 — Technology Platform:** DealSpace is a technology platform, not a party to any contract formed between creator and client. DealSpace bears no liability for the commercial terms of proposals.
+- **Clause 5 — E-signature validity:** References Israeli Electronic Signature Law 5761-2001. Describes the full forensic audit chain (IP address, user agent, UTC timestamp, PNG signature image) stored in the immutable certificate.
+- **Clause 7 — Payments:** Stripe PCI-DSS Level 1 compliance, zero card storage on DealSpace servers.
+- **Clause 8 — Consumer Protection:** Israeli Consumer Protection Law 5741-1981, 14-day cancellation right for subscription services.
+- **Clause 9 — AI Disclaimer:** AI Ghostwriter generates suggestions only; creator bears full responsibility for proposal content; DealSpace provides no legal or financial advice.
+
+### PrivacyPolicy.tsx (v3.0) — `/privacy`
+
+Key additions:
+- **Data Controller / Data Processor distinction:** Creator is the Data Controller for client data collected through proposals. DealSpace is the Data Processor acting on creator's behalf.
+- **Forensic data section:** Explicitly documents IP address, user agent, and UTC timestamp collected at signing — explains purpose (immutable audit trail for e-signature law compliance).
+- **Named third-party processors:** Resend Inc. (email delivery), Supabase Inc. (database & auth), Stripe Inc. (payments).
+- **Dual compliance:** Israeli Privacy Protection Law 5741-1981 + GDPR-aligned language for international clients.
+
+### Legal.tsx — Security Center — `/security`
+
+Key additions/updates:
+- **Immutable audit trail:** Describes forensic certificate as locked and tamper-evident from the moment of signing.
+- **PCI-DSS Level 1:** Explicit statement that payment processing is exclusively through Stripe; DealSpace never stores, transmits, or processes card data.
+- **Infrastructure:** TLS 1.3 in transit, AES-256 at rest, Row Level Security at PostgreSQL level, PKCE authentication flow.
+- **Breach notification:** 72-hour commitment to notify affected users following a confirmed security incident.
+- **IS 5568 / WCAG 2.2 AA:** Accessibility compliance documented.
+- **Responsible Disclosure:** Program description for security researchers.
+
+### AccessibilityStatement.tsx — `/accessibility`
+
+- New section: **Built-in Accessibility Widget** — documents all 14 built-in controls from `useAccessibilityStore`:
+  text size, high contrast, monochrome, invert colors, color-blind modes (protanopia/deuteranopia/tritanopia), dyslexia font (Atkinson Hyperlegible), readable font (Arial), line height boost, letter spacing, reading mask, stop animations, highlight links, focus highlight, big cursor.
+- Both Hebrew and English statements updated to reference the widget.
+
+### Dark mode card fix — `bg-white dark:bg-transparent`
+
+Legal pages use glass card components with `bg-white` in light mode. In dark mode, `bg-white` sets `background-color: white` while `dark:bg-gradient-to-br` sets only `background-image` — a different CSS property. The `background-color` bleeds through, making glass cards appear solid white with invisible text.
+
+**Fix:** Add `dark:bg-transparent` to card `className`, which overrides `background-color` in dark mode so the page's dark background (`#05050A`) shows through the gradient.
+
+```tsx
+// ✅ Correct pattern for glass cards on legal pages
+const CARD_CLS = 'bg-white dark:bg-transparent dark:bg-gradient-to-br ...'
+```
+
+**Also:** Replace hardcoded hex heading colors (`#c4b5fd`, `#818cf8`, etc.) with Tailwind `dark:`-aware classes to prevent pre-hydration flash of unstyled content (FOUC).
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -2770,3 +2839,6 @@ The "חיוב ומנוי / Billing & Subscription" item in the `ProtectedLayout`
 - **Do not hardcode Stripe Payment Links or Customer Portal URL** — these live in `.env.local` as `VITE_STRIPE_PRO_LINK`, `VITE_STRIPE_PREMIUM_LINK`, `VITE_STRIPE_CUSTOMER_PORTAL`. Read via `src/lib/stripe.ts` constants. All Stripe-related components check `if (url)` or `if (STRIPE_CUSTOMER_PORTAL)` before enabling CTAs — never assume the env vars are set.
 - **Do not redirect users to Stripe without `client_reference_id`** — always use `buildCheckoutUrl(link, userId, email)` from `src/lib/stripe.ts`. The `client_reference_id` is the Supabase user UUID; it is the only reliable way the `stripe-webhook` edge function can identify which user just paid on `checkout.session.completed`.
 - **Do not open Stripe Payment Links in a new tab** — use `window.location.href = url` (same tab). This is the correct pattern for checkout flows. Opening in a new tab breaks the return-URL redirect and the user ends up with a dangling tab after completing payment.
+- **Do not use `bg-white` alone on glass cards inside dark-mode pages** — `bg-white` sets `background-color: white`; `dark:bg-gradient-to-br` sets only `background-image`. Since `background-color` is a different CSS property, it bleeds through the gradient, making cards appear solid white with invisible dark-mode text. Always pair with `dark:bg-transparent` to nullify the background-color in dark mode: `className="bg-white dark:bg-transparent dark:bg-gradient-to-br ..."`. This bug affected all four legal pages (TermsOfService, PrivacyPolicy, Legal, AccessibilityStatement) and was fixed in Sprint 48.
+- **Do not hardcode hex colors for section headings on legal/public pages** — hardcoded values like `color: '#c4b5fd'` bypass Tailwind's dark-mode awareness and can cause a flash of unstyled content (FOUC) on page load. Use Tailwind `dark:text-*` classes instead (e.g., `className="text-gray-900 dark:text-violet-300"`).
+- **Do not add an `id` field to `KBItem` objects in `knowledgeBase.ts`** — the `KBItem` interface only has `category`, `q_he`, `q_en`, `a_he`, `a_en`. There is no `id` field. The `HelpCenterDrawer` uses array index for keys. Adding `id` to items without adding it to the interface causes `tsc -b` to fail.
