@@ -142,6 +142,31 @@ function HebrewStatement() {
         </Paragraph>
       </Section>
 
+      <Section title="כלי הנגישות המובנה — 14 פקדי נגישות">
+        <Paragraph>
+          DealSpace כוללת כלי נגישות מובנה הזמין בכל דפי הפלטפורמה — ללא צורך בהורדה או התקנה. הכלי נגיש דרך כפתור FAB קבוע בפינת המסך. להלן 14 הפקדים הזמינים:
+        </Paragraph>
+        <BulletList items={[
+          'גודל טקסט — הגדלת הגופן בין 100% ל-150% ב-5 רמות, ללא שינוי פריסת הדף.',
+          'ניגוד גבוה — מגביר ניגוד, בהירות וצבעוניות לשיפור קריאות עבור לקויי ראייה.',
+          'מונוכרום — הצגת כל הממשק בגוני אפור להפחתת עומס ויזואלי.',
+          'היפוך צבעים — היפוך מלא של כל צבעי המסך עם סיבוב גוון לשמירת קריאות.',
+          'מצב עיוורון צבעים — תיקון מותאם לשלושה סוגים: פרוטנופיה (אדום-ירוק), דאוטרנופיה (ירוק), וטריטנופיה (כחול-צהוב).',
+          'גופן דיסלקציה — מעבר לגופן Atkinson Hyperlegible, המיועד לשיפור קריאות עבור לוקים בדיסלקציה.',
+          'גופן קריא — מעבר לגופן Arial סטנדרטי להפחתת עומס קוגניטיבי.',
+          'מרווח שורות מוגדל — הגדלת גובה השורה ל-2.1 לשיפור הפרדה בין שורות טקסט.',
+          'מרווח אותיות — הגדלת ריווח בין אותיות ב-0.06em לשיפור קריאות.',
+          'מסכת קריאה — שכבת הדגשה הנעה עם הסמן לסיוע בקריאה ממוקדת שורה אחר שורה.',
+          'עצירת אנימציות — השבתת כל האנימציות והמעברים בפלטפורמה עבור אנשים עם רגישות לתנועה (Vestibular Disorders).',
+          'הדגשת קישורים — הוספת מסגרת צהובה לכל קישורי הדף ולכפתורים לשיפור מיקומם החזותי.',
+          'הדגשת פוקוס — הצגת מסגרת פוקוס עבה וצהובה על כל אלמנט בפוקוס לשיפור ניווט במקלדת.',
+          'סמן מוגדל — הגדלת סמן העכבר לנראות מרבית עבור לקויי ראייה ומנועיות.',
+        ]} />
+        <Paragraph>
+          כל ההגדרות נשמרות אוטומטית ב-localStorage ומיושמות באופן מיידי על ה-DOM — הן נשמרות בין ביקורים ופעילות הדפדפן.
+        </Paragraph>
+      </Section>
+
       <Section title="מגבלות ידועות">
         <Paragraph>
           על אף מאמצינו לעמוד בכל דרישות התקן, קיימות מגבלות ידועות הנובעות מאופי השירות:
@@ -266,6 +291,31 @@ function EnglishStatement() {
         </div>
         <Paragraph>
           <span className="font-medium text-slate-700 dark:text-white/70">Note:</span> DealSpace is fully responsive and optimized for all screen sizes — mobile, tablet, and desktop.
+        </Paragraph>
+      </Section>
+
+      <Section title="Built-in Accessibility Widget — 14 Controls">
+        <Paragraph>
+          DealSpace includes a built-in accessibility widget available on every page of the platform — no download or installation required. The widget is accessible via a fixed FAB button in the corner of the screen. The following 14 controls are available:
+        </Paragraph>
+        <BulletList items={[
+          'Text Size — Increase font size from 100% to 150% across 5 levels, without altering page layout.',
+          'High Contrast — Boosts contrast, brightness, and saturation to improve readability for users with low vision.',
+          'Monochrome — Renders the entire interface in greyscale to reduce visual overload.',
+          'Invert Colors — Full color inversion with hue rotation to preserve readability.',
+          'Color Blind Mode — Tailored correction for three types: Protanopia (red-green), Deuteranopia (green), and Tritanopia (blue-yellow).',
+          'Dyslexia Font — Switches to Atkinson Hyperlegible, designed to improve readability for users with dyslexia.',
+          'Readable Font — Switches to standard Arial to reduce cognitive load.',
+          'Line Height Boost — Increases line height to 2.1 for improved separation between lines of text.',
+          'Letter Spacing — Increases inter-character spacing by 0.06em for improved readability.',
+          'Reading Mask — A highlight overlay that follows the cursor to assist line-by-line focused reading.',
+          'Stop Animations — Disables all animations and transitions on the platform for users with vestibular disorders.',
+          'Highlight Links — Adds a yellow border to all page links and buttons for improved visual identification.',
+          'Focus Highlight — Displays a thick yellow focus ring on every focused element for improved keyboard navigation.',
+          'Big Cursor — Enlarges the mouse cursor for maximum visibility for users with low vision or motor impairments.',
+        ]} />
+        <Paragraph>
+          All settings are automatically saved to localStorage and applied immediately to the DOM — they persist across visits and browser sessions.
         </Paragraph>
       </Section>
 

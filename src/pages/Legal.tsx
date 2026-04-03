@@ -25,80 +25,80 @@ interface LegalContent {
 const content: Record<LegalType, Record<'he' | 'en', LegalContent>> = {
   security: {
     he: {
-      title: 'אבטחת מידע',
-      subtitle: 'כיצד אנו מגנים על הנתונים שלך',
+      title: 'מרכז האבטחה',
+      subtitle: 'ארכיטקטורת האבטחה, הפורנזיקה והציות הרגולטורי של DealSpace',
       effective: 'תוקף מיום 1 בינואר 2026',
       sections: [
         {
-          title: '1. תשתית ואחסון',
-          body: 'הנתונים מאוחסנים על שרתי Supabase (AWS eu-central-1). תשתית הענן עומדת בתקן SOC 2 Type II ו-ISO 27001. הנתונים מוצפנים בתעבורה באמצעות TLS 1.3 ובאחסון באמצעות AES-256. לא מאוחסנים נתוני תשלום — כל עסקאות התשלום מעובדות ישירות דרך Stripe.',
+          title: '1. שרשרת ביקורת בלתי ניתנת לשינוי — מזהה פורנזי בכל חוזה',
+          body: 'כל חוזה חתום ב-DealSpace מכיל תעודת אימות פורנזית נעולה ובלתי ניתנת לשינוי, המוטבעת ישירות בקובץ ה-PDF החתום. שרשרת הביקורת כוללת: (א) תמונת PNG של החתימה הידנית של החותם; (ב) חותמת זמן מדויקת ב-UTC ISO 8601; (ג) כתובת ה-IP המלאה של החותם בעת האירוע; (ד) User Agent מלא — דפדפן, מערכת הפעלה וגרסה; (ה) שם מלא וחברה ומספר ח.פ / ע.מ של החותם כפי שהוזנו; (ו) Token ייחודי לזיהוי המסמך. שרשרת ראיות זו עומדת בדרישות חוק חתימה אלקטרונית, התשס"א-2001, ומספקת בסיס ראייתי מוצק לאכיפה משפטית. ה-PDF נוצר ומוחתם אחת ולתמיד — ולא ניתן לשנותו לאחר החתימה.',
         },
         {
-          title: '2. אימות וגישה',
-          body: 'DealSpace משתמשת ב-Supabase Auth עם תמיכה מלאה ב-OAuth 2.0 ו-PKCE. סיסמאות מוצפנות באמצעות bcrypt עם salt ייחודי. הגישה לנתונים נשלטת על ידי Row Level Security (RLS) — כל משתמש ניגש לנתוניו בלבד. פגי תוקף אסימוני גישה מוגדרים ל-1 שעה עם רענון אוטומטי.',
+          title: '2. תשתית ענן — אבטחת מסד הנתונים',
+          body: 'הנתונים מאוחסנים על שרתי Supabase (AWS eu-central-1, פרנקפורט, גרמניה) העומדים בתקן SOC 2 Type II ו-ISO 27001. הגישה לנתונים מוגנת ברמת מסד הנתונים על ידי Row Level Security (RLS) — כל יוצר ניגש אך ורק להצעות שלו; ניסיון גישה לנתוני יוצר אחר נחסם ברמת ה-PostgreSQL, עוד לפני שהבקשה מגיעה לשכבת האפליקציה. אסימוני JWT נחתמים ב-RS256 ופגי תוקפם לאחר שעה אחת, עם רענון אוטומטי. מפתחות API לשירותים חיצוניים מאוחסנים כמשתני סביבה מוצפנים ב-Edge Functions בלבד — אינם נחשפים ל-Client-Side JavaScript לעולם.',
         },
         {
-          title: '3. הצפנת נתונים',
-          body: 'כל תעבורת הרשת מוצפנת ב-TLS 1.3. מסדי הנתונים מוצפנים במנוחה באמצעות AES-256. גיבויים מוצפנים באמצעות מפתחות נפרדים. מפתחות ה-API לשירותי צד שלישי מאוחסנים כמשתני סביבה מוצפנים ולא נחשפים ל-Client-Side JavaScript.',
+          title: '3. הצפנה מקצה לקצה — TLS 1.3 + AES-256',
+          body: 'כל תעבורת הרשת בין הדפדפן לשרת מוצפנת ב-TLS 1.3, הפרוטוקול המאובטח ביותר הזמין, המחייב Perfect Forward Secrecy בכל חיבור. מסדי הנתונים מוצפנים במנוחה באמצעות AES-256. גיבויים מוצפנים עם מפתחות נפרדים שאינם קשורים למפתחות הנתונים הראשיים. מנגנון ה-PKCE (Proof Key for Code Exchange) מגן על תהליכי ה-OAuth ומונע תקיפות CSRF על תהליך ההתחברות. הסיסמאות עוברות Hash עם bcrypt ו-salt ייחודי לכל משתמש; DealSpace לעולם אינה שומרת סיסמה בכתב ברור.',
         },
         {
-          title: '4. חתימות אלקטרוניות',
-          body: 'חתימות אלקטרוניות נשמרות כתמונת PNG מוצפנת המוטבעת ב-PDF. כל אירוע חתימה נרשם עם חותמת זמן, כתובת IP, ו-User Agent. הנתונים נשמרים בצמידות להסכם ומשמשים כראיה חוקית לפי חוק חתימה אלקטרונית, התשס"א-2001.',
+          title: '4. PCI-DSS Level 1 — אפס אחסון נתוני תשלום',
+          body: 'DealSpace לא מאחסנת, לא מעבדת ולא מעבירה נתוני כרטיסי אשראי. כל עסקאות התשלום מנותבות ישירות דרך Stripe Inc., ספק תשלומים המאושר ברמה הגבוהה ביותר PCI-DSS Level 1 Service Provider. מספרי כרטיסים, קודי CVV, ומידע בנקאי אינם חולפים דרך שרתי DealSpace — הם מוזנים ישירות לממשק המוצפן של Stripe. DealSpace מקבלת מ-Stripe אסימוני לקוח (customer_id) ומנוי (subscription_id) בלבד — מזהים שאינם מאפשרים חיוב עצמאי. בדיקת אבטחת תשלומים עצמאית מתבצעת מדי שנה.',
         },
         {
-          title: '5. ניטור ותגובה לאירועים',
-          body: 'הפלטפורמה מנוטרת 24/7 לזיהוי חריגות, ניסיונות פריצה ופעילות חשודה. אנו מפעילים מדיניות נעילת חשבון לאחר מספר ניסיונות כניסה כושלים. דיווח על פרצות אבטחה: security@dealspace.app. יש לקצוב תגובה תוך 72 שעות.',
+          title: '5. ניטור, זיהוי חדירות ותגובה לאירועים',
+          body: 'הפלטפורמה מנוטרת 24/7 לזיהוי חריגות, ניסיונות פריצה ופעילות חשודה. מדיניות נעילת חשבון אוטומטית מופעלת לאחר ניסיונות התחברות כושלים חוזרים. לפי חוק הגנת הפרטיות, התשמ"א-1981, ותקנות הגנת המידע האירופיות (GDPR), DealSpace מתחייבת להודיע לרשויות המוסמכות ולמשתמשים המושפעים תוך 72 שעות מגילוי פרצת אבטחה מהותית. לדיווח על פגיעויות אבטחה: security@dealspace.app. אנו מעריכים ומכבדים גילוי אחראי (Responsible Disclosure).',
         },
         {
-          title: '6. תוכנית תגמול חוקרי אבטחה (Bug Bounty)',
-          body: 'DealSpace מעריכה את קהילת מחקר האבטחה. אנו מזמינים חוקרים לדווח על פגיעויות בצורה אחראית דרך security@dealspace.app. דיווחים תקינים יזכו להכרה ציבורית ואפשרות לתגמול כספי בהתאם לחומרת הפגיעות.',
+          title: '6. ציות רגולטורי מקיף',
+          body: 'DealSpace תוכננה מהיסוד לעמוד בדרישות הרגולטוריות הקשוחות ביותר: חוק הגנת הפרטיות, התשמ"א-1981 ותקנות אבטחת מידע, התשע"ז-2017 (ישראל); תקנות הגנת המידע הכלליות (GDPR) לגבי מידע של אזרחי האיחוד האירופי; תקן IS 5568 / WCAG 2.2 AA לנגישות דיגיטלית; חוק חתימה אלקטרונית, התשס"א-2001 לתוקף משפטי של חתימות; חוק הגנת הצרכן, התשמ"א-1981 לתנאי מנוי וביטול. ביקורות אבטחה חיצוניות מתבצעות מדי שנה על ידי גורם מבקר עצמאי.',
         },
         {
-          title: '7. ציות לרגולציה',
-          body: 'DealSpace פועלת בהתאם לחוק הגנת הפרטיות, התשמ"א-1981, תקנות GDPR (למשתמשים מהאיחוד האירופי), ומדיניות אבטחת מידע ISO 27001. אנו עוברים ביקורות אבטחה חיצוניות מדי שנה.',
+          title: '7. שחזור ורציפות עסקית',
+          body: 'גיבויים אוטומטיים של מסד הנתונים מתבצעים כל 6 שעות עם שמירה ל-30 יום. ה-RTO (Recovery Time Objective — זמן שחזור מרבי) עומד על 4 שעות, וה-RPO (Recovery Point Objective — מרב אובדן הנתונים) על 6 שעות. מסד הנתונים פרוס בארכיטקטורת High Availability עם Read Replica ועם פייל-אובר אוטומטי, המבטיחים המשך שירות אף בעת כשל בשרת הראשי. קיים תוכן אסון (Disaster Recovery Plan) מתועד ומוכן להפעלה מיידית.',
         },
         {
-          title: '8. שחזור ורציפות עסקית',
-          body: 'גיבויים אוטומטיים מתבצעים כל 6 שעות עם שמירה ל-30 יום. ה-RTO (Recovery Time Objective) עומד על 4 שעות, ה-RPO (Recovery Point Objective) על 6 שעות. בסיס הנתונים פרוס בסביבת High Availability עם פייל-אובר אוטומטי.',
+          title: '8. תוכנית גילוי אחראי (Responsible Disclosure)',
+          body: 'DealSpace מעריכה את קהילת מחקר האבטחה ורואה בה שותפה חיונית לשמירה על שלמות המערכת. אנו מזמינים חוקרי אבטחה לדווח על פגיעויות בצורה אחראית דרך: security@dealspace.app. יש לכלול בדיווח: תיאור מפורט של הפגיעות, שלבי שחזור, וסיכום ההשפעה הפוטנציאלית. DealSpace מתחייבת לתגובה ראשונית תוך 72 שעות, לעדכון מתמיד על מצב הטיפול, ולאי-נקיטת צעדים משפטיים כנגד חוקרים שפעלו בתום לב ובהתאם למדיניות זו. דיווחים תקינים שמובילים לתיקון פגיעות קריטיות יזכו בהכרה ציבורית ואפשרות לתגמול כספי.',
         },
       ],
     },
     en: {
-      title: 'Security Policy',
-      subtitle: 'How we protect your data and platform integrity',
+      title: 'Security Center',
+      subtitle: 'DealSpace\'s security architecture, forensic audit chain, and regulatory compliance',
       effective: 'Effective January 1, 2026',
       sections: [
         {
-          title: '1. Infrastructure & Storage',
-          body: 'Data is stored on Supabase (AWS eu-central-1) servers meeting SOC 2 Type II and ISO 27001 standards. All data is encrypted in transit via TLS 1.3 and at rest via AES-256. No payment data is stored — all transactions are processed directly through Stripe.',
+          title: '1. Immutable Audit Trail — Forensic Certificate in Every Signed Contract',
+          body: 'Every contract signed through DealSpace contains a locked, immutable forensic certificate embedded directly in the signed PDF — it cannot be altered after signing. The audit chain captures: (a) a PNG image of the signer\'s handwritten signature; (b) a precise UTC ISO 8601 timestamp; (c) the signer\'s full IP address at the time of the signing event; (d) the complete User Agent string — browser, operating system, and version; (e) the signer\'s full name, company name, and tax ID as entered at signing; (f) a unique document Token for identification. This evidence chain satisfies the requirements of Israeli Electronic Signature Law 5761-2001, providing a robust evidentiary foundation for legal enforcement. The PDF is generated and sealed once — it is technically immutable after signing.',
         },
         {
-          title: '2. Authentication & Access Control',
-          body: 'DealSpace uses Supabase Auth with full OAuth 2.0 and PKCE support. Passwords are hashed with bcrypt and unique salts. Data access is governed by Row Level Security (RLS) — each user accesses only their own data. Access tokens expire every hour with automatic refresh.',
+          title: '2. Cloud Infrastructure — Database-Level Security',
+          body: 'Data is stored on Supabase (AWS eu-central-1, Frankfurt, Germany) servers certified to SOC 2 Type II and ISO 27001 standards. Data access is protected at the database level by Row Level Security (RLS) — each Creator accesses only their own proposals; any attempt to access another Creator\'s data is blocked at the PostgreSQL level, before the request ever reaches the application layer. JWTs are signed with RS256 and expire after one hour, with automatic refresh. API keys for external services are stored as encrypted environment variables within Edge Functions only — they are never exposed to client-side JavaScript.',
         },
         {
-          title: '3. Data Encryption',
-          body: 'All network traffic is encrypted with TLS 1.3. Databases are encrypted at rest with AES-256. Backups are encrypted with separate keys. Third-party API keys are stored as encrypted environment variables and are never exposed to client-side JavaScript.',
+          title: '3. End-to-End Encryption — TLS 1.3 + AES-256',
+          body: 'All network traffic between the browser and server is encrypted with TLS 1.3 — the most secure protocol available — mandating Perfect Forward Secrecy on every connection. Databases are encrypted at rest with AES-256. Backups are encrypted with separate keys independent of primary data keys. The PKCE (Proof Key for Code Exchange) mechanism protects all OAuth flows and prevents CSRF attacks on the sign-in process. Passwords are hashed with bcrypt and a unique per-user salt; DealSpace never stores a password in plaintext.',
         },
         {
-          title: '4. Electronic Signatures',
-          body: 'Electronic signatures are stored as encrypted PNG images embedded in signed PDFs. Each signing event is logged with a timestamp, IP address, and User Agent. This data is stored alongside the agreement and serves as legal evidence under applicable electronic signature law.',
+          title: '4. PCI-DSS Level 1 — Zero Payment Data Storage',
+          body: 'DealSpace does not store, process, or transmit credit card data. All payment transactions are routed exclusively through Stripe Inc., a payment provider certified at the highest level — PCI-DSS Level 1 Service Provider. Card numbers, CVV codes, and banking information never traverse DealSpace\'s servers — they are entered directly into Stripe\'s encrypted interface. DealSpace receives only Stripe customer tokens (customer_id) and subscription identifiers — identifiers that cannot be used to independently initiate a charge. An independent payment security audit is conducted annually.',
         },
         {
-          title: '5. Monitoring & Incident Response',
-          body: 'The platform is monitored 24/7 for anomalies, intrusion attempts, and suspicious activity. Account lockout policies apply after multiple failed login attempts. Report security vulnerabilities to: security@dealspace.app. We commit to a 72-hour response time.',
+          title: '5. Monitoring, Intrusion Detection & Incident Response',
+          body: 'The platform is monitored 24/7 for anomalies, intrusion attempts, and suspicious activity. Automatic account lockout policies activate after repeated failed login attempts. Under the Israeli Privacy Protection Law (1981) and GDPR, DealSpace commits to notifying the relevant authorities and affected users within 72 hours of discovering a material security breach. To report a security vulnerability: security@dealspace.app. We appreciate and respect responsible disclosure.',
         },
         {
-          title: '6. Bug Bounty Program',
-          body: 'DealSpace values the security research community. We invite researchers to responsibly disclose vulnerabilities via security@dealspace.app. Valid reports receive public recognition and potential monetary rewards based on severity.',
+          title: '6. Comprehensive Regulatory Compliance',
+          body: 'DealSpace was designed from the ground up to meet the most demanding regulatory requirements: Israeli Privacy Protection Law 5741-1981 and Information Security Regulations 5777-2017; General Data Protection Regulation (GDPR) for EU citizen data; Israeli Standard IS 5568 / WCAG 2.2 AA for digital accessibility; Israeli Electronic Signature Law 5761-2001 for the legal validity of electronic signatures; Israeli Consumer Protection Law 5741-1981 for subscription and cancellation terms. Independent external security audits are conducted annually.',
         },
         {
-          title: '7. Regulatory Compliance',
-          body: 'DealSpace operates in compliance with applicable privacy protection laws, GDPR (for EU users), and ISO 27001 security management standards. We undergo annual third-party security audits.',
+          title: '7. Recovery & Business Continuity',
+          body: 'Automated database backups run every 6 hours with 30-day retention. Our RTO (Recovery Time Objective — maximum recovery time) is 4 hours, and our RPO (Recovery Point Objective — maximum data loss window) is 6 hours. The database is deployed in a High Availability architecture with a Read Replica and automatic failover, ensuring service continuity even during primary server failure. A documented Disaster Recovery Plan is maintained and ready for immediate activation.',
         },
         {
-          title: '8. Recovery & Business Continuity',
-          body: 'Automated backups run every 6 hours with 30-day retention. Our RTO is 4 hours and RPO is 6 hours. The database is deployed in a High Availability configuration with automatic failover.',
+          title: '8. Responsible Disclosure Program',
+          body: 'DealSpace values the security research community as a vital partner in maintaining platform integrity. We invite security researchers to responsibly disclose vulnerabilities via: security@dealspace.app. Please include a detailed description of the vulnerability, reproduction steps, and a summary of potential impact. DealSpace commits to an initial response within 72 hours, ongoing status updates throughout remediation, and no legal action against researchers acting in good faith and in accordance with this policy. Valid reports that lead to the remediation of critical vulnerabilities will receive public recognition and potential monetary rewards.',
         },
       ],
     },

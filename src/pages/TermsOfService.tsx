@@ -6,7 +6,6 @@ import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Legal Prose Styles ────────────────────────────────────────────────────────
-// Manually approximated since @tailwindcss/typography is not installed.
 
 const CARD_CLS = 'bg-white border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
 
@@ -16,7 +15,7 @@ interface Clause {
   num: string
   title_he: string
   title_en: string
-  body_he: string[]    // paragraphs
+  body_he: string[]
   body_en: string[]
 }
 
@@ -26,12 +25,12 @@ const CLAUSES: Clause[] = [
     title_he: 'מבוא וקבלת התנאים',
     title_en: 'Introduction & Acceptance of Terms',
     body_he: [
-      'ברוכים הבאים ל-DealSpace. הסכם תנאי שירות זה ("ההסכם" או "התנאים") מסדיר את היחסים המשפטיים בינך ("משתמש", "מנוי", "בעל עסק") לבין DealSpace Technologies Ltd. ("DealSpace", "אנו", "החברה"), חברה המפעילה פלטפורמה טכנולוגית ליצירת הצעות מחיר אינטראקטיביות, ניהול חוזים דיגיטליים ואיסוף חתימות אלקטרוניות.',
-      'השימוש בפלטפורמה, לרבות גלישה, הרשמה, יצירת חשבון, יצירת הצעת מחיר, שיתוף קישורים עם לקוחות, או כל פעולה אחרת בשירות — מהווה הסכמה מלאה, בלתי מסויגת ומחייבת לתנאים אלו. אם אינך מסכים לכל אחד מהתנאים המפורטים להלן, הינך מחויב להפסיק את השימוש בשירות לאלתר.',
+      'ברוכים הבאים ל-DealSpace. הסכם תנאי שירות זה ("ההסכם" או "התנאים") מסדיר את היחסים המשפטיים בינך ("משתמש", "מנוי", "יוצר") לבין DealSpace Technologies Ltd. ("DealSpace", "אנו", "החברה") — חברה המפעילה פלטפורמה טכנולוגית ליצירת הצעות מחיר אינטראקטיביות, ניהול מסמכים דיגיטליים ואיסוף חתימות אלקטרוניות.',
+      'השימוש בפלטפורמה — לרבות גלישה, הרשמה, יצירת חשבון, יצירת הצעת מחיר, שיתוף קישורים עם לקוחות, או כל פעולה אחרת בשירות — מהווה הסכמה מלאה, בלתי מסויגת ומחייבת לתנאים אלו. אם אינך מסכים לכל אחד מהתנאים המפורטים להלן, הינך מחויב להפסיק את השימוש בשירות לאלתר.',
       'גיל מינימלי: השירות מיועד לבגירים בני 18 שנה ומעלה בלבד. שימוש על ידי קטין מהווה הפרה מהותית של הסכם זה, ו-DealSpace תהיה רשאית לסגור את החשבון הנוגע בדבר ללא הודעה מוקדמת.',
     ],
     body_en: [
-      'Welcome to DealSpace. This Terms of Service Agreement ("Agreement" or "Terms") governs the legal relationship between you ("User", "Subscriber", "Business Owner") and DealSpace Technologies Ltd. ("DealSpace", "we", "Company"), a company operating a technology platform for interactive proposal creation, digital contract management, and electronic signature collection.',
+      'Welcome to DealSpace. This Terms of Service Agreement ("Agreement" or "Terms") governs the legal relationship between you ("User", "Subscriber", "Creator") and DealSpace Technologies Ltd. ("DealSpace", "we", "Company") — a company operating a technology platform for interactive proposal creation, digital document management, and electronic signature collection.',
       'Use of the platform — including browsing, registration, account creation, proposal creation, sharing links with clients, or any other action on the Service — constitutes full, unconditional, and binding agreement to these Terms. If you do not agree to any of the terms set forth herein, you must immediately cease use of the Service.',
       'Minimum Age: The Service is intended for adults aged 18 and older only. Use by a minor constitutes a material breach of this Agreement, and DealSpace may close the account in question without prior notice.',
     ],
@@ -42,179 +41,171 @@ const CLAUSES: Clause[] = [
     title_en: 'Key Term Definitions',
     body_he: [
       '"פלטפורמה" / "השירות" — מכלול הכלים, הממשקים, ממשקי ה-API, הרכיבים ותשתיות הענן המסופקים על ידי DealSpace בכתובת dealspace.app וכל תת-דומיין שלה.',
-      '"יוצר" — משתמש רשום המשתמש בפלטפורמה ליצירת הצעות מחיר ושליחתן ללקוחות. היוצר הוא הצד האחראי לתוכן ולתנאים הכלולים בהצעה.',
+      '"יוצר" — משתמש רשום המשתמש בפלטפורמה ליצירת הצעות מחיר ושליחתן ללקוחות. היוצר הוא הצד האחראי הבלעדי לתוכן, למחירים, לתנאי ההתקשרות ולתנאי העסק הגלובליים הכלולים בהצעה.',
       '"לקוח" — אדם או ישות שהיוצר שיתף איתם קישור לחדר עסקאות. הלקוח ניגש לפלטפורמה ללא צורך בחשבון רשום.',
-      '"חדר עסקאות" — ממשק דיגיטלי ציבורי המיוצר עבור כל הצעת מחיר, המאפשר ללקוח לצפות בהצעה, לבחור תוספות, וחתום עליה.',
-      '"חתימה אלקטרונית" — ייצוג גרפי של הסכמה שנאסף דרך ממשק הקנבס של DealSpace, המאוחסן כתמונת PNG ומוטבע ב-PDF החתום.',
-      '"תוכן משתמש" — כל מידע, תמונות, מחירים, תנאי חוזה, תיאורי שירות ונתוני לקוחות שמזין המשתמש לפלטפורמה.',
+      '"חדר עסקאות" — ממשק דיגיטלי ציבורי המיוצר עבור כל הצעת מחיר, המאפשר ללקוח לצפות בהצעה, לבחור תוספות ולחתום עליה אלקטרונית.',
+      '"חתימה אלקטרונית" — ייצוג גרפי של הסכמה שנאסף דרך ממשק הקנבס של DealSpace, המאוחסן כתמונת PNG ומוטבע ב-PDF החתום יחד עם נתוני ביקורת פורנזיים (IP, User Agent, חותמת זמן) לפי חוק חתימה אלקטרונית, התשס"א-2001.',
+      '"תוכן משתמש" — כל מידע, תמונות, מחירים, תנאי חוזה, תיאורי שירות, נתוני לקוחות ותנאי עסק גלובליים שמזין המשתמש לפלטפורמה.',
+      '"AI Ghostwriter" — כלי כתיבה מבוסס בינה מלאכותית המוטמע בפלטפורמה ומייצר הצעות טקסט לתיאורי פרויקטים. הפלט הוא הצעה בלבד ואינו מהווה ייעוץ משפטי, פיננסי, או עסקי מטעם DealSpace.',
     ],
     body_en: [
       '"Platform" / "Service" — The totality of tools, interfaces, APIs, components, and cloud infrastructure provided by DealSpace at dealspace.app and any subdomains thereof.',
-      '"Creator" — A registered user who uses the platform to create proposals and send them to clients. The Creator is the party responsible for the content and terms contained in the proposal.',
+      '"Creator" — A registered user who uses the platform to create proposals and send them to clients. The Creator is the sole party responsible for the content, pricing, contractual terms, and Global Business Terms contained in the proposal.',
       '"Client" — A person or entity with whom the Creator has shared a deal room link. The Client accesses the platform without requiring a registered account.',
-      '"Deal Room" — A public digital interface generated for each proposal, allowing the client to view the proposal, select add-ons, and sign it.',
-      '"Electronic Signature" — A graphical representation of consent collected through DealSpace\'s canvas interface, stored as a PNG image and embedded in the signed PDF.',
-      '"User Content" — All information, images, prices, contract terms, service descriptions, and client data entered by the User into the platform.',
+      '"Deal Room" — A public digital interface generated for each proposal, allowing the client to view the proposal, select add-ons, and electronically sign it.',
+      '"Electronic Signature" — A graphical representation of consent collected through DealSpace\'s canvas interface, stored as a PNG image and embedded in the signed PDF alongside forensic audit data (IP address, User Agent, timestamp) pursuant to the Israeli Electronic Signature Law, 5761-2001.',
+      '"User Content" — All information, images, prices, contract terms, service descriptions, client data, and Global Business Terms entered by the User into the platform.',
+      '"AI Ghostwriter" — An artificial intelligence writing tool embedded in the platform that generates text suggestions for project descriptions. The output is a suggestion only and does not constitute legal, financial, or business advice from DealSpace.',
     ],
   },
   {
     num: '3',
-    title_he: 'הרישיון ותחום השימוש המותר',
-    title_en: 'License & Permitted Use',
+    title_he: 'DealSpace כפלטפורמה טכנולוגית — לא צד לחוזה',
+    title_en: 'DealSpace as Technology Platform — Not a Party to Any Contract',
     body_he: [
-      'DealSpace מעניקה לך בזאת רישיון אישי, מוגבל, לא-בלעדי, שאינו ניתן להעברה ולא ניתן לרישיון-משנה, לשימוש בפלטפורמה אך ורק למטרות עסקיות לגיטימיות ובכפוף לתנאים המפורטים בהסכם זה.',
-      'שימושים אסורים במפורש: (א) יצירת הצעות מחיר הכוללות תוכן מטעה, הונאתי, לא-חוקי, פוגעני, מגדיל ראש, מפר זכויות יוצרים, מפר פרטיות, או מהווה לשון הרע; (ב) שימוש בפלטפורמה לשיגור ספאם, הונאות פישינג, או כל פגיעה בצדדים שלישיים; (ג) ניסיון לפרוץ, לעקוף, לחסום, לשבש, להסיח, לפרק לרכיבים, לשכפל, לסרוק, לבצע הנדסה הפוכה, או להעתיק כל חלק מהפלטפורמה; (ד) יצירת חשבונות מרובים לצורכי עקיפת הגבלות מנוי; (ה) שימוש בבוטים, זחלנים, או אמצעי אוטומציה כלשהם ללא אישור מפורש בכתב.',
-      'DealSpace שומרת לעצמה את הזכות לשנות, להשעות, לצמצם, או להפסיק את הגישה לשירות בכל עת, בהתאם שיקול דעתה הבלעדי, עבור כל משתמש המפר את תנאי הרישיון.',
+      'DealSpace מספקת פלטפורמה טכנולוגית בלבד — כלי לניהול הצעות מחיר, חתימות אלקטרוניות ותיעוד עסקי. DealSpace אינה צד לשום הסכם, חוזה, עסקה, או התקשרות הנחתמת בין היוצר לבין הלקוח שלו דרך הפלטפורמה. DealSpace היא "מוביל טכנולוגי" (Technology Conduit) ולא שותפה, ערבה, ממליצה, או מאמתת של כל תוכן עסקי.',
+      'היוצר הוא הצד האחראי הבלעדי לכל תוכן שהוא מפרסם, לרבות: (א) מחירים ותנאי תשלום; (ב) תיאורי שירותים ומפרטים; (ג) תנאי ההתקשרות הגלובליים שהוא מצרף לכל הצעה; (ד) ציות לכלל החוקים החלים, לרבות חוק הגנת הצרכן, חוק הרוכלות, חוקי עבודה ומיסוי, חוק הסכמים אחידים; (ה) כל ייצוג, הבטחה, אחריות, מצג, או התחייבות שנכלל בהצעה.',
+      'DealSpace אינה בודקת, אינה מאמתת, ואינה ערבה לכשרות המשפטית, לדיוק, לשלמות, לאמיתות, או לאכיפות של כל תוכן שיוצרים מפרסמים על הפלטפורמה, לרבות תנאי עסק גלובליים. DealSpace לא תישא בכל אחריות בגין סכסוך שינבע מהסכם בין יוצר ללקוח.',
     ],
     body_en: [
-      'DealSpace hereby grants you a personal, limited, non-exclusive, non-transferable, non-sublicensable license to use the platform solely for legitimate business purposes and subject to the terms set forth in this Agreement.',
-      'Expressly prohibited uses: (a) creating proposals containing misleading, fraudulent, illegal, offensive, arrogant, copyright-infringing, privacy-violating, or defamatory content; (b) using the platform to send spam, phishing scams, or any harm to third parties; (c) attempting to break into, bypass, block, disrupt, distract, disassemble, replicate, scan, reverse-engineer, or copy any part of the platform; (d) creating multiple accounts to circumvent subscription restrictions; (e) using bots, crawlers, or any automation means without explicit written authorization.',
-      'DealSpace reserves the right to modify, suspend, reduce, or terminate access to the Service at any time, at its sole discretion, for any user violating the license terms.',
+      'DealSpace provides a technology platform only — a tool for proposal management, electronic signatures, and business documentation. DealSpace is not a party to any agreement, contract, transaction, or arrangement executed between the Creator and their Client through the platform. DealSpace is a "Technology Conduit" and not a partner, guarantor, endorser, or validator of any business content.',
+      'The Creator is solely and exclusively responsible for all content they publish, including: (a) pricing and payment terms; (b) service descriptions and specifications; (c) Global Business Terms attached to each proposal; (d) compliance with all applicable laws, including consumer protection law, solicitation law, labor and tax laws, and standard contract laws; (e) any representation, promise, warranty, statement, or commitment included in the proposal.',
+      'DealSpace does not review, validate, or guarantee the legal validity, accuracy, completeness, truthfulness, or enforceability of any content published by Creators on the platform, including Global Business Terms. DealSpace shall bear no responsibility for any dispute arising from an agreement between a Creator and a Client.',
     ],
   },
   {
     num: '4',
-    title_he: 'אחריות המשתמש לתוכן ולהצעות',
-    title_en: 'User Responsibility for Content & Proposals',
+    title_he: 'חשבון משתמש ואבטחה',
+    title_en: 'User Account & Security',
     body_he: [
-      'המשתמש הוא האחראי הבלעדי לכל תוכן שמועלה, נוצר, נשלח, או מופץ דרך הפלטפורמה. זה כולל, אך אינו מוגבל ל: מחירים, תנאי תשלום, תיאורי שירות, לוחות זמנים, תנאי ביטול, מסמכי חוזה, ופרטי לקוחות.',
-      'DealSpace אינה בודקת, מאשרת, מסווגת, מוודאת, מנטרת, ואינה מחויבת לבדוק את תוכן ההצעות שנוצרות על ידי משתמשים. DealSpace פועלת אך ורק כמאחסן פסיבי של תוכן המשתמש.',
-      'המשתמש מצהיר ומתחייב כי: (א) הוא בעל כל הזכויות הנדרשות לפרסום התוכן; (ב) התוכן אינו מפר כל חוק, תקנה, או זכות של צד שלישי; (ג) הוא יישא בכל אחריות משפטית, עסקית ומסחרית הנובעת מהצעות המחיר שיצר.',
+      'לצורך שימוש בפלטפורמה, עליך ליצור חשבון עם פרטי זיהוי תקינים ואמיתיים. המשתמש אחראי לשמירת סודיות פרטי הגישה לחשבונו (שם משתמש, סיסמה, קודי גישה). יש להודיע ל-DealSpace מיידית על כל שימוש בלתי מורשה בחשבונך בכתובת security@dealspace.app.',
+      'DealSpace לא תישא בכל אחריות לנזקים הנגרמים מגישה בלתי מורשית לחשבון שנגרמה עקב: (א) גילוי פרטי הגישה על ידי המשתמש לצדדים שלישיים; (ב) שימוש בסיסמה חלשה; (ג) שימוש ברשת לא מאובטחת; (ד) אי-שימוש במנגנוני אימות רב-שלבי הזמינים; (ה) כל מחדל אחר של המשתמש.',
+      'DealSpace שומרת לעצמה את הזכות להשעות, להגביל, או לסגור חשבון שבו זוהתה פעילות חשודה, הפרת תנאי שימוש, פעילות הונאה, ניסיון פריצה, שימוש לרעה בפלטפורמה, או פעילות שעלולה לסכן משתמשים אחרים.',
     ],
     body_en: [
-      'The User is solely responsible for all content uploaded, created, sent, or distributed through the platform. This includes, but is not limited to: prices, payment terms, service descriptions, timelines, cancellation terms, contract documents, and client data.',
-      'DealSpace does not review, approve, classify, verify, monitor, and is not obligated to review the content of proposals created by users. DealSpace operates solely as a passive host of User Content.',
-      'The User declares and undertakes that: (a) they hold all rights necessary to publish the content; (b) the content does not violate any law, regulation, or third-party right; (c) they will bear all legal, business, and commercial responsibility arising from the proposals they created.',
+      'To use the platform, you must create an account with valid and truthful identification details. The User is responsible for maintaining the confidentiality of their account access credentials (username, password, access codes). You must immediately notify DealSpace of any unauthorized use of your account at security@dealspace.app.',
+      'DealSpace shall not be liable for any damages resulting from unauthorized account access caused by: (a) disclosure of access credentials by the User to third parties; (b) use of a weak password; (c) use of an unsecured network; (d) failure to use available multi-factor authentication mechanisms; (e) any other User negligence.',
+      'DealSpace reserves the right to suspend, restrict, or close any account in which suspicious activity, terms violation, fraud, hacking attempt, platform abuse, or activity endangering other users has been identified.',
     ],
   },
   {
     num: '5',
-    title_he: 'היעדר ייעוץ משפטי — הצהרת ויתור קריטית',
-    title_en: 'No Legal Advice — Critical Disclaimer',
+    title_he: 'חתימה אלקטרונית — תוקף משפטי לפי חוק',
+    title_en: 'Electronic Signature — Legal Validity under Israeli Law',
     body_he: [
-      'הצהרה זו היא מהחשובות ביותר בהסכם זה. אנא קרא אותה בעיון רב.',
-      'DealSpace מספקת תבניות חוזה, מסגרות הסכם, ורכיבי טקסט משפטי-עסקי כנקודת פתיחה בלבד לשימושם של בעלי עסקים. DealSpace אינה משרד עורכי דין, אינה מספקת ייעוץ משפטי מכל סוג, ואין להתייחס לתוכן המשפטי המוצע בפלטפורמה כאל תחליף לייעוץ עורך דין מוסמך.',
-      'כל הסכם, חוזה, הצעת מחיר, או מסמך שנוצר דרך DealSpace ייחשב כמסמך שנוצר על ידי המשתמש — לא על ידי DealSpace. DealSpace לא בחנה את המסמך, לא אישרה את תקינותו המשפטית, ואינה ערבה לאכיפתו בפני כל ערכאה שיפוטית או מנהלית.',
-      'המשתמש מחויב, ובמיוחד לפני חתימה על הסכמים מסחריים מהותיים, להתייעץ עם עורך דין מוסמך הבקיא בדיני החוזים, דיני העבודה, דיני הצרכנות, ובדיני המס הרלוונטיים לתחום עיסוקו. DealSpace לא תישא בכל אחריות לנזקים הנובעים מהסתמכות על תוכן משפטי שנוצר בפלטפורמה ללא בדיקה מקצועית עצמאית.',
+      'חתימות אלקטרוניות שנאספות דרך DealSpace כפופות לחוק חתימה אלקטרונית, התשס"א-2001 (להלן: "חוק החתימה"). בהתאם לחוק, חתימה אלקטרונית שנאספה במתכונת הפלטפורמה מהווה הסכמה מחייבת בין הצדדים לה. DealSpace משמשת כמתווך טכנולוגי בלבד ואינה צד לשום הסכם החתום דרכה.',
+      'כל אירוע חתימה מתועד באמצעות שרשרת ראיות אלקטרונית בלתי ניתנת לשינוי, הכוללת: (א) תמונת החתימה הגרפית בפורמט PNG; (ב) חותמת זמן מדויקת (UTC) של מעמד החתימה; (ג) כתובת ה-IP של החותם; (ד) User Agent מלא (דפדפן, גרסה, מערכת הפעלה, מכשיר) של החותם; (ה) שם מלא, שם חברה, וח.פ/ת.ז של החותם שנמסרו בעת חתימה; (ו) מזהה ייחודי (Token) של המסמך החתום. כל הנתונים מוטבעים ב-PDF החתום ומשמשים ראיה לאמיתות החתימה.',
+      'DealSpace אינה מייעצת בנוגע לכשרותה המשפטית של חתימה אלקטרונית לשימושים ספציפיים (כגון: עסקאות מקרקעין, צוואות, ייפוי כוח נוטריוני, מסמכים הדורשים עדים). באחריות היוצר לוודא שהשימוש בחתימה אלקטרונית לצורכיו הספציפיים עולה בקנה אחד עם כל הדרישות החוקיות הרלוונטיות.',
     ],
     body_en: [
-      'This declaration is among the most important in this Agreement. Please read it carefully.',
-      'DealSpace provides contract templates, agreement frameworks, and business-legal text components as a starting point only for use by business owners. DealSpace is not a law firm, does not provide legal advice of any kind, and the legal content offered on the platform should not be treated as a substitute for advice from a qualified attorney.',
-      'Any agreement, contract, proposal, or document created through DealSpace shall be considered a document created by the User — not by DealSpace. DealSpace has not reviewed the document, has not approved its legal validity, and does not guarantee its enforceability before any judicial or administrative body.',
-      'The User is obligated, and especially before signing material commercial agreements, to consult with a qualified attorney well-versed in contract law, labor law, consumer law, and tax laws relevant to their field of business. DealSpace will not bear any liability for damages arising from reliance on legal content created on the platform without independent professional review.',
+      'Electronic signatures collected through DealSpace are subject to the Israeli Electronic Signature Law, 5761-2001 (the "Signature Law"). Pursuant to this law, an electronic signature collected via the platform constitutes a binding agreement between the signing parties. DealSpace serves solely as a technological intermediary and is not a party to any agreement signed through it.',
+      'Each signing event is documented through an immutable electronic evidence chain, including: (a) the graphical signature image in PNG format; (b) an exact timestamp (UTC) of the signing event; (c) the signer\'s IP address; (d) the signer\'s full User Agent (browser, version, operating system, device); (e) the signer\'s full name, company name, and tax ID provided at signing; (f) a unique Token identifier of the signed document. All data is embedded in the signed PDF and serves as evidence of signature authenticity.',
+      'DealSpace does not advise on the legal validity of an electronic signature for specific uses (such as real estate transactions, wills, notarial powers of attorney, or documents requiring witnesses). It is the Creator\'s responsibility to verify that the use of an electronic signature for their specific purposes complies with all relevant legal requirements.',
     ],
   },
   {
     num: '6',
-    title_he: 'חתימה אלקטרונית ותוקפה המשפטי',
-    title_en: 'Electronic Signature & Legal Validity',
+    title_he: 'תוכן משתמש ותנאי עסק גלובליים',
+    title_en: 'User Content & Global Business Terms',
     body_he: [
-      'חתימות אלקטרוניות הנאספות דרך הפלטפורמה של DealSpace כפופות לחוק חתימה אלקטרונית, התשס"א-2001 ("החוק"), ולכל תקנה שתחוקק מכוחו. המשתמש מאשר כי הוא מכיר ומבין את הוראות החוק הנוגעות לתוקפה המחייב של החתימה האלקטרונית.',
-      'DealSpace משמשת כמתווכת טכנולוגית בלבד ואינה צד להסכמים, לחוזים, ולהתחייבויות הנחתמים דרך הפלטפורמה. ההסכם המחייב הינו בין היוצר (בעל העסק) לבין הלקוח (החותם) — DealSpace אינה אחראית לקיום, לאכיפה, לפרשנות, ולמחלוקות הנוגעות להסכמים אלו.',
-      'כל אירוע חתימה אלקטרוני נרשם עם: (א) חותמת זמן מדויקת; (ב) כתובת ה-IP של הלקוח; (ג) ה-User-Agent של הדפדפן; (ד) תמונת החתימה הגרפית. נתונים אלו מהווים ראיה טכנית לאירוע החתימה ונשמרים לצד מסמך ה-PDF החתום. עם זאת, DealSpace אינה ערבה לאמינות זהות החותם ואינה מספקת שירות אימות זהות.',
-      'המשתמש נושא בבלעדיות באחריות לוודא כי הלקוח שחתם על ההסכם הוא אכן האדם המוסמך לעשות כן, וכי החתימה נאספה בהסכמה חופשית וללא כפייה.',
+      'היוצר מצהיר ומתחייב כי כל תוכן שהוא מפרסם דרך הפלטפורמה: (א) אינו מפר כל חוק חל; (ב) אינו מפר זכויות קניין רוחני של צד שלישי; (ג) אינו כולל תוכן מטעה, שקרי, מכפיש, פורנוגרפי, מסית, או פוגעני; (ד) הוא בסמכותו לפרסם; (ה) מציג מחירים נכונים ועדכניים.',
+      'תנאי עסק גלובליים — DealSpace מאפשרת ליוצרים לנסח תנאי התקשרות גלובליים ("תנאי עסק") ולצרפם לכל הצעת מחיר שישלחו. תנאים אלו נחתמים על ידי לקוח היוצר, וכל ההסכמה שנוצרת היא בין היוצר ללקוח בלבד. DealSpace אינה צד להסכמה זו, אינה מאמתת את תוכן התנאים, ואינה נושאת בכל אחריות משפטית, חוזית, או צרכנית בגינם.',
+      'DealSpace שומרת לעצמה את הזכות להסיר כל תוכן שמפר תנאי שימוש אלו, ובמקרה קיצוני — לסגור את חשבון המשתמש. הסרת תוכן לא תקנה למשתמש כל זכות לפיצוי.',
     ],
     body_en: [
-      'Electronic signatures collected through the DealSpace platform are subject to the Electronic Signature Law, 5761-2001 ("the Law"), and any regulations enacted thereunder. The User confirms that they know and understand the provisions of the Law regarding the binding validity of the electronic signature.',
-      'DealSpace serves solely as a technology intermediary and is not a party to agreements, contracts, and obligations signed through the platform. The binding agreement is between the Creator (business owner) and the Client (signatory) — DealSpace is not responsible for the performance, enforcement, interpretation, or disputes relating to such agreements.',
-      'Each electronic signature event is recorded with: (a) precise timestamp; (b) client IP address; (c) browser User-Agent; (d) graphic signature image. This data constitutes technical evidence of the signing event and is stored alongside the signed PDF document. However, DealSpace does not guarantee the reliability of the signatory\'s identity and does not provide identity verification services.',
-      'The User bears sole responsibility for verifying that the client who signed the agreement is indeed the person authorized to do so, and that the signature was obtained with free consent and without coercion.',
+      'The Creator represents and warrants that all content they publish through the platform: (a) does not violate any applicable law; (b) does not infringe any third-party intellectual property rights; (c) does not contain misleading, false, defamatory, pornographic, inciting, or offensive content; (d) they have the authority to publish; (e) presents accurate and current pricing.',
+      'Global Business Terms — DealSpace enables Creators to draft Global Business Terms ("Business Terms") and attach them to each proposal they send. These terms are signed by the Creator\'s Client, and any agreement formed is solely between the Creator and the Client. DealSpace is not a party to this agreement, does not validate the content of the terms, and bears no legal, contractual, or consumer liability in connection with them.',
+      'DealSpace reserves the right to remove any content that violates these Terms of Service, and in extreme cases — to close the User\'s account. Content removal shall not entitle the User to any compensation.',
     ],
   },
   {
     num: '7',
-    title_he: 'מנויים, תשלומים וביטולים',
-    title_en: 'Subscriptions, Payments & Cancellations',
+    title_he: 'מנוי, תמחור ותשלומים',
+    title_en: 'Subscription, Pricing & Payments',
     body_he: [
-      'השירות מוצע במסגרת תוכניות מנוי חודשיות ושנתיות, אשר פרטיהן מפורסמים בדף התמחור בפלטפורמה. DealSpace שומרת לעצמה את הזכות לשנות את מחירי המנוי בכפוף להודעה מוקדמת של 30 יום.',
-      'החיוב מתבצע מראש ביום תחילת כל תקופת מנוי. במנוי שנתי, החיוב מתבצע בתשלום אחד עבור שנה מלאה. DealSpace לא מאחסנת פרטי כרטיס אשראי — כל עסקאות התשלום מעובדות על ידי ספק תשלומים חיצוני מאושר.',
-      'ביטול מנוי: ניתן לבטל בכל עת דרך הגדרות החשבון. הביטול ייכנס לתוקף בתום תקופת החיוב הנוכחית בלבד — לא ניתן לקבל זיכוי חלקי על תקופה שנרכשה ולא מומשה. אחרי הביטול, הגישה לפלטפורמה תישמר עד לתום התקופה ששולמה.',
-      'החזרים כספיים: לא ניתנים החזרים על תקופות מנוי ששולמו, אלא במקרים המנויים מפורשות בחוק הגנת הצרכן, התשמ"א-1981, ובתנאי שניתנה הודעת ביטול בכתב תוך 14 ימים מיום הרכישה הראשונה (לגבי מנוי ראשוני בלבד). פנייה לבקשת החזר: billing@dealspace.app.',
+      'DealSpace מציעה תוכניות מנוי חודשיות בדרגות שונות (חינם, פרו, פרימיום), הנקובות בשקלים חדשים (₪) כולל מע"מ. המחיר הנקוב הוא המחיר הסופי — אין תוספות מסתורות. תמחור עדכני מפורסם בדף התמחור. DealSpace שומרת לעצמה את הזכות לשנות מחירים עם הודעה מוקדמת של 30 יום לפחות.',
+      'עיבוד תשלומים: כל העסקאות הכספיות מעובדות באופן מאובטח על ידי Stripe, Inc. — ספק תשלומים בינלאומי מוביל. DealSpace אינה מאחסנת פרטי כרטיס אשראי, פרטי חשבון בנק, או כל מידע פיננסי רגיש. כל נתוני התשלום מוצפנים ומאובטחים לפי תקן PCI-DSS Level 1 בתשתית Stripe בלבד.',
+      'המנוי מחויב מראש בתחילת כל תקופת חיוב. שדרוג תוכנית ייכנס לתוקף מיידי; שינמוך תוכנית ייכנס לתוקף בתחילת תקופת החיוב הבאה. לא ינתן פיצול חלקי עבור תקופה חלקית.',
     ],
     body_en: [
-      'The Service is offered under monthly and annual subscription plans, the details of which are published on the platform\'s pricing page. DealSpace reserves the right to change subscription prices subject to 30 days\' prior notice.',
-      'Billing occurs in advance on the first day of each subscription period. For annual subscriptions, billing occurs in a single payment for a full year. DealSpace does not store credit card details — all payment transactions are processed by an approved external payment provider.',
-      'Cancellation: You may cancel at any time through account settings. Cancellation takes effect at the end of the current billing period only — partial credits for purchased but unused periods are not available. After cancellation, platform access is maintained until the end of the paid period.',
-      'Refunds: Refunds are not provided for paid subscription periods, except in cases expressly enumerated in the Consumer Protection Law, 5741-1981, provided that written cancellation notice was given within 14 days of the first purchase date (for initial subscriptions only). Contact for refund requests: billing@dealspace.app.',
+      'DealSpace offers monthly subscription plans at various tiers (Free, Pro, Premium), denominated in New Israeli Shekels (₪) inclusive of VAT. The stated price is the final price — no hidden additions. Current pricing is published on the pricing page. DealSpace reserves the right to change prices with at least 30 days\' advance notice.',
+      'Payment processing: All financial transactions are processed securely by Stripe, Inc. — a leading international payment provider. DealSpace does not store credit card details, bank account details, or any sensitive financial information. All payment data is encrypted and secured to PCI-DSS Level 1 standard within Stripe\'s infrastructure only.',
+      'Subscriptions are billed in advance at the start of each billing period. Plan upgrades take effect immediately; plan downgrades take effect at the start of the next billing period. No partial proration is provided for partial periods.',
     ],
   },
   {
     num: '8',
-    title_he: 'הגבלת אחריות',
-    title_en: 'Limitation of Liability',
+    title_he: 'ביטול מנוי וזכות החזרה',
+    title_en: 'Subscription Cancellation & Refund Rights',
     body_he: [
-      'הפלטפורמה מסופקת "כפי שהיא" (AS-IS) ו"כפי שהיא זמינה" (AS-AVAILABLE), ללא כל אחריות מכל סוג שהוא, מפורשת או משתמעת, לרבות ואחריות לסחירות, התאמה למטרה מסוימת, אי-הפרה, דיוק, שלמות, זמינות, אמינות, בטיחות, או רציפות של השירות.',
-      'DealSpace לא תישא בכל אחריות — בין אם בעוולה, חוזה, אחריות מוחלטת, או כל תאוריה משפטית אחרת — לנזקים עקיפים, מקריים, מיוחדים, תוצאתיים, עונשיים, או לאובדן רווחים ממוניים, אובדן פוטנציאל עסקי, אובדן נתונים, פגיעה במוניטין, אובדן לקוחות, או כל נזק כלכלי אחר, גם אם DealSpace הוזהרה לגבי אפשרות נזקים כאלה.',
-      'האחריות המצטברת המרבית של DealSpace כלפי כל משתמש, בגין כל סיבה שהיא ותחת כל תאוריה משפטית, לא תעלה בשום מקרה על הסכום הכולל ששולם בפועל על ידי המשתמש ל-DealSpace במהלך שלושת (3) חודשי המנוי שקדמו ישירות לאירוע שגרם לנזק הנטען.',
-      'מדינות מסוימות אינן מאפשרות הגבלה של נזקים תוצאתיים — במקרה כזה ייתכן שחלק מהגבלות לעיל לא יחולו עליך. במקרה כזה, אחריות DealSpace תוגבל למידה המרבית המותרת על פי הדין החל.',
+      'המשתמש רשאי לבטל את מנויו בכל עת, באופן מיידי ועצמאי, דרך דף "חיוב ומנוי" בממשק DealSpace — ללא קנסות, ללא הסברים, וללא הליכים בירוקרטיים. הביטול ייכנס לתוקף בתום תקופת החיוב הנוכחית, ועד אז תישמר גישה מלאה לשירות.',
+      'בהתאם לחוק הגנת הצרכן, התשמ"א-1981 (כפי שתוקן), ובפרט להוראות בדבר ביטול עסקאות שנרכשו דרך האינטרנט: (א) ניתן לבטל עסקה תוך 14 יום מיום ההתקשרות בתנאי שלא נעשה שימוש בשירות — ולקבל החזר מלא; (ב) לאחר שימוש בשירות, הביטול ייכנס לתוקף בתום תקופת החיוב ולא יינתן החזר כספי; (ג) זכויות הצרכן המנויות בחוק גוברות על כל תנאי הסכם זה.',
+      'לביטול ייזום, חיוב שגוי, או כל פנייה בענייני חיוב: billing@dealspace.app. נענה תוך 3 ימי עסקים.',
     ],
     body_en: [
-      'The platform is provided "AS-IS" and "AS-AVAILABLE", without warranty of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, completeness, availability, reliability, safety, or continuity of the Service.',
-      'DealSpace will not be liable — whether in tort, contract, strict liability, or any other legal theory — for indirect, incidental, special, consequential, punitive, or exemplary damages, or for loss of profits, business opportunity, data, reputation, customers, or any other economic damages, even if DealSpace was warned of the possibility of such damages.',
-      'DealSpace\'s maximum cumulative liability to any user, for any reason and under any legal theory, shall in no event exceed the total amount actually paid by the User to DealSpace during the three (3) subscription months directly preceding the event that caused the alleged damage.',
-      'Some jurisdictions do not allow limitation of consequential damages — in such cases some of the above limitations may not apply to you. In that case, DealSpace\'s liability will be limited to the maximum extent permitted by applicable law.',
+      'Users may cancel their subscription at any time, immediately and independently, through the "Billing & Subscription" page in the DealSpace interface — without penalties, without explanations, and without bureaucratic procedures. Cancellation takes effect at the end of the current billing period, during which full access to the Service is maintained.',
+      'In accordance with the Consumer Protection Law, 5741-1981 (as amended), and in particular the provisions regarding cancellation of transactions purchased via the internet: (a) a transaction may be cancelled within 14 days of the transaction date provided the Service has not been used — for a full refund; (b) after Service use, cancellation takes effect at the end of the billing period and no refund will be issued; (c) consumer rights specified in applicable law prevail over any terms of this Agreement.',
+      'For proactive cancellation, an erroneous charge, or any billing inquiry: billing@dealspace.app. We will respond within 3 business days.',
     ],
   },
   {
     num: '9',
-    title_he: 'שמירת נתונים ואחריות הגיבוי',
-    title_en: 'Data Retention & Backup Responsibility',
+    title_he: 'כלי כתיבת AI (Ghostwriter) — כתב ויתור מלא',
+    title_en: 'AI Writing Tool (Ghostwriter) — Full Disclaimer',
     body_he: [
-      'DealSpace אינה שירות גיבוי ואינה אחראית לאובדן נתונים. על המשתמש לשמור עותקים מקומיים של כל הסכם, חוזה, והצעת מחיר חתומה. כל הסכם שנחתם מייצר PDF להורדה — על המשתמש להוריד ולשמור מסמך זה ללא דיחוי.',
-      'תקופות שמירה: נתוני חשבון פעיל נשמרים לאורך כל תקופת המנוי. לאחר ביטול המנוי, נשמרים הנתונים למשך 90 יום קלנדריים, לאחריהם נמחקים באופן בלתי הפיך. לא ניתן לשחזר נתונים שנמחקו לאחר תקופה זו.',
-      'DealSpace מבצעת גיבויים תשתיתיים פנימיים לצרכי המשכיות עסקית בלבד ואינה מספקת שירות שחזור נתונים פרטניים למשתמשים. אי-הורדת PDF חתום בעת חתימה, או אי-ייצוא נתונים לפני ביטול המנוי, הינה אחריותו הבלעדית של המשתמש.',
+      'DealSpace מספקת כלי כתיבה מבוסס בינה מלאכותית ("AI Ghostwriter") המסייע ביצירת הצעות טקסט עבור תיאורי פרויקטים. חשוב מאוד להבין את מגבלות הכלי לפני השימוש בו בהקשר עסקי.',
+      'הפלט של AI Ghostwriter הוא הצעת טקסט בלבד ואינו מהווה: (א) ייעוץ משפטי, פיננסי, חשבונאי, עסקי, או כל ייעוץ מקצועי מוסמך אחר; (ב) תוכן שעבר בדיקת עובדות, אימות, או ביקורת משפטית; (ג) ייצוג של עמדת DealSpace בנוגע לנושאים עסקיים או משפטיים; (ד) תחליף לייעוץ מעורך דין בכל הנוגע לניסוח חוזים, תנאי התקשרות, או מסמכים משפטיים מחייבים.',
+      'היוצר אחראי באופן מלא ובלעדי לבחון, לערוך, לאשר, ולהיות בעל הבנה מלאה של כל תוכן שנוצר על ידי AI Ghostwriter לפני שיפרסמו ללקוחות. DealSpace לא תישא בכל אחריות לנזקים עסקיים, משפטיים, כספיים, מוניטיניים, או אחרים שינבעו מהסתמכות על תוכן שנוצר על ידי הבינה המלאכותית — בין אם פורסם כמות שהוא ובין אם לאחר עריכה.',
     ],
     body_en: [
-      'DealSpace is not a backup service and is not responsible for data loss. The User must maintain local copies of all signed agreements, contracts, and proposals. Each signed agreement generates a downloadable PDF — the User must download and save this document without delay.',
-      'Retention periods: Active account data is retained for the duration of the subscription period. After subscription cancellation, data is retained for 90 calendar days, after which it is permanently and irreversibly deleted. Data deleted after this period cannot be recovered.',
-      'DealSpace performs internal infrastructure backups for business continuity purposes only and does not provide individual data recovery services to users. Failure to download a signed PDF at the time of signing, or failure to export data before subscription cancellation, is the User\'s sole responsibility.',
+      'DealSpace provides an artificial intelligence writing tool ("AI Ghostwriter") that assists in generating text suggestions for project descriptions. It is critically important to understand the tool\'s limitations before using it in a business context.',
+      'The output of AI Ghostwriter is a text suggestion only and does not constitute: (a) legal, financial, accounting, business, or any other qualified professional advisory; (b) content that has undergone fact-checking, verification, or legal review; (c) a representation of DealSpace\'s position on any business or legal matters; (d) a substitute for legal counsel with respect to drafting contracts, engagement terms, or legally binding documents.',
+      'The Creator is fully and exclusively responsible for reviewing, editing, approving, and having complete understanding of all content generated by AI Ghostwriter before publishing it to clients. DealSpace shall not be liable for any business, legal, financial, reputational, or other damages arising from reliance on AI-generated content — whether published as-is or after editing.',
     ],
   },
   {
     num: '10',
-    title_he: 'קניין רוחני',
-    title_en: 'Intellectual Property',
+    title_he: 'הגבלת אחריות ופטור',
+    title_en: 'Limitation of Liability & Disclaimer',
     body_he: [
-      'כל זכויות הקניין הרוחני בפלטפורמה — לרבות, אך לא רק: קוד המקור, קוד הביצוע, אדריכלות המערכת, עיצוב ממשק המשתמש, לוגו, שמות מסחריים, סימני מסחר, תמונות, טקסטים, אנימציות, API, ומסדי נתונים — הינן רכושה הבלעדי של DealSpace Technologies Ltd. ומוגנות על פי חוקי זכויות יוצרים ישראליים ובינלאומיים.',
-      'תוכן המשתמש שייך למשתמש. DealSpace אינה טוענת לזכויות קניין רוחני בתוכן שמועלה על ידי המשתמשים (הצעות מחיר, חוזים, לוגואים של לקוחות). עם זאת, בעצם העלאת תוכן לפלטפורמה, המשתמש מעניק ל-DealSpace רישיון מוגבל, לא-בלעדי, לאחסן, לעבד, לצג, ולשדר תוכן זה אך ורק לצורך אספקת השירות.',
-      'חל איסור מפורש על: העתקה, שכפול, פירוק, הנדסה הפוכה, מכירה, השכרה, העברה, עיבוד, או יצירת עבודות נגזרות מכל חלק של הפלטפורמה ללא רישיון מפורש ובכתב מ-DealSpace.',
+      'השירות ניתן "כפי שהוא" (AS IS) וכ"כפי שזמין" (AS AVAILABLE), ללא כל אחריות מכל סוג שהוא, מפורשת או משתמעת, לרבות אחריות לסחירות, התאמה למטרה ספציפית, אי-הפרה, דיוק, שלמות, אמינות, זמינות, או חופשיות מוירוסים ורכיבים מזיקים.',
+      'DealSpace לא תישא בכל אחריות לנזקים עקיפים, מקריים, מיוחדים, תוצאתיים, או עונשיים, לרבות: אובדן רווחים, אובדן הכנסה, אובדן נתונים, פגיעה במוניטין, אובדן לקוחות, הפסד עסקי, עלויות גיוס לקוחות חלופיים — אף אם DealSpace הוזהרה מראש על אפשרות נזק כזה.',
+      'אחריות מצטברת מקסימלית: אחריותה הכוללת של DealSpace כלפיך לא תעלה על הסכום הכולל ששילמת ל-DealSpace ב-12 החודשים שקדמו לאירוע המהווה עילת התביעה. אם לא שילמת כלל (חשבון חינמי), אחריות DealSpace מוגבלת ל-₪250.',
     ],
     body_en: [
-      'All intellectual property rights in the platform — including but not limited to: source code, executable code, system architecture, user interface design, logo, trade names, trademarks, images, texts, animations, API, and databases — are the exclusive property of DealSpace Technologies Ltd. and are protected under Israeli and international copyright laws.',
-      'User Content belongs to the User. DealSpace does not claim intellectual property rights in content uploaded by users (proposals, contracts, client logos). However, by uploading content to the platform, the User grants DealSpace a limited, non-exclusive license to store, process, display, and transmit such content solely for the purpose of providing the Service.',
-      'The following are expressly prohibited: copying, duplicating, disassembling, reverse-engineering, selling, renting, transferring, processing, or creating derivative works from any part of the platform without an explicit written license from DealSpace.',
+      'The Service is provided "AS IS" and "AS AVAILABLE", without any warranty of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, completeness, reliability, availability, or freedom from viruses and harmful components.',
+      'DealSpace shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including: loss of profits, loss of revenue, loss of data, reputational harm, loss of customers, business loss, costs of procuring substitute services — even if DealSpace was advised in advance of the possibility of such damages.',
+      'Maximum cumulative liability: DealSpace\'s total liability to you shall not exceed the total amount you actually paid to DealSpace in the 12-month period preceding the event giving rise to the claim. If you paid nothing (free account), DealSpace\'s liability is limited to ₪250.',
     ],
   },
   {
     num: '11',
-    title_he: 'שיפוי',
-    title_en: 'Indemnification',
+    title_he: 'קניין רוחני ורישיון שימוש',
+    title_en: 'Intellectual Property & License',
     body_he: [
-      'המשתמש ("המשפה") מסכים לשפות, להגן על, ולהחזיק בלא נזק את DealSpace, מנהליה, עובדיה, קבלניה, שותפיה, ובעלי מניותיה ("המשופות") מפני כל תביעה, דרישה, הליך משפטי, נזק, הפסד, חבות, עלות, ו/או הוצאות (לרבות שכר טרחת עורכי דין סביר) שהוגשו על ידי צדדים שלישיים ונובעים מ:',
-      '(א) תוכן המשתמש שנוצר, פורסם, שותף, או הופץ דרך הפלטפורמה; (ב) הפרת הסכם זה על ידי המשתמש; (ג) הפרת זכויות של צד שלישי, לרבות זכויות קניין רוחני, פרטיות, או חוזה, על ידי המשתמש; (ד) מחלוקות בין המשתמש לבין לקוחותיו בגין הצעות מחיר, חוזים, אספקת שירותים, מחירים, או כל נושא עסקי אחר; (ה) כל מצג כוזב שנעשה על ידי המשתמש בהצעות שיצר.',
-      'DealSpace שומרת לעצמה את הזכות, על חשבונה, לקחת על עצמה את ההגנה הבלעדית על כל עניין הכפוף לשיפוי, ובמקרה כזה המשתמש מסכים לשתף פעולה עם הגנת DealSpace.',
+      'כל זכויות הקניין הרוחני בפלטפורמה — לרבות עיצוב הממשק, קוד המקור, אלגוריתמים, לוגו, סמלים, שמות מותגים, פטנטים (רשומים ובקשות תלויות), ידע קנייני וחדשנות פנימית — הם רכושה הבלעדי של DealSpace Technologies Ltd. ומוגנים בכלל חוקי הקניין הרוחני החלים.',
+      'DealSpace מעניקה לך רישיון שימוש אישי, מוגבל, לא-בלעדי, שאינו ניתן להמחאה, שאינו ניתן להעברת רישיון משנה, לשימוש בשירות למטרות עסקיות לגיטימיות בלבד בהתאם לתנאי הסכם זה. אין בזה להעניק לך כל זכות בקניין הרוחני של DealSpace. אינך רשאי להעתיק, לפרוס, לבצע הנדסה לאחור, לתרגם, או להפיץ כל חלק מהפלטפורמה ללא הסכמה מפורשת בכתב.',
+      'תוכן שנוצר על ידי המשתמש (הצעות מחיר, תנאי עסק, לוגו חברה) נשאר בבעלות המשתמש. המשתמש מעניק ל-DealSpace רישיון שימוש מוגבל, ללא תמלוגים, לשימוש בתוכן זה אך ורק לצורך אספקת השירות — לעיבוד, אחסון, ושיגור ההצעה.',
     ],
     body_en: [
-      'The User ("Indemnifying Party") agrees to indemnify, defend, and hold harmless DealSpace, its directors, employees, contractors, partners, and shareholders ("Indemnified Parties") from any claim, demand, legal proceeding, damage, loss, liability, cost, and/or expense (including reasonable attorney\'s fees) brought by third parties arising from:',
-      '(a) User Content created, published, shared, or distributed through the platform; (b) the User\'s breach of this Agreement; (c) the User\'s infringement of third-party rights, including intellectual property, privacy, or contractual rights; (d) disputes between the User and their clients regarding proposals, contracts, service delivery, prices, or any other business matter; (e) any false representation made by the User in proposals they created.',
-      'DealSpace reserves the right, at its own expense, to assume sole defense of any matter subject to indemnification, in which case the User agrees to cooperate with DealSpace\'s defense.',
+      'All intellectual property rights in the platform — including interface design, source code, algorithms, logos, marks, brand names, patents (registered and pending applications), proprietary know-how, and internal innovation — are the exclusive property of DealSpace Technologies Ltd. and are protected by all applicable intellectual property laws.',
+      'DealSpace grants you a personal, limited, non-exclusive, non-assignable, non-sublicensable license to use the Service for legitimate business purposes only in accordance with the terms of this Agreement. Nothing herein grants you any rights in DealSpace\'s intellectual property. You may not copy, deploy, reverse engineer, translate, or distribute any part of the platform without express written consent.',
+      'Content created by the User (proposals, business terms, company logo) remains the property of the User. The User grants DealSpace a limited, royalty-free license to use this content solely for the purpose of providing the Service — to process, store, and deliver the proposal.',
     ],
   },
   {
     num: '12',
-    title_he: 'סיום, שינויים בשירות, דין חל וסמכות שיפוט',
-    title_en: 'Termination, Service Changes, Governing Law & Jurisdiction',
+    title_he: 'שינויים בתנאים, דין חל וסמכות שיפוט',
+    title_en: 'Amendments, Governing Law & Jurisdiction',
     body_he: [
-      'DealSpace רשאית לסיים, להשעות, לצמצם, או לשנות את השירות בכל עת, לרבות מחיקת חשבון שהפר את תנאי השירות, ביצע פעילות הונאה, גרם נזק לפלטפורמה, פגע בצד שלישי, או לא שילם את דמי המנוי. עם סיום החשבון, הגישה לפלטפורמה תיחסם לאלתר.',
-      'שינויים בתנאים: DealSpace שומרת לעצמה את הזכות לעדכן הסכם זה בכל עת. שינויים מהותיים יפורסמו באתר ויישלח עליהם עדכון דוא"ל 14 יום לפני כניסתם לתוקף. המשך השימוש בשירות לאחר כניסת השינויים לתוקף מהווה הסכמה לתנאים המעודכנים.',
-      'דין חל: הסכם זה, וכל מחלוקת הנוגעת לו, כפופים לדיני מדינת ישראל, ללא קשר לכללי ברירת הדין. תחולת אמנת האומות המאוחדות על חוזי מכר בינלאומי של טובין ("CISG") שוללת בזאת במפורש.',
-      'סמכות שיפוט: כל תביעה, סכסוך, ומחלוקת הנוגעים להסכם זה, לשירות, ולכל יחס בין הצדדים יובאו לפני בית המשפט המוסמך במחוז תל אביב-יפו בלבד, ולשני הצדדים לא תהיה טענת חוסר סמכות. הצדדים מסכימים לנסות ולפתור כל מחלוקת בגישור מוסכם לפני פנייה לבית המשפט.',
+      'שינויים בתנאים: DealSpace רשאית לעדכן הסכם זה מעת לעת. שינויים מהותיים — כגון שינוי מדיניות ביטול, הוספת מגבלות שימוש, שינוי מדיניות אחריות — יפורסמו באתר ויישלח עדכון דוא"ל לכל המשתמשים הפעילים לפחות 14 יום לפני כניסתם לתוקף. המשך השימוש בשירות לאחר מועד השינוי מהווה הסכמה לתנאים המעודכנים.',
+      'דין חל: הסכם זה, וכל מחלוקת הנוגעת לו, כפופים לדיני מדינת ישראל בלבד, ללא קשר לכללי ברירת הדין. תחולת אמנת האומות המאוחדות על חוזי מכר בינלאומי של טובין ("CISG") שוללת בזאת במפורש.',
+      'סמכות שיפוט: כל תביעה, סכסוך, ומחלוקת הנוגעים להסכם זה, לשירות, ולכל יחסים בין הצדדים יובאו לפני בית המשפט המוסמך במחוז תל אביב-יפו בלבד. שני הצדדים מוותרים בזאת על כל טענת חוסר סמכות מקומית. הצדדים מסכימים לנסות ולפתור כל מחלוקת בגישור מוסכם לפני פנייה לבית המשפט.',
     ],
     body_en: [
-      'DealSpace may terminate, suspend, reduce, or modify the Service at any time, including deleting accounts that violated the Terms, engaged in fraudulent activity, damaged the platform, harmed a third party, or failed to pay subscription fees. Upon account termination, platform access will be blocked immediately.',
-      'Changes to Terms: DealSpace reserves the right to update this Agreement at any time. Material changes will be published on the website and an email update will be sent 14 days before they take effect. Continued use of the Service after changes take effect constitutes acceptance of the updated terms.',
-      'Governing Law: This Agreement, and any dispute related to it, is subject to the laws of the State of Israel, regardless of conflict of law rules. The application of the United Nations Convention on Contracts for the International Sale of Goods ("CISG") is hereby expressly excluded.',
-      'Jurisdiction: All claims, disputes, and controversies relating to this Agreement, the Service, and any relationship between the parties shall be brought before the competent court in the Tel Aviv-Jaffa district only, and neither party shall have a claim of lack of jurisdiction. The parties agree to attempt to resolve any dispute through agreed mediation before approaching the court.',
+      'Amendments: DealSpace reserves the right to update this Agreement from time to time. Material changes — such as changes to the cancellation policy, addition of usage restrictions, or changes to the liability policy — will be published on the website and an email update will be sent to all active users at least 14 days before they take effect. Continued use of the Service after the effective date constitutes acceptance of the updated terms.',
+      'Governing Law: This Agreement, and any dispute relating to it, is subject exclusively to the laws of the State of Israel, regardless of conflict of law rules. The application of the United Nations Convention on Contracts for the International Sale of Goods ("CISG") is hereby expressly excluded.',
+      'Jurisdiction: All claims, disputes, and controversies relating to this Agreement, the Service, and any relationship between the parties shall be brought before the competent court in the Tel Aviv-Jaffa district only. Both parties hereby waive any claim of lack of local jurisdiction. The parties agree to attempt to resolve any dispute through agreed mediation before approaching the court.',
     ],
   },
 ]
@@ -264,9 +255,9 @@ export default function TermsOfService() {
 
         <div className="flex items-center gap-1 rounded-xl p-1 border border-slate-200 bg-white/80 dark:border-white/[0.07] dark:bg-white/[0.03]">
           {([
-            { path: '/terms',   label_he: 'תנאי שירות', label_en: 'Terms',   active: true },
-            { path: '/privacy', label_he: 'פרטיות',     label_en: 'Privacy', active: false },
-            { path: '/security',label_he: 'אבטחה',      label_en: 'Security',active: false },
+            { path: '/terms',    label_he: 'תנאי שירות', label_en: 'Terms',    active: true  },
+            { path: '/privacy',  label_he: 'פרטיות',     label_en: 'Privacy',  active: false },
+            { path: '/security', label_he: 'אבטחה',      label_en: 'Security', active: false },
           ]).map(tab => (
             <button
               key={tab.path}
@@ -302,7 +293,7 @@ export default function TermsOfService() {
               : 'Please read carefully before using the platform'}
           </p>
           <p className="text-xs text-slate-400 dark:text-white/22">
-            {isHe ? 'תוקף מיום 1 בינואר 2026 | גרסה 2.0' : 'Effective January 1, 2026 | Version 2.0'}
+            {isHe ? 'תוקף מיום 1 בינואר 2026 | גרסה 3.0' : 'Effective January 1, 2026 | Version 3.0'}
           </p>
         </div>
 
