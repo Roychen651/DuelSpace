@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /deal/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /proposals/
+Disallow: /profile/
+Disallow: /billing/
+Disallow: /services/
+Disallow: /integrations/
+Disallow: /auth/
+
+Sitemap: https://dealspace.app/sitemap.xml
