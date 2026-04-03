@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   CreditCard, Zap, Star, CheckCircle2, AlertTriangle, Clock,
   RefreshCw, XCircle, Download, Infinity as InfinityIcon,
@@ -39,8 +39,7 @@ export default function Billing() {
   const isPremium = tier === 'unlimited'
 
   const tierColor  = isPremium ? '#d4af37' : isPro ? '#818cf8' : 'rgba(255,255,255,0.3)'
-  const tierBg     = isPremium ? 'rgba(212,175,55,0.1)' : isPro ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.04)'
-  const tierBorder = isPremium ? 'rgba(212,175,55,0.25)' : isPro ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.08)'
+  const tierBorder = isPremium ? 'rgba(212,175,55,0.22)' : isPro ? 'rgba(99,102,241,0.22)' : 'rgba(255,255,255,0.07)'
 
   const planNameHe = isPremium ? 'פרימיום' : isPro ? 'פרו' : 'חינם'
   const planNameEn = isPremium ? 'Premium' : isPro ? 'Pro' : 'Free'
@@ -57,7 +56,10 @@ export default function Billing() {
     }
   }
 
-  const animBase = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }
+  const animBase = {
+    initial: { opacity: 0, y: 24 },
+    animate: { opacity: 1, y: 0 },
+  }
 
   // Derive billing state
   const stateD = billingStatus === 'past_due'
@@ -68,127 +70,216 @@ export default function Billing() {
     <div className="relative min-h-dvh flex flex-col" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes billing-fade-up {
-          from { opacity: 0; transform: translateY(18px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes billing-float {
-          0%, 100% { transform: translateY(0); }
-          50%       { transform: translateY(-6px); }
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50%       { transform: translateY(-18px) scale(1.04); }
+        }
+        @keyframes billing-float-b {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50%       { transform: translateY(12px) scale(0.97); }
+        }
+        @keyframes billing-banner-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(var(--pulse-rgb), 0.35); }
+          60%       { box-shadow: 0 0 0 8px rgba(var(--pulse-rgb), 0); }
+        }
+        @keyframes billing-status-blink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.4; }
         }
       `}</style>
 
-      {/* Aurora */}
+      {/* ── Multi-orb aurora background ─────────────────────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
-        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full"
-          style={{ background: `radial-gradient(circle, ${tierColor}18 0%, transparent 65%)`, filter: 'blur(60px)', animation: 'billing-float 20s ease-in-out infinite' }} />
+        <div className="absolute inset-0 bg-[#040608]" />
+        {/* Primary tier orb */}
+        <div className="absolute -top-32 -end-32 h-[600px] w-[600px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${tierColor}20 0%, transparent 65%)`,
+            filter: 'blur(72px)',
+            animation: 'billing-float 22s ease-in-out infinite',
+          }} />
+        {/* Secondary indigo orb */}
+        <div className="absolute bottom-0 -start-40 h-[480px] w-[480px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)',
+            filter: 'blur(80px)',
+            animation: 'billing-float-b 28s ease-in-out infinite',
+          }} />
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 opacity-[0.025]"
+          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
       </div>
 
-      <main className="relative z-10 px-6 py-10 max-w-2xl mx-auto w-full flex-1">
+      <main className="relative z-10 px-5 sm:px-6 py-12 max-w-2xl mx-auto w-full flex-1">
 
-        {/* Header */}
-        <motion.div {...animBase} transition={{ duration: 0.4 }} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl flex-none"
-              style={{ background: `linear-gradient(135deg, ${tierColor}40, ${tierColor}20)`, border: `1px solid ${tierColor}40` }}>
-              <CreditCard size={18} style={{ color: tierColor }} />
+        {/* ── Page Header ──────────────────────────────────────────────────────── */}
+        <motion.div {...animBase} transition={{ duration: 0.5, ease: 'easeOut' as const }} className="mb-10">
+          <div className="flex items-center gap-3.5 mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl flex-none"
+              style={{
+                background: `linear-gradient(135deg, ${tierColor}40, ${tierColor}18)`,
+                border: `1px solid ${tierColor}40`,
+                boxShadow: `0 0 28px ${tierColor}25, inset 0 1px 0 rgba(255,255,255,0.1)`,
+              }}>
+              <CreditCard size={20} style={{ color: tierColor }} />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white" style={{ letterSpacing: '-0.025em' }}>
-              {isHe ? 'חיוב ומנוי' : 'Billing & Subscription'}
-            </h1>
+            <div>
+              <h1 className="text-[26px] font-black text-white" style={{ letterSpacing: '-0.03em' }}>
+                {isHe ? 'חיוב ומנוי' : 'Billing & Subscription'}
+              </h1>
+              <p className="text-[13px] text-white/38 mt-0.5">
+                {isHe
+                  ? 'מידע על התוכנית, מחזור החיוב, וניהול'
+                  : 'Plan details, billing cycle, and management'}
+              </p>
+            </div>
           </div>
-          <p className="text-[14px] text-slate-500 dark:text-white/40 leading-relaxed">
-            {isHe
-              ? 'מידע על התוכנית שלך, מחזור החיוב, ואפשרויות ניהול'
-              : 'Your plan details, billing cycle, and management options'}
-          </p>
         </motion.div>
 
-        {/* ── State D: Past Due Banner ────────────────────────────────────────── */}
-        {stateD && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-2xl px-5 py-4 mb-6"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', boxShadow: '0 0 32px rgba(239,68,68,0.08)' }}>
-            <div className="flex items-start gap-3 mb-4">
-              <AlertTriangle size={16} className="text-red-400 flex-none mt-0.5" />
-              <div>
-                <p className="text-[13px] font-bold text-red-300 mb-1">
-                  {isHe ? 'תשלום נכשל — יצירת הצעות חסומה' : 'Payment failed — proposal creation locked'}
-                </p>
-                <p className="text-[12px] text-red-400/70 leading-relaxed">
-                  {isHe
-                    ? 'עדכן את אמצעי התשלום שלך כדי לחדש את הגישה המלאה.'
-                    : 'Update your payment method to restore full access.'}
-                </p>
+        {/* ── State D: Past Due Banner ──────────────────────────────────────────── */}
+        <AnimatePresence>
+          {stateD && (
+            <motion.div
+              key="past-due-banner"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-2xl px-5 py-5 mb-6 overflow-hidden relative"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.05) 100%)',
+                border: '1px solid rgba(239,68,68,0.28)',
+                boxShadow: '0 0 48px rgba(239,68,68,0.1), inset 0 1px 0 rgba(239,68,68,0.12)',
+              }}>
+              {/* Radial glow behind icon */}
+              <div className="absolute top-0 start-0 w-32 h-32 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.25) 0%, transparent 70%)', transform: 'translate(-30%, -30%)' }} />
+              <div className="relative flex items-start gap-4 mb-5">
+                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
+                  style={{
+                    background: 'rgba(239,68,68,0.2)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    animation: 'billing-banner-pulse 2s ease-out infinite',
+                    '--pulse-rgb': '239,68,68',
+                  } as React.CSSProperties}>
+                  <AlertTriangle size={15} className="text-red-400" />
+                </div>
+                <div className="pt-0.5">
+                  <p className="text-[13.5px] font-bold text-red-300 mb-1 tracking-tight">
+                    {isHe ? 'תשלום נכשל — יצירת הצעות חסומה' : 'Payment failed — proposal creation locked'}
+                  </p>
+                  <p className="text-[12px] text-red-400/65 leading-relaxed">
+                    {isHe
+                      ? 'עדכן את אמצעי התשלום שלך כדי לחדש את הגישה המלאה.'
+                      : 'Update your payment method to restore full access.'}
+                  </p>
+                </div>
               </div>
-            </div>
-            <a
-              href={portalUrl}
-              onClick={handlePortalClick}
-              className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
-              style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.45)', color: '#fca5a5' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.32)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.22)' }}
-            >
-              <CreditCard size={14} />
-              {isHe ? 'עדכון פרטי אשראי' : 'Update Payment Method'}
-              <ArrowUpRight size={13} className="opacity-70" />
-            </a>
-          </motion.div>
-        )}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
+                style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.42)', color: '#fca5a5' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.32)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.22)'; (e.currentTarget as HTMLAnchorElement).style.transform = '' }}
+              >
+                <CreditCard size={14} />
+                {isHe ? 'עדכון פרטי אשראי' : 'Update Payment Method'}
+                <ArrowUpRight size={13} className="opacity-70" />
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* ── State C: Cancel-at-End Banner ───────────────────────────────────── */}
-        {stateC && periodEnd && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-2xl px-5 py-4 mb-6"
-            style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
-            <div className="flex items-start gap-3 mb-4">
-              <Clock size={16} className="text-amber-400 flex-none mt-0.5" />
-              <div>
-                <p className="text-[13px] font-bold text-amber-300 mb-1">
-                  {isHe ? 'המנוי בוטל — פעיל עד סוף התקופה' : 'Subscription canceled — active until period end'}
-                </p>
-                <p className="text-[12px] text-amber-400/70 leading-relaxed">
-                  {isHe
-                    ? `המנוי יסתיים ב-${fmtDate(periodEnd, isHe)} ולא יחודש. לאחר מכן החשבון יעבור לתוכנית חינם.`
-                    : `Your subscription ends on ${fmtDate(periodEnd, isHe)} and will not renew. After that, the account reverts to the Free plan.`}
-                </p>
+        {/* ── State C: Cancel-at-End Banner ─────────────────────────────────────── */}
+        <AnimatePresence>
+          {stateC && periodEnd && (
+            <motion.div
+              key="cancel-banner"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-2xl px-5 py-5 mb-6 overflow-hidden relative"
+              style={{
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.04) 100%)',
+                border: '1px solid rgba(245,158,11,0.28)',
+                boxShadow: '0 0 40px rgba(245,158,11,0.08), inset 0 1px 0 rgba(245,158,11,0.1)',
+              }}>
+              <div className="absolute top-0 start-0 w-32 h-32 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 70%)', transform: 'translate(-30%, -30%)' }} />
+              <div className="relative flex items-start gap-4 mb-5">
+                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
+                  style={{
+                    background: 'rgba(245,158,11,0.2)',
+                    border: '1px solid rgba(245,158,11,0.35)',
+                    animation: 'billing-banner-pulse 2.4s ease-out infinite',
+                    '--pulse-rgb': '245,158,11',
+                  } as React.CSSProperties}>
+                  <Clock size={15} className="text-amber-400" />
+                </div>
+                <div className="pt-0.5">
+                  <p className="text-[13.5px] font-bold text-amber-300 mb-1 tracking-tight">
+                    {isHe ? 'המנוי בוטל — פעיל עד סוף התקופה' : 'Subscription canceled — active until period end'}
+                  </p>
+                  <p className="text-[12px] text-amber-400/65 leading-relaxed">
+                    {isHe
+                      ? `המנוי יסתיים ב-${fmtDate(periodEnd, isHe)} ולא יחודש. לאחר מכן החשבון יעבור לתוכנית חינם.`
+                      : `Your subscription ends on ${fmtDate(periodEnd, isHe)} and will not renew. After that, the account reverts to the Free plan.`}
+                  </p>
+                </div>
               </div>
-            </div>
-            <a
-              href={portalUrl}
-              onClick={handlePortalClick}
-              className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
-              style={{ background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.40)', color: '#fcd34d' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.28)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.18)' }}
-            >
-              <RotateCcw size={14} />
-              {isHe ? 'חידוש מנוי' : 'Reactivate Subscription'}
-              <ArrowUpRight size={13} className="opacity-70" />
-            </a>
-          </motion.div>
-        )}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
+                style={{ background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.38)', color: '#fcd34d' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.28)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.18)'; (e.currentTarget as HTMLAnchorElement).style.transform = '' }}
+              >
+                <RotateCcw size={14} />
+                {isHe ? 'חידוש מנוי' : 'Reactivate Subscription'}
+                <ArrowUpRight size={13} className="opacity-70" />
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* ── Current Plan Card ────────────────────────────────────────────────── */}
-        <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.08 }}
-          className="rounded-3xl p-6 mb-5"
-          style={{ background: tierBg, border: `1px solid ${tierBorder}`, boxShadow: isPaid ? `0 0 40px ${tierColor}12` : 'none' }}>
+        {/* ── Current Plan Card ──────────────────────────────────────────────────── */}
+        <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' as const }}
+          className="rounded-3xl p-6 mb-5 overflow-hidden relative"
+          style={{
+            background: `linear-gradient(160deg, ${tierColor}10 0%, ${tierColor}04 100%)`,
+            border: `1px solid ${tierBorder}`,
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.4), ${isPaid ? `0 0 48px ${tierColor}10` : ''}`,
+          }}>
+          {/* Subtle corner glow */}
+          {isPaid && (
+            <div className="absolute -top-20 -end-20 h-48 w-48 rounded-full pointer-events-none"
+              style={{ background: `radial-gradient(circle, ${tierColor}20 0%, transparent 65%)`, filter: 'blur(32px)' }} />
+          )}
 
-          <div className="flex items-start justify-between gap-3 mb-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl flex-none"
-                style={{ background: `${tierColor}20`, border: `1px solid ${tierColor}35` }}>
-                {isPremium ? <InfinityIcon size={18} style={{ color: tierColor }} />
-                  : isPro ? <Zap size={18} style={{ color: tierColor }} />
-                  : <Star size={18} style={{ color: tierColor }} />}
+          <div className="relative flex items-start justify-between gap-3 mb-5">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl flex-none"
+                style={{
+                  background: `linear-gradient(135deg, ${tierColor}30, ${tierColor}12)`,
+                  border: `1px solid ${tierColor}35`,
+                  boxShadow: `0 0 20px ${tierColor}22`,
+                }}>
+                {isPremium ? <InfinityIcon size={20} style={{ color: tierColor }} />
+                  : isPro ? <Zap size={20} style={{ color: tierColor }} />
+                  : <Star size={20} style={{ color: tierColor }} />}
               </div>
               <div>
-                <p className="text-[15px] font-black text-white/90">
+                <p className="text-[16px] font-black text-white tracking-tight">
                   {isHe ? `תוכנית ${planNameHe}` : `${planNameEn} Plan`}
                 </p>
                 {planPrice && (
-                  <p className="text-[12px] mt-0.5" style={{ color: `${tierColor}99` }}>
+                  <p className="text-[12px] mt-0.5" style={{ color: `${tierColor}90` }}>
                     {planPrice} {isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}
                   </p>
                 )}
@@ -200,47 +291,60 @@ export default function Billing() {
               </div>
             </div>
             <span className="flex-none rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider"
-              style={{ background: `${tierColor}18`, color: tierColor, border: `1px solid ${tierColor}30` }}>
+              style={{
+                background: `${tierColor}18`,
+                color: tierColor,
+                border: `1px solid ${tierColor}28`,
+                boxShadow: `0 0 12px ${tierColor}15`,
+              }}>
               {isPremium ? 'PREMIUM' : isPro ? 'PRO' : 'FREE'}
             </span>
           </div>
 
           {/* Billing cycle info — paid users */}
           {isPaid && periodEnd && (
-            <div className="space-y-2.5">
+            <div className="relative space-y-2">
               <div className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="flex items-center gap-2 text-[12px] text-white/50">
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2 text-[12px] text-white/40">
                   {cancelAtEnd
-                    ? <><XCircle size={13} className="text-amber-400" />{isHe ? 'גישה פעילה עד' : 'Active until'}</>
-                    : <><RefreshCw size={13} className="text-emerald-400" />{isHe ? 'חיוב הבא' : 'Next charge'}</>}
+                    ? <><XCircle size={12} className="text-amber-400" />{isHe ? 'גישה פעילה עד' : 'Active until'}</>
+                    : <><RefreshCw size={12} className="text-emerald-400" />{isHe ? 'חיוב הבא' : 'Next charge'}</>}
                 </div>
-                <p className="text-[12px] font-bold text-white/80">
+                <p className="text-[12px] font-bold text-white/75">
                   {fmtDate(periodEnd, isHe)}
                   {!cancelAtEnd && planPrice && (
-                    <span className="text-white/40 font-normal"> · {planPrice}</span>
+                    <span className="text-white/35 font-normal"> · {planPrice}</span>
                   )}
                 </p>
               </div>
 
               <div className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="flex items-center gap-2 text-[12px] text-white/50">
-                  <ShieldCheck size={13} />
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2 text-[12px] text-white/40">
+                  <ShieldCheck size={12} />
                   {isHe ? 'מצב חיוב' : 'Billing status'}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {billingStatus === 'active' && !cancelAtEnd && (
-                    <><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 block" />
-                    <p className="text-[12px] font-bold text-emerald-400">{isHe ? 'פעיל' : 'Active'}</p></>
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 block"
+                        style={{ animation: 'billing-status-blink 2.5s ease-in-out infinite' }} />
+                      <p className="text-[12px] font-bold text-emerald-400">{isHe ? 'פעיל' : 'Active'}</p>
+                    </>
                   )}
                   {billingStatus === 'active' && cancelAtEnd && (
-                    <><span className="h-1.5 w-1.5 rounded-full bg-amber-400 block" />
-                    <p className="text-[12px] font-bold text-amber-400">{isHe ? 'מתבטל בסוף התקופה' : 'Cancels at period end'}</p></>
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400 block" />
+                      <p className="text-[12px] font-bold text-amber-400">{isHe ? 'מתבטל בסוף התקופה' : 'Cancels at period end'}</p>
+                    </>
                   )}
                   {billingStatus === 'past_due' && (
-                    <><span className="h-1.5 w-1.5 rounded-full bg-red-400 block" />
-                    <p className="text-[12px] font-bold text-red-400">{isHe ? 'תשלום נכשל' : 'Payment failed'}</p></>
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400 block"
+                        style={{ animation: 'billing-status-blink 1.2s ease-in-out infinite' }} />
+                      <p className="text-[12px] font-bold text-red-400">{isHe ? 'תשלום נכשל' : 'Payment failed'}</p>
+                    </>
                   )}
                 </div>
               </div>
@@ -248,74 +352,116 @@ export default function Billing() {
           )}
         </motion.div>
 
-        {/* ── State B: Action Center — Active paid, not canceling ──────────────── */}
+        {/* ── State B: Action Center — Active paid, not canceling ────────────────── */}
         {stateB && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.12 }} className="space-y-2 mb-5">
+          <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.14, ease: 'easeOut' as const }} className="mb-5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-3 px-0.5">
+              {isHe ? 'פעולות' : 'Actions'}
+            </p>
 
-            {/* 1. Manage Subscription */}
-            <a
-              href={portalUrl}
-              onClick={handlePortalClick}
-              className="flex items-center justify-between w-full rounded-2xl px-4 py-3.5 transition-all"
-              style={{ background: `${tierColor}12`, border: `1px solid ${tierColor}30` }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}22` }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}12` }}
-            >
-              <span className="flex items-center gap-2.5 text-[13px] font-semibold" style={{ color: tierColor }}>
-                <Settings size={14} />
-                {isHe ? 'ניהול מנוי ושנמוך' : 'Manage Subscription & Downgrade'}
-              </span>
-              <ArrowUpRight size={13} style={{ color: `${tierColor}80` }} />
-            </a>
+            {/* Action container */}
+            <div className="rounded-3xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.35)',
+              }}>
 
-            {/* 2. View Invoices */}
-            <a
-              href={portalUrl}
-              onClick={handlePortalClick}
-              className="flex items-center justify-between w-full rounded-2xl px-4 py-3.5 transition-all"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)' }}
-            >
-              <div>
-                <div className="flex items-center gap-2.5 text-[13px] font-semibold text-white/70 mb-0.5">
-                  <Download size={14} className="flex-none" />
-                  {isHe ? 'חשבוניות וקבלות' : 'View Invoices & Receipts'}
+              {/* 1. Manage Subscription */}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}10` }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+                    style={{ background: `${tierColor}18`, border: `1px solid ${tierColor}28` }}>
+                    <Settings size={13} style={{ color: tierColor }} />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white/85">
+                      {isHe ? 'ניהול מנוי ושנמוך' : 'Manage Subscription & Downgrade'}
+                    </p>
+                    <p className="text-[11px] text-white/35 mt-0.5">
+                      {isHe ? 'שנה תוכנית, פרטי תשלום, ועוד' : 'Change plan, payment method, and more'}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-white/30 leading-relaxed ms-[22px]">
-                  {isHe
-                    ? 'חשבוניות מס קבלה מופקות אוטומטית ע״י חשבונית ירוקה (Morning) לאחר כל חיוב'
-                    : 'Tax invoices generated automatically via Morning (Green Invoice) after each charge'}
-                </p>
-              </div>
-              <ArrowUpRight size={13} className="text-white/25 flex-none ms-3" />
-            </a>
-
-            {/* 3. Cancel Subscription */}
-            <a
-              href={portalUrl}
-              onClick={handlePortalClick}
-              className="flex items-center justify-between w-full rounded-2xl px-4 py-3.5 transition-all"
-              style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.09)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.04)' }}
-            >
-              <div>
-                <div className="flex items-center gap-2.5 text-[13px] font-semibold text-red-400/80 mb-0.5">
-                  <XCircle size={14} className="flex-none" />
-                  {isHe ? 'ביטול מנוי' : 'Cancel Subscription'}
+                <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowUpRight size={14} style={{ color: `${tierColor}70` }} />
                 </div>
-                <p className="text-[11px] text-red-400/40 leading-relaxed ms-[22px]">
-                  {isHe
-                    ? 'הביטול ייכנס לתוקף בסוף מחזור החיוב. לא יינתנו החזרים יחסיים.'
-                    : 'Cancellations take effect at the end of the billing cycle. No pro-rata refunds.'}
-                </p>
-              </div>
-              <ArrowUpRight size={13} className="text-red-400/30 flex-none ms-3" />
-            </a>
+              </a>
+
+              {/* 2. View Invoices */}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.03)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Download size={13} className="text-white/55" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white/70">
+                      {isHe ? 'חשבוניות וקבלות' : 'View Invoices & Receipts'}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {/* Glowing dot for Morning */}
+                      <span className="h-1.5 w-1.5 rounded-full flex-none"
+                        style={{ background: '#4ade80', boxShadow: '0 0 5px #4ade8099' }} />
+                      <p className="text-[11px] text-white/32">
+                        {isHe
+                          ? 'מופקות אוטומטית ע״י Morning (חשבונית ירוקה)'
+                          : 'Auto-generated via Morning (Green Invoice)'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowUpRight size={14} className="text-white/25" />
+                </div>
+              </a>
+
+              {/* 3. Cancel Subscription */}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.06)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <XCircle size={13} className="text-red-400/70" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-red-400/75 group-hover:text-red-400 transition-colors">
+                      {isHe ? 'ביטול מנוי' : 'Cancel Subscription'}
+                    </p>
+                    <p className="text-[11px] text-red-400/35 mt-0.5">
+                      {isHe
+                        ? 'ייכנס לתוקף בסוף מחזור החיוב. ללא החזרים.'
+                        : 'Takes effect at end of billing cycle. No refunds.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowUpRight size={14} className="text-red-400/28" />
+                </div>
+              </a>
+            </div>
 
             {/* Lifecycle transparency note */}
-            <p className="text-[10.5px] leading-relaxed px-1 pt-1" style={{ color: 'rgba(255,255,255,0.22)' }}>
+            <p className="text-[10.5px] leading-relaxed px-1 pt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
               {isHe
                 ? 'שדרוגים מתעדכנים מיידית (חיוב יחסי). ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי.'
                 : 'Upgrades are pro-rated and applied immediately. Downgrades and cancellations take effect at the end of the current billing cycle.'}
@@ -323,25 +469,31 @@ export default function Billing() {
           </motion.div>
         )}
 
-        {/* ── PRO → upgrade to Premium ────────────────────────────────────────── */}
+        {/* ── PRO → upgrade to Premium ──────────────────────────────────────────── */}
         {isPro && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.16 }}
-            className="rounded-3xl p-5 mb-5"
-            style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <div className="flex items-start justify-between gap-4">
+          <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' as const }}
+            className="rounded-3xl p-5 mb-5 overflow-hidden relative"
+            style={{
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.09) 0%, rgba(212,175,55,0.03) 100%)',
+              border: '1px solid rgba(212,175,55,0.22)',
+              boxShadow: 'inset 0 1px 0 rgba(212,175,55,0.08), 0 0 40px rgba(212,175,55,0.06)',
+            }}>
+            <div className="absolute -top-16 -end-16 h-40 w-40 rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%)', filter: 'blur(24px)' }} />
+            <div className="relative flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <InfinityIcon size={15} style={{ color: '#d4af37' }} />
-                  <p className="text-[13px] font-bold" style={{ color: '#d4af37' }}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <InfinityIcon size={14} style={{ color: '#d4af37' }} />
+                  <p className="text-[13px] font-black tracking-tight" style={{ color: '#d4af37' }}>
                     {isHe ? 'שדרג לפרימיום' : 'Upgrade to Premium'}
                   </p>
                 </div>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {(isHe
                     ? ['הצעות ללא הגבלה', 'תמיכה בעדיפות גבוהה', 'השפעה על מפת הדרכים']
                     : ['Unlimited proposals', 'Priority support', 'Roadmap influence']
                   ).map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-[12px] text-white/50">
+                    <li key={i} className="flex items-center gap-2 text-[12px] text-white/45">
                       <CheckCircle2 size={11} style={{ color: '#d4af37' }} className="flex-none" />
                       {f}
                     </li>
@@ -351,81 +503,95 @@ export default function Billing() {
               <a
                 href={STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#'}
                 onClick={e => { if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') } }}
-                className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2 text-[12px] font-bold transition-all whitespace-nowrap"
-                style={{ background: 'rgba(212,175,55,0.18)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.35)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.28)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.18)' }}
+                className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all whitespace-nowrap"
+                style={{
+                  background: 'rgba(212,175,55,0.18)',
+                  color: '#d4af37',
+                  border: '1px solid rgba(212,175,55,0.32)',
+                  boxShadow: '0 0 16px rgba(212,175,55,0.12)',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.28)'; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 4px 20px rgba(212,175,55,0.2)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.18)'; el.style.transform = ''; el.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)' }}
               >
-                {isHe ? 'שדרג — ₪39 / חודש' : 'Upgrade — ₪39 / month'} <ArrowUpRight size={12} />
+                {isHe ? 'שדרג — ₪39 / חודש' : 'Upgrade — ₪39 / mo'} <ArrowUpRight size={12} />
               </a>
             </div>
           </motion.div>
         )}
 
-        {/* ── FREE: upgrade cards ─────────────────────────────────────────────── */}
+        {/* ── FREE: Upgrade cards ────────────────────────────────────────────────── */}
         {tier === 'free' && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.14 }} className="mb-5">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/30 mb-3">
+          <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.14, ease: 'easeOut' as const }} className="mb-5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-3 px-0.5">
               {isHe ? 'שדרוגים זמינים' : 'Available upgrades'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Pro */}
+
+              {/* Pro card */}
               <a
                 href={STRIPE_PRO_LINK ? buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email) : '#'}
                 onClick={e => { if (!STRIPE_PRO_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PRO_LINK not set') } }}
                 className="flex flex-col rounded-2xl p-5 transition-all"
-                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(99,102,241,0.15)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(99,102,241,0.08)' }}
+                style={{
+                  background: 'linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.04) 100%)',
+                  border: '1px solid rgba(99,102,241,0.22)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'linear-gradient(160deg, rgba(99,102,241,0.16) 0%, rgba(99,102,241,0.07) 100%)'; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 32px rgba(99,102,241,0.15)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.04) 100%)'; el.style.transform = ''; el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05)' }}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <Zap size={15} style={{ color: '#818cf8' }} />
+                  <Zap size={14} style={{ color: '#818cf8' }} />
                   <p className="text-[13px] font-black" style={{ color: '#818cf8' }}>{isHe ? 'פרו' : 'Pro'}</p>
                 </div>
-                <p className="text-[22px] font-black text-white mb-0.5">₪19</p>
-                <p className="text-[10px] text-indigo-400/60 mb-3">{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
+                <p className="text-[28px] font-black text-white tracking-tight mb-0">₪19</p>
+                <p className="text-[11px] text-indigo-400/55 mb-4">{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
                 {(isHe
                   ? ['עד 100 הצעות', 'Webhooks + אוטומציות', 'תמיכה ישירה']
                   : ['Up to 100 proposals', 'Webhooks + automations', 'Direct support']
                 ).map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] text-white/45 mb-1.5">
+                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-white/42 mb-2">
                     <CheckCircle2 size={10} style={{ color: '#818cf8' }} className="flex-none" /> {f}
                   </div>
                 ))}
                 <div className="mt-auto pt-4">
-                  <div className="flex items-center justify-center gap-1.5 w-full rounded-xl py-2.5 text-[12px] font-bold"
-                    style={{ background: 'rgba(99,102,241,0.22)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.35)' }}>
+                  <div className="flex items-center justify-center gap-1.5 w-full rounded-xl py-2.5 text-[12.5px] font-bold"
+                    style={{ background: 'rgba(99,102,241,0.22)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.32)' }}>
                     {isHe ? 'שדרג עכשיו' : 'Upgrade Now'} <ArrowUpRight size={12} />
                   </div>
                 </div>
               </a>
 
-              {/* Premium */}
+              {/* Premium card */}
               <a
                 href={STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#'}
                 onClick={e => { if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') } }}
                 className="flex flex-col rounded-2xl p-5 transition-all"
-                style={{ background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.2)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.13)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.07)' }}
+                style={{
+                  background: 'linear-gradient(160deg, rgba(212,175,55,0.09) 0%, rgba(212,175,55,0.03) 100%)',
+                  border: '1px solid rgba(212,175,55,0.2)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'linear-gradient(160deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.06) 100%)'; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px rgba(212,175,55,0.1)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'linear-gradient(160deg, rgba(212,175,55,0.09) 0%, rgba(212,175,55,0.03) 100%)'; el.style.transform = ''; el.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <InfinityIcon size={15} style={{ color: '#d4af37' }} />
+                  <InfinityIcon size={14} style={{ color: '#d4af37' }} />
                   <p className="text-[13px] font-black" style={{ color: '#d4af37' }}>{isHe ? 'פרימיום' : 'Premium'}</p>
                 </div>
-                <p className="text-[22px] font-black text-white mb-0.5">₪39</p>
-                <p className="text-[10px] mb-3" style={{ color: 'rgba(212,175,55,0.6)' }}>{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
+                <p className="text-[28px] font-black text-white tracking-tight mb-0">₪39</p>
+                <p className="text-[11px] mb-4" style={{ color: 'rgba(212,175,55,0.55)' }}>{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
                 {(isHe
                   ? ['הצעות ללא הגבלה', 'הכל כולל פרו', 'תמיכה בעדיפות גבוהה']
                   : ['Unlimited proposals', 'Everything in Pro', 'Priority support']
                 ).map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] text-white/45 mb-1.5">
+                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-white/42 mb-2">
                     <CheckCircle2 size={10} style={{ color: '#d4af37' }} className="flex-none" /> {f}
                   </div>
                 ))}
                 <div className="mt-auto pt-4">
-                  <div className="flex items-center justify-center gap-1.5 w-full rounded-xl py-2.5 text-[12px] font-bold"
-                    style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.35)' }}>
+                  <div className="flex items-center justify-center gap-1.5 w-full rounded-xl py-2.5 text-[12.5px] font-bold"
+                    style={{ background: 'rgba(212,175,55,0.2)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.32)' }}>
                     {isHe ? 'שדרג עכשיו' : 'Upgrade Now'} <ArrowUpRight size={12} />
                   </div>
                 </div>
@@ -434,15 +600,19 @@ export default function Billing() {
           </motion.div>
         )}
 
-        {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
+        {/* ── FAQ ────────────────────────────────────────────────────────────────── */}
         {isPaid && (
-          <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.22 }}
-            className="rounded-3xl p-5 mb-5"
-            style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-white/30 mb-4">
+          <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.22, ease: 'easeOut' as const }}
+            className="rounded-3xl p-6 mb-5"
+            style={{
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-5">
               {isHe ? 'שאלות נפוצות' : 'FAQ'}
             </p>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {[
                 {
                   q: isHe ? 'מה קורה כשמבטלים את המנוי?' : 'What happens when I cancel?',
@@ -469,11 +639,14 @@ export default function Billing() {
                     : 'DealSpace does not offer automatic pro-rata refunds for unused periods. For exceptional refund requests — contact support@dealspace.app',
                 },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <HelpCircle size={14} className="flex-none mt-0.5 text-indigo-400/60" />
+                <div key={i} className="flex items-start gap-3.5">
+                  <div className="flex h-6 w-6 flex-none items-center justify-center rounded-lg mt-0.5"
+                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.18)' }}>
+                    <HelpCircle size={11} className="text-indigo-400/70" />
+                  </div>
                   <div>
-                    <p className="text-[12px] font-bold text-white/70 mb-1">{item.q}</p>
-                    <p className="text-[12px] text-white/40 leading-relaxed">{item.a}</p>
+                    <p className="text-[12.5px] font-bold text-white/68 mb-1.5">{item.q}</p>
+                    <p className="text-[12px] text-white/38 leading-relaxed">{item.a}</p>
                   </div>
                 </div>
               ))}
@@ -481,24 +654,36 @@ export default function Billing() {
           </motion.div>
         )}
 
-        {/* ── Security note ────────────────────────────────────────────────────── */}
-        <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.28 }}
-          className="flex items-center gap-3 rounded-2xl px-5 py-3.5 mb-4"
-          style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <ShieldCheck size={14} className="text-emerald-400/60 flex-none" />
-          <p className="text-[11px] text-white/30 leading-relaxed">
+        {/* ── Security note ──────────────────────────────────────────────────────── */}
+        <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.28, ease: 'easeOut' as const }}
+          className="flex items-center gap-3.5 rounded-2xl px-5 py-4 mb-3"
+          style={{
+            background: 'linear-gradient(160deg, rgba(74,222,128,0.06) 0%, rgba(74,222,128,0.02) 100%)',
+            border: '1px solid rgba(74,222,128,0.12)',
+          }}>
+          <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl"
+            style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)' }}>
+            <ShieldCheck size={13} className="text-emerald-400/80" />
+          </div>
+          <p className="text-[11.5px] text-white/35 leading-relaxed">
             {isHe
               ? 'כל פרטי התשלום מאוחסנים ומנוהלים ישירות ב-Stripe — תקן PCI-DSS. DealSpace לא שומר מספרי כרטיס אשראי.'
               : 'All payment details are stored and managed directly by Stripe — PCI-DSS compliant. DealSpace never stores card numbers.'}
           </p>
         </motion.div>
 
-        {/* ── Israeli invoicing compliance note ────────────────────────────────── */}
-        <motion.div {...animBase} transition={{ duration: 0.4, delay: 0.32 }}
-          className="flex items-start gap-3 rounded-2xl px-5 py-4"
-          style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)' }}>
-          <Info size={14} className="text-indigo-400/70 flex-none mt-0.5" />
-          <p className="text-[11px] text-white/30 leading-relaxed">
+        {/* ── Israeli invoicing compliance note ─────────────────────────────────── */}
+        <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.32, ease: 'easeOut' as const }}
+          className="flex items-start gap-3.5 rounded-2xl px-5 py-4"
+          style={{
+            background: 'linear-gradient(160deg, rgba(99,102,241,0.07) 0%, rgba(99,102,241,0.02) 100%)',
+            border: '1px solid rgba(99,102,241,0.14)',
+          }}>
+          <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl mt-0.5"
+            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <Info size={13} className="text-indigo-400/80" />
+          </div>
+          <p className="text-[11.5px] text-white/35 leading-relaxed">
             {isHe
               ? 'חשבונית מס/קבלה מוכרת למס (הכוללת מע"מ ומספר הקצאה) מופקת אוטומטית ונשלחת למייל שלכם לאחר כל חיוב חודשי באמצעות Morning (חשבונית ירוקה).'
               : 'A recognized Israeli Tax Invoice / Receipt (including VAT and allocation number) is automatically generated and sent to your email after each monthly charge via Morning (Green Invoice).'}

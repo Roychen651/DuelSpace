@@ -121,39 +121,58 @@ export function GlobalFooter() {
     { icon: <CheckCircle2 size={10} style={{ color: '#4ade80' }} />, text: c.trust[2] },
   ]
 
-  // Shared link button class — RTL-aware hover translate
-  const linkCls = 'text-[13px] text-white/40 transition-[transform,color] duration-200 hover:text-white ltr:hover:translate-x-0.5 rtl:hover:-translate-x-0.5 text-start block py-0.5'
+  // Link class — direction-aware translate + smooth transition
+  const linkCls = [
+    'text-[13px] text-white/45 text-start block py-1',
+    'transition-all duration-300',
+    'hover:text-white',
+    'ltr:hover:translate-x-1 rtl:hover:-translate-x-1',
+    'transform',
+  ].join(' ')
 
   return (
     <footer
       dir={isHe ? 'rtl' : 'ltr'}
       className="relative z-10"
-      style={{ background: 'rgba(3,3,5,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
+      style={{
+        background: 'rgba(3,3,5,0.94)',
+        backdropFilter: 'blur(32px)',
+        WebkitBackdropFilter: 'blur(32px)',
+      }}
     >
-      {/* Top gradient border */}
+      {/* Top gradient border — indigo glow */}
       <div
         className="h-px w-full"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(99,102,241,0.35) 30%, rgba(168,85,247,0.35) 70%, transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.5) 30%, rgba(168,85,247,0.5) 70%, transparent 100%)' }}
       />
 
-      <div className="max-w-6xl mx-auto px-5 sm:px-6 pt-8 pb-7">
+      {/* Subtle inner top shadow for depth */}
+      <div
+        className="h-px w-full"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent)' }}
+      />
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
 
         {/* ════════════════════════════════════════════════════════════════
             MOBILE LAYOUT  (< md)
         ════════════════════════════════════════════════════════════════ */}
-        <div className="md:hidden">
+        <div className="md:hidden py-10">
 
           {/* Brand row */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between mb-7">
+            <div className="flex items-center gap-3">
               <div
-                className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                  boxShadow: '0 0 24px rgba(99,102,241,0.5), 0 0 8px rgba(99,102,241,0.3)',
+                }}
               >
-                <Zap size={14} className="text-white" />
+                <Zap size={15} className="text-white" />
               </div>
               <div>
-                <span className="text-[14px] font-black text-white" style={{ letterSpacing: '-0.02em' }}>
+                <span className="text-[15px] font-black text-white" style={{ letterSpacing: '-0.025em' }}>
                   DealSpace
                 </span>
                 <span className="ms-1.5 text-[11px] text-white/30 font-normal">{c.tagline}</span>
@@ -162,7 +181,8 @@ export function GlobalFooter() {
 
             <button
               onClick={() => setLocale(isHe ? 'en' : 'he')}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65 flex-none border border-white/[0.08]"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/38 transition-all hover:text-white/70 flex-none"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
             >
               <Globe size={10} />
               {c.langToggle}
@@ -170,15 +190,15 @@ export function GlobalFooter() {
           </div>
 
           {/* Divider */}
-          <div className="mb-5 h-px bg-white/[0.06]" />
+          <div className="mb-6 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
 
-          {/* 2-column link grid — 8 links, no headings, py-2 touch targets */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 mb-5">
+          {/* 2-column link grid */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0 mb-7">
             {c.mobileLinks.map(link => (
               <button
                 key={link.label}
                 onClick={() => handleLink(link.path)}
-                className="text-start text-[12.5px] font-medium text-white/40 transition-colors hover:text-white py-2"
+                className="text-start text-[12.5px] font-medium text-white/42 transition-all duration-300 hover:text-white py-2.5 transform hover:translate-x-0.5"
               >
                 {link.label}
               </button>
@@ -186,15 +206,18 @@ export function GlobalFooter() {
           </div>
 
           {/* Divider */}
-          <div className="mb-4 h-px bg-white/[0.06]" />
+          <div className="mb-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
 
           {/* Trust badges */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
             {TRUST_BADGES.map(badge => (
               <div
                 key={badge.text}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
               >
                 {badge.icon}
                 <span className="text-[9.5px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
@@ -216,32 +239,35 @@ export function GlobalFooter() {
 
         {/* ════════════════════════════════════════════════════════════════
             DESKTOP LAYOUT  (md+)
-            Brand col + 3 link columns
         ════════════════════════════════════════════════════════════════ */}
-        <div className="hidden md:block">
+        <div className="hidden md:block py-20">
 
           {/* 4-column grid: brand + product + legal + support */}
-          <div className="grid md:grid-cols-4 gap-10 mb-10">
+          <div className="grid md:grid-cols-4 gap-12 mb-14">
 
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-2.5 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl flex-none"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 20px rgba(99,102,241,0.45)' }}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl flex-none"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                    boxShadow: '0 0 28px rgba(99,102,241,0.55), 0 0 10px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+                  }}
                 >
-                  <Zap size={16} className="text-white" />
+                  <Zap size={17} className="text-white" />
                 </div>
-                <span className="text-[16px] font-black text-white" style={{ letterSpacing: '-0.02em' }}>
+                <span className="text-[17px] font-black text-white" style={{ letterSpacing: '-0.025em' }}>
                   DealSpace
                 </span>
               </div>
-              <p className="text-[12px] leading-relaxed text-white/38 mb-5">
+              <p className="text-[12.5px] leading-relaxed text-white/35 mb-6">
                 {c.description}
               </p>
               <button
                 onClick={() => setLocale(isHe ? 'en' : 'he')}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/35 transition-colors hover:text-white/65 border border-white/[0.08]"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium text-white/35 transition-all hover:text-white/65 hover:-translate-y-0.5"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
               >
                 <Globe size={11} />
                 {c.langToggle}
@@ -250,8 +276,8 @@ export function GlobalFooter() {
 
             {/* Product */}
             <div>
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col2.heading}</p>
-              <ul className="space-y-1">
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col2.heading}</p>
+              <ul className="space-y-0.5">
                 {c.col2.links.map(link => (
                   <li key={link.label}>
                     <button onClick={() => handleLink(link.path)} className={linkCls}>
@@ -264,8 +290,8 @@ export function GlobalFooter() {
 
             {/* Legal */}
             <div>
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col3.heading}</p>
-              <ul className="space-y-1">
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col3.heading}</p>
+              <ul className="space-y-0.5">
                 {c.col3.links.map(link => (
                   <li key={link.label}>
                     <button onClick={() => handleLink(link.path)} className={linkCls}>
@@ -278,8 +304,8 @@ export function GlobalFooter() {
 
             {/* Support */}
             <div>
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.12em] text-white/65">{c.col4.heading}</p>
-              <ul className="space-y-1">
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col4.heading}</p>
+              <ul className="space-y-0.5">
                 {c.col4.links.map(link => (
                   <li key={link.label}>
                     <button onClick={() => handleLink(link.path)} className={linkCls}>
@@ -293,19 +319,22 @@ export function GlobalFooter() {
 
           {/* Divider */}
           <div
-            className="mb-6 h-px"
-            style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)' }}
+            className="mb-8 h-px"
+            style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.08) 80%, transparent)' }}
           />
 
-          {/* Bottom bar: trust badges | copyright + Made in Israel */}
+          {/* Bottom bar */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             {/* Trust badges */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               {TRUST_BADGES.map(badge => (
                 <div
                   key={badge.text}
                   className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                  style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
                 >
                   {badge.icon}
                   <span className="text-[10px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
@@ -316,11 +345,11 @@ export function GlobalFooter() {
             {/* Copyright + Made in Israel */}
             <div className="flex items-center gap-3">
               <span
-                className="text-[10.5px] font-medium text-white/30 rounded-full px-3 py-1.5"
+                className="text-[10.5px] font-medium text-white/28 rounded-full px-3 py-1.5"
                 style={{
-                  background: 'rgba(255,255,255,0.035)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: '0 0 12px rgba(99,102,241,0.08)',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 0 16px rgba(99,102,241,0.08)',
                 }}
               >
                 {c.madeInIsrael}
@@ -330,7 +359,7 @@ export function GlobalFooter() {
           </div>
 
           {/* Legal note */}
-          <p className="mt-3 text-[10px] text-white/14 leading-relaxed">
+          <p className="mt-4 text-[10px] text-white/14 leading-relaxed">
             {c.legalNote}
           </p>
         </div>
