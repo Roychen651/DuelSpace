@@ -379,12 +379,17 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
         {plan.price === 0 ? (
           <p className="text-3xl font-black text-white/80">{isHe ? 'חינם' : 'Free'}</p>
         ) : (
-          <div className="flex items-end gap-1">
-            <span className="text-3xl font-black text-white">₪{plan.price}</span>
-            <span className="text-xs text-white/35 mb-1 font-medium">
-              {isHe ? plan.periodHe : plan.periodEn}
-            </span>
-          </div>
+          <>
+            <div className="flex items-end gap-1">
+              <span className="text-3xl font-black text-white">₪{plan.price}</span>
+              <span className="text-xs text-white/35 mb-1 font-medium">
+                {isHe ? plan.periodHe : plan.periodEn}
+              </span>
+            </div>
+            <p className="text-[10px] font-semibold mt-0.5" style={{ color: `${plan.accent}99` }}>
+              {isHe ? 'כולל מע"מ' : 'VAT incl.'}
+            </p>
+          </>
         )}
       </div>
 
@@ -437,7 +442,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
           )}
           {isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn}
         </motion.button>
-      ) : (
+      ) : STRIPE_CUSTOMER_PORTAL ? (
         // ── Downgrade / manage billing — Stripe Customer Portal ──
         <motion.button
           onClick={handleCta}
@@ -462,6 +467,14 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
           <CreditCard size={13} />
           {isHe ? 'ניהול מנוי' : 'Manage Subscription'}
         </motion.button>
+      ) : (
+        // ── Portal not configured — show contact fallback ──
+        <div
+          className="w-full rounded-xl py-2.5 px-3 text-[11px] text-center leading-relaxed"
+          style={{ background: 'rgba(255,255,255,0.02)', color: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {isHe ? 'לשינוי תוכנית: support@dealspace.app' : 'To change plan: support@dealspace.app'}
+        </div>
       )}
     </motion.div>
   )

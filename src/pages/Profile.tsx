@@ -787,30 +787,8 @@ export default function Profile() {
               </span>
             </div>
 
-            {/* CTA — paid: Stripe Customer Portal; free: upgrade links */}
-            {(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL ? (
-              <div className="space-y-3">
-                <motion.a
-                  href={STRIPE_CUSTOMER_PORTAL}
-                  className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
-                  whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
-                >
-                  <span className="flex items-center gap-2">
-                    <CreditCard size={14} />
-                    {isHe ? 'ניהול מנוי, חשבוניות וביטול' : 'Manage subscription, invoices & cancellation'}
-                  </span>
-                  <ExternalLink size={12} className="opacity-40" />
-                </motion.a>
-                <p className="text-[11px] text-slate-400 dark:text-white/30 leading-relaxed">
-                  {isHe
-                    ? 'שינוי תוכנית, עדכון אמצעי תשלום, הורדת חשבוניות וביטול — הכל דרך פורטל Stripe המאובטח.'
-                    : 'Change plan, update payment method, download invoices, or cancel — all via the secure Stripe portal.'}
-                </p>
-              </div>
-            ) : (
+            {/* FREE — upgrade options */}
+            {tier === 'free' && (
               <div className="space-y-3">
                 <p className="text-xs text-slate-400 dark:text-white/35 leading-relaxed -mt-2 mb-3">
                   {isHe
@@ -847,6 +825,112 @@ export default function Profile() {
                     </motion.a>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* PRO — upgrade to Premium + manage/cancel */}
+            {tier === 'pro' && (
+              <div className="space-y-4">
+                {/* Upgrade to Premium */}
+                {STRIPE_PREMIUM_LINK && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                      {isHe ? 'שדרוג זמין' : 'Available upgrade'}
+                    </p>
+                    <motion.a
+                      href={buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email)}
+                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
+                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.22)', color: '#d4af37', transition: 'background 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.15)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.08)' }}
+                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <InfinityIcon size={14} />
+                        {isHe ? 'שדרג לפרימיום — ₪39 / חודש' : 'Upgrade to Premium — ₪39 / mo'}
+                      </span>
+                      <span className="text-[10px] opacity-50 font-normal">
+                        {isHe ? 'הצעות ללא הגבלה' : 'Unlimited proposals'}
+                      </span>
+                    </motion.a>
+                  </div>
+                )}
+
+                {/* Manage / Cancel */}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                    {isHe ? 'ניהול מנוי' : 'Subscription management'}
+                  </p>
+                  {STRIPE_CUSTOMER_PORTAL ? (
+                    <motion.a
+                      href={STRIPE_CUSTOMER_PORTAL}
+                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
+                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <CreditCard size={14} />
+                        {isHe ? 'עדכון תשלום, חשבוניות וביטול' : 'Update billing, invoices & cancel'}
+                      </span>
+                      <ExternalLink size={12} className="opacity-40" />
+                    </motion.a>
+                  ) : (
+                    <p className="text-[12px] text-white/35 leading-relaxed rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {isHe
+                        ? 'לביטול, שינוי תוכנית או הורדת חשבוניות — פנה לתמיכה: support@dealspace.app'
+                        : 'To cancel, change plan, or download invoices — contact support@dealspace.app'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Invoice note */}
+                <p className="text-[11px] text-white/25 leading-relaxed">
+                  {isHe
+                    ? 'Stripe שולחת קבלה אוטומטית למייל שלך בכל חיוב חודשי. חשבוניות מס זמינות בפורטל.'
+                    : 'Stripe automatically emails a receipt on every monthly charge. Tax invoices are available in the portal.'}
+                </p>
+              </div>
+            )}
+
+            {/* PREMIUM — manage / downgrade / cancel */}
+            {tier === 'unlimited' && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                    {isHe ? 'ניהול מנוי' : 'Subscription management'}
+                  </p>
+                  {STRIPE_CUSTOMER_PORTAL ? (
+                    <motion.a
+                      href={STRIPE_CUSTOMER_PORTAL}
+                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
+                      style={{ background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.22)', color: '#d4af37', transition: 'background 0.2s, border-color 0.2s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.13)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.35)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.22)' }}
+                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <CreditCard size={14} />
+                        {isHe ? 'ניהול תוכנית, חשבוניות, שינוי וביטול' : 'Manage plan, invoices & cancellation'}
+                      </span>
+                      <ExternalLink size={12} className="opacity-40" />
+                    </motion.a>
+                  ) : (
+                    <p className="text-[12px] text-white/35 leading-relaxed rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {isHe
+                        ? 'לביטול, שינוי תוכנית או הורדת חשבוניות — פנה לתמיכה: support@dealspace.app'
+                        : 'To cancel, change plan, or download invoices — contact support@dealspace.app'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Invoice note */}
+                <p className="text-[11px] text-white/25 leading-relaxed">
+                  {isHe
+                    ? 'Stripe שולחת קבלה אוטומטית למייל שלך בכל חיוב חודשי. לשינוי תוכנית — השתמש בפורטל הניהול למעלה.'
+                    : 'Stripe automatically emails a receipt on every monthly charge. To change or cancel your plan, use the management portal above.'}
+                </p>
               </div>
             )}
           </Card>
