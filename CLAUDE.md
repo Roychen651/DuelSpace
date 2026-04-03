@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–48.6 (Footer Routing & UI Overhaul).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–50.5 (Self-Serve Lifecycle Engine + Billing State Machine).
 
 ---
 
@@ -117,10 +117,10 @@ src/
 │   ├── Dashboard.tsx        # /dashboard — KPI cards, grid/list/kanban views, filter/sort bar; DunningBanner when billing_status=past_due
 │   ├── ProposalBuilder.tsx  # /proposals/new + /proposals/:id — split-screen editor
 │   ├── DealRoom.tsx         # /deal/:token — public, no auth, full client-facing flow
-│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, VAT, global business terms
+│   ├── Profile.tsx          # /profile — identity, avatar, password, business info, brand color, company logo, business terms, VAT, communication preferences, danger zone (account deletion)
 │   ├── ServicesLibrary.tsx  # /services — services catalog CRUD (Supabase-backed via useServicesStore)
 │   ├── Integrations.tsx     # /integrations — Webhook automations hub; full-page paywall for free tier, step-by-step platform guides (Make/Zapier/n8n), webhook config + test
-│   ├── Billing.tsx          # /billing — Subscription management page; current plan, period end, cancel-at-end banner, past-due banner, upgrade/downgrade CTAs, FAQ
+│   ├── Billing.tsx          # /billing — True billing state machine (States A–D): Free upgrade cards, Active 3-button action center, Canceled reactivate, Past-due payment update; FAQ; Morning invoicing compliance note
 │   ├── Legal.tsx            # /security — security policy page
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
 │   ├── PrivacyPolicy.tsx    # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
@@ -1058,16 +1058,67 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 
 ## 15. Profile Page
 
-`/profile` (ProtectedRoute) — eight sections:
+`/profile` (ProtectedRoute) — ten sections:
 
 1. **Avatar** — upload to Supabase Storage, `updateProfile({ avatar_url })`
 2. **Display Name** — `updateProfile({ full_name })`
 3. **Password** — strength meter (evaluatePassword), `updatePassword(newPassword)`
 4. **Business Identity** (Building2 icon) — company_name, tax_id, phone, address, signatory_name — saved directly via `supabase.auth.updateUser({ data: biz })` (not through auth store)
 5. **Brand Color** (Palette icon) — 12 preset swatches + custom hex input + native `<input type="color">` (sr-only) + live preview chip — saved via `supabase.auth.updateUser({ data: { brand_color } })`
-6. **Company Logo** (ImageIcon) — upload to Supabase Storage bucket `avatars/logos/${user.id}.ext`, saves URL to `user_metadata.logo_url`. Displayed in Deal Room above project title (white filter for dark bg) and on PDF cover page. Section sits between Brand Color and Password.
+6. **Company Logo** (ImageIcon) — upload to Supabase Storage bucket `avatars/logos/${user.id}.ext`, saves URL to `user_metadata.logo_url`. Displayed in Deal Room above project title and on PDF cover page. Section sits between Brand Color and Global Business Terms.
 7. **Global Business Terms** (FileText icon) — TipTap `RichTextEditor` for formatted business terms (h1/h2/h3, bold, italic, lists). Saved to `user_metadata.business_terms` via `supabase.auth.updateUser({ data: { business_terms } })`. EditorPanel auto-injects this into every saved proposal. In the Deal Room, shown as "תנאי העסק / Business Terms" section (always visible, including after signing). Client must check a consent checkbox before `canSign` is true. Included in PDF on a new page. Section sits between Company Logo and VAT Rate.
 8. **VAT Rate** (Percent icon) — decimal input persisted to `localStorage('dealspace:vat-rate')`, default `0.18`
+9. **Communication Preferences** (BellRing icon) — two toggles:
+   - **Marketing & Offers / עדכונים שיווקיים והטבות** — custom `<button role="switch">` toggle (indigo glow when on). Default: `true`. Saved to `user_metadata.marketing_opt_in` via `supabase.auth.updateUser({ data: { marketing_opt_in } })`. State initialised from `user?.user_metadata?.marketing_opt_in ?? true`.
+   - **Product & Operational Updates / עדכונים תפעוליים ומוצריים** — visually locked/disabled toggle (always on). Labelled "Required per Terms of Service / נדרש לפי תנאי השירות". NOT interactive — never saves anything, never changes state.
+   - Section sits between VAT Rate and Danger Zone.
+10. **Danger Zone** (AlertTriangle icon, red border) — "Delete Account / מחק חשבון" red button. Clicking opens an `AnimatePresence` Framer Motion modal (backdrop + spring-animated card). Modal warns about irreversibility (data loss, active subscription must be cancelled first). User must type `"DELETE"` (en) or `"מחק"` (he) to enable the final red confirmation button. `canDelete = deleteConfirmText === deleteWord`. Calls `deleteAccount()` from `useAuthStore` in a `try/catch` (returns `Promise<void>` — no error return value). On error, sets `deleteError` string. Section sits at the very bottom of the page.
+
+### Communication Preferences state pattern
+```tsx
+const [marketingOptIn, setMarketingOptIn] = useState<boolean>(
+  (user?.user_metadata?.marketing_opt_in as boolean | undefined) ?? true
+)
+const [prefsSaving, setPrefsSaving] = useState(false)
+const [prefsSaved, setPrefsSaved]   = useState(false)
+
+const handleSavePrefs = async (newVal: boolean) => {
+  setMarketingOptIn(newVal)
+  setPrefsSaving(true)
+  const { error } = await supabase.auth.updateUser({ data: { marketing_opt_in: newVal } })
+  setPrefsSaving(false)
+  if (!error) { setPrefsSaved(true); setTimeout(() => setPrefsSaved(false), 2500) }
+}
+```
+
+### Custom toggle switch (RTL-safe)
+The toggle thumb uses a computed property key to handle both LTR and RTL layouts:
+```tsx
+style={{ [isHe ? 'right' : 'left']: isActive ? '1.25rem' : '0.125rem' }}
+```
+This avoids hardcoding `left` or `right`, which would render incorrectly in RTL without a CSS logical property.
+
+### Danger Zone state pattern
+```tsx
+const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+const [deleteConfirmText, setDeleteConfirmText] = useState('')
+const [deleting, setDeleting] = useState(false)
+const [deleteError, setDeleteError] = useState<string | null>(null)
+const deleteWord = isHe ? 'מחק' : 'DELETE'
+const canDelete = deleteConfirmText === deleteWord
+
+const handleDeleteAccount = async () => {
+  if (!canDelete) return
+  setDeleting(true)
+  setDeleteError(null)
+  try {
+    await deleteAccount()   // Promise<void> — no return value
+  } catch {
+    setDeleteError(isHe ? 'שגיאה במחיקת החשבון. נסה שוב.' : 'Failed to delete account. Please try again.')
+    setDeleting(false)
+  }
+}
+```
 
 ### user_metadata fields (auth.users)
 These live in `user.user_metadata` and are read by EditorPanel to populate `creator_info`:
@@ -1081,6 +1132,7 @@ These live in `user.user_metadata` and are read by EditorPanel to populate `crea
 - `brand_color` — hex string, e.g. `#6366f1`
 - `logo_url` — company logo URL (uploaded to Supabase Storage)
 - `business_terms` — TipTap HTML string — creator's global legal/business terms; frozen into each proposal by EditorPanel on save
+- `marketing_opt_in` — boolean — whether user consented to marketing emails (default: `true`; written client-side from Communication Preferences section)
 
 ---
 
@@ -2659,39 +2711,68 @@ The UI uses 'PREMIUM' as the display name. Never change the internal `'unlimited
 
 ---
 
-## 37. Billing Management Page (Sprint 47.4)
+## 37. Billing Management Page (Sprints 47.4 + 50 + 50.5)
 
 ### Architecture
 
-`src/pages/Billing.tsx` — full in-app subscription management UI at `/billing`. Reads billing state from four Zustand selectors:
+`src/pages/Billing.tsx` — true state-machine billing UI at `/billing`. Four mutually exclusive billing states drive the entire page layout. No `mailto:` fallbacks — portal buttons always render; missing env vars produce a dev-mode `alert()`.
 
 ```ts
 const tier          = useTier()
 const billingStatus = useBillingStatus()
 const periodEnd     = useSubscriptionPeriodEnd()   // Date | null
 const cancelAtEnd   = useCancelAtPeriodEnd()        // boolean
+
+// Derived states (use these, not raw selectors, in conditionals)
+const stateD = billingStatus === 'past_due'
+const stateC = isPaid && cancelAtEnd === true
+const stateB = isPaid && billingStatus === 'active' && !cancelAtEnd
+// State A = tier === 'free'
 ```
 
-### Page sections
+### `portalUrl` + `handlePortalClick` pattern
+```tsx
+const portalUrl = STRIPE_CUSTOMER_PORTAL || '#'
+const handlePortalClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  if (!STRIPE_CUSTOMER_PORTAL) {
+    e.preventDefault()
+    if (import.meta.env.DEV) alert('VITE_STRIPE_CUSTOMER_PORTAL not set in .env.local')
+  }
+}
+```
+Every portal `<a>` uses `href={portalUrl}` and `onClick={handlePortalClick}`. Never gate portal links behind `{STRIPE_CUSTOMER_PORTAL && ...}` — that hides actions from the UI in dev.
 
-1. **Past-due banner** — rendered when `billingStatus === 'past_due'`. Red glassmorphism card with portal link (or support email fallback). Same visual language as `DunningBanner` in Dashboard.
+### State A — Free tier (`tier === 'free'`)
 
-2. **Cancel-at-period-end banner** — rendered when `cancelAtEnd === true`. Amber glassmorphism card showing the exact end date from `periodEnd`. Tells user the subscription runs until the end of the billing period.
+- Current Plan Card: "חינם / Free", "עד 5 הצעות פעילות / Up to 5 active proposals"
+- Upgrade section: 2-column grid — Pro card (indigo, ₪19) + Premium card (gold, ₪39). Each card has a visible `"שדרג עכשיו / Upgrade Now"` button at the bottom. Links use `buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)`.
 
-3. **Current plan card** — always rendered. Shows:
-   - Tier badge + plan name + price + VAT note
-   - Next charge date (from `periodEnd`) or "Cancellation scheduled" label
-   - `billing_status` pill: active (green) / past_due (red) / canceled (gray) / never paid (gray)
-   - Invoice note: "Invoices are available in the Stripe Customer Portal"
-   - Management CTA: portal link (`STRIPE_CUSTOMER_PORTAL`) in tier color, OR `support@dealspace.app` fallback if env var not set
+### State B — Active paid, not canceling (`billingStatus === 'active'` && `!cancelAtEnd`)
 
-4. **Pro → Premium upgrade card** — rendered only when `tier === 'pro'`. Gold-accent card with 3 key Premium benefits + CTA to `buildCheckoutUrl(STRIPE_PREMIUM_LINK, ...)`.
+- Current Plan Card: tier name, price, next charge date (`periodEnd`), billing status pill (green "פעיל / Active")
+- Action Center — 3 distinct `<a>` buttons:
+  1. **Manage Subscription & Downgrade / ניהול מנוי ושנמוך** — tier-colored, `Settings` icon → `portalUrl`
+  2. **View Invoices & Receipts / חשבוניות וקבלות** — muted white, `Download` icon → `portalUrl`. Sub-text: "חשבוניות מס קבלה מופקות אוטומטית ע״י חשבונית ירוקה (Morning)"
+  3. **Cancel Subscription / ביטול מנוי** — danger-red (`rgba(239,68,68,0.04)` bg), `XCircle` icon → `portalUrl`. Sub-text: "הביטול ייכנס לתוקף בסוף מחזור החיוב / Cancellations take effect at the end of the billing cycle."
+- Lifecycle note below the 3 buttons: "שדרוגים מתעדכנים מיידית. ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי."
 
-5. **Free user upgrade cards** — rendered only when `tier === 'free'`. 2-column grid: Pro card (indigo) + Premium card (gold). Each links to `buildCheckoutUrl(...)`. Only rendered if env vars are set.
+### State C — Canceled at period end (`cancelAtEnd === true`)
 
-6. **FAQ section** — 4 bilingual Q&As: cancellation policy, invoices/receipts, plan changes, refund policy.
+- **Amber banner** (top of page, before Current Plan Card): shows exact end date from `periodEnd`, full-width `"חידוש מנוי / Reactivate Subscription"` button (`RotateCcw` icon, amber-colored) → `portalUrl`
+- Current Plan Card: billing status pill shows amber "מתבטל בסוף התקופה / Cancels at period end"
 
-7. **PCI-DSS security note** — "Payment info is handled exclusively by Stripe. DealSpace never stores card details."
+### State D — Past due (`billingStatus === 'past_due'`)
+
+- **Red banner** (top of page, before State C banner if applicable): full-width `"עדכון פרטי אשראי / Update Payment Method"` button (`CreditCard` icon, red-colored) → `portalUrl`
+- Current Plan Card: billing status pill shows red "תשלום נכשל / Payment failed"
+
+### Pro → Premium upsell (`tier === 'pro'`)
+Gold-accent card always shown below the action center. 3 bullet benefits + `"שדרג — ₪39 / חודש / Upgrade — ₪39 / month"` button → `buildCheckoutUrl(STRIPE_PREMIUM_LINK, ...)`. Rendered regardless of billing state.
+
+### Additional sections (always rendered)
+- **FAQ** (paid users only) — 4 Q&As: cancellation policy, invoices, plan changes, refunds
+- **PCI-DSS security note** — Stripe handles payment data; DealSpace never stores card numbers
+- **Morning invoicing compliance** — Israeli Tax Invoice / Receipt generated via Morning (חשבונית ירוקה) after each charge
 
 ### Selectors used (all from `useAuthStore`)
 
@@ -2757,6 +2838,35 @@ const CARD_CLS = 'bg-white dark:bg-transparent dark:bg-gradient-to-br ...'
 ```
 
 **Also:** Replace hardcoded hex heading colors (`#c4b5fd`, `#818cf8`, etc.) with Tailwind `dark:`-aware classes to prevent pre-hydration flash of unstyled content (FOUC).
+
+---
+
+## 39. Self-Serve Lifecycle Engine (Sprint 50)
+
+### Communication Preferences (Profile.tsx — section 9)
+
+New section with `BellRing` icon, between VAT Rate and Danger Zone. Contains:
+1. **Marketing & Offers toggle** — real toggle, saves `marketing_opt_in` to `user_metadata`
+2. **Product & Operational Updates toggle** — visually identical but always locked/disabled. Exists purely to communicate that transactional emails cannot be opted out per ToS. No state, no save action.
+
+Both toggles use a custom `<button role="switch">` component with an inline-style sliding thumb. The thumb uses the computed property key pattern for RTL safety: `style={{ [isHe ? 'right' : 'left']: isActive ? '1.25rem' : '0.125rem' }}`.
+
+### Danger Zone (Profile.tsx — section 10)
+
+Red-bordered card at the very bottom of `/profile`. Flow:
+1. User clicks "Delete Account / מחק חשבון"
+2. `AnimatePresence` modal opens (backdrop `onClick` closes it, card `stopPropagation`)
+3. Modal warns: data is permanently deleted, active subscriptions must be cancelled first
+4. Input requires exact string `"DELETE"` (en) or `"מחק"` (he) before the confirm button activates
+5. Confirm button calls `deleteAccount()` from `useAuthStore` — wrapped in `try/catch` because it returns `Promise<void>` (no error return value)
+6. On catch: sets `deleteError` state, re-enables button
+7. On success: `deleteAccount()` internally calls Supabase RPC then signs out — navigation is handled automatically
+
+### Billing Transparency (Billing.tsx — Sprint 50)
+
+Two new compliance elements added to the Billing page:
+1. **Morning (חשבונית ירוקה) invoicing note** — indigo-tinted info box explaining that Israeli Tax Invoice / Receipt is auto-generated and emailed after each charge
+2. **Lifecycle transparency copy** — below the State B action center: pro-rata upgrades, end-of-cycle downgrades/cancellations, no pro-rata refunds
 
 ---
 
@@ -2856,3 +2966,9 @@ const CARD_CLS = 'bg-white dark:bg-transparent dark:bg-gradient-to-br ...'
 - **Do not use `navigate()` for `mailto:` links in `GlobalFooter`** — `navigate()` is for in-app SPA routes. Calling `navigate('mailto:support@dealspace.app')` pushes a broken entry into the history stack and never opens an email client. Always use `window.location.href = path` for `mailto:` destinations, gated by `path.startsWith('mailto:')` in the `handleLink()` dispatcher.
 - **Do not use `/#help` or other fragment-anchor links in `GlobalFooter`** — the Help Center is a controlled `<Drawer>` component, not a page section with a stable `id`. Fragment anchors like `/#help` silently resolve to the page root on every route and give no feedback to the user. Use `#top` (handled by `window.scrollTo({ top: 0 })`) or `mailto:support@dealspace.app` for help-related footer links.
 - **Do not duplicate footer columns** — before Sprint 48.6, `col3` (Resources) and `col4` (Legal) contained nearly identical links (Security + Accessibility in both), wasting a column slot. Each column must cover a distinct navigation intent: Product (app features), Legal & Trust (compliance pages), Support (contact + account). Do not re-add overlapping links across columns.
+- **Do not call `deleteAccount()` expecting an error return value** — `deleteAccount()` in `useAuthStore` returns `Promise<void>`. It does NOT return `{ error }` or any other object. Any `if (result?.error)` check is silently a no-op. Always wrap in `try/catch` and treat a thrown exception as the error signal. The same applies to calling it via `useAuthStore.getState().deleteAccount()` — destructure it directly from `useAuthStore()` in the component instead.
+- **Do not make the "Product & Operational Updates" communication preference toggle interactive** — this toggle exists solely to inform users that transactional/operational emails are mandatory per ToS. It must always appear visually locked/disabled (opacity reduced, `cursor: not-allowed`). It saves nothing, fires no network request, and changes no state. Making it toggle-able would imply users can opt out of password reset emails, billing alerts, etc. — which is legally and operationally incorrect.
+- **Do not use `{STRIPE_CUSTOMER_PORTAL && <a href={...}>...</a>}` in Billing.tsx** — conditional rendering hides the action from the UI entirely when the env var is missing in dev, making the billing page look broken. Always render the button with `href={portalUrl}` (where `portalUrl = STRIPE_CUSTOMER_PORTAL || '#'`) and `onClick={handlePortalClick}`. In dev mode, `handlePortalClick` calls `e.preventDefault()` + `alert()` if the env var is absent. This preserves the production UI design at all times.
+- **Do not collapse all billing management into one "Manage Subscription" link** — the Billing page implements a state machine with distinct actions per state. State B (active) has 3 separate buttons: Manage/Downgrade, View Invoices (with Morning note), Cancel (danger-styled). State C (cancelAtEnd) has a Reactivate button. State D (past_due) has an Update Payment button. Merging these into one generic link destroys the self-serve UX that eliminates support tickets.
+- **Do not use `hardcoded left/right` CSS in toggle thumb styles** — profile section toggles use a computed property key `[isHe ? 'right' : 'left']` on the thumb's inline style. This ensures the thumb slides in the correct physical direction in both LTR and RTL layouts. Hardcoding `left` fails in RTL; hardcoding `right` fails in LTR.
+- **Do not use `GlobalFooter` col3 heading as "Legal & Trust"** — since Sprint 50.5 the heading is `'משפטי / Legal'` (he) and `'Legal'` (en). The "& Trust" / "ואמון" suffix was removed. Do not re-add it.
