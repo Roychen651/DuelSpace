@@ -385,23 +385,23 @@ function HeroAurora() {
       />
       <div
         className="absolute top-[-20%] left-[15%] h-[800px] w-[800px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.38) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(72px)', animation: 'lp-aurora-1 28s ease-in-out infinite' }}
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.38) 0%, rgba(168,85,247,0.18) 40%, transparent 70%)', filter: 'blur(72px)', animation: 'lp-aurora-1 28s ease-in-out infinite', willChange: 'transform' }}
       />
       <div
         className="absolute top-[10%] right-[-10%] h-[700px] w-[700px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(99,102,241,0.12) 50%, transparent 70%)', filter: 'blur(80px)', animation: 'lp-aurora-2 22s ease-in-out infinite' }}
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(99,102,241,0.12) 50%, transparent 70%)', filter: 'blur(80px)', animation: 'lp-aurora-2 22s ease-in-out infinite', willChange: 'transform' }}
       />
       <div
         className="absolute bottom-[-10%] left-[-5%] h-[560px] w-[560px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.1) 50%, transparent 70%)', filter: 'blur(64px)', animation: 'lp-aurora-3 32s ease-in-out infinite' }}
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.1) 50%, transparent 70%)', filter: 'blur(64px)', animation: 'lp-aurora-3 32s ease-in-out infinite', willChange: 'transform' }}
       />
       <div
         className="absolute top-[40%] right-[30%] h-[400px] w-[400px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)', filter: 'blur(90px)', animation: 'lp-aurora-1 40s ease-in-out infinite reverse' }}
+        style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 70%)', filter: 'blur(90px)', animation: 'lp-aurora-1 40s ease-in-out infinite reverse', willChange: 'transform' }}
       />
       <div
         className="absolute top-[60%] left-[45%] h-[300px] w-[300px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'lp-aurora-2 36s ease-in-out infinite reverse' }}
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'lp-aurora-2 36s ease-in-out infinite reverse', willChange: 'transform' }}
       />
       {PARTICLES.map((p, i) => (
         <div
@@ -516,7 +516,7 @@ function DealRoomMockup({ c, isHe }: { c: typeof copy['he']; isHe: boolean }) {
   const rotateY = useTransform(gyroY, (v) => -4 + v)
 
   return (
-    <div style={{ perspective: 1400, animation: 'lp-float-mockup 7s ease-in-out infinite' }}>
+    <div style={{ perspective: 1400, animation: 'lp-float-mockup 7s ease-in-out infinite', willChange: 'transform' }}>
       <motion.div
         whileHover={{ rotateX: 4, rotateY: -2, scale: 1.015 }}
         style={{
@@ -1632,7 +1632,7 @@ function FinalCTASection({ c, isHe, onCta }: { c: typeof copy['he']; isHe: boole
           <p className="text-white/45 text-base mb-10 max-w-md mx-auto leading-relaxed">{c.ctaSub}</p>
 
           <div className="relative inline-block">
-            <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', filter: 'blur(20px)', opacity: 0.5, animation: 'lp-badge-pulse 2.5s ease-in-out infinite' }} />
+            <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', filter: 'blur(20px)', opacity: 0.5, animation: 'lp-badge-pulse 2.5s ease-in-out infinite', willChange: 'transform' }} />
             <motion.button
               onClick={onCta}
               whileHover={{ scale: 1.03, y: -2 }}
@@ -1878,7 +1878,7 @@ function HeroSection({ c, isHe, onCta, onDemo }: {
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3 justify-center lg:justify-start mb-6" style={{ animation: 'lp-fade-up 0.55s ease-out 0.38s both' }}>
               <div className="relative">
-                <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', filter: 'blur(14px)', opacity: 0.55, animation: 'lp-badge-pulse 2s ease-in-out infinite' }} />
+                <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', filter: 'blur(14px)', opacity: 0.55, animation: 'lp-badge-pulse 2s ease-in-out infinite', willChange: 'transform' }} />
                 <motion.button
                   onClick={onCta}
                   whileHover={{ scale: 1.04, y: -2 }}

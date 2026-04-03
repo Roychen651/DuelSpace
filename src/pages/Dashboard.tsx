@@ -177,9 +177,9 @@ function DashboardAurora() {
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
       <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
       <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full opacity-50 dark:opacity-100"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 20s ease-in-out infinite' }} />
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 20s ease-in-out infinite', willChange: 'transform' }} />
       <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full opacity-50 dark:opacity-100"
-        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 25s ease-in-out infinite reverse' }} />
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 25s ease-in-out infinite reverse', willChange: 'transform' }} />
     </div>
   )
 }

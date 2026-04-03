@@ -403,9 +403,9 @@ export default function Integrations() {
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
         <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 22s ease-in-out infinite' }} />
+          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 22s ease-in-out infinite', willChange: 'transform' }} />
         <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 28s ease-in-out infinite reverse' }} />
+          style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 28s ease-in-out infinite reverse', willChange: 'transform' }} />
       </div>
 
       <main className="relative z-10 px-6 py-10 max-w-3xl mx-auto w-full flex-1">

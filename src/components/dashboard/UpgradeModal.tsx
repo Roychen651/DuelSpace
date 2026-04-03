@@ -67,17 +67,17 @@ const PLANS: PlanDef[] = [
     featuresEn: [
       'Up to 100 active proposals',
       'Everything in Free',
-      'Direct email support',
-      'Early access to new features',
+      'Webhooks + Automations',
+      'Direct support',
     ],
     featuresHe: [
       'עד 100 הצעות פעילות',
       'הכל כולל תוכנית חינם',
+      'Webhooks + אוטומציות',
       'תמיכה ישירה בדוא"ל',
-      'גישה מוקדמת לפיצ׳רים חדשים',
     ],
     ctaUpgradeEn: 'Upgrade to Pro', ctaUpgradeHe: 'שדרג לפרו',
-    popular: false,
+    popular: true,
     accent: '#6366f1',
   },
   {
@@ -97,8 +97,8 @@ const PLANS: PlanDef[] = [
       'השפעה על מפת הדרכים',
     ],
     ctaUpgradeEn: 'Upgrade to Premium', ctaUpgradeHe: 'שדרג לפרימיום',
-    popular: true,
-    accent: '#a855f7',
+    popular: false,
+    accent: '#d4af37',
   },
 ]
 
@@ -279,23 +279,25 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
   const planRank    = PLAN_RANK[plan.id]
   const isCurrent   = plan.id === currentPlanId
   const isUpgrade   = planRank > currentRank
-  const isDowngrade = planRank < currentRank
 
   const handleCta = () => {
     if (isCurrent) return
 
     if (isUpgrade) {
       const baseLink = plan.id === 'pro' ? STRIPE_PRO_LINK : STRIPE_PREMIUM_LINK
-      const url = buildCheckoutUrl(baseLink, userId, userEmail)
-      if (url) {
-        window.location.href = url
+      if (!baseLink) {
+        if (import.meta.env.DEV) alert(`VITE_STRIPE_${plan.id === 'pro' ? 'PRO' : 'PREMIUM'}_LINK not set in .env.local`)
+        return
       }
+      window.location.href = buildCheckoutUrl(baseLink, userId, userEmail)
       return
     }
 
     // Downgrade or manage — redirect to Stripe Customer Portal
-    if (isDowngrade && STRIPE_CUSTOMER_PORTAL) {
+    if (STRIPE_CUSTOMER_PORTAL) {
       window.location.href = STRIPE_CUSTOMER_PORTAL
+    } else if (import.meta.env.DEV) {
+      alert('VITE_STRIPE_CUSTOMER_PORTAL not set in .env.local')
     }
   }
 
@@ -442,7 +444,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
           )}
           {isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn}
         </motion.button>
-      ) : STRIPE_CUSTOMER_PORTAL ? (
+      ) : (
         // ── Downgrade / manage billing — Stripe Customer Portal ──
         <motion.button
           onClick={handleCta}
@@ -467,14 +469,6 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
           <CreditCard size={13} />
           {isHe ? 'ניהול מנוי' : 'Manage Subscription'}
         </motion.button>
-      ) : (
-        // ── Portal not configured — show contact fallback ──
-        <div
-          className="w-full rounded-xl py-2.5 px-3 text-[11px] text-center leading-relaxed"
-          style={{ background: 'rgba(255,255,255,0.02)', color: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          {isHe ? 'לשינוי תוכנית: support@dealspace.app' : 'To change plan: support@dealspace.app'}
-        </div>
       )}
     </motion.div>
   )

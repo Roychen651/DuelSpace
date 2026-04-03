@@ -395,7 +395,35 @@ export default function Billing() {
                 </div>
               </a>
 
-              {/* 2. View Invoices */}
+              {/* 2. Update Payment Method */}
+              <a
+                href={portalUrl}
+                onClick={handlePortalClick}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.03)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <CreditCard size={13} className="text-white/55" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white/70">
+                      {isHe ? 'עדכון אמצעי תשלום' : 'Update Payment Method'}
+                    </p>
+                    <p className="text-[11px] text-white/35 mt-0.5">
+                      {isHe ? 'שנה כרטיס אשראי או שיטת תשלום' : 'Change credit card or payment method'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowUpRight size={14} className="text-white/25" />
+                </div>
+              </a>
+
+              {/* 3. View Invoices */}
               <a
                 href={portalUrl}
                 onClick={handlePortalClick}
@@ -430,7 +458,7 @@ export default function Billing() {
                 </div>
               </a>
 
-              {/* 3. Cancel Subscription */}
+              {/* 4. Cancel Subscription */}
               <a
                 href={portalUrl}
                 onClick={handlePortalClick}
@@ -635,8 +663,8 @@ export default function Billing() {
                 {
                   q: isHe ? 'האם ניתן לקבל החזר כספי?' : 'Can I get a refund?',
                   a: isHe
-                    ? 'DealSpace לא מציע החזרים יחסיים אוטומטיים על תקופה שלא נוצלה. לבקשת החזר יוצאי דופן — פנה לתמיכה: support@dealspace.app'
-                    : 'DealSpace does not offer automatic pro-rata refunds for unused periods. For exceptional refund requests — contact support@dealspace.app',
+                    ? 'DealSpace לא מציע החזרים יחסיים על תקופה שלא נוצלה. הביטול ייכנס לתוקף בסוף מחזור החיוב הנוכחי בלבד.'
+                    : 'DealSpace does not offer pro-rata refunds for unused periods. Cancellation takes effect at the end of the current billing cycle only.',
                 },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3.5">
