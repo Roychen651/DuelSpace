@@ -95,28 +95,31 @@ Deno.serve(async (req: Request) => {
 
         // Determine tier from the subscription's price
         let tier: 'pro' | 'unlimited' | null = null
+        let checkoutSub: Stripe.Subscription | null = null
         if (session.subscription) {
-          const sub = await stripe.subscriptions.retrieve(session.subscription as string)
-          tier = tierFromPriceId(sub.items.data[0]?.price?.id)
+          checkoutSub = await stripe.subscriptions.retrieve(session.subscription as string)
+          tier = tierFromPriceId(checkoutSub.items.data[0]?.price?.id)
 
           // Tag the subscription with the supabase user id so future events can find it
-          if (!sub.metadata?.supabase_user_id) {
-            await stripe.subscriptions.update(sub.id, {
+          if (!checkoutSub.metadata?.supabase_user_id) {
+            await stripe.subscriptions.update(checkoutSub.id, {
               metadata: { supabase_user_id: userId },
             })
           }
         }
 
-        if (!tier) {
+        if (!tier || !checkoutSub) {
           console.warn('[stripe-webhook] Could not determine tier from session:', session.id)
           break
         }
 
-        // Save the stripe_customer_id alongside the tier upgrade
+        // Save the stripe_customer_id, tier, and billing cycle info
         const customerId = session.customer as string | null
         await updateUserMetadata(userId, {
-          plan_tier:      tier,
-          billing_status: 'active',
+          plan_tier:                        tier,
+          billing_status:                   'active',
+          subscription_period_end:          checkoutSub.current_period_end.toString(),
+          subscription_cancel_at_period_end: checkoutSub.cancel_at_period_end ? 'true' : 'false',
           ...(customerId ? { stripe_customer_id: customerId } : {}),
         })
         break
@@ -137,7 +140,11 @@ Deno.serve(async (req: Request) => {
           break
         }
 
-        await updateUserMetadata(userId, { plan_tier: tier })
+        await updateUserMetadata(userId, {
+          plan_tier:                        tier,
+          subscription_period_end:          sub.current_period_end.toString(),
+          subscription_cancel_at_period_end: sub.cancel_at_period_end ? 'true' : 'false',
+        })
         break
       }
 
@@ -148,8 +155,10 @@ Deno.serve(async (req: Request) => {
         if (!userId) break
 
         await updateUserMetadata(userId, {
-          plan_tier:      'free',
-          billing_status: 'canceled',
+          plan_tier:                        'free',
+          billing_status:                   'canceled',
+          subscription_period_end:          null,
+          subscription_cancel_at_period_end: 'false',
         })
         break
       }
@@ -167,7 +176,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // ── Invoice payment succeeded — dunning resolved ──────────────────────
-      // Unblocks proposal creation.
+      // Unblocks proposal creation and refreshes billing cycle dates.
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice
         // Only clear past_due on non-zero invoices (zero-dollar trials etc. fire this too)
@@ -176,7 +185,14 @@ Deno.serve(async (req: Request) => {
         const userId = await resolveUserId(null, invoice.customer as string)
         if (!userId) break
 
-        await updateUserMetadata(userId, { billing_status: 'active' })
+        // Refresh subscription period end on each successful charge
+        const periodEndUpdate: Record<string, string | null> = { billing_status: 'active' }
+        if (invoice.subscription) {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string)
+          periodEndUpdate.subscription_period_end          = sub.current_period_end.toString()
+          periodEndUpdate.subscription_cancel_at_period_end = sub.cancel_at_period_end ? 'true' : 'false'
+        }
+        await updateUserMetadata(userId, periodEndUpdate)
         console.log(`[stripe-webhook] Dunning resolved: user ${userId} → billing_status: active`)
         break
       }

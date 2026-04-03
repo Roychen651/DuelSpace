@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Zap, Lock, CheckCircle2, AlertCircle, Loader2,
-  Webhook, Send, ArrowRight, MousePointerClick, Bell, FileText,
-  Settings2, Link2, FlaskConical, ChevronDown, ChevronUp,
+  Webhook, Link2, FlaskConical, ChevronDown, ChevronUp,
+  MousePointerClick, Settings2, Bell, FileText, Send,
+  ArrowDown, AlertTriangle, Info,
 } from 'lucide-react'
 import { useAuthStore, useTier } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
@@ -12,99 +13,296 @@ import { UpgradeModal } from '../components/dashboard/UpgradeModal'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { useProposalStore } from '../stores/useProposalStore'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── How It Works steps ───────────────────────────────────────────────────────
 
 const FLOW_STEPS = [
   {
-    iconEn: <MousePointerClick size={18} />,
-    titleEn: 'Client signs your proposal',
-    bodyEn: 'Your client opens the Deal Room link and clicks "Approve & Sign".',
+    icon: <MousePointerClick size={18} />,
     titleHe: 'הלקוח חותם על ההצעה',
-    bodyHe: 'הלקוח פותח את קישור ה-Deal Room ולוחץ על "אשר וחתום".',
+    titleEn: 'Client signs your proposal',
+    bodyHe: 'הלקוח פותח את קישור ה-Deal Room, בוחר את האפשרויות שלו וחותם דיגיטלית.',
+    bodyEn: 'Your client opens the Deal Room link, selects their options, and signs digitally.',
     color: '#6366f1',
   },
   {
-    iconEn: <Zap size={18} />,
-    titleEn: 'DealSpace fires the webhook',
-    bodyEn: 'Within milliseconds, DealSpace POSTs deal details (client, project, total, date) to your URL.',
+    icon: <Zap size={18} />,
     titleHe: 'DealSpace שולח את ה-Webhook',
-    bodyHe: 'תוך אלפיות שנייה, DealSpace שולח POST עם פרטי העסקה (לקוח, פרויקט, סכום, תאריך) לכתובת שלך.',
+    titleEn: 'DealSpace fires the webhook',
+    bodyHe: 'תוך שניות, DealSpace שולח בקשת POST לכתובת שלך עם כל פרטי העסקה.',
+    bodyEn: 'Within seconds, DealSpace sends a POST request to your URL with full deal details.',
     color: '#a855f7',
   },
   {
-    iconEn: <Settings2 size={18} />,
-    titleEn: 'Your automation runs',
-    bodyEn: 'Make.com, Zapier, or n8n receive the data and trigger your workflow: send an invoice, update your CRM, notify Slack, and more.',
+    icon: <Settings2 size={18} />,
     titleHe: 'האוטומציה שלך מופעלת',
-    bodyHe: 'Make.com, Zapier, או n8n מקבלים את הנתונים ומפעילים את ה-Workflow שלך: שליחת חשבונית, עדכון CRM, הודעת Slack ועוד.',
+    titleEn: 'Your automation runs',
+    bodyHe: 'Make.com, Zapier או n8n מקבלים את הנתונים ומפעילים את כל ה-Workflow שבנית.',
+    bodyEn: 'Make.com, Zapier, or n8n receive the data and trigger your entire workflow.',
     color: '#22c55e',
   },
 ]
 
-const PLATFORMS = [
+// ─── Use cases ────────────────────────────────────────────────────────────────
+
+const USE_CASES = [
+  { icon: <FileText size={13} />, he: 'שליחת חשבונית מס אוטומטית דרך Invoice4u', en: 'Auto-send a tax invoice via Invoice4u' },
+  { icon: <Bell size={13} />, he: 'התראת Slack/WhatsApp על כל סגירת עסקה', en: 'Slack/WhatsApp notification on every deal close' },
+  { icon: <Link2 size={13} />, he: 'פתיחת עסקה חדשה ב-HubSpot או Pipedrive', en: 'Create a new deal in HubSpot or Pipedrive' },
+  { icon: <Send size={13} />, he: 'מייל ברוכים הבאים ללקוח דרך SendGrid', en: 'Send a welcome email to the client via SendGrid' },
+  { icon: <Settings2 size={13} />, he: 'הוספה ל-Google Sheets למעקב הכנסות', en: 'Append to Google Sheets for revenue tracking' },
+  { icon: <MousePointerClick size={13} />, he: 'פתיחת משימה ב-monday.com / Notion', en: 'Trigger a task in monday.com or Notion' },
+]
+
+// ─── Platform guides ──────────────────────────────────────────────────────────
+
+interface PlatformGuide {
+  name: string
+  logo: string
+  tagHe: string
+  tagEn: string
+  stepsHe: Array<{ title: string; detail: string }>
+  stepsEn: Array<{ title: string; detail: string }>
+  tipHe: string
+  tipEn: string
+  commonMistakeHe: string
+  commonMistakeEn: string
+}
+
+const PLATFORMS: PlatformGuide[] = [
   {
     name: 'Make.com',
     logo: '🔄',
-    stepsEn: [
-      'Create a new Scenario in Make.com',
-      'Add a "Webhooks" module → "Custom webhook"',
-      'Copy the generated webhook URL',
-      'Paste it here and click Save',
-      'Run the Test Connection to verify',
-    ],
+    tagHe: 'הפלטפורמה הנפוצה ביותר בישראל לאוטומציה',
+    tagEn: 'Most popular automation platform in Israel',
     stepsHe: [
-      'פתח Scenario חדש ב-Make.com',
-      'הוסף מודול "Webhooks" → "Custom webhook"',
-      'העתק את ה-URL שנוצר',
-      'הדבק אותו כאן ולחץ שמור',
-      'לחץ "בדוק חיבור" לאימות',
+      {
+        title: 'פתח Scenario חדש',
+        detail: 'היכנס ל-app.make.com, לחץ "Create a new scenario" (כפתור כחול בפינה). תגיע לעורך ויזואלי עם מעגל ריק באמצע.',
+      },
+      {
+        title: 'הוסף מודול Webhook',
+        detail: 'לחץ על המעגל הריק (+). בחלון החיפוש שנפתח, חפש "Webhooks". בחר "Custom webhook" ואז לחץ "Add".',
+      },
+      {
+        title: 'צור Webhook חדש',
+        detail: 'לחץ "Add" שוב בחלון הבא. Make.com ייצור URL ייחודי שנראה כך: https://hook.eu1.make.com/abc123xyz. זה ה-URL שלך.',
+      },
+      {
+        title: 'העתק את ה-URL',
+        detail: 'לחץ על הכפתור "Copy address to clipboard" שמופיע ליד ה-URL. שמור אותו — תצטרך אותו בשלב הבא.',
+      },
+      {
+        title: 'הדבק כאן ושמור',
+        detail: 'חזור לדף זה, הדבק את ה-URL בשדה "כתובת Webhook" למעלה, ולחץ "שמור". עכשיו ה-URL שמור ב-DealSpace.',
+      },
+      {
+        title: 'הפעל מצב האזנה ב-Make',
+        detail: 'חזור ל-Make.com ולחץ "Run once" (בפינה השמאלית התחתונה). Make.com עכשיו מחכה לנתונים ראשונים.',
+      },
+      {
+        title: 'שלח Webhook לבדיקה',
+        detail: 'חזור לדף זה ולחץ "בדוק חיבור". DealSpace ישלח payload לדוגמה. ב-Make.com תראה "1 bundle received".',
+      },
+      {
+        title: 'הוסף את המודול הבא',
+        detail: 'ב-Make.com, לחץ על הפלוס (+) שמופיע אחרי מודול ה-Webhook כדי להוסיף את הפעולה הבאה: שליחת מייל, עדכון CRM, חשבונית, Slack ועוד.',
+      },
     ],
+    stepsEn: [
+      {
+        title: 'Create a new Scenario',
+        detail: 'Go to app.make.com, click "Create a new scenario" (blue button). You\'ll land in the visual editor with an empty circle in the center.',
+      },
+      {
+        title: 'Add a Webhook module',
+        detail: 'Click the empty circle (+). In the search window that opens, search for "Webhooks". Select "Custom webhook" then click "Add".',
+      },
+      {
+        title: 'Create a new Webhook',
+        detail: 'Click "Add" again in the next window. Make.com generates a unique URL like: https://hook.eu1.make.com/abc123xyz. This is your webhook URL.',
+      },
+      {
+        title: 'Copy the URL',
+        detail: 'Click the "Copy address to clipboard" button next to the URL. Save it — you\'ll need it in the next step.',
+      },
+      {
+        title: 'Paste here and Save',
+        detail: 'Return to this page, paste the URL in the "Webhook URL" field above, and click "Save". The URL is now stored in DealSpace.',
+      },
+      {
+        title: 'Enable listening mode in Make',
+        detail: 'Back in Make.com, click "Run once" (bottom-left corner). Make.com is now waiting for the first data.',
+      },
+      {
+        title: 'Send a test webhook',
+        detail: 'Return here and click "Test Connection". DealSpace sends a sample payload. In Make.com you\'ll see "1 bundle received".',
+      },
+      {
+        title: 'Add your next module',
+        detail: 'In Make.com, click the (+) that appears after the Webhook module to add the next action: send email, update CRM, create invoice, Slack, and more.',
+      },
+    ],
+    tipHe: '💡 ב-Make.com, השתמש ב-"Data Structure" כדי למפות את שדות ה-Webhook אוטומטית. לחץ "Determine data structure" ו-Make יזהה את כל השדות מהבדיקה.',
+    tipEn: '💡 In Make.com, use "Data Structure" to auto-map webhook fields. Click "Determine data structure" and Make will recognize all fields from the test.',
+    commonMistakeHe: '⚠️ טעות נפוצה: שכחת ללחוץ "Run once" לפני בדיקת החיבור. Make.com חייב להיות במצב האזנה כדי לקבל את הנתונים.',
+    commonMistakeEn: '⚠️ Common mistake: Forgetting to click "Run once" before testing. Make.com must be in listening mode to receive data.',
   },
   {
     name: 'Zapier',
     logo: '⚡',
-    stepsEn: [
-      'Create a new Zap in Zapier',
-      'Choose "Webhooks by Zapier" as trigger → "Catch Hook"',
-      'Copy the webhook URL Zapier provides',
-      'Paste it here and click Save',
-      'Trigger a test to activate the Zap',
-    ],
+    tagHe: 'אינטגרציה עם 6,000+ אפליקציות',
+    tagEn: 'Integrates with 6,000+ apps',
     stepsHe: [
-      'פתח Zap חדש ב-Zapier',
-      'בחר "Webhooks by Zapier" כטריגר → "Catch Hook"',
-      'העתק את ה-URL שזאפייר מספק',
-      'הדבק אותו כאן ולחץ שמור',
-      'הפעל בדיקה כדי להפעיל את ה-Zap',
+      {
+        title: 'פתח Zap חדש',
+        detail: 'היכנס ל-zapier.com/app/editor, לחץ "+ Create Zap". תגיע לעורך שלבים.',
+      },
+      {
+        title: 'בחר Trigger: Webhooks by Zapier',
+        detail: 'בחלון "Trigger", חפש "Webhooks by Zapier" (זהו אפליקציה מובנית של Zapier). לחץ עליה.',
+      },
+      {
+        title: 'בחר "Catch Hook"',
+        detail: 'מתוך אפשרויות ה-Event, בחר "Catch Hook". זה יוצר URL ייחודי שמקבל בקשות POST.',
+      },
+      {
+        title: 'העתק את ה-Webhook URL',
+        detail: 'Zapier מציג URL שנראה כך: https://hooks.zapier.com/hooks/catch/1234567/abcdef/. העתק אותו.',
+      },
+      {
+        title: 'הדבק כאן ושמור',
+        detail: 'חזור לדף זה, הדבק את ה-URL בשדה למעלה, ולחץ "שמור".',
+      },
+      {
+        title: 'בדוק חיבור',
+        detail: 'לחץ "בדוק חיבור" בדף זה. Zapier אמור לזהות אוטומטית את הנתונים שנשלחו (proposal_id, client_name, grand_total וכו\').',
+      },
+      {
+        title: 'הוסף Action',
+        detail: 'לחץ "Continue" ב-Zapier, ואז "+ Add Action" כדי להגדיר מה יקרה: שלח מייל, עדכן Google Sheets, צור רשומה ב-HubSpot ועוד.',
+      },
+      {
+        title: 'הפעל את ה-Zap',
+        detail: 'לחץ "Publish Zap" (כפתור כתום). ה-Zap פעיל ומוכן לקבל webhooks אמיתיים.',
+      },
     ],
+    stepsEn: [
+      {
+        title: 'Create a new Zap',
+        detail: 'Go to zapier.com/app/editor, click "+ Create Zap". You\'ll land in the step editor.',
+      },
+      {
+        title: 'Choose Trigger: Webhooks by Zapier',
+        detail: 'In the "Trigger" panel, search for "Webhooks by Zapier" (built-in Zapier app). Click it.',
+      },
+      {
+        title: 'Choose "Catch Hook"',
+        detail: 'From the Event options, choose "Catch Hook". This creates a unique URL that accepts POST requests.',
+      },
+      {
+        title: 'Copy the Webhook URL',
+        detail: 'Zapier shows a URL like: https://hooks.zapier.com/hooks/catch/1234567/abcdef/. Copy it.',
+      },
+      {
+        title: 'Paste here and Save',
+        detail: 'Return to this page, paste the URL in the field above, and click "Save".',
+      },
+      {
+        title: 'Test Connection',
+        detail: 'Click "Test Connection" on this page. Zapier should automatically detect the sent data (proposal_id, client_name, grand_total, etc.).',
+      },
+      {
+        title: 'Add an Action',
+        detail: 'Click "Continue" in Zapier, then "+ Add Action" to define what happens: send email, update Google Sheets, create a HubSpot record, and more.',
+      },
+      {
+        title: 'Publish the Zap',
+        detail: 'Click "Publish Zap" (orange button). The Zap is active and ready to receive real webhooks.',
+      },
+    ],
+    tipHe: '💡 Zapier מזהה אוטומטית את שדות ה-Webhook לאחר הבדיקה. תוכל להשתמש ב-"{{data__client_name}}" בכל שלב כדי להכניס את שם הלקוח.',
+    tipEn: '💡 Zapier auto-detects webhook fields after the test. You can use "{{data__client_name}}" in any step to insert the client name.',
+    commonMistakeHe: '⚠️ Webhooks by Zapier הוא אפליקציה בתשלום בתוכניות מסוימות של Zapier. אם אינך רואה אותה, בדוק את התוכנית שלך.',
+    commonMistakeEn: '⚠️ Webhooks by Zapier is a paid-tier feature in some Zapier plans. If you don\'t see it, check your plan.',
   },
   {
     name: 'n8n',
     logo: '🔗',
-    stepsEn: [
-      'Open your n8n instance',
-      'Add a "Webhook" trigger node',
-      'Set method to POST, copy the Test/Production URL',
-      'Paste it here and click Save',
-      'Use Test Connection to send a sample payload',
-    ],
+    tagHe: 'קוד פתוח — לאינסטלציה עצמית או Cloud',
+    tagEn: 'Open source — self-hosted or Cloud',
     stepsHe: [
-      'פתח את ה-n8n שלך',
-      'הוסף node מסוג "Webhook" כטריגר',
-      'הגדר method ל-POST, העתק את ה-URL',
-      'הדבק אותו כאן ולחץ שמור',
-      'לחץ "בדוק חיבור" לשליחת דוגמה',
+      {
+        title: 'פתח Workflow חדש',
+        detail: 'ב-n8n שלך (n8n.io/cloud או self-hosted), לחץ "New workflow".',
+      },
+      {
+        title: 'הוסף Webhook Node',
+        detail: 'לחץ "+ Add first step" ← חפש "Webhook". בחר את ה-Webhook node (לא HTTP Request).',
+      },
+      {
+        title: 'הגדר HTTP Method',
+        detail: 'ב-Webhook node: שנה "HTTP Method" ל-POST. השאר את שאר ההגדרות כברירת מחדל.',
+      },
+      {
+        title: 'העתק את ה-Test URL',
+        detail: 'n8n מציג שני URLs: "Test URL" ו-"Production URL". להתחלה, העתק את ה-"Test URL" (נראה כמו: https://yourn8n.app.n8n.cloud/webhook-test/uuid).',
+      },
+      {
+        title: 'הדבק כאן ושמור',
+        detail: 'חזור לדף זה, הדבק את ה-Test URL, ולחץ "שמור".',
+      },
+      {
+        title: 'הפעל האזנה',
+        detail: 'ב-n8n, לחץ "Test workflow" (כפתור בפינה). n8n עכשיו מחכה לנתונים.',
+      },
+      {
+        title: 'שלח בדיקה ובנה',
+        detail: 'לחץ "בדוק חיבור" בדף זה. ב-n8n תראה את הנתונים ב-"Input" של ה-Webhook node. מכאן תוכל לחבר nodes נוספים.',
+      },
+      {
+        title: 'עבור ל-Production URL',
+        detail: 'לאחר שסיימת לבנות ולבדוק, החלף ב-DealSpace ל-"Production URL" (ללא /webhook-test/) ולחץ שמור. Activate את ה-Workflow ב-n8n.',
+      },
     ],
+    stepsEn: [
+      {
+        title: 'Create a new Workflow',
+        detail: 'In your n8n instance (n8n.io/cloud or self-hosted), click "New workflow".',
+      },
+      {
+        title: 'Add a Webhook Node',
+        detail: 'Click "+ Add first step" → search "Webhook". Choose the Webhook node (not HTTP Request).',
+      },
+      {
+        title: 'Set HTTP Method',
+        detail: 'In the Webhook node: change "HTTP Method" to POST. Leave other settings as default.',
+      },
+      {
+        title: 'Copy the Test URL',
+        detail: 'n8n shows two URLs: "Test URL" and "Production URL". Start with the "Test URL" (like: https://yourn8n.app.n8n.cloud/webhook-test/uuid).',
+      },
+      {
+        title: 'Paste here and Save',
+        detail: 'Return to this page, paste the Test URL, and click "Save".',
+      },
+      {
+        title: 'Enable listening',
+        detail: 'In n8n, click "Test workflow" (button in the corner). n8n is now waiting for data.',
+      },
+      {
+        title: 'Test and build',
+        detail: 'Click "Test Connection" on this page. In n8n you\'ll see data in the "Input" of the Webhook node. Now you can connect additional nodes.',
+      },
+      {
+        title: 'Switch to Production URL',
+        detail: 'Once you\'re done building, replace with the "Production URL" (without /webhook-test/) and click Save. Activate the Workflow in n8n.',
+      },
+    ],
+    tipHe: '💡 ב-n8n, השתמש ב-"JSON" output מה-Webhook node. הנתונים יהיו תחת body.data.client_name, body.data.grand_total וכו\'.',
+    tipEn: '💡 In n8n, use "JSON" output from the Webhook node. Data will be under body.data.client_name, body.data.grand_total, etc.',
+    commonMistakeHe: '⚠️ טעות נפוצה: שימוש ב-Test URL בסביבת הפרודקשן. בסיום הבנייה — החלף ל-Production URL והפעל את ה-Workflow.',
+    commonMistakeEn: '⚠️ Common mistake: Using the Test URL in production. When done building — switch to Production URL and Activate the Workflow.',
   },
-]
-
-const USE_CASES = [
-  { iconEn: <FileText size={14} />, en: 'Auto-send a tax invoice via Invoice4u', he: 'שליחת חשבונית מס אוטומטית דרך Invoice4u' },
-  { iconEn: <Bell size={14} />, en: 'Get a Slack or WhatsApp notification on every close', he: 'קבל התראת Slack/WhatsApp על כל סגירה' },
-  { iconEn: <Link2 size={14} />, en: 'Create a new deal in HubSpot or Pipedrive', he: 'פתח עסקה ב-HubSpot או ב-Pipedrive' },
-  { iconEn: <Send size={14} />, en: 'Send a welcome email via SendGrid or Mailchimp', he: 'שלח מייל ברוכים הבאים דרך SendGrid' },
-  { iconEn: <Settings2 size={14} />, en: 'Add to a Google Sheet for revenue tracking', he: 'הוסף ל-Google Sheet למעקב הכנסות' },
-  { iconEn: <MousePointerClick size={14} />, en: 'Trigger a monday.com task or Notion page', he: 'פתח משימה ב-monday.com או Notion' },
 ]
 
 // ─── Integrations page ────────────────────────────────────────────────────────
@@ -169,7 +367,7 @@ export default function Integrations() {
       setTestStatus('error')
     } finally {
       setTesting(false)
-      setTimeout(() => setTestStatus('idle'), 4000)
+      setTimeout(() => setTestStatus('idle'), 5000)
     }
   }
 
@@ -181,6 +379,8 @@ export default function Integrations() {
     'shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
     'focus:bg-white dark:focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
   ].join(' ')
+
+  const isWebhookSaved = !!(user?.user_metadata?.webhook_url as string | undefined)?.trim()
 
   return (
     <div className="relative min-h-dvh flex flex-col" dir={isHe ? 'rtl' : 'ltr'}>
@@ -194,8 +394,8 @@ export default function Integrations() {
           50%       { transform: translateY(-8px); }
         }
         @keyframes int-glow-pulse {
-          0%, 100% { opacity: 0.5; }
-          50%       { opacity: 1; }
+          0%, 100% { box-shadow: 0 0 32px rgba(212,175,55,0.15); }
+          50%       { box-shadow: 0 0 48px rgba(212,175,55,0.3); }
         }
       `}</style>
 
@@ -213,10 +413,8 @@ export default function Integrations() {
         {/* ── Header ──────────────────────────────────────────────────────────── */}
         <div className="mb-10" style={{ animation: 'int-fade-up 0.4s ease-out 0.05s both' }}>
           <div className="flex items-center gap-3 mb-3">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-2xl flex-none"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 24px rgba(99,102,241,0.4)' }}
-            >
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl flex-none"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 24px rgba(99,102,241,0.4)' }}>
               <Webhook size={18} className="text-white" />
             </div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white" style={{ letterSpacing: '-0.025em' }}>
@@ -230,85 +428,73 @@ export default function Integrations() {
           </p>
         </div>
 
-        {/* ── FREE: full-page paywall ──────────────────────────────────────────── */}
+        {/* ── How it works — shown to all ────────────────────────────────────── */}
+        <div
+          className="rounded-3xl overflow-hidden mb-6"
+          style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            animation: 'int-fade-up 0.45s ease-out 0.1s both',
+          }}
+        >
+          <div className="px-6 py-4 border-b border-white/[0.05]">
+            <p className="text-[13px] font-bold text-white/80">
+              {isHe ? 'איך זה עובד — 3 שלבים' : 'How it works — 3 steps'}
+            </p>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            {FLOW_STEPS.map((step, i) => (
+              <div key={i} className="flex items-start gap-4">
+                <div className="flex-none flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `${step.color}18`, border: `1px solid ${step.color}35`, color: step.color }}>
+                  {step.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-white/85 mb-1">
+                    {isHe ? step.titleHe : step.titleEn}
+                  </p>
+                  <p className="text-[12px] text-white/45 leading-relaxed">
+                    {isHe ? step.bodyHe : step.bodyEn}
+                  </p>
+                </div>
+                <span className="flex-none flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white/25 mt-1"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {i + 1}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── FREE: paywall gate ──────────────────────────────────────────────── */}
         {!isPaid && (
           <>
-            {/* How it works — visible to all as marketing */}
-            <div
-              className="rounded-3xl overflow-hidden mb-6"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                animation: 'int-fade-up 0.45s ease-out 0.12s both',
-              }}
-            >
-              <div className="px-6 py-5 border-b border-white/[0.05]">
-                <p className="text-[13px] font-bold text-white/80">
-                  {isHe ? 'איך זה עובד' : 'How it works'}
-                </p>
-              </div>
-              <div className="px-6 py-5 space-y-5">
-                {FLOW_STEPS.map((step, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <div
-                      className="flex-none flex h-9 w-9 items-center justify-center rounded-xl mt-0.5"
-                      style={{ background: `${step.color}18`, border: `1px solid ${step.color}35`, color: step.color }}
-                    >
-                      {step.iconEn}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-white/85 mb-0.5">
-                        {isHe ? step.titleHe : step.titleEn}
-                      </p>
-                      <p className="text-[12px] text-white/40 leading-relaxed">
-                        {isHe ? step.bodyHe : step.bodyEn}
-                      </p>
-                    </div>
-                    <div className="flex-none flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white/25" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      {i + 1}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Use cases */}
-            <div
-              className="rounded-3xl px-6 py-5 mb-6"
-              style={{
-                background: 'rgba(255,255,255,0.015)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                animation: 'int-fade-up 0.45s ease-out 0.18s both',
-              }}
-            >
+            <div className="rounded-3xl px-6 py-5 mb-6"
+              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.16s both' }}>
               <p className="text-[12px] font-semibold text-white/40 mb-3">
-                {isHe ? 'מה אפשר לאוטמט:' : 'What you can automate:'}
+                {isHe ? 'מה תוכל לאוטמט:' : 'What you can automate:'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {USE_CASES.map((uc, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-[12px] text-white/50">
-                    <span className="flex-none" style={{ color: '#6366f1' }}>{uc.iconEn}</span>
+                    <span className="flex-none" style={{ color: '#6366f1' }}>{uc.icon}</span>
                     {isHe ? uc.he : uc.en}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Paywall gate */}
-            <div
-              className="rounded-3xl overflow-hidden"
+            {/* Lock gate */}
+            <div className="rounded-3xl overflow-hidden mb-6"
               style={{
                 background: 'linear-gradient(160deg, rgba(212,175,55,0.08) 0%, rgba(99,102,241,0.06) 100%)',
                 border: '1px solid rgba(212,175,55,0.2)',
-                boxShadow: '0 0 60px rgba(212,175,55,0.06)',
-                animation: 'int-fade-up 0.45s ease-out 0.24s both',
-              }}
-            >
+                animation: 'int-glow-pulse 2.5s ease-in-out infinite, int-fade-up 0.45s ease-out 0.22s both',
+              }}>
               <div className="px-8 py-10 flex flex-col items-center text-center gap-5">
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 0 40px rgba(212,175,55,0.18)', animation: 'int-glow-pulse 2s ease-in-out infinite' }}
-                >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 0 40px rgba(212,175,55,0.18)' }}>
                   <Lock size={24} className="text-yellow-400" />
                 </div>
                 <div>
@@ -317,8 +503,8 @@ export default function Integrations() {
                   </p>
                   <p className="text-[13px] text-white/45 leading-relaxed max-w-sm mx-auto">
                     {isHe
-                      ? 'שדרג לפרו כדי לחבר Webhook, לשלוח חשבוניות אוטומטיות, לעדכן CRM ולקבל התראות בזמן אמת.'
-                      : 'Upgrade to Pro to connect a webhook, send automatic invoices, update your CRM, and receive real-time notifications.'}
+                      ? 'שדרג כדי לחבר Webhook, לשלוח חשבוניות אוטומטיות, לעדכן CRM ולקבל התראות בזמן אמת על כל חתימה.'
+                      : 'Upgrade to connect a webhook, send automatic invoices, update your CRM, and get real-time notifications on every signature.'}
                   </p>
                 </div>
                 <motion.button
@@ -326,97 +512,51 @@ export default function Integrations() {
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
                   className="flex items-center gap-2 rounded-2xl px-7 py-3.5 text-[14px] font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 32px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}
-                >
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 32px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
                   <Zap size={15} />
-                  {isHe ? 'שדרג לפרו' : 'Upgrade to Pro'}
+                  {isHe ? 'שדרג לפרו — ₪19 / חודש' : 'Upgrade to Pro — ₪19 / month'}
                 </motion.button>
-                <p className="text-[11px] text-white/25">
-                  {isHe ? 'ביטול בכל עת · ₪19 / חודש · כולל מע"מ' : 'Cancel anytime · ₪19 / month · VAT incl.'}
+                <p className="text-[11px] text-white/20">
+                  {isHe ? 'ביטול בכל עת · כולל מע"מ' : 'Cancel anytime · VAT incl.'}
                 </p>
               </div>
             </div>
           </>
         )}
 
-        {/* ── PAID: full integration panel ──────────────────────────────────── */}
+        {/* ── PAID: webhook config + full guides ─────────────────────────────── */}
         {isPaid && (
           <>
-            {/* How it works */}
-            <div
-              className="rounded-3xl overflow-hidden mb-6"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                animation: 'int-fade-up 0.4s ease-out 0.1s both',
-              }}
-            >
-              <div className="px-6 py-5 border-b border-white/[0.05]">
-                <p className="text-[13px] font-bold text-white/80">
-                  {isHe ? 'איך זה עובד' : 'How it works'}
+            {/* Status + active webhook indicator */}
+            {isWebhookSaved && (
+              <div className="flex items-center gap-2.5 rounded-2xl px-4 py-3 mb-5"
+                style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)', animation: 'int-fade-up 0.35s ease-out 0.14s both' }}>
+                <CheckCircle2 size={14} className="text-emerald-400 flex-none" />
+                <p className="text-[12px] font-semibold text-emerald-400">
+                  {isHe ? 'Webhook פעיל ומוגדר — DealSpace ישלח POST לאחר כל חתימה' : 'Webhook active — DealSpace will POST after every signature'}
                 </p>
               </div>
-              <div className="px-6 py-5">
-                <div className="flex items-start gap-0">
-                  {FLOW_STEPS.map((step, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center text-center px-2">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-xl mb-3"
-                        style={{ background: `${step.color}18`, border: `1px solid ${step.color}35`, color: step.color }}
-                      >
-                        {step.iconEn}
-                      </div>
-                      <p className="text-[11px] font-bold text-white/80 mb-1 leading-snug">
-                        {isHe ? step.titleHe : step.titleEn}
-                      </p>
-                      <p className="text-[10px] text-white/35 leading-relaxed hidden sm:block">
-                        {isHe ? step.bodyHe : step.bodyEn}
-                      </p>
-                      {i < FLOW_STEPS.length - 1 && (
-                        <div className="absolute" style={{ display: 'none' }} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {/* Connector line on desktop */}
-                <div className="hidden sm:flex items-center justify-between px-[10%] -mt-20 mb-3 pointer-events-none" aria-hidden>
-                  <ArrowRight size={14} className="text-white/15" />
-                  <ArrowRight size={14} className="text-white/15" />
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Webhook configuration card */}
-            <div
-              className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm dark:bg-white/[0.02] dark:border-white/[0.06] dark:shadow-none mb-6"
-              style={{ animation: 'int-fade-up 0.45s ease-out 0.15s both' }}
-            >
-              {/* Card header */}
+            <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm dark:bg-white/[0.02] dark:border-white/[0.06] dark:shadow-none mb-6"
+              style={{ animation: 'int-fade-up 0.45s ease-out 0.15s both' }}>
+
               <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-white/[0.05]">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
-                  style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.28)' }}
-                >
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
+                  style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.28)' }}>
                   <Zap size={15} className="text-indigo-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-bold text-white">
-                    {isHe ? 'Webhook — חתימה על הצעה' : 'Proposal Signed Webhook'}
+                    {isHe ? 'Webhook — event: proposal.accepted' : 'Webhook — event: proposal.accepted'}
                   </p>
-                  <p className="text-[12px] text-white/35 mt-0.5">
-                    POST — event: proposal.accepted
+                  <p className="text-[11px] text-white/30 mt-0.5">
+                    {isHe ? 'מופעל מיד לאחר שלקוח חותם על ההצעה' : 'Fires immediately after a client signs a proposal'}
                   </p>
-                </div>
-                <div
-                  className="flex-none flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black"
-                  style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
-                >
-                  <CheckCircle2 size={11} />
-                  {isHe ? 'פעיל' : 'Active'}
                 </div>
               </div>
 
-              {/* Card body */}
               <div className="px-6 py-6 space-y-5">
 
                 {/* Webhook URL input */}
@@ -425,36 +565,32 @@ export default function Integrations() {
                     <Link2 size={13} className="text-indigo-400" />
                     {isHe ? 'כתובת Webhook' : 'Webhook URL'}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="url"
-                      value={webhookUrl}
-                      onChange={e => setWebhookUrl(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-                      placeholder="https://hook.make.com/..."
-                      className={inputClass}
-                      dir="ltr"
-                    />
-                  </div>
+                  <input
+                    type="url"
+                    value={webhookUrl}
+                    onChange={e => setWebhookUrl(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+                    placeholder="https://hook.eu1.make.com/..."
+                    className={inputClass}
+                    dir="ltr"
+                  />
                   <p className="text-[12px] text-zinc-500 mt-2">
                     {isHe
-                      ? 'הדבק כאן את ה-Webhook URL מ-Make.com, Zapier, n8n, או כל כלי אוטומציה אחר.'
-                      : 'Paste the Webhook URL from Make.com, Zapier, n8n, or any other automation tool.'}
+                      ? 'הכתובת שמקבלת את ה-POST. קבל אותה מ-Make.com, Zapier, n8n או כל כלי אוטומציה אחר (ראה מדריך למטה).'
+                      : 'The URL that receives the POST. Get it from Make.com, Zapier, n8n, or any automation tool (see guide below).'}
                   </p>
                 </div>
 
                 {/* Payload preview */}
                 <div>
-                  <p className="text-[12px] font-semibold text-zinc-400 mb-2">
-                    {isHe ? 'מבנה ה-Payload שנשלח' : 'Payload structure sent'}
+                  <p className="text-[12px] font-semibold text-zinc-400 mb-2 flex items-center gap-1.5">
+                    <Info size={12} className="text-indigo-400" />
+                    {isHe ? 'Payload שנשלח בכל חתימה' : 'Payload sent on every signature'}
                   </p>
-                  <div
-                    className="rounded-xl px-4 py-3.5 text-[11px] font-mono leading-relaxed text-white/40 overflow-x-auto"
-                    style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.05)' }}
-                    dir="ltr"
-                  >
+                  <div className="rounded-xl px-4 py-3.5 text-[11px] font-mono leading-relaxed text-white/40 overflow-x-auto"
+                    style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.05)' }} dir="ltr">
                     <span className="text-indigo-400/70">{'{'}</span>
-                    {`\n  "event": "proposal.accepted",\n  "data": {\n    "proposal_id": "uuid",\n    "project_title": "...",\n    "client_name": "...",\n    "client_email": "...",\n    "client_company": "...",\n    "grand_total": 5000,\n    "currency": "ILS",\n    "public_token": "...",\n    "signed_at": "2026-01-01T00:00:00.000Z"\n  }\n`}
+                    {`\n  "event": "proposal.accepted",\n  "data": {\n    "proposal_id":  "uuid",\n    "project_title": "עיצוב מחדש לאתר",\n    "client_name":   "שם הלקוח",\n    "client_email":  "client@example.com",\n    "client_company": "שם החברה",\n    "grand_total":   12000,\n    "currency":      "ILS",\n    "public_token":  "abc123",\n    "signed_at":     "2026-04-03T10:30:00.000Z"\n  }\n`}
                     <span className="text-indigo-400/70">{'}'}</span>
                   </div>
                 </div>
@@ -467,11 +603,7 @@ export default function Integrations() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     className="flex items-center gap-2 rounded-xl px-5 h-10 text-[13px] font-bold text-white flex-none"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      boxShadow: '0 0 20px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.12)',
-                    }}
-                  >
+                    style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.3)' }}>
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     {isHe ? 'שמור' : 'Save'}
                   </motion.button>
@@ -485,10 +617,9 @@ export default function Integrations() {
                     style={{
                       background: 'rgba(255,255,255,0.04)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      color: !webhookUrl.trim() ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
+                      color: !webhookUrl.trim() ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)',
                       cursor: !webhookUrl.trim() ? 'not-allowed' : 'pointer',
-                    }}
-                  >
+                    }}>
                     {testing ? <Loader2 size={13} className="animate-spin" /> : <FlaskConical size={13} />}
                     {isHe ? 'בדוק חיבור' : 'Test Connection'}
                   </motion.button>
@@ -509,48 +640,44 @@ export default function Integrations() {
                     {testStatus === 'ok' && (
                       <motion.span key="test-ok" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
                         className="flex items-center gap-1.5 text-[12px] font-semibold text-emerald-400">
-                        <CheckCircle2 size={13} />{isHe ? 'Webhook מגיב תקין ✓' : 'Webhook responded OK ✓'}
+                        <CheckCircle2 size={13} />{isHe ? '✓ Webhook מגיב תקין' : '✓ Webhook responded OK'}
                       </motion.span>
                     )}
                     {testStatus === 'error' && (
                       <motion.span key="test-err" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
                         className="flex items-center gap-1.5 text-[12px] font-semibold text-red-400">
-                        <AlertCircle size={13} />{isHe ? 'שגיאה — בדוק שה-URL נכון ומקבל POST' : 'Error — check the URL accepts POST requests'}
+                        <AlertCircle size={13} />{isHe ? 'שגיאה — ה-URL לא מגיב ל-POST' : 'Error — URL not responding to POST'}
                       </motion.span>
                     )}
                   </AnimatePresence>
                 </div>
 
-                {/* Test note */}
+                {/* Contextual test hint */}
                 {webhookUrl.trim() && (
                   <p className="text-[11px] text-white/25 leading-relaxed">
                     {isHe
-                      ? 'לחיצה על "בדוק חיבור" שולחת payload לדוגמה לכתובת שלמעלה. ב-Make.com יש ללחוץ "Run once" לפני הבדיקה.'
-                      : 'Clicking "Test Connection" sends a sample payload to the URL above. In Make.com, click "Run once" before testing.'}
+                      ? 'ב-Make.com: לחץ "Run once" לפני הבדיקה. ב-n8n: לחץ "Test workflow". ב-Zapier: ה-Zap חייב להיות Published.'
+                      : 'Make.com: click "Run once" before testing. n8n: click "Test workflow". Zapier: Zap must be Published.'}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Platform setup guides */}
-            <div
-              className="rounded-3xl overflow-hidden mb-6"
-              style={{
-                background: 'rgba(255,255,255,0.015)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                animation: 'int-fade-up 0.45s ease-out 0.22s both',
-              }}
-            >
+            {/* Platform setup guides — accordion */}
+            <div className="rounded-3xl overflow-hidden mb-6"
+              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.06)', animation: 'int-fade-up 0.45s ease-out 0.2s both' }}>
+
               <div className="px-6 py-5 border-b border-white/[0.05]">
                 <p className="text-[13px] font-bold text-white/80">
-                  {isHe ? 'מדריך הגדרה לפי פלטפורמה' : 'Setup guide by platform'}
+                  {isHe ? 'מדריך הגדרה שלב אחר שלב' : 'Step-by-step setup guide'}
                 </p>
                 <p className="text-[12px] text-white/35 mt-1">
                   {isHe
-                    ? 'לחץ על פלטפורמה לקבלת הוראות שלב-אחר-שלב'
-                    : 'Click a platform for step-by-step instructions'}
+                    ? 'בחר את הפלטפורמה שלך — המדריך יוביל אותך בדיוק מה ללחוץ ואיפה'
+                    : 'Choose your platform — the guide tells you exactly what to click and where'}
                 </p>
               </div>
+
               <div className="divide-y divide-white/[0.04]">
                 {PLATFORMS.map(platform => (
                   <div key={platform.name}>
@@ -559,45 +686,77 @@ export default function Integrations() {
                       className="w-full flex items-center justify-between px-6 py-4 text-start transition-colors hover:bg-white/[0.02]"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{platform.logo}</span>
-                        <p className="text-[13px] font-bold text-white/80">{platform.name}</p>
+                        <span className="text-2xl">{platform.logo}</span>
+                        <div>
+                          <p className="text-[13px] font-bold text-white/85">{platform.name}</p>
+                          <p className="text-[11px] text-white/35">
+                            {isHe ? platform.tagHe : platform.tagEn}
+                          </p>
+                        </div>
                       </div>
-                      {expandedPlatform === platform.name
-                        ? <ChevronUp size={14} className="text-white/30 flex-none" />
-                        : <ChevronDown size={14} className="text-white/30 flex-none" />
-                      }
+                      <div className="flex items-center gap-2 flex-none">
+                        {expandedPlatform === platform.name && (
+                          <span className="text-[10px] font-bold text-indigo-400 rounded-full px-2 py-0.5"
+                            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                            {isHe ? 'פתוח' : 'Open'}
+                          </span>
+                        )}
+                        {expandedPlatform === platform.name
+                          ? <ChevronUp size={15} className="text-white/30" />
+                          : <ChevronDown size={15} className="text-white/30" />}
+                      </div>
                     </button>
+
                     <AnimatePresence>
                       {expandedPlatform === platform.name && (
                         <motion.div
-                          key={platform.name + '-steps'}
+                          key={platform.name + '-body'}
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.22, ease: 'easeOut' as const }}
+                          transition={{ duration: 0.25, ease: 'easeOut' as const }}
                           style={{ overflow: 'hidden' }}
                         >
-                          <div className="px-6 pb-5">
-                            <ol className="space-y-2.5">
+                          <div className="px-6 pb-6">
+                            {/* Steps */}
+                            <div className="space-y-0">
                               {(isHe ? platform.stepsHe : platform.stepsEn).map((step, i) => (
-                                <li key={i} className="flex items-start gap-3 text-[12px] text-white/55">
-                                  <span
-                                    className="flex-none flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black text-white mt-0.5"
-                                    style={{ background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.5)' }}
-                                  >
-                                    {i + 1}
-                                  </span>
-                                  {step}
-                                </li>
+                                <div key={i} className="flex gap-4 py-3 border-b border-white/[0.04] last:border-0">
+                                  <div className="flex-none flex flex-col items-center gap-1 pt-0.5">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black text-white flex-none"
+                                      style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                                      {i + 1}
+                                    </span>
+                                    {i < (isHe ? platform.stepsHe : platform.stepsEn).length - 1 && (
+                                      <div className="w-px flex-1 mt-1" style={{ background: 'rgba(99,102,241,0.2)', minHeight: 16 }} />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0 pb-1">
+                                    <p className="text-[13px] font-bold text-white/85 mb-1">{step.title}</p>
+                                    <p className="text-[12px] text-white/50 leading-relaxed">{step.detail}</p>
+                                  </div>
+                                </div>
                               ))}
-                            </ol>
-                            <div
-                              className="mt-4 rounded-xl px-4 py-3 text-[11px] text-white/40 leading-relaxed"
-                              style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
-                            >
-                              {isHe
-                                ? `💡 לאחר ההגדרה ב-${platform.name}, הדבק את ה-URL בשדה למעלה ולחץ שמור. לחץ "בדוק חיבור" כדי לוודא שהכל עובד.`
-                                : `💡 After setting up in ${platform.name}, paste the URL in the field above and click Save. Then click "Test Connection" to verify everything works.`}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="my-4 border-t border-white/[0.04]" />
+
+                            {/* Tip */}
+                            <div className="rounded-xl px-4 py-3 mb-3"
+                              style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)' }}>
+                              <p className="text-[12px] text-indigo-300/80 leading-relaxed">
+                                {isHe ? platform.tipHe : platform.tipEn}
+                              </p>
+                            </div>
+
+                            {/* Common mistake */}
+                            <div className="rounded-xl px-4 py-3"
+                              style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                              <p className="text-[12px] leading-relaxed flex items-start gap-2" style={{ color: 'rgba(248,113,113,0.8)' }}>
+                                <AlertTriangle size={13} className="flex-none mt-0.5" />
+                                {isHe ? platform.commonMistakeHe : platform.commonMistakeEn}
+                              </p>
                             </div>
                           </div>
                         </motion.div>
@@ -609,80 +768,56 @@ export default function Integrations() {
             </div>
 
             {/* Use cases */}
-            <div
-              className="rounded-3xl px-6 py-5 mb-6"
-              style={{
-                background: 'rgba(255,255,255,0.015)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                animation: 'int-fade-up 0.45s ease-out 0.28s both',
-              }}
-            >
+            <div className="rounded-3xl px-6 py-5 mb-6"
+              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.25s both' }}>
               <p className="text-[12px] font-semibold text-zinc-500 mb-4">
-                {isHe ? 'דוגמאות לאוטומציות פופולריות:' : 'Popular automation examples:'}
+                {isHe ? 'רעיונות לאוטומציות פופולריות:' : 'Popular automation ideas:'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {USE_CASES.map((uc, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-[12px] text-white/50">
-                    <span className="flex-none" style={{ color: '#6366f1' }}>{uc.iconEn}</span>
+                    <span className="flex-none" style={{ color: '#818cf8' }}>{uc.icon}</span>
                     {isHe ? uc.he : uc.en}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Compatible tools */}
-            <div
-              className="rounded-3xl px-6 py-5"
-              style={{
-                background: 'rgba(255,255,255,0.015)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                animation: 'int-fade-up 0.45s ease-out 0.32s both',
-              }}
-            >
-              <p className="text-[12px] font-semibold text-zinc-500 mb-4">
-                {isHe ? 'תואם ל:' : 'Compatible with:'}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {['Make.com', 'Zapier', 'n8n', 'Invoice4u', 'HubSpot', 'Pipedrive', 'monday.com', 'SendGrid', 'Slack', 'WhatsApp Business'].map(tool => (
-                  <span
-                    key={tool}
-                    className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-white/40"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                  >
-                    {tool}
-                  </span>
-                ))}
+            {/* Need help */}
+            <div className="rounded-3xl px-6 py-5"
+              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.3s both' }}>
+              <div className="flex items-start gap-3">
+                <ArrowDown size={14} className="text-indigo-400 flex-none mt-0.5 rotate-[135deg]" />
+                <div>
+                  <p className="text-[13px] font-bold text-white/70 mb-1">
+                    {isHe ? 'צריך עזרה בהגדרה?' : 'Need help setting up?'}
+                  </p>
+                  <p className="text-[12px] text-white/40 leading-relaxed">
+                    {isHe
+                      ? 'שלח מייל ל-support@dealspace.app עם שם הפלטפורמה שאתה משתמש בה ונעזור לך בהגדרה המלאה.'
+                      : 'Email support@dealspace.app with the platform name you\'re using and we\'ll help with full setup.'}
+                  </p>
+                </div>
               </div>
             </div>
           </>
         )}
 
-        {/* Compatible tools footer (free users) */}
-        {!isPaid && (
-          <div
-            className="mt-6 rounded-3xl px-6 py-5"
-            style={{
-              background: 'rgba(255,255,255,0.015)',
-              border: '1px solid rgba(255,255,255,0.05)',
-              animation: 'int-fade-up 0.45s ease-out 0.3s both',
-            }}
-          >
-            <p className="text-[12px] font-semibold text-zinc-500 mb-4">
-              {isHe ? 'תואם ל:' : 'Compatible with:'}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['Make.com', 'Zapier', 'n8n', 'Invoice4u', 'HubSpot', 'Pipedrive', 'monday.com', 'SendGrid', 'Slack', 'WhatsApp Business'].map(tool => (
-                <span
-                  key={tool}
-                  className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-white/40"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
+        {/* Compatible tools — both tiers */}
+        <div className="mt-6 rounded-3xl px-6 py-5"
+          style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', animation: 'int-fade-up 0.45s ease-out 0.35s both' }}>
+          <p className="text-[11px] font-semibold text-zinc-600 mb-3">
+            {isHe ? 'תואם ל:' : 'Compatible with:'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {['Make.com', 'Zapier', 'n8n', 'Invoice4u', 'HubSpot', 'Pipedrive', 'monday.com', 'SendGrid', 'Slack', 'WhatsApp Business'].map(tool => (
+              <span key={tool} className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-white/35"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {tool}
+              </span>
+            ))}
           </div>
-        )}
+        </div>
 
       </main>
 

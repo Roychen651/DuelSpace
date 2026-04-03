@@ -9,7 +9,6 @@ import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
-import { STRIPE_CUSTOMER_PORTAL } from '../../lib/stripe'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -291,17 +290,15 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
-                    {/* Manage Subscription — paid users only; directs to Stripe Customer Portal */}
-                    {(tier === 'pro' || tier === 'unlimited') && STRIPE_CUSTOMER_PORTAL && (
-                      <button
-                        onClick={() => { window.location.href = STRIPE_CUSTOMER_PORTAL }}
-                        className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start"
-                        style={{ color: tier === 'unlimited' ? '#d4af37' : '#818cf8' }}
-                      >
-                        <CreditCard size={13} className="flex-none" />
-                        {isHe ? 'ניהול מנוי והתחייבויות' : 'Manage Subscription'}
-                      </button>
-                    )}
+                    {/* Billing & Subscription — all users */}
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/billing') }}
+                      className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start"
+                      style={{ color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'rgba(255,255,255,0.55)' }}
+                    >
+                      <CreditCard size={13} className="flex-none" />
+                      {isHe ? 'חיוב ומנוי' : 'Billing & Subscription'}
+                    </button>
                   </div>
 
                   {/* Sign out */}

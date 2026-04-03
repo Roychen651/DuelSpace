@@ -251,6 +251,26 @@ export const useBillingStatus = (): BillingStatus => useAuthStore(s => {
   return null
 })
 
+/**
+ * Returns the current subscription period end as a Date, or null if not on a paid plan.
+ * Stored by stripe-webhook as a Unix timestamp string (e.g. "1746000000").
+ */
+export const useSubscriptionPeriodEnd = (): Date | null => useAuthStore(s => {
+  const raw = s.user?.user_metadata?.subscription_period_end as string | undefined
+  if (!raw) return null
+  const ts = parseInt(raw, 10)
+  if (isNaN(ts)) return null
+  return new Date(ts * 1000)
+})
+
+/**
+ * Returns true if the user has scheduled a cancellation that takes effect at period end.
+ * Stored by stripe-webhook as the string 'true' | 'false'.
+ */
+export const useCancelAtPeriodEnd = (): boolean => useAuthStore(s => {
+  return (s.user?.user_metadata?.subscription_cancel_at_period_end as string | undefined) === 'true'
+})
+
 export const FREE_PROPOSAL_LIMIT = 5
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
