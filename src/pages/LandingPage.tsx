@@ -1970,7 +1970,7 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                 style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
               >
                 <span className="hidden sm:inline">{c.navCta}</span>
-                <span className="sm:hidden">{isHe ? 'בחינם' : 'Free'}</span>
+                <span className="sm:hidden">{isHe ? 'התחילו' : 'Start'}</span>
               </motion.button>
             </div>
           </motion.nav>
@@ -2062,7 +2062,7 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                 style={{ background: 'linear-gradient(135deg, #6366f1, #7c3aed, #a855f7)', boxShadow: '0 0 22px rgba(99,102,241,0.45), 0 2px 10px rgba(0,0,0,0.3)' }}
               >
                 <span className="hidden sm:inline">{c.navCta}</span>
-                <span className="sm:hidden">{isHe ? 'בחינם' : 'Free'}</span>
+                <span className="sm:hidden">{isHe ? 'התחילו' : 'Start'}</span>
                 <ChevronRight size={12} className="sm:hidden" />
                 <ChevronRight size={13} className="hidden sm:inline" />
               </motion.button>
