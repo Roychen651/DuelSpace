@@ -67,7 +67,7 @@ function ToggleRow({
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition-all ${active ? 'bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/14 dark:border-indigo-500/30' : 'bg-slate-50 border border-slate-200 dark:bg-white/4 dark:border-white/7'}`}
+      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition-all ${active ? 'bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/[0.14] dark:border-indigo-500/30' : 'bg-slate-50 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]'}`}
       style={{ direction: 'inherit' }}
     >
       {/* Icon + label — always first in DOM; flex direction follows dir="rtl" on html */}
@@ -80,7 +80,7 @@ function ToggleRow({
 
       {/* Toggle pill */}
       <div
-        className={`relative h-5 w-9 flex-none rounded-full transition-all ${active ? '' : 'bg-slate-200 dark:bg-white/10'}`}
+        className={`relative h-5 w-9 flex-none rounded-full transition-all ${active ? '' : 'bg-slate-200 dark:bg-white/[0.10]'}`}
         style={{
           background: active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : undefined,
           boxShadow: active ? '0 0 8px rgba(99,102,241,0.45)' : 'none',
@@ -120,7 +120,7 @@ function ColorBlindRow() {
   const { colorBlindMode, setColorBlindMode } = useAccessibilityStore()
   return (
     <div
-      className="rounded-xl px-3 py-2.5 space-y-2 bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/7"
+      className="rounded-xl px-3 py-2.5 space-y-2 bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.07]"
     >
       <div className="flex items-center gap-2">
         <Eye size={13} style={{ color: colorBlindMode !== 'none' ? '#818cf8' : undefined }} className={colorBlindMode !== 'none' ? '' : 'text-slate-400 dark:text-white/35'} />
@@ -260,7 +260,7 @@ export function AccessibilityWidget() {
             />
 
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-white/6">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-xl"
@@ -288,7 +288,7 @@ export function AccessibilityWidget() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 dark:text-white/25 transition hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-600 dark:hover:text-white/60"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 dark:text-white/25 transition hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-slate-600 dark:hover:text-white/60"
                 >
                   <X size={12} />
                 </button>
@@ -306,7 +306,7 @@ export function AccessibilityWidget() {
 
               {/* Text size */}
               <div
-                className="rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/7"
+                className="rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.07]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export function AccessibilityWidget() {
                       type="button"
                       onClick={() => setTextSize(textSize - 0.1)}
                       disabled={textSize <= 1}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/8"
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/[0.08]"
                       aria-label={isHe ? 'הקטן טקסט' : 'Decrease text size'}
                     >
                       <Minus size={10} className="text-slate-500 dark:text-white/60" />
@@ -332,14 +332,14 @@ export function AccessibilityWidget() {
                       type="button"
                       onClick={() => setTextSize(textSize + 0.1)}
                       disabled={textSize >= 1.5}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/8"
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/[0.08]"
                       aria-label={isHe ? 'הגדל טקסט' : 'Increase text size'}
                     >
                       <Plus size={10} className="text-slate-500 dark:text-white/60" />
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 h-1 rounded-full overflow-hidden bg-slate-200 dark:bg-white/6">
+                <div className="mt-2 h-1 rounded-full overflow-hidden bg-slate-200 dark:bg-white/[0.06]">
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{
@@ -377,7 +377,7 @@ export function AccessibilityWidget() {
 
             {/* Footer */}
             <div
-              className="px-3 pb-3 pt-2 border-t border-slate-100 dark:border-white/6"
+              className="px-3 pb-3 pt-2 border-t border-slate-100 dark:border-white/[0.06]"
             >
               <button
                 type="button"
@@ -412,13 +412,19 @@ export function AccessibilityWidget() {
         <motion.button
           type="button"
           onClick={() => setOpen(v => !v)}
-          className={`relative flex h-12 w-12 items-center justify-center rounded-full ${open ? '' : 'bg-white dark:bg-white/6 border border-slate-200 dark:border-white/12 shadow-md dark:shadow-none'}`}
+          className="relative flex h-12 w-12 items-center justify-center rounded-full"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
           style={{
-            background: open ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : undefined,
-            boxShadow: open ? '0 0 28px rgba(99,102,241,0.55), 0 8px 24px rgba(0,0,0,0.6)' : undefined,
+            background: open
+              ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+              : 'linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%)',
+            border: open ? 'none' : '1px solid rgba(255,255,255,0.12)',
+            boxShadow: open
+              ? '0 0 28px rgba(99,102,241,0.55), 0 8px 24px rgba(0,0,0,0.6)'
+              : '0 8px 24px rgba(0,0,0,0.45)',
             backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
           }}
           aria-label={isHe ? 'תפריט נגישות' : 'Accessibility Menu'}
           aria-expanded={open}
