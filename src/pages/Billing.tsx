@@ -1,8 +1,9 @@
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CreditCard, Zap, Star, CheckCircle2, AlertTriangle, Clock,
   RefreshCw, XCircle, Download, Infinity as InfinityIcon,
-  ArrowUpRight, Info, ShieldCheck, HelpCircle, Settings, RotateCcw,
+  ArrowUpRight, Info, ShieldCheck, HelpCircle, Settings, RotateCcw, Loader2,
 } from 'lucide-react'
 import {
   useAuthStore, useTier, useBillingStatus,
@@ -10,7 +11,7 @@ import {
 } from '../stores/useAuthStore'
 import { useI18n } from '../lib/i18n'
 import {
-  STRIPE_CUSTOMER_PORTAL, STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl,
+  STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl, createPortalSession,
 } from '../lib/stripe'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 
@@ -45,16 +46,28 @@ export default function Billing() {
   const planNameEn = isPremium ? 'Premium' : isPro ? 'Pro' : 'Free'
   const planPrice  = isPremium ? '₪39' : isPro ? '₪19' : null
 
-  // Stripe portal — always render buttons; dev-alert if env var missing
-  const portalUrl = STRIPE_CUSTOMER_PORTAL || '#'
-  const handlePortalClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!STRIPE_CUSTOMER_PORTAL) {
-      e.preventDefault()
+  // If user has a Stripe customer ID, ALL billing actions route through a
+  // dynamic portal session — prevents duplicate subscriptions on plan changes.
+  const hasStripeCustomer = Boolean(user?.user_metadata?.stripe_customer_id)
+
+  // Track which action button is loading (null = idle)
+  const [loadingAction, setLoadingAction] = React.useState<string | null>(null)
+
+  const handlePortalAction = React.useCallback(async (action: string) => {
+    if (loadingAction) return
+    setLoadingAction(action)
+    try {
+      const url = await createPortalSession()
+      window.location.href = url
+      // Don't reset — page is navigating away
+    } catch (err) {
+      console.error('[stripe-portal]', err)
       if (import.meta.env.DEV) {
-        alert('VITE_STRIPE_CUSTOMER_PORTAL not set in .env.local')
+        alert('Portal session failed. Is the stripe-portal Edge Function deployed?\n\nRun: supabase functions deploy stripe-portal --project-ref aefyytktbpynkbxhzhyt')
       }
+      setLoadingAction(null)
     }
-  }
+  }, [loadingAction])
 
   const animBase = {
     initial: { opacity: 0, y: 24 },
@@ -178,18 +191,19 @@ export default function Billing() {
                   </p>
                 </div>
               </div>
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
+              <button
+                type="button"
+                onClick={() => handlePortalAction('past_due')}
+                disabled={loadingAction === 'past_due'}
+                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all disabled:opacity-70 disabled:cursor-wait"
                 style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.42)', color: '#fca5a5' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.32)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.22)'; (e.currentTarget as HTMLAnchorElement).style.transform = '' }}
+                onMouseEnter={e => { if (!loadingAction) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.32)'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)' } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.22)'; (e.currentTarget as HTMLButtonElement).style.transform = '' }}
               >
-                <CreditCard size={14} />
+                {loadingAction === 'past_due' ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
                 {isHe ? 'עדכון פרטי אשראי' : 'Update Payment Method'}
-                <ArrowUpRight size={13} className="opacity-70" />
-              </a>
+                {loadingAction !== 'past_due' && <ArrowUpRight size={13} className="opacity-70" />}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -232,18 +246,19 @@ export default function Billing() {
                   </p>
                 </div>
               </div>
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all"
+              <button
+                type="button"
+                onClick={() => handlePortalAction('reactivate')}
+                disabled={loadingAction === 'reactivate'}
+                className="flex items-center justify-center gap-2 w-full rounded-xl py-3 text-[13px] font-bold transition-all disabled:opacity-70 disabled:cursor-wait"
                 style={{ background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.38)', color: '#fcd34d' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.28)'; (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.18)'; (e.currentTarget as HTMLAnchorElement).style.transform = '' }}
+                onMouseEnter={e => { if (!loadingAction) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.28)'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)' } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.18)'; (e.currentTarget as HTMLButtonElement).style.transform = '' }}
               >
-                <RotateCcw size={14} />
+                {loadingAction === 'reactivate' ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                 {isHe ? 'חידוש מנוי' : 'Reactivate Subscription'}
-                <ArrowUpRight size={13} className="opacity-70" />
-              </a>
+                {loadingAction !== 'reactivate' && <ArrowUpRight size={13} className="opacity-70" />}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -368,18 +383,19 @@ export default function Billing() {
               }}>
 
               {/* 1. Manage Subscription */}
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+              <button
+                type="button"
+                onClick={() => handlePortalAction('manage')}
+                disabled={!!loadingAction}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = `${tierColor}10` }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = `${tierColor}10` }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: `${tierColor}18`, border: `1px solid ${tierColor}28` }}>
-                    <Settings size={13} style={{ color: tierColor }} />
+                    {loadingAction === 'manage' ? <Loader2 size={13} className="animate-spin" style={{ color: tierColor }} /> : <Settings size={13} style={{ color: tierColor }} />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-white/85">
@@ -393,21 +409,22 @@ export default function Billing() {
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
                   <ArrowUpRight size={14} style={{ color: `${tierColor}70` }} />
                 </div>
-              </a>
+              </button>
 
               {/* 2. Update Payment Method */}
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+              <button
+                type="button"
+                onClick={() => handlePortalAction('payment')}
+                disabled={!!loadingAction}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.03)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <CreditCard size={13} className="text-white/55" />
+                    {loadingAction === 'payment' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <CreditCard size={13} className="text-white/55" />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-white/70">
@@ -421,28 +438,28 @@ export default function Billing() {
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
                   <ArrowUpRight size={14} className="text-white/25" />
                 </div>
-              </a>
+              </button>
 
               {/* 3. View Invoices */}
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
+              <button
+                type="button"
+                onClick={() => handlePortalAction('invoices')}
+                disabled={!!loadingAction}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.03)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Download size={13} className="text-white/55" />
+                    {loadingAction === 'invoices' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <Download size={13} className="text-white/55" />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-white/70">
                       {isHe ? 'חשבוניות וקבלות' : 'View Invoices & Receipts'}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {/* Glowing dot for Morning */}
                       <span className="h-1.5 w-1.5 rounded-full flex-none"
                         style={{ background: '#4ade80', boxShadow: '0 0 5px #4ade8099' }} />
                       <p className="text-[11px] text-white/32">
@@ -456,20 +473,21 @@ export default function Billing() {
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
                   <ArrowUpRight size={14} className="text-white/25" />
                 </div>
-              </a>
+              </button>
 
               {/* 4. Cancel Subscription */}
-              <a
-                href={portalUrl}
-                onClick={handlePortalClick}
-                className="flex items-center justify-between w-full px-5 py-4 transition-all group"
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(239,68,68,0.06)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = '' }}
+              <button
+                type="button"
+                onClick={() => handlePortalAction('cancel')}
+                disabled={!!loadingAction}
+                className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                    <XCircle size={13} className="text-red-400/70" />
+                    {loadingAction === 'cancel' ? <Loader2 size={13} className="animate-spin text-red-400/70" /> : <XCircle size={13} className="text-red-400/70" />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-red-400/75 group-hover:text-red-400 transition-colors">
@@ -485,7 +503,7 @@ export default function Billing() {
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
                   <ArrowUpRight size={14} className="text-red-400/28" />
                 </div>
-              </a>
+              </button>
             </div>
 
             {/* Lifecycle transparency note */}
@@ -528,21 +546,32 @@ export default function Billing() {
                   ))}
                 </ul>
               </div>
-              <a
-                href={STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#'}
-                onClick={e => { if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') } }}
-                className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all whitespace-nowrap"
-                style={{
-                  background: 'rgba(212,175,55,0.18)',
-                  color: '#d4af37',
-                  border: '1px solid rgba(212,175,55,0.32)',
-                  boxShadow: '0 0 16px rgba(212,175,55,0.12)',
-                }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.28)'; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 4px 20px rgba(212,175,55,0.2)' }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.18)'; el.style.transform = ''; el.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)' }}
-              >
-                {isHe ? 'שדרג — ₪39 / חודש' : 'Upgrade — ₪39 / mo'} <ArrowUpRight size={12} />
-              </a>
+              {/* Existing customers → portal (prevents duplicate subscription) */}
+              {hasStripeCustomer ? (
+                <button
+                  type="button"
+                  onClick={() => handlePortalAction('pro_to_premium')}
+                  disabled={!!loadingAction}
+                  className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all whitespace-nowrap disabled:opacity-70 disabled:cursor-wait"
+                  style={{ background: 'rgba(212,175,55,0.18)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.32)', boxShadow: '0 0 16px rgba(212,175,55,0.12)' }}
+                  onMouseEnter={e => { if (!loadingAction) { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'rgba(212,175,55,0.28)'; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 4px 20px rgba(212,175,55,0.2)' } }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLButtonElement; el.style.background = 'rgba(212,175,55,0.18)'; el.style.transform = ''; el.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)' }}
+                >
+                  {loadingAction === 'pro_to_premium' ? <Loader2 size={12} className="animate-spin" /> : null}
+                  {isHe ? 'שדרג — ₪39 / חודש' : 'Upgrade — ₪39 / mo'} {loadingAction !== 'pro_to_premium' && <ArrowUpRight size={12} />}
+                </button>
+              ) : (
+                <a
+                  href={STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#'}
+                  onClick={e => { if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') } }}
+                  className="flex-none flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-bold transition-all whitespace-nowrap"
+                  style={{ background: 'rgba(212,175,55,0.18)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.32)', boxShadow: '0 0 16px rgba(212,175,55,0.12)' }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.28)'; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 4px 20px rgba(212,175,55,0.2)' }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.background = 'rgba(212,175,55,0.18)'; el.style.transform = ''; el.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)' }}
+                >
+                  {isHe ? 'שדרג — ₪39 / חודש' : 'Upgrade — ₪39 / mo'} <ArrowUpRight size={12} />
+                </a>
+              )}
             </div>
           </motion.div>
         )}
@@ -555,10 +584,13 @@ export default function Billing() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-              {/* Pro card */}
+              {/* Pro card — portal for returning customers, checkout for new */}
               <a
-                href={STRIPE_PRO_LINK ? buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email) : '#'}
-                onClick={e => { if (!STRIPE_PRO_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PRO_LINK not set') } }}
+                href={hasStripeCustomer ? undefined : (STRIPE_PRO_LINK ? buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email) : '#')}
+                onClick={e => {
+                  if (hasStripeCustomer) { e.preventDefault(); handlePortalAction('free_to_pro') }
+                  else if (!STRIPE_PRO_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PRO_LINK not set') }
+                }}
                 className="flex flex-col rounded-2xl p-5 transition-all"
                 style={{
                   background: 'linear-gradient(160deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.04) 100%)',
@@ -590,10 +622,13 @@ export default function Billing() {
                 </div>
               </a>
 
-              {/* Premium card */}
+              {/* Premium card — portal for returning customers, checkout for new */}
               <a
-                href={STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#'}
-                onClick={e => { if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') } }}
+                href={hasStripeCustomer ? undefined : (STRIPE_PREMIUM_LINK ? buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email) : '#')}
+                onClick={e => {
+                  if (hasStripeCustomer) { e.preventDefault(); handlePortalAction('free_to_premium') }
+                  else if (!STRIPE_PREMIUM_LINK && import.meta.env.DEV) { e.preventDefault(); alert('VITE_STRIPE_PREMIUM_LINK not set') }
+                }}
                 className="flex flex-col rounded-2xl p-5 transition-all"
                 style={{
                   background: 'linear-gradient(160deg, rgba(212,175,55,0.09) 0%, rgba(212,175,55,0.03) 100%)',

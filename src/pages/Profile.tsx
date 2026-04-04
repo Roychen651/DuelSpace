@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText, CreditCard, ExternalLink, Zap, Star, Infinity as InfinityIcon, BellRing, AlertTriangle, Trash2 } from 'lucide-react'
 import { useAuthStore, useTier } from '../stores/useAuthStore'
-import { STRIPE_CUSTOMER_PORTAL, STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl } from '../lib/stripe'
+import { STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl, createPortalSession } from '../lib/stripe'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
 import { useI18n } from '../lib/i18n'
@@ -211,6 +211,23 @@ export default function Profile() {
   const { locale } = useI18n()
   const isHe = locale === 'he'
   const tier = useTier()
+
+  // Portal session — existing Stripe customers always use dynamic session
+  const hasStripeCustomer = Boolean(user?.user_metadata?.stripe_customer_id)
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const handlePortalAction = useCallback(async () => {
+    if (portalLoading) return
+    setPortalLoading(true)
+    try {
+      const url = await createPortalSession()
+      window.location.href = url
+    } catch (err) {
+      console.error('[stripe-portal]', err)
+      if (import.meta.env.DEV) alert('Portal session failed. Is the stripe-portal Edge Function deployed?')
+      setPortalLoading(false)
+    }
+  }, [portalLoading])
 
   const name = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email = user?.email ?? ''
@@ -832,9 +849,10 @@ export default function Profile() {
                     : 'Upgrade to Pro to remove proposal limits, unlock Webhooks, and get direct support.'}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {STRIPE_PRO_LINK && (
+                  {(STRIPE_PRO_LINK || hasStripeCustomer) && (
                     <motion.a
-                      href={buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email)}
+                      href={hasStripeCustomer ? undefined : buildCheckoutUrl(STRIPE_PRO_LINK, user?.id ?? '', user?.email)}
+                      onClick={hasStripeCustomer ? (e) => { e.preventDefault(); handlePortalAction() } : undefined}
                       className="flex flex-col items-center rounded-2xl px-3 py-3.5 text-center"
                       style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', transition: 'background 0.2s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(99,102,241,0.18)' }}
@@ -846,9 +864,10 @@ export default function Profile() {
                       <p className="text-[10px] text-white/35 mt-0.5">{isHe ? '₪19 / חודש · כולל מע"מ' : '₪19 / mo · VAT incl.'}</p>
                     </motion.a>
                   )}
-                  {STRIPE_PREMIUM_LINK && (
+                  {(STRIPE_PREMIUM_LINK || hasStripeCustomer) && (
                     <motion.a
-                      href={buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email)}
+                      href={hasStripeCustomer ? undefined : buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email)}
+                      onClick={hasStripeCustomer ? (e) => { e.preventDefault(); handlePortalAction() } : undefined}
                       className="flex flex-col items-center rounded-2xl px-3 py-3.5 text-center"
                       style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.22)', transition: 'background 0.2s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.14)' }}
@@ -867,12 +886,31 @@ export default function Profile() {
             {/* PRO — upgrade to Premium + manage/cancel */}
             {tier === 'pro' && (
               <div className="space-y-4">
-                {/* Upgrade to Premium */}
-                {STRIPE_PREMIUM_LINK && (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
-                      {isHe ? 'שדרוג זמין' : 'Available upgrade'}
-                    </p>
+                {/* Upgrade to Premium — portal for existing customers */}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                    {isHe ? 'שדרוג זמין' : 'Available upgrade'}
+                  </p>
+                  {hasStripeCustomer ? (
+                    <motion.button
+                      type="button"
+                      onClick={handlePortalAction}
+                      disabled={portalLoading}
+                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold disabled:opacity-70 disabled:cursor-wait"
+                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.22)', color: '#d4af37', transition: 'background 0.2s' }}
+                      onMouseEnter={e => { if (!portalLoading) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.15)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.08)' }}
+                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <span className="flex items-center gap-2">
+                        {portalLoading ? <Loader2 size={14} className="animate-spin" /> : <InfinityIcon size={14} />}
+                        {isHe ? 'שדרג לפרימיום — ₪39 / חודש' : 'Upgrade to Premium — ₪39 / mo'}
+                      </span>
+                      <span className="text-[10px] opacity-50 font-normal">
+                        {isHe ? 'הצעות ללא הגבלה' : 'Unlimited proposals'}
+                      </span>
+                    </motion.button>
+                  ) : STRIPE_PREMIUM_LINK ? (
                     <motion.a
                       href={buildCheckoutUrl(STRIPE_PREMIUM_LINK, user?.id ?? '', user?.email)}
                       className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
@@ -889,36 +927,30 @@ export default function Profile() {
                         {isHe ? 'הצעות ללא הגבלה' : 'Unlimited proposals'}
                       </span>
                     </motion.a>
-                  </div>
-                )}
+                  ) : null}
+                </div>
 
-                {/* Manage / Cancel */}
+                {/* Manage / Cancel — always dynamic portal */}
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
                     {isHe ? 'ניהול מנוי' : 'Subscription management'}
                   </p>
-                  {STRIPE_CUSTOMER_PORTAL ? (
-                    <motion.a
-                      href={STRIPE_CUSTOMER_PORTAL}
-                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.15)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
-                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <CreditCard size={14} />
-                        {isHe ? 'עדכון תשלום, חשבוניות וביטול' : 'Update billing, invoices & cancel'}
-                      </span>
-                      <ExternalLink size={12} className="opacity-40" />
-                    </motion.a>
-                  ) : (
-                    <p className="text-[12px] text-white/35 leading-relaxed rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      {isHe
-                        ? 'לביטול, שינוי תוכנית או הורדת חשבוניות — פנה לתמיכה: support@dealspace.app'
-                        : 'To cancel, change plan, or download invoices — contact support@dealspace.app'}
-                    </p>
-                  )}
+                  <motion.button
+                    type="button"
+                    onClick={handlePortalAction}
+                    disabled={portalLoading}
+                    className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold disabled:opacity-70 disabled:cursor-wait"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
+                    onMouseEnter={e => { if (!portalLoading) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)' } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
+                    whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                  >
+                    <span className="flex items-center gap-2">
+                      {portalLoading ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                      {isHe ? 'עדכון תשלום, חשבוניות וביטול' : 'Update billing, invoices & cancel'}
+                    </span>
+                    <ExternalLink size={12} className="opacity-40" />
+                  </motion.button>
                 </div>
 
                 {/* Invoice note */}
@@ -937,28 +969,22 @@ export default function Profile() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
                     {isHe ? 'ניהול מנוי' : 'Subscription management'}
                   </p>
-                  {STRIPE_CUSTOMER_PORTAL ? (
-                    <motion.a
-                      href={STRIPE_CUSTOMER_PORTAL}
-                      className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold"
-                      style={{ background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.22)', color: '#d4af37', transition: 'background 0.2s, border-color 0.2s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.13)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.35)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(212,175,55,0.07)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(212,175,55,0.22)' }}
-                      whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <CreditCard size={14} />
-                        {isHe ? 'ניהול תוכנית, חשבוניות, שינוי וביטול' : 'Manage plan, invoices & cancellation'}
-                      </span>
-                      <ExternalLink size={12} className="opacity-40" />
-                    </motion.a>
-                  ) : (
-                    <p className="text-[12px] text-white/35 leading-relaxed rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      {isHe
-                        ? 'לביטול, שינוי תוכנית או הורדת חשבוניות — פנה לתמיכה: support@dealspace.app'
-                        : 'To cancel, change plan, or download invoices — contact support@dealspace.app'}
-                    </p>
-                  )}
+                  <motion.button
+                    type="button"
+                    onClick={handlePortalAction}
+                    disabled={portalLoading}
+                    className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold disabled:opacity-70 disabled:cursor-wait"
+                    style={{ background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.22)', color: '#d4af37', transition: 'background 0.2s, border-color 0.2s' }}
+                    onMouseEnter={e => { if (!portalLoading) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.13)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(212,175,55,0.35)' } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(212,175,55,0.22)' }}
+                    whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                  >
+                    <span className="flex items-center gap-2">
+                      {portalLoading ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                      {isHe ? 'ניהול תוכנית, חשבוניות, שינוי וביטול' : 'Manage plan, invoices & cancellation'}
+                    </span>
+                    <ExternalLink size={12} className="opacity-40" />
+                  </motion.button>
                 </div>
 
                 {/* Invoice note */}
