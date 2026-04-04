@@ -296,7 +296,7 @@ export default function Billing() {
                   : <Star size={20} style={{ color: tierColor }} />}
               </div>
               <div>
-                <p className="text-[16px] font-black text-white tracking-tight">
+                <p className="text-[16px] font-black text-slate-900 dark:text-white tracking-tight">
                   {isHe ? `תוכנית ${planNameHe}` : `${planNameEn} Plan`}
                 </p>
                 {planPrice && (
@@ -430,7 +430,7 @@ export default function Billing() {
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
-                    {loadingAction === 'payment' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <CreditCard size={13} className="text-white/55" />}
+                    {loadingAction === 'payment' ? <Loader2 size={13} className="animate-spin text-slate-400 dark:text-white/55" /> : <CreditCard size={13} className="text-slate-400 dark:text-white/55" />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-subtle">
@@ -459,7 +459,7 @@ export default function Billing() {
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
                     style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
-                    {loadingAction === 'invoices' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <Download size={13} className="text-white/55" />}
+                    {loadingAction === 'invoices' ? <Loader2 size={13} className="animate-spin text-slate-400 dark:text-white/55" /> : <Download size={13} className="text-slate-400 dark:text-white/55" />}
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-subtle">
@@ -610,7 +610,7 @@ export default function Billing() {
                   <Zap size={14} style={{ color: '#818cf8' }} />
                   <p className="text-[13px] font-black" style={{ color: '#818cf8' }}>{isHe ? 'פרו' : 'Pro'}</p>
                 </div>
-                <p className="text-[28px] font-black text-white tracking-tight mb-0">₪19</p>
+                <p className="text-[28px] font-black text-slate-900 dark:text-white tracking-tight mb-0">₪19</p>
                 <p className="text-[11px] text-indigo-400/55 mb-4">{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
                 {(isHe
                   ? ['עד 100 הצעות', 'Webhooks + אוטומציות', 'תמיכה ישירה']
@@ -648,7 +648,7 @@ export default function Billing() {
                   <InfinityIcon size={14} style={{ color: '#d4af37' }} />
                   <p className="text-[13px] font-black" style={{ color: '#d4af37' }}>{isHe ? 'פרימיום' : 'Premium'}</p>
                 </div>
-                <p className="text-[28px] font-black text-white tracking-tight mb-0">₪39</p>
+                <p className="text-[28px] font-black text-slate-900 dark:text-white tracking-tight mb-0">₪39</p>
                 <p className="text-[11px] mb-4" style={{ color: 'rgba(212,175,55,0.55)' }}>{isHe ? '/ חודש · כולל מע"מ' : '/ month · VAT incl.'}</p>
                 {(isHe
                   ? ['הצעות ללא הגבלה', 'הכל כולל פרו', 'תמיכה בעדיפות גבוהה']
