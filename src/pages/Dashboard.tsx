@@ -261,7 +261,7 @@ type SortBy = 'newest' | 'oldest' | 'value'
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { proposals, loading, fetchProposals, injectDemoProposal, deleteProposal } = useProposalStore()
+  const { proposals, loading, error, fetchProposals, injectDemoProposal, deleteProposal } = useProposalStore()
   const { user } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
@@ -1234,6 +1234,56 @@ export default function Dashboard() {
       </AnimatePresence>
 
       <GuidedTour locale={locale as 'he' | 'en'} enabled={!showWizard} />
+
+      {/* ── Error Toast ──────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            key="ds-error-toast"
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: 'spring' as const, stiffness: 380, damping: 28 }}
+            className="fixed bottom-6 left-1/2 z-[9990] flex items-center gap-3 rounded-2xl px-4 py-3 shadow-2xl"
+            style={{
+              transform: 'translateX(-50%)',
+              background: 'linear-gradient(160deg, rgba(30,8,8,0.97) 0%, rgba(20,5,5,0.97) 100%)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              boxShadow: '0 0 40px rgba(239,68,68,0.12), 0 16px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
+              backdropFilter: 'blur(24px)',
+              maxWidth: 'min(420px, calc(100vw - 32px))',
+            }}
+          >
+            <div
+              className="flex-none flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.25)' }}
+            >
+              <AlertTriangle size={14} style={{ color: '#f87171' }} />
+            </div>
+            <p className="flex-1 text-[13px] text-white/75 leading-snug min-w-0">
+              {error}
+            </p>
+            <button
+              onClick={() => fetchProposals()}
+              className="flex-none rounded-lg px-3 py-1.5 text-[12px] font-bold transition-colors"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.22)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.12)' }}
+            >
+              {isHe ? 'נסה שוב' : 'Retry'}
+            </button>
+            <button
+              onClick={() => useProposalStore.getState().clearError()}
+              className="flex-none flex h-6 w-6 items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'rgba(255,255,255,0.25)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)' }}
+            >
+              <X size={12} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

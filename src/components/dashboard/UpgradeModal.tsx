@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Zap, Star, Infinity as InfinityIcon, Check, CreditCard } from 'lucide-react'
+import { X, Zap, Star, Infinity as InfinityIcon, Check, CreditCard, Loader2 } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
 import { useAuthStore, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import type { PlanTier } from '../../stores/useAuthStore'
@@ -114,6 +115,7 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
   const { locale } = useI18n()
   const isHe = locale === 'he'
   const user = useAuthStore(s => s.user)
+  const [loadingTier, setLoadingTier] = useState<string | null>(null)
 
   // Map tier → plan id ('unlimited' maps to 'premium')
   const currentPlanId: PlanDef['id'] = currentTier === 'unlimited' ? 'premium' : currentTier
@@ -245,6 +247,8 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
                         currentPlanId={currentPlanId}
                         userId={user?.id ?? ''}
                         userEmail={user?.email ?? null}
+                        loadingTier={loadingTier}
+                        setLoadingTier={setLoadingTier}
                       />
                     ))}
                   </div>
@@ -267,21 +271,25 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
 
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
+function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail, loadingTier, setLoadingTier }: {
   plan: PlanDef
   isHe: boolean
   delay: number
   currentPlanId: PlanDef['id']
   userId: string
   userEmail: string | null
+  loadingTier: string | null
+  setLoadingTier: (t: string | null) => void
 }) {
   const currentRank = PLAN_RANK[currentPlanId]
   const planRank    = PLAN_RANK[plan.id]
   const isCurrent   = plan.id === currentPlanId
   const isUpgrade   = planRank > currentRank
+  const isLoading   = loadingTier === plan.id
+  const anyLoading  = loadingTier !== null
 
   const handleCta = () => {
-    if (isCurrent) return
+    if (isCurrent || anyLoading) return
 
     if (isUpgrade) {
       const baseLink = plan.id === 'pro' ? STRIPE_PRO_LINK : STRIPE_PREMIUM_LINK
@@ -289,12 +297,14 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
         if (import.meta.env.DEV) alert(`VITE_STRIPE_${plan.id === 'pro' ? 'PRO' : 'PREMIUM'}_LINK not set in .env.local`)
         return
       }
+      setLoadingTier(plan.id)
       window.location.href = buildCheckoutUrl(baseLink, userId, userEmail)
       return
     }
 
     // Downgrade or manage — redirect to Stripe Customer Portal
     if (STRIPE_CUSTOMER_PORTAL) {
+      setLoadingTier(plan.id)
       window.location.href = STRIPE_CUSTOMER_PORTAL
     } else if (import.meta.env.DEV) {
       alert('VITE_STRIPE_CUSTOMER_PORTAL not set in .env.local')
@@ -419,21 +429,22 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
         // ── Upgrade path ──
         <motion.button
           onClick={handleCta}
-          whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold overflow-hidden transition-all"
+          disabled={anyLoading}
+          whileTap={anyLoading ? {} : { scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold overflow-hidden transition-all flex items-center justify-center gap-2 disabled:cursor-wait"
           style={
             plan.popular
-              ? { background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff', boxShadow: '0 4px 24px rgba(99,102,241,0.4)' }
-              : { background: `${plan.accent}20`, color: plan.accent, border: `1px solid ${plan.accent}35` }
+              ? { background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff', boxShadow: '0 4px 24px rgba(99,102,241,0.4)', opacity: anyLoading && !isLoading ? 0.45 : 1 }
+              : { background: `${plan.accent}20`, color: plan.accent, border: `1px solid ${plan.accent}35`, opacity: anyLoading && !isLoading ? 0.45 : 1 }
           }
           onPointerEnter={e => {
-            if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}35`
+            if (!plan.popular && !anyLoading) (e.currentTarget as HTMLElement).style.background = `${plan.accent}35`
           }}
           onPointerLeave={e => {
             if (!plan.popular) (e.currentTarget as HTMLElement).style.background = `${plan.accent}20`
           }}
         >
-          {plan.popular && (
+          {plan.popular && !isLoading && (
             <span
               className="pointer-events-none absolute inset-0"
               style={{
@@ -442,23 +453,30 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
               }}
             />
           )}
-          {isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn}
+          {isLoading
+            ? <Loader2 size={14} className="animate-spin" />
+            : (isHe ? plan.ctaUpgradeHe : plan.ctaUpgradeEn)
+          }
         </motion.button>
       ) : (
         // ── Downgrade / manage billing — Stripe Customer Portal ──
         <motion.button
           onClick={handleCta}
-          whileTap={{ scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2 transition-colors"
+          disabled={anyLoading}
+          whileTap={anyLoading ? {} : { scale: 0.95, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
+          className="relative w-full rounded-xl py-2.5 text-[13px] font-bold flex items-center justify-center gap-2 transition-colors disabled:cursor-wait"
           style={{
             background: 'rgba(255,255,255,0.04)',
             color: 'rgba(255,255,255,0.45)',
             border: '1px solid rgba(255,255,255,0.1)',
+            opacity: anyLoading && !isLoading ? 0.45 : 1,
           }}
           onPointerEnter={e => {
-            const el = e.currentTarget as HTMLElement
-            el.style.background = 'rgba(255,255,255,0.08)'
-            el.style.color = 'rgba(255,255,255,0.7)'
+            if (!anyLoading) {
+              const el = e.currentTarget as HTMLElement
+              el.style.background = 'rgba(255,255,255,0.08)'
+              el.style.color = 'rgba(255,255,255,0.7)'
+            }
           }}
           onPointerLeave={e => {
             const el = e.currentTarget as HTMLElement
@@ -466,7 +484,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail }: {
             el.style.color = 'rgba(255,255,255,0.45)'
           }}
         >
-          <CreditCard size={13} />
+          {isLoading ? <Loader2 size={13} className="animate-spin" /> : <CreditCard size={13} />}
           {isHe ? 'ניהול מנוי' : 'Manage Subscription'}
         </motion.button>
       )}

@@ -1086,7 +1086,7 @@ export default function DealRoom() {
                 {isHe ? 'קוד גישה' : 'Access Code'}
               </label>
               <input
-                type="text"
+                type="tel"
                 inputMode="numeric"
                 maxLength={8}
                 placeholder={isHe ? 'הכנס קוד...' : 'Enter code…'}

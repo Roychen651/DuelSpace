@@ -17,10 +17,14 @@ import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
 function fmtDate(d: Date, isHe: boolean): string {
-  return d.toLocaleDateString(isHe ? 'he-IL' : 'en-GB', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  })
+  const day   = String(d.getDate()).padStart(2, '0')
+  const month = isHe ? MONTHS_HE[d.getMonth()] : MONTHS_EN[d.getMonth()]
+  const year  = d.getFullYear()
+  return isHe ? `${day} ב${month} ${year}` : `${day} ${month} ${year}`
 }
 
 // ─── Billing page ─────────────────────────────────────────────────────────────

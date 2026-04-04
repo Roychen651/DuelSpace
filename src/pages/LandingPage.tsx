@@ -112,8 +112,8 @@ const copy = {
     pricingH2: 'תוכנית לכל שלב בדרך',
     pricingSub: 'בחרו. שדרגו בכל עת. ביטול ללא עלות.',
     pricingPopular: 'הכי פופולרי',
-    pricingCta: 'התחילו עכשיו',
-    pricingFreeCta: 'חינם לנצח',
+    pricingCta: 'שדרגו עכשיו',
+    pricingFreeCta: 'התחילו בחינם',
     tiers: [
       {
         name: 'חינם',
@@ -244,8 +244,8 @@ const copy = {
     pricingH2: 'A plan for every stage',
     pricingSub: 'Pick a plan. Upgrade anytime. Cancel with zero hassle.',
     pricingPopular: 'Most Popular',
-    pricingCta: 'Get started',
-    pricingFreeCta: 'Free forever',
+    pricingCta: 'Upgrade Now',
+    pricingFreeCta: 'Start for Free',
     tiers: [
       {
         name: 'Free',

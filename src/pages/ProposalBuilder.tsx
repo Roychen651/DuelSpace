@@ -495,6 +495,9 @@ export default function ProposalBuilder() {
             }}
           >
             <Eye size={14} />
+            <span className="sm:hidden text-[10px] whitespace-nowrap">
+              {locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}
+            </span>
             <span className="hidden sm:inline whitespace-nowrap">
               {locale === 'he' ? 'תצוגה מקדימה' : 'Preview'}
             </span>
