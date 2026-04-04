@@ -1,32 +1,29 @@
-// ─── Tour Engine — driver.js with DealSpace dark theme ───────────────────────
+// ─── Tour Engine — driver.js with DealSpace dual theme ───────────────────────
 // Imperative tour starter. Call startDashboardTour(locale) to launch.
 // CSS is loaded via index.css @import driver.js/dist/driver.css.
 
 import { driver } from 'driver.js'
 
-const DARK_OVERRIDE_ID = 'ds-driver-dark-override'
+const TOUR_STYLE_ID = 'ds-driver-tour-theme'
 
-function injectDarkStyles() {
-  if (document.getElementById(DARK_OVERRIDE_ID)) return
+function injectTourStyles() {
+  if (document.getElementById(TOUR_STYLE_ID)) return
   const style = document.createElement('style')
-  style.id = DARK_OVERRIDE_ID
+  style.id = TOUR_STYLE_ID
   style.textContent = `
-    /* ── DealSpace driver.js dark theme ─────────────────────────────────── */
+    /* ── DealSpace driver.js — dual-theme (light default, dark via .dark) ── */
 
-    /* Overlay — keep it light enough that the highlighted element is readable */
+    /* Overlay — same opacity in both modes */
     .driver-overlay {
-      background: rgba(0, 0, 0, 0.58) !important;
+      background: rgba(0, 0, 0, 0.52) !important;
     }
 
-    /* Popover shell */
+    /* ── Popover shell — LIGHT ── */
     .driver-popover {
-      background: linear-gradient(160deg, rgba(18,18,30,0.98) 0%, rgba(10,10,18,0.99) 100%) !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
       border-radius: 18px !important;
-      box-shadow:
-        0 24px 80px rgba(0,0,0,0.75),
-        0 0 0 1px rgba(99,102,241,0.15),
-        inset 0 1px 0 rgba(255,255,255,0.06) !important;
+      box-shadow: 0 24px 64px rgba(15,23,42,0.14), 0 4px 16px rgba(15,23,42,0.07) !important;
       font-family: 'Plus Jakarta Sans', 'Rubik', system-ui, sans-serif !important;
       padding: 22px 24px 18px !important;
       min-width: 300px !important;
@@ -34,55 +31,46 @@ function injectDarkStyles() {
       backdrop-filter: blur(32px) !important;
     }
 
-    /* Title — pad end to make room for the X button (physical right) */
     .driver-popover-title {
       font-size: 15px !important;
       font-weight: 800 !important;
-      color: #ffffff !important;
+      color: #0f172a !important;
       margin-bottom: 8px !important;
       letter-spacing: -0.01em !important;
       padding-right: 28px !important;
     }
 
-    /* Description */
     .driver-popover-description {
       font-size: 13px !important;
-      color: rgba(255,255,255,0.55) !important;
+      color: #64748b !important;
       line-height: 1.65 !important;
       margin-bottom: 0 !important;
     }
 
-    /* Footer */
     .driver-popover-footer {
       margin-top: 18px !important;
       padding-top: 14px !important;
-      border-top: 1px solid rgba(255,255,255,0.07) !important;
+      border-top: 1px solid #e2e8f0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       gap: 8px !important;
     }
 
-    /* Progress text */
     .driver-popover-progress-text {
       font-size: 11px !important;
-      color: rgba(255,255,255,0.25) !important;
+      color: #94a3b8 !important;
       font-weight: 600 !important;
     }
 
-    /* Navigation buttons */
     .driver-popover-navigation-btns {
       display: flex !important;
       gap: 6px !important;
     }
 
-    /* All nav buttons */
     .driver-popover-prev-btn,
     .driver-popover-next-btn {
-      background: rgba(255,255,255,0.06) !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
       border-radius: 10px !important;
-      color: rgba(255,255,255,0.6) !important;
       font-family: inherit !important;
       font-size: 12px !important;
       font-weight: 700 !important;
@@ -92,16 +80,22 @@ function injectDarkStyles() {
       text-shadow: none !important;
     }
 
-    .driver-popover-prev-btn:hover {
-      background: rgba(255,255,255,0.1) !important;
-      color: rgba(255,255,255,0.85) !important;
-      border-color: rgba(255,255,255,0.18) !important;
+    .driver-popover-prev-btn {
+      background: #f1f5f9 !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
     }
 
-    /* Next / Done button — indigo accent */
+    .driver-popover-prev-btn:hover {
+      background: #e2e8f0 !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    /* Next / Done — indigo accent (same in both modes) */
     .driver-popover-next-btn {
       background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-      border-color: rgba(99,102,241,0.5) !important;
+      border: 1px solid rgba(99,102,241,0.5) !important;
       color: #ffffff !important;
       box-shadow: 0 0 16px rgba(99,102,241,0.35) !important;
     }
@@ -111,7 +105,7 @@ function injectDarkStyles() {
       box-shadow: 0 0 24px rgba(99,102,241,0.55) !important;
     }
 
-    /* Close × button — physical top-right, no box outline */
+    /* Close × button */
     .driver-popover-close-btn {
       display: inline-flex !important;
       align-items: center !important;
@@ -134,7 +128,7 @@ function injectDarkStyles() {
       font-size: 15px !important;
       font-weight: 400 !important;
       line-height: 1 !important;
-      color: rgba(255,255,255,0.35) !important;
+      color: #94a3b8 !important;
       cursor: pointer !important;
       pointer-events: auto !important;
       text-shadow: none !important;
@@ -144,13 +138,13 @@ function injectDarkStyles() {
     }
 
     .driver-popover-close-btn:hover {
-      color: rgba(255,255,255,0.85) !important;
-      background: rgba(255,255,255,0.1) !important;
+      color: #475569 !important;
+      background: #f1f5f9 !important;
       border: none !important;
       box-shadow: none !important;
     }
 
-    /* Highlight ring */
+    /* Highlight ring — same in both modes */
     .driver-active-element,
     .driver-active .driver-active-element {
       outline: 2px solid rgba(99,102,241,0.7) !important;
@@ -159,8 +153,59 @@ function injectDarkStyles() {
       box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
     }
 
-    /* Arrow */
+    /* Arrow — light */
     .driver-popover-arrow {
+      border-color: #ffffff !important;
+    }
+
+    /* ── Popover shell — DARK ── */
+    .dark .driver-popover {
+      background: linear-gradient(160deg, rgba(18,18,30,0.98) 0%, rgba(10,10,18,0.99) 100%) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      box-shadow:
+        0 24px 80px rgba(0,0,0,0.75),
+        0 0 0 1px rgba(99,102,241,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.06) !important;
+    }
+
+    .dark .driver-popover-title {
+      color: #ffffff !important;
+    }
+
+    .dark .driver-popover-description {
+      color: rgba(255,255,255,0.55) !important;
+    }
+
+    .dark .driver-popover-footer {
+      border-top: 1px solid rgba(255,255,255,0.07) !important;
+    }
+
+    .dark .driver-popover-progress-text {
+      color: rgba(255,255,255,0.25) !important;
+    }
+
+    .dark .driver-popover-prev-btn {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      color: rgba(255,255,255,0.6) !important;
+    }
+
+    .dark .driver-popover-prev-btn:hover {
+      background: rgba(255,255,255,0.1) !important;
+      color: rgba(255,255,255,0.85) !important;
+      border-color: rgba(255,255,255,0.18) !important;
+    }
+
+    .dark .driver-popover-close-btn {
+      color: rgba(255,255,255,0.35) !important;
+    }
+
+    .dark .driver-popover-close-btn:hover {
+      color: rgba(255,255,255,0.85) !important;
+      background: rgba(255,255,255,0.1) !important;
+    }
+
+    .dark .driver-popover-arrow {
       border-color: rgba(18,18,30,0.98) !important;
     }
   `
@@ -168,7 +213,7 @@ function injectDarkStyles() {
 }
 
 export function startDashboardTour(locale: 'he' | 'en'): void {
-  injectDarkStyles()
+  injectTourStyles()
   const isHe = locale === 'he'
 
   type StepConfig = {
