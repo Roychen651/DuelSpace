@@ -9,6 +9,7 @@ import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
 import { HelpCenterDrawer } from '../ui/HelpCenterDrawer'
 import { NotificationBell } from '../ui/NotificationBell'
+import { GuidedTour } from '../onboarding/GuidedTour'
 
 // ─── ProtectedLayout ──────────────────────────────────────────────────────────
 
@@ -361,6 +362,9 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
 
       {/* Help Center drawer */}
       <HelpCenterDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {/* First-run guided tour — only fires once, self-dismisses to localStorage */}
+      <GuidedTour locale={locale} />
 
       {/* Page content */}
       {children}

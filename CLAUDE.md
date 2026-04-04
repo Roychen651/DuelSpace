@@ -209,6 +209,8 @@ supabase/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
     ├── send-proposal/
     │   └── index.ts                   # Sends branded HTML email via Resend; stamps email_sent_at + delivery_email; --no-verify-jwt
+    ├── stripe-portal/
+    │   └── index.ts                   # Creates one-time Stripe Customer Portal session URL; called by Billing.tsx + Profile.tsx; requires stripe_customer_id in user_metadata
     └── stripe-webhook/
         └── index.ts                   # Stripe webhook handler — updates plan_tier + billing_status + subscription_period_end + subscription_cancel_at_period_end in user_metadata
 ```
@@ -2711,23 +2713,55 @@ Four-layer monetization system. No new backend was needed — Stripe routing and
 
 ### `src/lib/stripe.ts`
 
-Central Stripe constants read from `.env.local`:
+Central Stripe constants and helpers:
 
 ```ts
 export const STRIPE_PRO_LINK        = import.meta.env.VITE_STRIPE_PRO_LINK        ?? ''
 export const STRIPE_PREMIUM_LINK    = import.meta.env.VITE_STRIPE_PREMIUM_LINK    ?? ''
+// Kept for legacy callers only — prefer createPortalSession() for all portal navigation
 export const STRIPE_CUSTOMER_PORTAL = import.meta.env.VITE_STRIPE_CUSTOMER_PORTAL ?? ''
 
-// Builds a Stripe Payment Link URL with client_reference_id and prefilled_email
+// First-time buyers only (no stripe_customer_id yet)
 export function buildCheckoutUrl(baseLink, userId, email?): string
+
+// Existing customers (stripe_customer_id present) — creates dynamic one-time portal URL
+export async function createPortalSession(): Promise<string>
 ```
+
+**Routing rule (the single discriminator):**
+- `user.user_metadata.stripe_customer_id` **EXISTS** → call `createPortalSession()` (dynamic portal URL, prevents duplicate subscriptions)
+- `stripe_customer_id` **MISSING** → call `buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)` (first purchase only)
+
+`createPortalSession()` calls the `stripe-portal` Supabase Edge Function which returns a one-time Stripe Customer Portal URL. The caller redirects via `window.location.href = url`.
 
 Required `.env.local` entries:
 ```
 VITE_STRIPE_PRO_LINK=https://buy.stripe.com/...
 VITE_STRIPE_PREMIUM_LINK=https://buy.stripe.com/...
-VITE_STRIPE_CUSTOMER_PORTAL=https://billing.stripe.com/p/login/...
+VITE_STRIPE_CUSTOMER_PORTAL=https://billing.stripe.com/p/login/...  ← legacy fallback only
 ```
+
+### `stripe-portal` Edge Function (`supabase/functions/stripe-portal/index.ts`)
+
+Deno Edge Function that generates a one-time Stripe Customer Portal session URL.
+
+**Auth:** Caller passes a valid Supabase user JWT in `Authorization` header + `apikey` header.
+
+**Flow:**
+1. Verify JWT via `supabaseAdmin.auth.getUser(jwt)`
+2. Read `stripe_customer_id` from `user.user_metadata`
+3. Return `400` if no customer (caller should have used Checkout instead)
+4. Call `stripe.billingPortal.sessions.create({ customer, return_url: APP_URL/billing })`
+5. Return `{ url }` — caller redirects immediately
+
+**Deployment:**
+```bash
+supabase functions deploy stripe-portal --project-ref aefyytktbpynkbxhzhyt
+```
+
+**Required secrets** (already set from stripe-webhook deployment):
+- `STRIPE_SECRET_KEY` — sk_live_... / sk_test_...
+- `APP_URL` — https://dealspace.app
 
 ### UpgradeModal (`src/components/dashboard/UpgradeModal.tsx`)
 
@@ -2798,9 +2832,9 @@ A new `Card` section ("חיוב ומנוי / Billing & Subscription") sits betwe
 **Current plan row** — shows plan name, price, VAT note, and tier badge. Background/border/icon color all derive from `tier`.
 
 **CTA block — paid users** (`tier === 'pro' || tier === 'unlimited'`):
-- Single `<motion.a>` anchor → `STRIPE_CUSTOMER_PORTAL`
-- Label: "ניהול מנוי, חשבוניות וביטול" / "Manage subscription, invoices & cancellation"  
-- Opens portal in same tab (Consumer Protection Law: cancellation must be accessible)
+- Single `<motion.button>` → `handlePortalAction()` (calls `createPortalSession()`, shows spinner, redirects)
+- Label: "ניהול מנוי, חשבוניות וביטול" / "Manage subscription, invoices & cancellation"
+- Always renders — never gated behind env var check
 
 **CTA block — free users**:
 - Two side-by-side upgrade cards (2-col grid): Pro and Premium
@@ -2844,17 +2878,36 @@ const stateB = isPaid && billingStatus === 'active' && !cancelAtEnd
 // State A = tier === 'free'
 ```
 
-### `portalUrl` + `handlePortalClick` pattern
+### `handlePortalAction` + `createPortalSession()` pattern (Sprint 54)
+
+All billing portal actions use dynamic sessions — **never static links**:
+
 ```tsx
-const portalUrl = STRIPE_CUSTOMER_PORTAL || '#'
-const handlePortalClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-  if (!STRIPE_CUSTOMER_PORTAL) {
-    e.preventDefault()
-    if (import.meta.env.DEV) alert('VITE_STRIPE_CUSTOMER_PORTAL not set in .env.local')
+const hasStripeCustomer = Boolean(user?.user_metadata?.stripe_customer_id)
+const [loadingAction, setLoadingAction] = React.useState<string | null>(null)
+
+const handlePortalAction = React.useCallback(async (action: string) => {
+  if (loadingAction) return
+  setLoadingAction(action)
+  try {
+    const url = await createPortalSession()
+    window.location.href = url
+  } catch (err) {
+    console.error('[stripe-portal]', err)
+    if (import.meta.env.DEV) alert('Portal session failed. Is the stripe-portal Edge Function deployed?')
+    setLoadingAction(null)
   }
-}
+}, [loadingAction])
 ```
-Every portal `<a>` uses `href={portalUrl}` and `onClick={handlePortalClick}`. Never gate portal links behind `{STRIPE_CUSTOMER_PORTAL && ...}` — that hides actions from the UI in dev.
+
+Every portal action button:
+- Renders as `<button onClick={() => handlePortalAction('action-name')}>`
+- Shows `<Loader2 size={13} className="animate-spin" />` when `loadingAction === 'action-name'`
+- Has `disabled={!!loadingAction}` with `disabled:cursor-wait`
+
+**Routing for upgrade buttons:**
+- `hasStripeCustomer === true` → portal action button (prevents duplicate subscriptions)
+- `hasStripeCustomer === false` → `<a href={buildCheckoutUrl(STRIPE_PRO_LINK | STRIPE_PREMIUM_LINK, userId, email)}>` Checkout link
 
 ### State A — Free tier (`tier === 'free'`)
 
@@ -3071,7 +3124,11 @@ Two new compliance elements added to the Billing page:
 - **Do not gate `useCancelAtPeriodEnd()` on `periodEnd` being non-null** — a subscription can have `cancel_at_period_end = true` even while `subscription_period_end` is technically set. Read them independently. Show the amber cancel-at-end banner when `cancelAtEnd === true` regardless.
 - **Do not parse `subscription_period_end` as milliseconds** — the stripe-webhook stores it as a Unix timestamp in **seconds** (e.g., `"1746000000"`). Always multiply by 1000 before `new Date(ts * 1000)`. `useSubscriptionPeriodEnd()` handles this correctly.
 - **Do not omit the VAT compliance badge on Pro/Premium pricing cards** — Israeli consumer law requires all prices to disclose VAT inclusion. The `"כולל מע"מ" / "VAT incl."` badge below the price on Pro (₪19) and Premium (₪39) cards is a legal requirement, not a design choice. Free tier (₪0) is exempt.
-- **Do not hardcode Stripe Payment Links or Customer Portal URL** — these live in `.env.local` as `VITE_STRIPE_PRO_LINK`, `VITE_STRIPE_PREMIUM_LINK`, `VITE_STRIPE_CUSTOMER_PORTAL`. Read via `src/lib/stripe.ts` constants. All Stripe-related components check `if (url)` or `if (STRIPE_CUSTOMER_PORTAL)` before enabling CTAs — never assume the env vars are set.
+- **Do not hardcode Stripe Payment Links or Customer Portal URL** — these live in `.env.local` as `VITE_STRIPE_PRO_LINK`, `VITE_STRIPE_PREMIUM_LINK`, `VITE_STRIPE_CUSTOMER_PORTAL`. Read via `src/lib/stripe.ts` constants.
+- **Do not send existing customers (have `stripe_customer_id`) to a static Checkout link** — this creates a duplicate subscription under the same email. Existing customers must always go through `createPortalSession()` which opens the Customer Portal where Stripe handles plan changes natively without creating a second subscription.
+- **Do not use static `STRIPE_CUSTOMER_PORTAL` links for billing actions in `Billing.tsx` or `Profile.tsx`** — since Sprint 54 all portal buttons call `createPortalSession()` (async, shows Loader2 spinner on the specific button, redirects on success). Static portal links were replaced by dynamic one-time session URLs. The `STRIPE_CUSTOMER_PORTAL` env var is kept as a legacy constant only; it is no longer used for navigation in these pages.
+- **Do not skip the `apikey` header when calling the `stripe-portal` Edge Function** — the Supabase API gateway requires both `Authorization: Bearer <access_token>` AND `apikey: <VITE_SUPABASE_ANON_KEY>`. Omitting `apikey` causes a gateway 401 that looks like the function isn't deployed.
+- **Do not deploy `stripe-portal` without checking `STRIPE_SECRET_KEY` and `APP_URL` secrets** — these are inherited from the `stripe-webhook` deployment. No new secrets are required, but both must be set or the portal session creation will fail with an uncaught Stripe error.
 - **Do not redirect users to Stripe without `client_reference_id`** — always use `buildCheckoutUrl(link, userId, email)` from `src/lib/stripe.ts`. The `client_reference_id` is the Supabase user UUID; it is the only reliable way the `stripe-webhook` edge function can identify which user just paid on `checkout.session.completed`.
 - **Do not open Stripe Payment Links in a new tab** — use `window.location.href = url` (same tab). This is the correct pattern for checkout flows. Opening in a new tab breaks the return-URL redirect and the user ends up with a dangling tab after completing payment.
 - **Do not use `bg-white` alone on glass cards inside dark-mode pages** — `bg-white` sets `background-color: white`; `dark:bg-gradient-to-br` sets only `background-image`. Since `background-color` is a different CSS property, it bleeds through the gradient, making cards appear solid white with invisible dark-mode text. Always pair with `dark:bg-transparent` to nullify the background-color in dark mode: `className="bg-white dark:bg-transparent dark:bg-gradient-to-br ..."`. This bug affected all four legal pages (TermsOfService, PrivacyPolicy, Legal, AccessibilityStatement) and was fixed in Sprint 48.
@@ -3084,6 +3141,7 @@ Two new compliance elements added to the Billing page:
 - **Do not call `deleteAccount()` expecting an error return value** — `deleteAccount()` in `useAuthStore` returns `Promise<void>`. It does NOT return `{ error }` or any other object. Any `if (result?.error)` check is silently a no-op. Always wrap in `try/catch` and treat a thrown exception as the error signal. The same applies to calling it via `useAuthStore.getState().deleteAccount()` — destructure it directly from `useAuthStore()` in the component instead.
 - **Do not make the "Product & Operational Updates" communication preference toggle interactive** — this toggle exists solely to inform users that transactional/operational emails are mandatory per ToS. It must always appear visually locked/disabled (opacity reduced, `cursor: not-allowed`). It saves nothing, fires no network request, and changes no state. Making it toggle-able would imply users can opt out of password reset emails, billing alerts, etc. — which is legally and operationally incorrect.
 - **Do not use `{STRIPE_CUSTOMER_PORTAL && <a href={...}>...</a>}` in Billing.tsx** — conditional rendering hides the action from the UI entirely when the env var is missing in dev, making the billing page look broken. Always render the button with `href={portalUrl}` (where `portalUrl = STRIPE_CUSTOMER_PORTAL || '#'`) and `onClick={handlePortalClick}`. In dev mode, `handlePortalClick` calls `e.preventDefault()` + `alert()` if the env var is absent. This preserves the production UI design at all times.
+- **Do not re-introduce the `portalUrl + handlePortalClick` `<a>` pattern in Billing.tsx** — Sprint 54 replaced all static portal `<a>` links with `<button onClick={() => handlePortalAction('...')}>`  that call `createPortalSession()`. The old pattern linked to a static URL and required a second Stripe login; the new pattern generates a one-time session. Do not revert.
 - **Do not collapse all billing management into one "Manage Subscription" link** — the Billing page implements a state machine with distinct actions per state. State B (active) has **4** separate buttons: Manage/Downgrade, Update Payment Method, View Invoices (with Morning note), Cancel (danger-styled). State C (cancelAtEnd) has a Reactivate button. State D (past_due) has an Update Payment button at the top. Merging these into one generic link destroys the self-serve UX that eliminates support tickets.
 - **Do not use `hardcoded left/right` CSS in toggle thumb styles** — profile section toggles use a computed property key `[isHe ? 'right' : 'left']` on the thumb's inline style. This ensures the thumb slides in the correct physical direction in both LTR and RTL layouts. Hardcoding `left` fails in RTL; hardcoding `right` fails in LTR.
 - **Do not use `GlobalFooter` col3 heading as "Legal & Trust"** — since Sprint 50.5 the heading is `'משפטי / Legal'` (he) and `'Legal'` (en). The "& Trust" / "ואמון" suffix was removed. Do not re-add it.
