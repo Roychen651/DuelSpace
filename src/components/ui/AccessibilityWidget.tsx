@@ -67,26 +67,22 @@ function ToggleRow({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between rounded-xl px-3 py-2 transition-all"
-      style={{
-        background: active ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.04)',
-        border: active ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
-        direction: 'inherit',
-      }}
+      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition-all ${active ? 'bg-indigo-50 border border-indigo-200 dark:bg-indigo-500/14 dark:border-indigo-500/30' : 'bg-slate-50 border border-slate-200 dark:bg-white/4 dark:border-white/7'}`}
+      style={{ direction: 'inherit' }}
     >
       {/* Icon + label — always first in DOM; flex direction follows dir="rtl" on html */}
       <div className="flex items-center gap-2.5">
-        <span style={{ color: active ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }}>{icon}</span>
-        <span className="text-[12px] font-medium" style={{ color: active ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
+        <span style={{ color: active ? '#818cf8' : undefined }} className={active ? '' : 'text-slate-400 dark:text-white/35'}>{icon}</span>
+        <span className={`text-[12px] font-medium ${active ? 'text-indigo-600 dark:text-violet-300' : 'text-slate-600 dark:text-white/55'}`}>
           {locale === 'he' ? labelHe : labelEn}
         </span>
       </div>
 
       {/* Toggle pill */}
       <div
-        className="relative h-5 w-9 flex-none rounded-full transition-all"
+        className={`relative h-5 w-9 flex-none rounded-full transition-all ${active ? '' : 'bg-slate-200 dark:bg-white/10'}`}
         style={{
-          background: active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.1)',
+          background: active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : undefined,
           boxShadow: active ? '0 0 8px rgba(99,102,241,0.45)' : 'none',
         }}
       >
@@ -104,7 +100,7 @@ function ToggleRow({
 function SectionLabel({ he, en }: { he: string; en: string }) {
   const { locale } = useI18n()
   return (
-    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-1 pt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
+    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-1 pt-1 text-muted">
       {locale === 'he' ? he : en}
     </p>
   )
@@ -124,12 +120,11 @@ function ColorBlindRow() {
   const { colorBlindMode, setColorBlindMode } = useAccessibilityStore()
   return (
     <div
-      className="rounded-xl px-3 py-2.5 space-y-2"
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+      className="rounded-xl px-3 py-2.5 space-y-2 bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/7"
     >
       <div className="flex items-center gap-2">
-        <Eye size={13} style={{ color: colorBlindMode !== 'none' ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }} />
-        <span className="text-[12px] font-medium" style={{ color: colorBlindMode !== 'none' ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
+        <Eye size={13} style={{ color: colorBlindMode !== 'none' ? '#818cf8' : undefined }} className={colorBlindMode !== 'none' ? '' : 'text-slate-400 dark:text-white/35'} />
+        <span className={`text-[12px] font-medium ${colorBlindMode !== 'none' ? 'text-indigo-600 dark:text-violet-300' : 'text-slate-600 dark:text-white/55'}`}>
           {locale === 'he' ? 'עיוורון צבעים' : 'Color Blind Mode'}
         </span>
       </div>
@@ -239,17 +234,15 @@ export function AccessibilityWidget() {
         {open && (
           <motion.div
             ref={panelRef}
-            className="fixed z-[9998] w-72 rounded-2xl flex flex-col"
+            className="fixed z-[9998] w-72 rounded-2xl flex flex-col bg-white dark:bg-[#0a0a14] border border-slate-200 dark:border-white/10"
             style={{
               bottom: 88,
               right: 16,
               height: panelH,
               overflow: 'hidden',
-              background: 'linear-gradient(180deg, rgba(10,10,20,0.99) 0%, rgba(6,6,14,0.99) 100%)',
-              border: '1px solid rgba(255,255,255,0.1)',
               backdropFilter: 'blur(60px) saturate(200%)',
               WebkitBackdropFilter: 'blur(60px) saturate(200%)',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
             }}
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -264,10 +257,7 @@ export function AccessibilityWidget() {
             />
 
             {/* Header */}
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-            >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-white/6">
               <div className="flex items-center gap-2">
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-xl"
@@ -276,8 +266,8 @@ export function AccessibilityWidget() {
                   <Accessibility size={13} className="text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold text-white/85">{isHe ? 'נגישות' : 'Accessibility'}</p>
-                  <p className="text-[9px] text-white/30">WCAG 2.2 AA · IS 5568</p>
+                  <p className="text-[12px] font-bold text-main">{isHe ? 'נגישות' : 'Accessibility'}</p>
+                  <p className="text-[9px] text-muted">WCAG 2.2 AA · IS 5568</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
@@ -285,8 +275,7 @@ export function AccessibilityWidget() {
                   <button
                     type="button"
                     onClick={reset}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition hover:bg-white/5"
-                    style={{ color: 'rgba(255,255,255,0.35)' }}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition hover:bg-slate-100 dark:hover:bg-white/5 text-muted"
                     title={isHe ? 'איפוס הגדרות' : 'Reset all'}
                   >
                     <RotateCcw size={10} />
@@ -296,7 +285,7 @@ export function AccessibilityWidget() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex h-6 w-6 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/8 hover:text-white/60"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 dark:text-white/25 transition hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-600 dark:hover:text-white/60"
                 >
                   <X size={12} />
                 </button>
@@ -314,13 +303,12 @@ export function AccessibilityWidget() {
 
               {/* Text size */}
               <div
-                className="rounded-xl px-3 py-2.5"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-white/4 border border-slate-200 dark:border-white/7"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <SunMedium size={13} style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.35)' }} />
-                    <span className="text-[12px] font-medium" style={{ color: textSize !== 1 ? '#c4b5fd' : 'rgba(255,255,255,0.55)' }}>
+                    <SunMedium size={13} style={{ color: textSize !== 1 ? '#818cf8' : undefined }} className={textSize !== 1 ? '' : 'text-slate-400 dark:text-white/35'} />
+                    <span className={`text-[12px] font-medium ${textSize !== 1 ? 'text-indigo-600 dark:text-violet-300' : 'text-slate-600 dark:text-white/55'}`}>
                       {isHe ? 'גודל טקסט' : 'Text Size'}
                     </span>
                   </div>
@@ -329,28 +317,26 @@ export function AccessibilityWidget() {
                       type="button"
                       onClick={() => setTextSize(textSize - 0.1)}
                       disabled={textSize <= 1}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
-                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/8"
                       aria-label={isHe ? 'הקטן טקסט' : 'Decrease text size'}
                     >
-                      <Minus size={10} className="text-white/60" />
+                      <Minus size={10} className="text-slate-500 dark:text-white/60" />
                     </button>
-                    <span className="w-9 text-center text-[11px] font-black tabular-nums" style={{ color: textSize !== 1 ? '#a5b4fc' : 'rgba(255,255,255,0.55)' }}>
+                    <span className={`w-9 text-center text-[11px] font-black tabular-nums ${textSize !== 1 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-white/55'}`}>
                       {Math.round(textSize * 100)}%
                     </span>
                     <button
                       type="button"
                       onClick={() => setTextSize(textSize + 0.1)}
                       disabled={textSize >= 1.5}
-                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25"
-                      style={{ background: 'rgba(255,255,255,0.08)' }}
+                      className="flex h-6 w-6 items-center justify-center rounded-lg transition disabled:opacity-25 bg-slate-200 dark:bg-white/8"
                       aria-label={isHe ? 'הגדל טקסט' : 'Increase text size'}
                     >
-                      <Plus size={10} className="text-white/60" />
+                      <Plus size={10} className="text-slate-500 dark:text-white/60" />
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="mt-2 h-1 rounded-full overflow-hidden bg-slate-200 dark:bg-white/6">
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{
@@ -388,8 +374,7 @@ export function AccessibilityWidget() {
 
             {/* Footer */}
             <div
-              className="px-3 pb-3 pt-2"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+              className="px-3 pb-3 pt-2 border-t border-slate-100 dark:border-white/6"
             >
               <button
                 type="button"
@@ -424,17 +409,12 @@ export function AccessibilityWidget() {
         <motion.button
           type="button"
           onClick={() => setOpen(v => !v)}
-          className="relative flex h-12 w-12 items-center justify-center rounded-full"
+          className={`relative flex h-12 w-12 items-center justify-center rounded-full ${open ? '' : 'bg-white dark:bg-white/6 border border-slate-200 dark:border-white/12 shadow-md dark:shadow-none'}`}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
           style={{
-            background: open
-              ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-              : 'linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 100%)',
-            border: open ? 'none' : '1px solid rgba(255,255,255,0.12)',
-            boxShadow: open
-              ? '0 0 28px rgba(99,102,241,0.55), 0 8px 24px rgba(0,0,0,0.6)'
-              : '0 8px 24px rgba(0,0,0,0.45)',
+            background: open ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : undefined,
+            boxShadow: open ? '0 0 28px rgba(99,102,241,0.55), 0 8px 24px rgba(0,0,0,0.6)' : undefined,
             backdropFilter: 'blur(20px)',
           }}
           aria-label={isHe ? 'תפריט נגישות' : 'Accessibility Menu'}
@@ -448,7 +428,7 @@ export function AccessibilityWidget() {
               </motion.span>
             ) : (
               <motion.span key="a" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                <Accessibility size={18} style={{ color: 'rgba(255,255,255,0.75)' }} />
+                <Accessibility size={18} className="text-slate-500 dark:text-white/75" />
               </motion.span>
             )}
           </AnimatePresence>

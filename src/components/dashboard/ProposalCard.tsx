@@ -93,9 +93,9 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
         <div key={ev.labelEn} className="flex items-center flex-1 min-w-0">
           <div className="flex flex-col items-center gap-0.5 flex-none">
             <div
-              className="h-1.5 w-1.5 rounded-full"
+              className={`h-1.5 w-1.5 rounded-full ${ev.done ? '' : 'bg-slate-200 dark:bg-white/10'}`}
               style={{
-                background: ev.done ? '#6366f1' : 'rgba(255,255,255,0.1)',
+                background: ev.done ? '#6366f1' : undefined,
                 boxShadow: ev.done ? '0 0 4px rgba(99,102,241,0.8)' : 'none',
               }}
             />
@@ -537,7 +537,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                           <span className="text-[10px] text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
                             {label}
                           </span>
-                          <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                          <div className="flex-1 h-1 rounded-full bg-slate-100 dark:bg-white/7">
                             <div
                               className="h-1 rounded-full"
                               style={{
@@ -593,17 +593,17 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                     </span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-white/30">
+                <div className="flex items-center gap-1 text-[10px] text-muted">
                   <Eye size={10} />
                   <span>{proposal.view_count}</span>
                 </div>
                 {proposal.time_spent_seconds > 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-slate-300 dark:text-white/25">
+                  <div className="flex items-center gap-1 text-[10px] text-muted">
                     <Timer size={10} />
                     <span>{formatTimeSpent(proposal.time_spent_seconds)}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-slate-300 dark:text-white/25">
+                <div className="flex items-center gap-1 text-[10px] text-muted">
                   <Clock size={10} />
                   <span>{date}</span>
                 </div>

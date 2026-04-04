@@ -1126,11 +1126,9 @@ export default function Dashboard() {
             className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4"
           >
             <div
-              className="w-full max-w-[480px] flex items-center gap-2 sm:gap-3 rounded-2xl px-3 sm:px-4 py-3"
+              className="w-full max-w-[480px] flex items-center gap-2 sm:gap-3 rounded-2xl px-3 sm:px-4 py-3 bg-white dark:bg-[#1a0808] border border-red-200 dark:border-red-500/30"
               style={{
-                background: 'linear-gradient(135deg, rgba(16,8,8,0.97) 0%, rgba(24,8,8,0.97) 100%)',
-                border: '1px solid rgba(248,113,113,0.3)',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(248,113,113,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
                 backdropFilter: 'blur(32px)',
               }}
             >
@@ -1142,7 +1140,7 @@ export default function Dashboard() {
                 {selectedIds.size}
               </div>
 
-              <p className="flex-1 text-sm font-semibold text-white/70">
+              <p className="flex-1 text-sm font-semibold text-slate-700 dark:text-white/70">
                 {confirmDelete
                   ? (isHe ? 'למחוק לצמיתות?' : 'Delete permanently?')
                   : (isHe
@@ -1155,8 +1153,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setSelectedIds(new Set())}
-                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors"
-                    style={{ color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/35 bg-slate-100 dark:bg-white/6 border border-slate-200 dark:border-white/10"
                   >
                     {isHe ? 'בטל' : 'Cancel'}
                   </button>
@@ -1177,8 +1174,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors"
-                    style={{ color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/35 bg-slate-100 dark:bg-white/6 border border-slate-200 dark:border-white/10"
                   >
                     {isHe ? 'חזור' : 'Back'}
                   </button>

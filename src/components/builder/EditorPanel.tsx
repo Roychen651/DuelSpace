@@ -1260,7 +1260,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
         {/* Quick presets — only shown when no milestones yet and not financially locked */}
         {milestones.length === 0 && !isFinanciallyLocked && (
           <div className="flex flex-wrap gap-2">
-            <p className="w-full text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/35">
+            <p className="w-full text-xs font-bold uppercase tracking-widest text-muted">
               {isHe ? 'תבניות מהירות' : 'Quick presets'}
             </p>
             {[
@@ -1279,8 +1279,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                     percentage: pct,
                   })),
                 })}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all"
-                style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc' }}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all bg-indigo-50 dark:bg-indigo-500/8 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-300"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
               >
@@ -1292,7 +1291,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
 
         {/* Visual distribution bar */}
         {milestones.length > 0 && milestoneSum > 0 && (
-          <div className="rounded-xl overflow-hidden" style={{ height: 8, background: 'rgba(255,255,255,0.05)' }}>
+          <div className="rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5" style={{ height: 8 }}>
             <div className="flex h-full">
               {milestones.map((m, i) => {
                 const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#c084fc', '#e879f9']
@@ -1421,8 +1420,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           <motion.button
             type="button"
             onClick={addMilestone}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold text-indigo-400 transition-all duration-200"
-            style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.06)' }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all duration-200 bg-indigo-50 dark:bg-indigo-500/6 border border-indigo-200 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-400"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
           >

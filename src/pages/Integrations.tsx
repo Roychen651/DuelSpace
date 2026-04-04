@@ -583,8 +583,7 @@ export default function Integrations() {
                     <Info size={12} className="text-indigo-400" />
                     {isHe ? 'Payload שנשלח בכל חתימה' : 'Payload sent on every signature'}
                   </p>
-                  <div className="rounded-xl px-4 py-3.5 text-[11px] font-mono leading-relaxed text-white/40 overflow-x-auto"
-                    style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.05)' }} dir="ltr">
+                  <div className="rounded-xl px-4 py-3.5 text-[11px] font-mono leading-relaxed overflow-x-auto text-slate-600 dark:text-white/40 bg-slate-50 dark:bg-black/35 border border-slate-200 dark:border-white/5" dir="ltr">
                     <span className="text-indigo-400/70">{'{'}</span>
                     {`\n  "event": "proposal.accepted",\n  "data": {\n    "proposal_id":  "uuid",\n    "project_title": "עיצוב מחדש לאתר",\n    "client_name":   "שם הלקוח",\n    "client_email":  "client@example.com",\n    "client_company": "שם החברה",\n    "grand_total":   12000,\n    "currency":      "ILS",\n    "public_token":  "abc123",\n    "signed_at":     "2026-04-03T10:30:00.000Z"\n  }\n`}
                     <span className="text-indigo-400/70">{'}'}</span>

@@ -119,8 +119,7 @@ export function NotificationBell() {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:text-white/75"
-          style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 dark:text-white/35 transition-colors hover:text-slate-700 dark:hover:text-white/75 border border-slate-200 dark:border-white/7 bg-slate-50 dark:bg-white/3"
           aria-label={isHe ? 'התראות' : 'Notifications'}
         >
           <Bell size={14} />
@@ -141,26 +140,22 @@ export function NotificationBell() {
           align="end"
           alignOffset={-4}
           collisionPadding={12}
-          className="z-[9998] outline-none"
+          className="z-[9998] outline-none bg-white dark:bg-[#08080f] border border-slate-200 dark:border-white/9"
           style={{
             width: 320,
-            background: 'rgba(8,8,18,0.98)',
-            border: '1px solid rgba(255,255,255,0.09)',
             borderRadius: '1.25rem',
-            boxShadow:
-              '0 24px 64px rgba(0,0,0,0.85), 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
             backdropFilter: 'blur(40px)',
             WebkitBackdropFilter: 'blur(40px)',
           }}
         >
           {/* ── Header ──────────────────────────────────────────────────────── */}
           <div
-            className="flex items-center justify-between px-4 py-3"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+            className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-white/7"
           >
             <div className="flex items-center gap-2">
               <Bell size={13} style={{ color: '#6366f1' }} />
-              <p className="text-[13px] font-bold text-white">
+              <p className="text-[13px] font-bold text-main">
                 {isHe ? 'מרכז התראות' : 'Activity Feed'}
               </p>
               {unreadCount > 0 && (
@@ -211,18 +206,14 @@ export function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <div
-                  className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }}
+                  className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/4 border border-slate-200 dark:border-white/7"
                 >
-                  <Bell size={16} className="text-white/20" />
+                  <Bell size={16} className="text-slate-400 dark:text-white/20" />
                 </div>
-                <p className="text-xs text-white/35 font-semibold">
+                <p className="text-xs text-muted font-semibold">
                   {isHe ? 'אין עדיין פעילות' : 'No activity yet'}
                 </p>
-                <p className="text-[11px] text-white/20 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-muted opacity-60 mt-0.5 leading-relaxed">
                   {isHe
                     ? 'שלח הצעה ותראה פעולות לקוח כאן'
                     : 'Send a proposal to see client activity here'}
@@ -277,10 +268,10 @@ export function NotificationBell() {
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium text-white/80 leading-snug">
+                        <p className="text-[12px] font-medium text-main leading-snug">
                           {isHe ? textHe : textEn}
                         </p>
-                        <p className="text-[10px] text-white/30 mt-0.5">
+                        <p className="text-[10px] text-muted mt-0.5">
                           {timeAgo(n.time, isHe)}
                         </p>
                       </div>
@@ -301,11 +292,8 @@ export function NotificationBell() {
 
           {/* ── Footer ──────────────────────────────────────────────────────── */}
           {notifications.length > 0 && (
-            <div
-              className="px-4 py-2.5 text-center"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <p className="text-[10px] text-white/20 font-medium">
+            <div className="px-4 py-2.5 text-center border-t border-slate-100 dark:border-white/6">
+              <p className="text-[10px] text-muted opacity-60 font-medium">
                 {isHe
                   ? 'מוצגות עד 20 הפעולות האחרונות'
                   : 'Showing up to 20 recent events'}
@@ -313,7 +301,7 @@ export function NotificationBell() {
             </div>
           )}
 
-          <Popover.Arrow style={{ fill: 'rgba(8,8,18,0.98)' }} />
+          <Popover.Arrow className="fill-white dark:fill-[rgba(8,8,18,0.98)]" />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

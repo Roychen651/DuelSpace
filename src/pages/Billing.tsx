@@ -737,8 +737,8 @@ export default function Billing() {
                     <HelpCircle size={11} className="text-indigo-400/70" />
                   </div>
                   <div>
-                    <p className="text-[12.5px] font-bold text-subtle mb-1.5">{item.q}</p>
-                    <p className="text-[12px] text-dim leading-relaxed">{item.a}</p>
+                    <p className="text-[12.5px] font-bold text-main mb-1.5">{item.q}</p>
+                    <p className="text-[12px] text-muted leading-relaxed">{item.a}</p>
                   </div>
                 </div>
               ))}
@@ -748,16 +748,13 @@ export default function Billing() {
 
         {/* ── Security note ──────────────────────────────────────────────────────── */}
         <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.28, ease: 'easeOut' as const }}
-          className="flex items-center gap-3.5 rounded-2xl px-5 py-4 mb-3"
-          style={{
-            background: 'linear-gradient(160deg, rgba(74,222,128,0.06) 0%, rgba(74,222,128,0.02) 100%)',
-            border: '1px solid rgba(74,222,128,0.12)',
-          }}>
+          className="flex items-center gap-3.5 rounded-2xl px-5 py-4 mb-3 bg-emerald-50 dark:bg-emerald-500/6 border border-emerald-200 dark:border-emerald-500/12"
+        >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl"
             style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)' }}>
             <ShieldCheck size={13} className="text-emerald-400/80" />
           </div>
-          <p className="text-[11.5px] text-dim leading-relaxed">
+          <p className="text-[11.5px] text-muted leading-relaxed">
             {isHe
               ? 'כל פרטי התשלום מאוחסנים ומנוהלים ישירות ב-Stripe — תקן PCI-DSS. DealSpace לא שומר מספרי כרטיס אשראי.'
               : 'All payment details are stored and managed directly by Stripe — PCI-DSS compliant. DealSpace never stores card numbers.'}
@@ -766,16 +763,13 @@ export default function Billing() {
 
         {/* ── Israeli invoicing compliance note ─────────────────────────────────── */}
         <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.32, ease: 'easeOut' as const }}
-          className="flex items-start gap-3.5 rounded-2xl px-5 py-4"
-          style={{
-            background: 'linear-gradient(160deg, rgba(99,102,241,0.07) 0%, rgba(99,102,241,0.02) 100%)',
-            border: '1px solid rgba(99,102,241,0.14)',
-          }}>
+          className="flex items-start gap-3.5 rounded-2xl px-5 py-4 bg-indigo-50 dark:bg-indigo-500/7 border border-indigo-200 dark:border-indigo-500/14"
+        >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl mt-0.5"
             style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
             <Info size={13} className="text-indigo-400/80" />
           </div>
-          <p className="text-[11.5px] text-dim leading-relaxed">
+          <p className="text-[11.5px] text-muted leading-relaxed">
             {isHe
               ? 'חשבונית מס/קבלה מוכרת למס (הכוללת מע"מ ומספר הקצאה) מופקת אוטומטית ונשלחת למייל שלכם לאחר כל חיוב חודשי באמצעות Morning (חשבונית ירוקה).'
               : 'A recognized Israeli Tax Invoice / Receipt (including VAT and allocation number) is automatically generated and sent to your email after each monthly charge via Morning (Green Invoice).'}

@@ -173,12 +173,10 @@ export function PremiumDatePicker({
           <Popover.Content
             sideOffset={6}
             align={isHe ? 'end' : 'start'}
-            className="z-[9999] rounded-2xl p-4 shadow-2xl"
+            className="z-[9999] rounded-2xl p-4 shadow-2xl bg-white dark:bg-[#14141f] border border-slate-200 dark:border-indigo-500/25"
             style={{
-              background: 'linear-gradient(135deg, rgba(20,20,35,0.99) 0%, rgba(12,12,24,0.99) 100%)',
-              border: '1px solid rgba(99,102,241,0.25)',
               backdropFilter: 'blur(40px)',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
               width: 280,
             }}
             dir={isHe ? 'rtl' : 'ltr'}
@@ -188,19 +186,19 @@ export function PremiumDatePicker({
               <button
                 type="button"
                 onClick={() => setViewMonth(m => subMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-all duration-200 hover:bg-white/8 hover:text-white/80 active:scale-90"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
               </button>
 
-              <span className="text-sm font-bold text-white/80">
+              <span className="text-sm font-bold text-slate-700 dark:text-white/80">
                 {format(viewMonth, 'MMMM yyyy', { locale: dateFnsLocale })}
               </span>
 
               <button
                 type="button"
                 onClick={() => setViewMonth(m => addMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-all duration-200 hover:bg-white/8 hover:text-white/80 active:scale-90"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>
@@ -209,7 +207,7 @@ export function PremiumDatePicker({
             {/* Weekday headers */}
             <div className="grid grid-cols-7 mb-1">
               {weekDayLabels.map(d => (
-                <div key={d} className="text-center text-[9px] font-bold text-white/25 py-1">
+                <div key={d} className="text-center text-[9px] font-bold text-slate-400 dark:text-white/25 py-1">
                   {d}
                 </div>
               ))}
@@ -229,14 +227,14 @@ export function PremiumDatePicker({
                     type="button"
                     onClick={() => !isPast && handleSelect(day)}
                     disabled={isPast}
-                    className="relative flex h-8 w-full items-center justify-center rounded-lg text-xs font-medium transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+                    className="relative flex h-8 w-full items-center justify-center rounded-lg text-xs font-medium text-slate-700 dark:text-white/70 transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-white/8"
                     style={{
                       background: isSelected
                         ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
                         : isToday
                           ? 'rgba(99,102,241,0.15)'
                           : 'transparent',
-                      color: isSelected ? '#fff' : isToday ? '#818cf8' : 'rgba(255,255,255,0.7)',
+                      color: isSelected ? '#fff' : isToday ? '#818cf8' : undefined,
                       boxShadow: isSelected ? '0 0 12px rgba(99,102,241,0.5)' : 'none',
                     }}
                   >
@@ -256,8 +254,7 @@ export function PremiumDatePicker({
             <button
               type="button"
               onClick={() => handleSelect(today)}
-              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold text-white/50 transition hover:text-white/80"
-              style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold text-slate-500 dark:text-white/50 transition hover:text-slate-800 dark:hover:text-white/80 border border-slate-200 dark:border-white/7"
             >
               {isHe ? 'היום' : 'Today'}
             </button>

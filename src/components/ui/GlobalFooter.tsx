@@ -147,10 +147,7 @@ export function GlobalFooter() {
       />
 
       {/* Subtle inner top shadow for depth */}
-      <div
-        className="h-px w-full"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent)' }}
-      />
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-100 dark:via-white/3 to-transparent" />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
 
@@ -190,7 +187,7 @@ export function GlobalFooter() {
           </div>
 
           {/* Divider */}
-          <div className="mb-6 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
+          <div className="mb-6 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/7 to-transparent" />
 
           {/* 2-column link grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-0 mb-7">
@@ -206,18 +203,14 @@ export function GlobalFooter() {
           </div>
 
           {/* Divider */}
-          <div className="mb-5 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
+          <div className="mb-5 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/7 to-transparent" />
 
           {/* Trust badges */}
           <div className="flex items-center gap-2 mb-5 flex-wrap">
             {TRUST_BADGES.map(badge => (
               <div
                 key={badge.text}
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                }}
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-card border border-glass"
               >
                 {badge.icon}
                 <span className="text-[9.5px] font-medium text-dim whitespace-nowrap">{badge.text}</span>
@@ -321,8 +314,7 @@ export function GlobalFooter() {
 
           {/* Divider */}
           <div
-            className="mb-8 h-px"
-            style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.08) 80%, transparent)' }}
+            className="mb-8 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/8 to-transparent"
           />
 
           {/* Bottom bar */}
