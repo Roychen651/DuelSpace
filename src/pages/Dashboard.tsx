@@ -725,13 +725,19 @@ export default function Dashboard() {
                   if (allSelected) setSelectedIds(new Set())
                   else setSelectedIds(new Set(filteredProposals.map(p => p.id)))
                 }}
-                className="flex h-5 w-5 flex-none items-center justify-center rounded-md transition-all duration-150"
-                style={{
-                  background: filteredProposals.every(p => selectedIds.has(p.id))
-                    ? 'rgba(248,113,113,0.25)'
-                    : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${filteredProposals.every(p => selectedIds.has(p.id)) ? 'rgba(248,113,113,0.55)' : 'rgba(255,255,255,0.18)'}`,
-                }}
+                className={`flex h-5 w-5 flex-none items-center justify-center rounded-md transition-all duration-150 ${
+                  filteredProposals.every(p => selectedIds.has(p.id)) || filteredProposals.some(p => selectedIds.has(p.id))
+                    ? ''
+                    : 'bg-white dark:bg-white/[0.06] border border-red-200 dark:border-white/[0.18]'
+                }`}
+                style={
+                  filteredProposals.every(p => selectedIds.has(p.id)) || filteredProposals.some(p => selectedIds.has(p.id))
+                    ? {
+                        background: filteredProposals.every(p => selectedIds.has(p.id)) ? 'rgba(248,113,113,0.25)' : 'rgba(248,113,113,0.1)',
+                        border: `1px solid ${filteredProposals.every(p => selectedIds.has(p.id)) ? 'rgba(248,113,113,0.55)' : 'rgba(248,113,113,0.35)'}`,
+                      }
+                    : {}
+                }
                 aria-label={isHe ? 'בחר הכל' : 'Select all'}
               >
                 {filteredProposals.every(p => selectedIds.has(p.id)) && (
@@ -1094,13 +1100,15 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); toggleSelect(p.id) }}
-                      className="absolute top-3 end-3 z-20 flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150"
-                      style={{
-                        background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.25)' : 'rgba(0,0,0,0.55)',
-                        border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.6)' : 'rgba(255,255,255,0.2)'}`,
-                        boxShadow: selectedIds.has(p.id) ? '0 0 10px rgba(248,113,113,0.25)' : 'none',
+                      className={`absolute top-3 end-3 z-20 flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150 ${
+                        selectedIds.has(p.id) ? '' : 'bg-white dark:bg-black/[0.55] border border-slate-300 dark:border-white/[0.2]'
+                      }`}
+                      style={selectedIds.has(p.id) ? {
+                        background: 'rgba(248,113,113,0.25)',
+                        border: '1px solid rgba(248,113,113,0.6)',
+                        boxShadow: '0 0 10px rgba(248,113,113,0.25)',
                         backdropFilter: 'blur(8px)',
-                      }}
+                      } : { backdropFilter: 'blur(8px)' }}
                       aria-label={selectedIds.has(p.id) ? (isHe ? 'בטל בחירה' : 'Deselect') : (isHe ? 'בחר' : 'Select')}
                     >
                       {selectedIds.has(p.id) && <Check size={12} style={{ color: '#f87171' }} strokeWidth={3} />}
