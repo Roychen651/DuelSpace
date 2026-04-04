@@ -1219,7 +1219,14 @@ function BentoGridSection({ c, isHe, isDark }: { c: typeof copy['he']; isHe: boo
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `${BENTO_COLORS[i]}1A`, border: `1px solid ${BENTO_COLORS[i]}38`, color: BENTO_COLORS[i], boxShadow: `0 0 12px ${BENTO_COLORS[i]}22` }}>
                     {icons[i]}
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ background: `linear-gradient(90deg, ${BENTO_COLORS[i]}, rgba(255,255,255,0.75), ${BENTO_COLORS[i]})`, backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={isDark ? {
+                    background: `linear-gradient(90deg, ${BENTO_COLORS[i]}, rgba(255,255,255,0.75), ${BENTO_COLORS[i]})`,
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    animation: 'lp-shimmer 4s linear infinite',
+                  } : { color: BENTO_COLORS[i], fontWeight: 800 }}>
                     {card.tag}
                   </span>
                 </div>
@@ -1283,21 +1290,20 @@ function AnimatedStat({ s, i, isHe, isDark }: { s: typeof PROOF_STATS[0]; i: num
     'linear-gradient(135deg, #c084fc 0%, #a5b4fc 100%)',
     'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)',
   ]
-  const lightGradients = [
-    'linear-gradient(135deg, #1e40af 0%, #6366f1 100%)',
-    'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-    'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-    'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)',
-  ]
+  // Solid colors for light mode — gradient-clip can fail in certain browsers/RTL contexts
+  const lightColors = ['#4338ca', '#7c3aed', '#6366f1', '#d4af37']
 
   return (
     <motion.div ref={ref} variants={itemFade} className="flex flex-col items-center text-center">
       <span
         className="text-4xl sm:text-5xl font-black tracking-tight mb-3 tabular-nums"
-        style={{
-          background: isDark ? darkGradients[i] : lightGradients[i],
+        style={isDark ? {
+          background: darkGradients[i],
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        } : {
+          color: lightColors[i],
         }}
       >
         <ScrambleCounter value={s.value} inView={inView} />
@@ -1468,7 +1474,10 @@ const TIER_ACCENT = ['#818cf8', '#c084fc', '#d4af37']
 
 function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe: boolean; onCta: () => void; isDark: boolean }) {
   return (
-    <section className="relative py-10 sm:py-28 px-4 sm:px-6 overflow-hidden">
+    <section
+      className="relative py-10 sm:py-28 px-4 sm:px-6 overflow-hidden"
+      style={{ background: isDark ? undefined : '#f1f5f9' }}
+    >
       <div className="pointer-events-none absolute inset-0" style={{ background: isDark ? 'radial-gradient(ellipse 60% 60% at 60% 50%, rgba(168,85,247,0.1) 0%, transparent 70%)' : 'radial-gradient(ellipse 60% 60% at 60% 50%, rgba(168,85,247,0.05) 0%, transparent 70%)' }} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.3), transparent)' }} />
 
@@ -1519,15 +1528,17 @@ function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe
                         ? 'linear-gradient(150deg, rgba(30,12,55,0.98) 0%, rgba(14,6,30,0.99) 100%)'
                         : isDark
                           ? 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)'
-                          : '#ffffff',
+                          : i === 0
+                            ? 'linear-gradient(160deg, #f0f4ff 0%, #ffffff 100%)'  // Free — light indigo tint
+                            : 'linear-gradient(160deg, #fffbf0 0%, #ffffff 100%)',  // Premium — light amber tint
                       border: isPro ? 'none' : isDark
                         ? `1px solid ${TIER_BORDER[i]}`
-                        : `1px solid ${i === 2 ? 'rgba(212,175,55,0.2)' : 'rgba(0,0,0,0.08)'}`,
+                        : `1px solid ${i === 2 ? 'rgba(212,175,55,0.35)' : 'rgba(99,102,241,0.22)'}`,
                       boxShadow: isPro
                         ? '0 0 50px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.08)'
                         : isDark
                           ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
-                          : '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05)',
+                          : '0 2px 8px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.06)',
                     }}
                   >
                     <div className="pointer-events-none absolute top-0 inset-x-6 h-px" style={{ background: `linear-gradient(90deg, transparent, ${TIER_ACCENT[i]}60, transparent)` }} />
@@ -1704,14 +1715,17 @@ function FinalCTASection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isH
         <motion.div variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }}>
           <motion.div
             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8"
-            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+            style={{
+              background: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(21,128,61,0.08)',
+              border: isDark ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(21,128,61,0.25)',
+            }}
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ type: 'spring' as const, stiffness: 280, damping: 20, delay: 0.1 }}
           >
-            <Shield size={12} style={{ color: '#4ade80' }} />
-            <span className="text-[11px] font-bold" style={{ color: '#4ade80' }}>{c.ctaUrgency}</span>
+            <Shield size={12} style={{ color: isDark ? '#4ade80' : '#15803d' }} />
+            <span className="text-[11px] font-bold" style={{ color: isDark ? '#4ade80' : '#15803d' }}>{c.ctaUrgency}</span>
           </motion.div>
 
           <h2
@@ -1722,6 +1736,7 @@ function FinalCTASection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isH
                 : 'linear-gradient(135deg, #0f172a 30%, #4338ca 65%, #7c3aed 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}
           >
             {c.ctaH2a}
@@ -1734,6 +1749,7 @@ function FinalCTASection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isH
                 : 'linear-gradient(135deg, #7c3aed 0%, #4338ca 50%, #0f172a 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}
           >
             {c.ctaH2b}
@@ -1788,6 +1804,7 @@ function ThemeToggle({ isDark, onToggle, c }: { isDark: boolean; onToggle: () =>
     <button
       onClick={onToggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      dir="ltr"
       className="relative flex items-center rounded-full select-none"
       style={{
         background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
@@ -1907,6 +1924,7 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                     : 'linear-gradient(135deg, #0f172a, #6366f1)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
                 DealSpace
@@ -1976,6 +1994,7 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                     : 'linear-gradient(135deg, #0f172a 0%, #6366f1 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
                 DealSpace
@@ -2076,6 +2095,7 @@ function HeroSection({ c, isHe, onCta, onDemo, isDark }: {
                       : 'linear-gradient(135deg, #0f172a 0%, #6366f1 60%, #8b5cf6 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
                   }}
                 >
                   DealSpace
@@ -2102,6 +2122,7 @@ function HeroSection({ c, isHe, onCta, onDemo, isDark }: {
                   : 'linear-gradient(135deg, #0f172a 0%, #4338ca 65%, #6366f1 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
               }}>
                 {c.h1Part1}
               </span>
@@ -2220,6 +2241,18 @@ export default function LandingPage() {
       return next
     })
   }
+
+  // Sync LandingPage theme with document dark class so GlobalFooter + Tailwind dark: variants match
+  useEffect(() => {
+    const html = document.documentElement
+    if (isDark) {
+      html.classList.add('dark')
+    } else {
+      html.classList.remove('dark')
+    }
+    // Restore dark on unmount (all other pages expect dark mode)
+    return () => { html.classList.add('dark') }
+  }, [isDark])
 
   const goAuth   = () => navigate('/auth')
   const goSignup = () => navigate('/auth?tab=signup')
