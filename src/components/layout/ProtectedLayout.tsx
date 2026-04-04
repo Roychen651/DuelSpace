@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock, CreditCard } from 'lucide-react'
+import { ThemeToggle } from '../ui/ThemeToggle'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore, useBillingStatus, useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
@@ -106,13 +107,12 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-slate-50 dark:bg-[#040608]">
+    <div className="min-h-dvh overflow-x-hidden bg-background">
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <nav
         className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6
-          bg-white/92 border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]
-          dark:bg-transparent dark:border-white/[0.06] dark:shadow-[0_1px_0_rgba(99,102,241,0.08),0_4px_24px_rgba(0,0,0,0.35)]"
+          bg-[var(--nav-bg)] border-b border-[color:var(--nav-border)] shadow-[var(--nav-shadow)]"
         style={{
           height: 58,
           backdropFilter: 'blur(28px)',
@@ -134,11 +134,11 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               <Zap size={15} className="text-white" />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white" style={{ letterSpacing: '-0.02em' }}>
+              <span className="text-[14px] font-black tracking-tight text-main" style={{ letterSpacing: '-0.02em' }}>
                 {t('brand.name')}
               </span>
               {company && (
-                <span className="text-[10px] text-slate-400 dark:text-white/30 font-medium truncate max-w-[120px]">{company}</span>
+                <span className="text-[10px] text-dim font-medium truncate max-w-[120px]">{company}</span>
               )}
             </div>
           </button>
@@ -166,8 +166,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setLocale(isHe ? 'en' : 'he')}
             className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors
-              border border-slate-200 bg-white/80 text-slate-400 hover:text-slate-600
-              dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-white/35 dark:hover:text-white/70"
+              border border-[color:var(--border)] bg-card text-muted hover:text-main"
           >
             <Globe size={10} />
             {isHe ? 'EN' : 'עב'}
@@ -178,8 +177,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             data-tour="help-btn"
             onClick={() => setHelpOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors
-              border border-slate-200 bg-white/80 text-slate-400 hover:text-slate-600
-              dark:border-white/[0.07] dark:bg-white/[0.03] dark:text-white/35 dark:hover:text-white/75"
+              border border-[color:var(--border)] bg-card text-muted hover:text-main"
             aria-label={isHe ? 'מרכז עזרה' : 'Help Center'}
             title={isHe ? 'מרכז עזרה' : 'Help Center'}
           >
@@ -233,8 +231,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             <button
               data-tour="profile-avatar"
               className="flex items-center gap-2 rounded-xl px-1.5 py-1 transition-colors outline-none
-                border border-slate-200 hover:bg-slate-100
-                dark:border-white/[0.08] dark:hover:bg-white/[0.06]"
+                border border-[color:var(--border)] hover:bg-[var(--bg-card-hover)]"
               style={{
                 background: menuOpen ? undefined : undefined,
               }}
@@ -248,7 +245,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               </div>
               {/* Name — desktop only */}
               {firstName && (
-                <span className="hidden md:block text-[12px] font-semibold text-slate-600 dark:text-white/70 pe-1 max-w-[90px] truncate">
+                <span className="hidden md:block text-[12px] font-semibold text-subtle pe-1 max-w-[90px] truncate">
                   {firstName}
                 </span>
               )}
@@ -258,19 +255,18 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             {menuOpen && (
               <div className="absolute end-0 top-full pt-2 z-50">
                 <div
-                  className="flex flex-col rounded-2xl overflow-hidden
-                    bg-white border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.08)]
-                    dark:bg-[#0d0d14] dark:border-white/[0.09] dark:shadow-[0_20px_60px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  className="flex flex-col rounded-2xl overflow-hidden bg-card shadow-dropdown"
                   style={{
                     width: 200,
-                    border: '1px solid',
+                    border: '1px solid var(--border)',
                     backdropFilter: 'blur(40px)',
+                    WebkitBackdropFilter: 'blur(40px)',
                   }}
                 >
                   {/* Identity header */}
-                  <div className="px-4 py-3 border-b border-slate-100 dark:border-white/[0.06]">
+                  <div className="px-4 py-3 border-b border-[color:var(--border)]">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <p className="text-[13px] font-semibold text-slate-900 dark:text-white/90 truncate">{name || user?.email}</p>
+                      <p className="text-[13px] font-semibold text-main truncate">{name || user?.email}</p>
                       {/* Tier badge */}
                       <span
                         className="flex-none rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider"
@@ -285,18 +281,18 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                         {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
                       </span>
                     </div>
-                    {company && <p className="text-[11px] text-slate-400 dark:text-white/35 truncate mt-0.5">{company}</p>}
+                    {company && <p className="text-[11px] text-dim truncate mt-0.5">{company}</p>}
                   </div>
 
                   {/* Menu items */}
                   <div className="p-1.5">
-                    <button onClick={() => navigate('/profile')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
+                    <button onClick={() => navigate('/profile')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-subtle transition-colors hover:bg-[var(--bg-card-hover)] hover:text-main text-start">
                       <Settings size={13} className="flex-none" />{isHe ? 'פרופיל והגדרות' : 'Profile & Settings'}
                     </button>
-                    <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
+                    <button data-tour="services-link" onClick={() => navigate('/services')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-subtle transition-colors hover:bg-[var(--bg-card-hover)] hover:text-main text-start">
                       <Bookmark size={13} className="flex-none" />{isHe ? 'שירותים שמורים' : 'Saved Services'}
                     </button>
-                    <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-500 dark:text-white/55 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start">
+                    <button data-tour="integrations-link" onClick={() => navigate('/integrations')} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-subtle transition-colors hover:bg-[var(--bg-card-hover)] hover:text-main text-start">
                       <Webhook size={13} className="flex-none" />{isHe ? 'אינטגרציות' : 'Integrations'}
                     </button>
                     {/* Billing & Subscription — all users */}
@@ -310,9 +306,16 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     </button>
                   </div>
 
-                  {/* Sign out */}
-                  <div className="border-t border-slate-100 dark:border-white/[0.06] p-1.5">
-                    <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-slate-400 dark:text-white/40 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/8 dark:hover:text-red-400 text-start">
+                  {/* Theme + Sign out */}
+                  <div className="border-t border-[color:var(--border)] p-1.5 space-y-0.5">
+                    {/* Theme toggle row */}
+                    <div className="flex items-center justify-between rounded-xl px-3 py-2">
+                      <span className="text-[12px] font-medium text-subtle">
+                        {isHe ? 'מצב תצוגה' : 'Appearance'}
+                      </span>
+                      <ThemeToggle />
+                    </div>
+                    <button onClick={handleSignOut} className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium text-muted transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/[0.08] dark:hover:text-red-400 text-start">
                       <LogOut size={13} className="flex-none" />{isHe ? 'התנתק' : 'Sign Out'}
                     </button>
                   </div>
@@ -333,8 +336,8 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             exit={{ opacity: 0, y: -12, scale: 0.96 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="fixed top-[66px] end-4 z-[9998] flex items-center gap-3 rounded-2xl px-4 py-3
-              bg-white border border-emerald-200 shadow-lg
-              dark:bg-[rgba(8,18,12,0.96)] dark:border-emerald-500/30 dark:shadow-[0_0_32px_rgba(34,197,94,0.12),0_8px_24px_rgba(0,0,0,0.5)]"
+              bg-card border border-emerald-200 shadow-lg
+              dark:border-emerald-500/30 dark:shadow-[0_0_32px_rgba(34,197,94,0.12),0_8px_24px_rgba(0,0,0,0.5)]"
             style={{
               backdropFilter: 'blur(20px)',
               maxWidth: 280,
@@ -352,7 +355,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
               <p className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 leading-none mb-0.5">
                 {isHe ? 'לקוח צופה עכשיו' : 'Client viewing now'}
               </p>
-              <p className="text-[11px] text-slate-500 dark:text-white/45 truncate">
+              <p className="text-[11px] text-subtle truncate">
                 {isHe
                   ? `"${viewingToast.title}" — ${viewingToast.client}`
                   : `"${viewingToast.title}" — ${viewingToast.client}`}

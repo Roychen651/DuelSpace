@@ -322,7 +322,7 @@ function PlanCard({ plan, isHe, delay, currentPlanId, userId, userEmail, loading
           ? `linear-gradient(160deg, ${plan.accent}18 0%, ${plan.accent}08 100%)`
           : plan.popular
             ? 'linear-gradient(160deg, rgba(168,85,247,0.12) 0%, rgba(99,102,241,0.07) 100%)'
-            : 'rgba(255,255,255,0.035)',
+            : 'rgba(255,255,255,0.04)',
         border: isCurrent
           ? `1px solid ${plan.accent}45`
           : plan.popular

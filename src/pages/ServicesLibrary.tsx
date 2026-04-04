@@ -18,14 +18,13 @@ function focusInput(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>)
   e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'
 }
 function blurInput(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
-  const isDark = document.documentElement.classList.contains('dark')
-  e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgb(226,232,240)'
+  e.currentTarget.style.borderColor = 'var(--border)'
   e.currentTarget.style.boxShadow = 'none'
 }
 
 const inputBase = [
-  'w-full rounded-xl border bg-slate-50 dark:bg-white/[0.05] px-3 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20',
-  'outline-none transition-all border-slate-200 dark:border-white/[0.1]',
+  'w-full rounded-xl border bg-[var(--input-bg)] px-3 py-2.5 text-sm text-main placeholder:text-dim',
+  'outline-none transition-all border-[color:var(--border)]',
 ].join(' ')
 
 // ─── Service Form Modal ───────────────────────────────────────────────────────
@@ -73,14 +72,13 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm font-black text-white">
+          <p className="text-sm font-black text-main">
             {isHe ? (initial ? 'עריכת שירות' : 'שירות חדש') : (initial ? 'Edit Service' : 'New Service')}
           </p>
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-white/30 transition hover:text-white/70"
-            style={{ background: 'rgba(255,255,255,0.05)' }}
+            className="svc-close-btn flex h-7 w-7 items-center justify-center rounded-xl text-dim transition hover:text-main"
           >
             <X size={13} />
           </button>
@@ -123,13 +121,12 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between rounded-xl px-3 py-2"
-              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
+              className="svc-vat-row flex items-center justify-between rounded-xl px-3 py-2"
             >
-              <span className="text-[10px] text-white/35">
+              <span className="text-[10px] text-dim">
                 {isHe ? `מתוכם מע"מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
               </span>
-              <span className="text-[10px] text-white/30 tabular-nums">
+              <span className="text-[10px] text-dim tabular-nums">
                 {formatCurrency(Math.round(priceNum - priceNum / (1 + vatRate)), currency)}
               </span>
             </motion.div>
@@ -150,8 +147,7 @@ function ServiceForm({ initial, currency, locale, vatRate, saving, onSave, onCan
             <button
               type="button"
               onClick={onCancel}
-              className="flex-none h-9 rounded-xl px-4 text-xs text-white/40 transition hover:text-white/70 whitespace-nowrap"
-              style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+              className="svc-cancel-btn flex-none h-9 rounded-xl px-4 text-xs text-dim transition hover:text-main whitespace-nowrap"
             >
               {isHe ? 'ביטול' : 'Cancel'}
             </button>
@@ -181,27 +177,18 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2, ease: 'easeOut' as const }}
-      className="flex items-center gap-4 rounded-2xl px-5 py-4"
-      style={{
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}
+      className="svc-row flex items-center gap-4 rounded-2xl px-5 py-4"
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white/90 truncate">{service.label}</p>
+        <p className="text-sm font-semibold text-main truncate">{service.label}</p>
         {service.description && (
-          <p className="text-xs text-white/35 truncate mt-0.5">{service.description}</p>
+          <p className="text-xs text-dim truncate mt-0.5">{service.description}</p>
         )}
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <button
             type="button"
             onClick={() => setShowVat(v => !v)}
-            className="flex items-center gap-1.5 rounded-lg px-2 py-0.5 transition-all"
-            style={{
-              background: showVat ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(99,102,241,0.2)',
-            }}
+            className={`flex items-center gap-1.5 rounded-lg px-2 py-0.5 transition-all ${showVat ? 'svc-vat-pill' : 'svc-vat-pill-off'}`}
           >
             <span
               className="text-sm font-black tabular-nums"
@@ -209,15 +196,15 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
             >
               {formatCurrency(service.price, 'ILS')}
             </span>
-            <span className="text-[9px] font-semibold" style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.3)' }}>
+            <span className="text-[9px] font-semibold" style={{ color: showVat ? '#818cf8' : 'var(--text-tertiary)' }}>
               {showVat
                 ? (isHe ? `כולל מע"מ` : 'incl. VAT')
                 : (isHe ? `ללא מע"מ` : 'no VAT')}
             </span>
-            <Percent size={8} style={{ color: showVat ? '#818cf8' : 'rgba(255,255,255,0.2)' }} />
+            <Percent size={8} style={{ color: showVat ? '#818cf8' : 'var(--text-tertiary)' }} />
           </button>
           {showVat && (
-            <span className="text-[10px] text-white/25 tabular-nums">
+            <span className="text-[10px] text-dim tabular-nums">
               {isHe ? 'מתוכם מע"מ' : 'VAT incl.'}: {formatCurrency(Math.round(service.price - service.price / (1 + vatRate)), 'ILS')}
             </span>
           )}
@@ -227,7 +214,7 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
         <button
           type="button"
           onClick={onEdit}
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.08] hover:text-indigo-400"
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-dim transition hover:bg-[var(--bg-card-hover)] hover:text-indigo-400"
           title={isHe ? 'ערוך' : 'Edit'}
         >
           <Edit3 size={13} />
@@ -235,7 +222,7 @@ function ServiceRow({ service, vatRate, locale, onEdit, onDelete }: {
         <button
           type="button"
           onClick={onDelete}
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-white/30 transition hover:bg-red-500/10 hover:text-red-400"
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-dim transition hover:bg-red-500/10 hover:text-red-400"
           title={isHe ? 'מחק' : 'Delete'}
         >
           <Trash2 size={13} />
@@ -264,13 +251,8 @@ function EmptyState({ locale, onAdd }: { locale: string; onAdd: () => void }) {
 
       <div className="relative">
         <div
-          className="relative flex h-24 w-24 items-center justify-center rounded-3xl"
-          style={{
-            background: 'linear-gradient(145deg, rgba(212,175,55,0.12) 0%, rgba(245,158,11,0.07) 100%)',
-            border: '1px solid rgba(212,175,55,0.25)',
-            boxShadow: '0 0 48px rgba(212,175,55,0.12)',
-            animation: 'svc-float 5s ease-in-out infinite',
-          }}
+          className="svc-empty-orb relative flex h-24 w-24 items-center justify-center rounded-3xl"
+          style={{ animation: 'svc-float 5s ease-in-out infinite' }}
         >
           <Layers size={36} className="text-amber-400/70" />
         </div>
@@ -306,7 +288,7 @@ function EmptyState({ locale, onAdd }: { locale: string; onAdd: () => void }) {
         >
           {isHe ? 'הקטלוג שלך מחכה' : 'Your catalog awaits'}
         </h3>
-        <p className="text-sm text-white/35 max-w-xs mx-auto leading-relaxed" dir={isHe ? 'rtl' : 'ltr'}>
+        <p className="text-sm text-dim max-w-xs mx-auto leading-relaxed" dir={isHe ? 'rtl' : 'ltr'}>
           {isHe
             ? 'שמור שירותים חוזרים פעם אחת — הזרק אותם להצעות בשתי לחיצות. חסוך זמן, שמור על אחידות.'
             : 'Save recurring services once — inject them into proposals in two clicks. Save time, stay consistent.'}
@@ -345,8 +327,8 @@ function SkeletonRows() {
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="h-[72px] rounded-2xl animate-pulse"
-          style={{ background: 'rgba(255,255,255,0.04)', animationDelay: `${i * 0.08}s` }}
+          className="svc-skeleton-row h-[72px] rounded-2xl animate-pulse"
+          style={{ animationDelay: `${i * 0.08}s` }}
         />
       ))}
     </div>
@@ -388,7 +370,7 @@ export default function ServicesLibrary() {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50 dark:bg-[#030305]" dir={isHe ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-background" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes ds-fade-up {
           from { opacity: 0; transform: translateY(16px); }
@@ -503,10 +485,10 @@ export default function ServicesLibrary() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl font-black text-main">
               {isHe ? 'ספריית שירותים' : 'Services Library'}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-white/35 mt-0.5">
+            <p className="text-xs text-dim mt-0.5">
               {isHe
                 ? 'ניהול שירותים שמורים לשימוש חוזר בהצעות'
                 : 'Manage saved services for reuse in proposals'}
@@ -532,17 +514,17 @@ export default function ServicesLibrary() {
           custom={1} variants={cardIn} initial="hidden" animate="visible"
           className="grid grid-cols-2 gap-3"
         >
-          <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm dark:bg-white/[0.04] dark:border-white/[0.07] dark:shadow-none">
-            <p className="text-xs text-slate-500 dark:text-white/35 mb-1">{isHe ? 'שירותים שמורים' : 'Saved services'}</p>
+          <div className="svc-stat rounded-2xl p-4">
+            <p className="text-xs text-dim mb-1">{isHe ? 'שירותים שמורים' : 'Saved services'}</p>
             {loading && services.length === 0
-              ? <div className="h-8 w-10 rounded-lg animate-pulse bg-slate-200 dark:bg-white/[0.08]" />
-              : <p className="text-2xl font-black text-slate-900 dark:text-white">{services.length}</p>
+              ? <div className="svc-skeleton h-8 w-10 rounded-lg animate-pulse" />
+              : <p className="text-2xl font-black text-main">{services.length}</p>
             }
           </div>
-          <div className="rounded-2xl p-4 bg-white border border-slate-200 shadow-sm dark:bg-white/[0.04] dark:border-white/[0.07] dark:shadow-none">
-            <p className="text-xs text-slate-500 dark:text-white/35 mb-1">{isHe ? 'שווי קטלוג' : 'Catalog value'}</p>
+          <div className="svc-stat rounded-2xl p-4">
+            <p className="text-xs text-dim mb-1">{isHe ? 'שווי קטלוג' : 'Catalog value'}</p>
             {loading && services.length === 0
-              ? <div className="h-8 w-24 rounded-lg animate-pulse bg-slate-200 dark:bg-white/[0.08]" />
+              ? <div className="svc-skeleton h-8 w-24 rounded-lg animate-pulse" />
               : <p className="text-xl font-black text-amber-400 tabular-nums">{formatCurrency(totalValue, 'ILS')}</p>
             }
           </div>

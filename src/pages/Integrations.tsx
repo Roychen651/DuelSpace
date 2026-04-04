@@ -374,10 +374,10 @@ export default function Integrations() {
   const activeCount = proposals.filter(p => !p.is_archived).length
 
   const inputClass = [
-    'w-full bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/[0.08] rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/30',
+    'w-full bg-[var(--input-bg)] border border-[color:var(--border)] rounded-xl px-4 py-3.5 text-base text-main placeholder:text-dim',
     'outline-none transition-all duration-200',
     'shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]',
-    'focus:bg-white dark:focus:bg-[#0f0f1a] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
+    'focus:bg-[var(--input-bg)] focus:border-indigo-500/60 focus:ring-4 focus:ring-indigo-500/[0.12]',
   ].join(' ')
 
   const isWebhookSaved = !!(user?.user_metadata?.webhook_url as string | undefined)?.trim()
@@ -401,7 +401,7 @@ export default function Integrations() {
 
       {/* Aurora */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
+        <div className="absolute inset-0 bg-background" />
         <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'int-float 22s ease-in-out infinite', willChange: 'transform' }} />
         <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full"
@@ -417,11 +417,11 @@ export default function Integrations() {
               style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 24px rgba(99,102,241,0.4)' }}>
               <Webhook size={18} className="text-white" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white" style={{ letterSpacing: '-0.025em' }}>
+            <h1 className="text-2xl font-black text-main" style={{ letterSpacing: '-0.025em' }}>
               {isHe ? 'אינטגרציות ואוטומציות' : 'Integrations & Automations'}
             </h1>
           </div>
-          <p className="text-[14px] text-slate-500 dark:text-white/45 leading-relaxed">
+          <p className="text-[14px] text-subtle leading-relaxed">
             {isHe
               ? 'חבר את DealSpace לכלים שלך — webhook אוטומטי בכל פעם שלקוח חותם על הצעה.'
               : 'Connect DealSpace to your tools — automatic webhook every time a client signs a proposal.'}
@@ -430,15 +430,11 @@ export default function Integrations() {
 
         {/* ── How it works — shown to all ────────────────────────────────────── */}
         <div
-          className="rounded-3xl overflow-hidden mb-6"
-          style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            animation: 'int-fade-up 0.45s ease-out 0.1s both',
-          }}
+          className="bg-card border border-[color:var(--border)] rounded-3xl overflow-hidden mb-6"
+          style={{ animation: 'int-fade-up 0.45s ease-out 0.1s both' }}
         >
-          <div className="px-6 py-4 border-b border-white/[0.05]">
-            <p className="text-[13px] font-bold text-white/80">
+          <div className="px-6 py-4 border-b border-[color:var(--border-subtle)]">
+            <p className="text-[13px] font-bold text-subtle">
               {isHe ? 'איך זה עובד — 3 שלבים' : 'How it works — 3 steps'}
             </p>
           </div>
@@ -450,15 +446,15 @@ export default function Integrations() {
                   {step.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-white/85 mb-1">
+                  <p className="text-[13px] font-bold text-subtle mb-1">
                     {isHe ? step.titleHe : step.titleEn}
                   </p>
-                  <p className="text-[12px] text-white/45 leading-relaxed">
+                  <p className="text-[12px] text-dim leading-relaxed">
                     {isHe ? step.bodyHe : step.bodyEn}
                   </p>
                 </div>
-                <span className="flex-none flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white/25 mt-1"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span className="flex-none flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-dim mt-1"
+                  style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
                   {i + 1}
                 </span>
               </div>
@@ -470,14 +466,14 @@ export default function Integrations() {
         {!isPaid && (
           <>
             {/* Use cases */}
-            <div className="rounded-3xl px-6 py-5 mb-6"
-              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.16s both' }}>
-              <p className="text-[12px] font-semibold text-white/40 mb-3">
+            <div className="bg-card border border-[color:var(--border)] rounded-3xl px-6 py-5 mb-6"
+              style={{ animation: 'int-fade-up 0.45s ease-out 0.16s both' }}>
+              <p className="text-[12px] font-semibold text-dim mb-3">
                 {isHe ? 'מה תוכל לאוטמט:' : 'What you can automate:'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {USE_CASES.map((uc, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-[12px] text-white/50">
+                  <div key={i} className="flex items-center gap-2.5 text-[12px] text-subtle">
                     <span className="flex-none" style={{ color: '#6366f1' }}>{uc.icon}</span>
                     {isHe ? uc.he : uc.en}
                   </div>
@@ -498,10 +494,10 @@ export default function Integrations() {
                   <Lock size={24} className="text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-[17px] font-black text-white mb-2">
+                  <p className="text-[17px] font-black text-main mb-2">
                     {isHe ? 'אוטומציות זמינות בתוכנית Pro ומעלה' : 'Automations require Pro or higher'}
                   </p>
-                  <p className="text-[13px] text-white/45 leading-relaxed max-w-sm mx-auto">
+                  <p className="text-[13px] text-subtle leading-relaxed max-w-sm mx-auto">
                     {isHe
                       ? 'שדרג כדי לחבר Webhook, לשלוח חשבוניות אוטומטיות, לעדכן CRM ולקבל התראות בזמן אמת על כל חתימה.'
                       : 'Upgrade to connect a webhook, send automatic invoices, update your CRM, and get real-time notifications on every signature.'}
@@ -516,7 +512,7 @@ export default function Integrations() {
                   <Zap size={15} />
                   {isHe ? 'שדרג לפרו — ₪19 / חודש' : 'Upgrade to Pro — ₪19 / month'}
                 </motion.button>
-                <p className="text-[11px] text-white/20">
+                <p className="text-[11px] text-dim">
                   {isHe ? 'ביטול בכל עת · כולל מע"מ' : 'Cancel anytime · VAT incl.'}
                 </p>
               </div>
@@ -539,19 +535,19 @@ export default function Integrations() {
             )}
 
             {/* Webhook configuration card */}
-            <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm dark:bg-white/[0.02] dark:border-white/[0.06] dark:shadow-none mb-6"
+            <div className="relative overflow-hidden rounded-3xl bg-card border border-[color:var(--border)] mb-6"
               style={{ animation: 'int-fade-up 0.45s ease-out 0.15s both' }}>
 
-              <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-white/[0.05]">
+              <div className="flex items-center gap-3 px-6 py-5 border-b border-[color:var(--border-subtle)]">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl flex-none"
                   style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(99,102,241,0.28)' }}>
                   <Zap size={15} className="text-indigo-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-bold text-white">
+                  <p className="text-[14px] font-bold text-main">
                     {isHe ? 'Webhook — event: proposal.accepted' : 'Webhook — event: proposal.accepted'}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">
+                  <p className="text-[11px] text-dim mt-0.5">
                     {isHe ? 'מופעל מיד לאחר שלקוח חותם על ההצעה' : 'Fires immediately after a client signs a proposal'}
                   </p>
                 </div>
@@ -561,7 +557,7 @@ export default function Integrations() {
 
                 {/* Webhook URL input */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-300 mb-2.5">
+                  <label className="flex items-center gap-1.5 text-[13px] font-semibold text-subtle mb-2.5">
                     <Link2 size={13} className="text-indigo-400" />
                     {isHe ? 'כתובת Webhook' : 'Webhook URL'}
                   </label>
@@ -574,7 +570,7 @@ export default function Integrations() {
                     className={inputClass}
                     dir="ltr"
                   />
-                  <p className="text-[12px] text-zinc-500 mt-2">
+                  <p className="text-[12px] text-dim mt-2">
                     {isHe
                       ? 'הכתובת שמקבלת את ה-POST. קבל אותה מ-Make.com, Zapier, n8n או כל כלי אוטומציה אחר (ראה מדריך למטה).'
                       : 'The URL that receives the POST. Get it from Make.com, Zapier, n8n, or any automation tool (see guide below).'}
@@ -583,7 +579,7 @@ export default function Integrations() {
 
                 {/* Payload preview */}
                 <div>
-                  <p className="text-[12px] font-semibold text-zinc-400 mb-2 flex items-center gap-1.5">
+                  <p className="text-[12px] font-semibold text-dim mb-2 flex items-center gap-1.5">
                     <Info size={12} className="text-indigo-400" />
                     {isHe ? 'Payload שנשלח בכל חתימה' : 'Payload sent on every signature'}
                   </p>
@@ -615,9 +611,9 @@ export default function Integrations() {
                     whileTap={webhookUrl.trim() ? { scale: 0.97 } : {}}
                     className="flex items-center gap-2 rounded-xl px-5 h-10 text-[13px] font-semibold flex-none"
                     style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: !webhookUrl.trim() ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border)',
+                      color: !webhookUrl.trim() ? 'var(--text-tertiary)' : 'var(--text-secondary)',
                       cursor: !webhookUrl.trim() ? 'not-allowed' : 'pointer',
                     }}>
                     {testing ? <Loader2 size={13} className="animate-spin" /> : <FlaskConical size={13} />}
@@ -654,7 +650,7 @@ export default function Integrations() {
 
                 {/* Contextual test hint */}
                 {webhookUrl.trim() && (
-                  <p className="text-[11px] text-white/25 leading-relaxed">
+                  <p className="text-[11px] text-dim leading-relaxed">
                     {isHe
                       ? 'ב-Make.com: לחץ "Run once" לפני הבדיקה. ב-n8n: לחץ "Test workflow". ב-Zapier: ה-Zap חייב להיות Published.'
                       : 'Make.com: click "Run once" before testing. n8n: click "Test workflow". Zapier: Zap must be Published.'}
@@ -664,32 +660,32 @@ export default function Integrations() {
             </div>
 
             {/* Platform setup guides — accordion */}
-            <div className="rounded-3xl overflow-hidden mb-6"
-              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.06)', animation: 'int-fade-up 0.45s ease-out 0.2s both' }}>
+            <div className="bg-card border border-[color:var(--border)] rounded-3xl overflow-hidden mb-6"
+              style={{ animation: 'int-fade-up 0.45s ease-out 0.2s both' }}>
 
-              <div className="px-6 py-5 border-b border-white/[0.05]">
-                <p className="text-[13px] font-bold text-white/80">
+              <div className="px-6 py-5 border-b border-[color:var(--border-subtle)]">
+                <p className="text-[13px] font-bold text-subtle">
                   {isHe ? 'מדריך הגדרה שלב אחר שלב' : 'Step-by-step setup guide'}
                 </p>
-                <p className="text-[12px] text-white/35 mt-1">
+                <p className="text-[12px] text-dim mt-1">
                   {isHe
                     ? 'בחר את הפלטפורמה שלך — המדריך יוביל אותך בדיוק מה ללחוץ ואיפה'
                     : 'Choose your platform — the guide tells you exactly what to click and where'}
                 </p>
               </div>
 
-              <div className="divide-y divide-white/[0.04]">
+              <div className="divide-y divide-[color:var(--border-subtle)]">
                 {PLATFORMS.map(platform => (
                   <div key={platform.name}>
                     <button
                       onClick={() => setExpandedPlatform(expandedPlatform === platform.name ? null : platform.name)}
-                      className="w-full flex items-center justify-between px-6 py-4 text-start transition-colors hover:bg-white/[0.02]"
+                      className="w-full flex items-center justify-between px-6 py-4 text-start transition-colors hover:bg-[var(--bg-card-hover)]"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{platform.logo}</span>
                         <div>
-                          <p className="text-[13px] font-bold text-white/85">{platform.name}</p>
-                          <p className="text-[11px] text-white/35">
+                          <p className="text-[13px] font-bold text-subtle">{platform.name}</p>
+                          <p className="text-[11px] text-dim">
                             {isHe ? platform.tagHe : platform.tagEn}
                           </p>
                         </div>
@@ -702,8 +698,8 @@ export default function Integrations() {
                           </span>
                         )}
                         {expandedPlatform === platform.name
-                          ? <ChevronUp size={15} className="text-white/30" />
-                          : <ChevronDown size={15} className="text-white/30" />}
+                          ? <ChevronUp size={15} className="text-dim" />
+                          : <ChevronDown size={15} className="text-dim" />}
                       </div>
                     </button>
 
@@ -721,7 +717,7 @@ export default function Integrations() {
                             {/* Steps */}
                             <div className="space-y-0">
                               {(isHe ? platform.stepsHe : platform.stepsEn).map((step, i) => (
-                                <div key={i} className="flex gap-4 py-3 border-b border-white/[0.04] last:border-0">
+                                <div key={i} className="flex gap-4 py-3 border-b border-[color:var(--border-subtle)] last:border-0">
                                   <div className="flex-none flex flex-col items-center gap-1 pt-0.5">
                                     <span className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black text-white flex-none"
                                       style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
@@ -732,15 +728,15 @@ export default function Integrations() {
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0 pb-1">
-                                    <p className="text-[13px] font-bold text-white/85 mb-1">{step.title}</p>
-                                    <p className="text-[12px] text-white/50 leading-relaxed">{step.detail}</p>
+                                    <p className="text-[13px] font-bold text-subtle mb-1">{step.title}</p>
+                                    <p className="text-[12px] text-subtle leading-relaxed">{step.detail}</p>
                                   </div>
                                 </div>
                               ))}
                             </div>
 
                             {/* Divider */}
-                            <div className="my-4 border-t border-white/[0.04]" />
+                            <div className="my-4 border-t border-[color:var(--border-subtle)]" />
 
                             {/* Tip */}
                             <div className="rounded-xl px-4 py-3 mb-3"
@@ -768,14 +764,14 @@ export default function Integrations() {
             </div>
 
             {/* Use cases */}
-            <div className="rounded-3xl px-6 py-5 mb-6"
-              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.25s both' }}>
-              <p className="text-[12px] font-semibold text-zinc-500 mb-4">
+            <div className="bg-card border border-[color:var(--border)] rounded-3xl px-6 py-5 mb-6"
+              style={{ animation: 'int-fade-up 0.45s ease-out 0.25s both' }}>
+              <p className="text-[12px] font-semibold text-dim mb-4">
                 {isHe ? 'רעיונות לאוטומציות פופולריות:' : 'Popular automation ideas:'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {USE_CASES.map((uc, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-[12px] text-white/50">
+                  <div key={i} className="flex items-center gap-2.5 text-[12px] text-subtle">
                     <span className="flex-none" style={{ color: '#818cf8' }}>{uc.icon}</span>
                     {isHe ? uc.he : uc.en}
                   </div>
@@ -784,15 +780,15 @@ export default function Integrations() {
             </div>
 
             {/* Need help */}
-            <div className="rounded-3xl px-6 py-5"
-              style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', animation: 'int-fade-up 0.45s ease-out 0.3s both' }}>
+            <div className="bg-card border border-[color:var(--border)] rounded-3xl px-6 py-5"
+              style={{ animation: 'int-fade-up 0.45s ease-out 0.3s both' }}>
               <div className="flex items-start gap-3">
                 <ArrowDown size={14} className="text-indigo-400 flex-none mt-0.5 rotate-[135deg]" />
                 <div>
-                  <p className="text-[13px] font-bold text-white/70 mb-1">
+                  <p className="text-[13px] font-bold text-subtle mb-1">
                     {isHe ? 'צריך עזרה בהגדרה?' : 'Need help setting up?'}
                   </p>
-                  <p className="text-[12px] text-white/40 leading-relaxed">
+                  <p className="text-[12px] text-dim leading-relaxed">
                     {isHe
                       ? 'שלח מייל ל-support@dealspace.app עם שם הפלטפורמה שאתה משתמש בה ונעזור לך בהגדרה המלאה.'
                       : 'Email support@dealspace.app with the platform name you\'re using and we\'ll help with full setup.'}
@@ -804,15 +800,15 @@ export default function Integrations() {
         )}
 
         {/* Compatible tools — both tiers */}
-        <div className="mt-6 rounded-3xl px-6 py-5"
-          style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', animation: 'int-fade-up 0.45s ease-out 0.35s both' }}>
-          <p className="text-[11px] font-semibold text-zinc-600 mb-3">
+        <div className="bg-card border border-[color:var(--border)] mt-6 rounded-3xl px-6 py-5"
+          style={{ animation: 'int-fade-up 0.45s ease-out 0.35s both' }}>
+          <p className="text-[11px] font-semibold text-dim mb-3">
             {isHe ? 'תואם ל:' : 'Compatible with:'}
           </p>
           <div className="flex flex-wrap gap-2">
             {['Make.com', 'Zapier', 'n8n', 'Invoice4u', 'HubSpot', 'Pipedrive', 'monday.com', 'SendGrid', 'Slack', 'WhatsApp Business'].map(tool => (
-              <span key={tool} className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-white/35"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span key={tool} className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-dim"
+                style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
                 {tool}
               </span>
             ))}

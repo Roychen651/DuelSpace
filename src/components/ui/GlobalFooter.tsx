@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Zap, Globe, Shield, Lock, CheckCircle2 } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
+import { ThemeToggle } from './ThemeToggle'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -123,9 +124,9 @@ export function GlobalFooter() {
 
   // Link class — direction-aware translate + smooth transition
   const linkCls = [
-    'text-[13px] text-white/45 text-start block py-1',
+    'text-[13px] text-subtle text-start block py-1',
     'transition-all duration-300',
-    'hover:text-white',
+    'hover:text-main',
     'ltr:hover:translate-x-1 rtl:hover:-translate-x-1',
     'transform',
   ].join(' ')
@@ -133,9 +134,8 @@ export function GlobalFooter() {
   return (
     <footer
       dir={isHe ? 'rtl' : 'ltr'}
-      className="relative z-10"
+      className="relative z-10 bg-background/95"
       style={{
-        background: 'rgba(3,3,5,0.94)',
         backdropFilter: 'blur(32px)',
         WebkitBackdropFilter: 'blur(32px)',
       }}
@@ -172,17 +172,17 @@ export function GlobalFooter() {
                 <Zap size={15} className="text-white" />
               </div>
               <div>
-                <span className="text-[15px] font-black text-white" style={{ letterSpacing: '-0.025em' }}>
+                <span className="text-[15px] font-black text-main" style={{ letterSpacing: '-0.025em' }}>
                   DealSpace
                 </span>
-                <span className="ms-1.5 text-[11px] text-white/30 font-normal">{c.tagline}</span>
+                <span className="ms-1.5 text-[11px] text-dim font-normal">{c.tagline}</span>
               </div>
             </div>
 
             <button
               onClick={() => setLocale(isHe ? 'en' : 'he')}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-white/38 transition-all hover:text-white/70 flex-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-subtle transition-all hover:text-main flex-none"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)' }}
             >
               <Globe size={10} />
               {c.langToggle}
@@ -198,7 +198,7 @@ export function GlobalFooter() {
               <button
                 key={link.label}
                 onClick={() => handleLink(link.path)}
-                className="text-start text-[12.5px] font-medium text-white/42 transition-all duration-300 hover:text-white py-2.5 transform hover:translate-x-0.5"
+                className="text-start text-[12.5px] font-medium text-subtle transition-all duration-300 hover:text-main py-2.5 transform hover:translate-x-0.5"
               >
                 {link.label}
               </button>
@@ -220,17 +220,17 @@ export function GlobalFooter() {
                 }}
               >
                 {badge.icon}
-                <span className="text-[9.5px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
+                <span className="text-[9.5px] font-medium text-dim whitespace-nowrap">{badge.text}</span>
               </div>
             ))}
           </div>
 
           {/* Bottom row: copyright + Made in Israel */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <p className="text-[10px] text-white/18" dir="ltr">{c.copyright}</p>
+            <p className="text-[10px] text-muted" dir="ltr">{c.copyright}</p>
             <span
-              className="text-[10px] font-medium text-white/28 rounded-full px-2.5 py-1"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+              className="text-[10px] font-medium text-dim rounded-full px-2.5 py-1"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)' }}
             >
               {c.madeInIsrael}
             </span>
@@ -257,26 +257,28 @@ export function GlobalFooter() {
                 >
                   <Zap size={17} className="text-white" />
                 </div>
-                <span className="text-[17px] font-black text-white" style={{ letterSpacing: '-0.025em' }}>
+                <span className="text-[17px] font-black text-main" style={{ letterSpacing: '-0.025em' }}>
                   DealSpace
                 </span>
               </div>
-              <p className="text-[12.5px] leading-relaxed text-white/35 mb-6">
+              <p className="text-[12.5px] leading-relaxed text-subtle mb-6">
                 {c.description}
               </p>
               <button
                 onClick={() => setLocale(isHe ? 'en' : 'he')}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium text-white/35 transition-all hover:text-white/65 hover:-translate-y-0.5"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium text-subtle transition-all hover:text-main hover:-translate-y-0.5"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)' }}
               >
                 <Globe size={11} />
                 {c.langToggle}
               </button>
+              {/* Theme toggle — visible to logged-out users on public pages */}
+              <ThemeToggle />
             </div>
 
             {/* Product */}
             <div>
-              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col2.heading}</p>
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-main/75">{c.col2.heading}</p>
               <ul className="space-y-0.5">
                 {c.col2.links.map(link => (
                   <li key={link.label}>
@@ -290,7 +292,7 @@ export function GlobalFooter() {
 
             {/* Legal */}
             <div>
-              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col3.heading}</p>
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-main/75">{c.col3.heading}</p>
               <ul className="space-y-0.5">
                 {c.col3.links.map(link => (
                   <li key={link.label}>
@@ -304,7 +306,7 @@ export function GlobalFooter() {
 
             {/* Support */}
             <div>
-              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-white/75">{c.col4.heading}</p>
+              <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.13em] text-main/75">{c.col4.heading}</p>
               <ul className="space-y-0.5">
                 {c.col4.links.map(link => (
                   <li key={link.label}>
@@ -332,12 +334,12 @@ export function GlobalFooter() {
                   key={badge.text}
                   className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-glass)',
                   }}
                 >
                   {badge.icon}
-                  <span className="text-[10px] font-medium text-white/30 whitespace-nowrap">{badge.text}</span>
+                  <span className="text-[10px] font-medium text-dim whitespace-nowrap">{badge.text}</span>
                 </div>
               ))}
             </div>
@@ -345,21 +347,21 @@ export function GlobalFooter() {
             {/* Copyright + Made in Israel */}
             <div className="flex items-center gap-3">
               <span
-                className="text-[10.5px] font-medium text-white/28 rounded-full px-3 py-1.5"
+                className="text-[10.5px] font-medium text-dim rounded-full px-3 py-1.5"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-glass)',
                   boxShadow: '0 0 16px rgba(99,102,241,0.08)',
                 }}
               >
                 {c.madeInIsrael}
               </span>
-              <p className="text-[11px] text-white/20" dir="ltr">{c.copyright}</p>
+              <p className="text-[11px] text-muted" dir="ltr">{c.copyright}</p>
             </div>
           </div>
 
           {/* Legal note */}
-          <p className="mt-4 text-[10px] text-white/14 leading-relaxed">
+          <p className="mt-4 text-[10px] text-muted leading-relaxed">
             {c.legalNote}
           </p>
         </div>

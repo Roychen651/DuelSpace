@@ -112,7 +112,7 @@ export default function Billing() {
 
       {/* ── Multi-orb aurora background ─────────────────────────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-[#040608]" />
+        <div className="absolute inset-0 bg-background" />
         {/* Primary tier orb */}
         <div className="absolute -top-32 -end-32 h-[600px] w-[600px] rounded-full"
           style={{
@@ -146,10 +146,10 @@ export default function Billing() {
               <CreditCard size={20} style={{ color: tierColor }} />
             </div>
             <div>
-              <h1 className="text-[26px] font-black text-white" style={{ letterSpacing: '-0.03em' }}>
+              <h1 className="text-[26px] font-black text-main" style={{ letterSpacing: '-0.03em' }}>
                 {isHe ? 'חיוב ומנוי' : 'Billing & Subscription'}
               </h1>
-              <p className="text-[13px] text-white/38 mt-0.5">
+              <p className="text-[13px] text-subtle mt-0.5">
                 {isHe
                   ? 'מידע על התוכנית, מחזור החיוב, וניהול'
                   : 'Plan details, billing cycle, and management'}
@@ -305,7 +305,7 @@ export default function Billing() {
                   </p>
                 )}
                 {!isPaid && (
-                  <p className="text-[12px] mt-0.5 text-white/30">
+                  <p className="text-[12px] mt-0.5 text-dim">
                     {isHe ? 'עד 5 הצעות פעילות' : 'Up to 5 active proposals'}
                   </p>
                 )}
@@ -326,23 +326,23 @@ export default function Billing() {
           {isPaid && periodEnd && (
             <div className="relative space-y-2">
               <div className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center gap-2 text-[12px] text-white/40">
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-2 text-[12px] text-dim">
                   {cancelAtEnd
                     ? <><XCircle size={12} className="text-amber-400" />{isHe ? 'גישה פעילה עד' : 'Active until'}</>
                     : <><RefreshCw size={12} className="text-emerald-400" />{isHe ? 'חיוב הבא' : 'Next charge'}</>}
                 </div>
-                <p className="text-[12px] font-bold text-white/75">
+                <p className="text-[12px] font-bold text-main">
                   {fmtDate(periodEnd, isHe)}
                   {!cancelAtEnd && planPrice && (
-                    <span className="text-white/35 font-normal"> · {planPrice}</span>
+                    <span className="text-dim font-normal"> · {planPrice}</span>
                   )}
                 </p>
               </div>
 
               <div className="flex items-center justify-between rounded-xl px-4 py-3"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center gap-2 text-[12px] text-white/40">
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-2 text-[12px] text-dim">
                   <ShieldCheck size={12} />
                   {isHe ? 'מצב חיוב' : 'Billing status'}
                 </div>
@@ -376,16 +376,16 @@ export default function Billing() {
         {/* ── State B: Action Center — Active paid, not canceling ────────────────── */}
         {stateB && (
           <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.14, ease: 'easeOut' as const }} className="mb-5">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-3 px-0.5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-dim mb-3 px-0.5">
               {isHe ? 'פעולות' : 'Actions'}
             </p>
 
             {/* Action container */}
             <div className="rounded-3xl overflow-hidden"
               style={{
-                background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.35)',
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.12)',
               }}>
 
               {/* 1. Manage Subscription */}
@@ -394,7 +394,7 @@ export default function Billing() {
                 onClick={() => handlePortalAction('manage')}
                 disabled={!!loadingAction}
                 className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ borderBottom: '1px solid var(--border-subtle)' }}
                 onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = `${tierColor}10` }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
@@ -404,10 +404,10 @@ export default function Billing() {
                     {loadingAction === 'manage' ? <Loader2 size={13} className="animate-spin" style={{ color: tierColor }} /> : <Settings size={13} style={{ color: tierColor }} />}
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-white/85">
+                    <p className="text-[13px] font-semibold text-main">
                       {isHe ? 'ניהול מנוי ושנמוך' : 'Manage Subscription & Downgrade'}
                     </p>
-                    <p className="text-[11px] text-white/35 mt-0.5">
+                    <p className="text-[11px] text-subtle mt-0.5">
                       {isHe ? 'שנה תוכנית, פרטי תשלום, ועוד' : 'Change plan, payment method, and more'}
                     </p>
                   </div>
@@ -423,26 +423,26 @@ export default function Billing() {
                 onClick={() => handlePortalAction('payment')}
                 disabled={!!loadingAction}
                 className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)' }}
+                style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-hover)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
                     {loadingAction === 'payment' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <CreditCard size={13} className="text-white/55" />}
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-white/70">
+                    <p className="text-[13px] font-semibold text-subtle">
                       {isHe ? 'עדכון אמצעי תשלום' : 'Update Payment Method'}
                     </p>
-                    <p className="text-[11px] text-white/35 mt-0.5">
+                    <p className="text-[11px] text-dim mt-0.5">
                       {isHe ? 'שנה כרטיס אשראי או שיטת תשלום' : 'Change credit card or payment method'}
                     </p>
                   </div>
                 </div>
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
-                  <ArrowUpRight size={14} className="text-white/25" />
+                  <ArrowUpRight size={14} className="text-dim" />
                 </div>
               </button>
 
@@ -452,23 +452,23 @@ export default function Billing() {
                 onClick={() => handlePortalAction('invoices')}
                 disabled={!!loadingAction}
                 className="flex items-center justify-between w-full px-5 py-4 transition-all group text-start disabled:cursor-wait"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)' }}
+                style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                onMouseEnter={e => { if (!loadingAction) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-hover)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
                 <div className="flex items-center gap-3.5">
                   <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)' }}>
                     {loadingAction === 'invoices' ? <Loader2 size={13} className="animate-spin text-white/55" /> : <Download size={13} className="text-white/55" />}
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-white/70">
+                    <p className="text-[13px] font-semibold text-subtle">
                       {isHe ? 'חשבוניות וקבלות' : 'View Invoices & Receipts'}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="h-1.5 w-1.5 rounded-full flex-none"
                         style={{ background: '#4ade80', boxShadow: '0 0 5px #4ade8099' }} />
-                      <p className="text-[11px] text-white/32">
+                      <p className="text-[11px] text-dim">
                         {isHe
                           ? 'מופקות אוטומטית ע״י Morning (חשבונית ירוקה)'
                           : 'Auto-generated via Morning (Green Invoice)'}
@@ -477,7 +477,7 @@ export default function Billing() {
                   </div>
                 </div>
                 <div className="flex-none transition-transform duration-200 group-hover:translate-x-0.5">
-                  <ArrowUpRight size={14} className="text-white/25" />
+                  <ArrowUpRight size={14} className="text-dim" />
                 </div>
               </button>
 
@@ -513,7 +513,7 @@ export default function Billing() {
             </div>
 
             {/* Lifecycle transparency note */}
-            <p className="text-[10.5px] leading-relaxed px-1 pt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            <p className="text-[10.5px] leading-relaxed px-1 pt-3 text-dim">
               {isHe
                 ? 'שדרוגים מתעדכנים מיידית (חיוב יחסי). ביטול או שנמוך ייכנסו לתוקף בסוף מחזור החיוב הנוכחי.'
                 : 'Upgrades are pro-rated and applied immediately. Downgrades and cancellations take effect at the end of the current billing cycle.'}
@@ -545,7 +545,7 @@ export default function Billing() {
                     ? ['הצעות ללא הגבלה', 'תמיכה בעדיפות גבוהה', 'השפעה על מפת הדרכים']
                     : ['Unlimited proposals', 'Priority support', 'Roadmap influence']
                   ).map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-[12px] text-white/45">
+                    <li key={i} className="flex items-center gap-2 text-[12px] text-subtle">
                       <CheckCircle2 size={11} style={{ color: '#d4af37' }} className="flex-none" />
                       {f}
                     </li>
@@ -585,7 +585,7 @@ export default function Billing() {
         {/* ── FREE: Upgrade cards ────────────────────────────────────────────────── */}
         {tier === 'free' && (
           <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.14, ease: 'easeOut' as const }} className="mb-5">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-3 px-0.5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-dim mb-3 px-0.5">
               {isHe ? 'שדרוגים זמינים' : 'Available upgrades'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -616,7 +616,7 @@ export default function Billing() {
                   ? ['עד 100 הצעות', 'Webhooks + אוטומציות', 'תמיכה ישירה']
                   : ['Up to 100 proposals', 'Webhooks + automations', 'Direct support']
                 ).map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-white/42 mb-2">
+                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-subtle mb-2">
                     <CheckCircle2 size={10} style={{ color: '#818cf8' }} className="flex-none" /> {f}
                   </div>
                 ))}
@@ -654,7 +654,7 @@ export default function Billing() {
                   ? ['הצעות ללא הגבלה', 'הכל כולל פרו', 'תמיכה בעדיפות גבוהה']
                   : ['Unlimited proposals', 'Everything in Pro', 'Priority support']
                 ).map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-white/42 mb-2">
+                  <div key={i} className="flex items-center gap-2 text-[11.5px] text-subtle mb-2">
                     <CheckCircle2 size={10} style={{ color: '#d4af37' }} className="flex-none" /> {f}
                   </div>
                 ))}
@@ -697,11 +697,11 @@ export default function Billing() {
           <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.22, ease: 'easeOut' as const }}
             className="rounded-3xl p-6 mb-5"
             style={{
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/28 mb-5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-dim mb-5">
               {isHe ? 'שאלות נפוצות' : 'FAQ'}
             </p>
             <div className="space-y-5">
@@ -737,8 +737,8 @@ export default function Billing() {
                     <HelpCircle size={11} className="text-indigo-400/70" />
                   </div>
                   <div>
-                    <p className="text-[12.5px] font-bold text-white/68 mb-1.5">{item.q}</p>
-                    <p className="text-[12px] text-white/38 leading-relaxed">{item.a}</p>
+                    <p className="text-[12.5px] font-bold text-subtle mb-1.5">{item.q}</p>
+                    <p className="text-[12px] text-dim leading-relaxed">{item.a}</p>
                   </div>
                 </div>
               ))}
@@ -757,7 +757,7 @@ export default function Billing() {
             style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)' }}>
             <ShieldCheck size={13} className="text-emerald-400/80" />
           </div>
-          <p className="text-[11.5px] text-white/35 leading-relaxed">
+          <p className="text-[11.5px] text-dim leading-relaxed">
             {isHe
               ? 'כל פרטי התשלום מאוחסנים ומנוהלים ישירות ב-Stripe — תקן PCI-DSS. DealSpace לא שומר מספרי כרטיס אשראי.'
               : 'All payment details are stored and managed directly by Stripe — PCI-DSS compliant. DealSpace never stores card numbers.'}
@@ -775,7 +775,7 @@ export default function Billing() {
             style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
             <Info size={13} className="text-indigo-400/80" />
           </div>
-          <p className="text-[11.5px] text-white/35 leading-relaxed">
+          <p className="text-[11.5px] text-dim leading-relaxed">
             {isHe
               ? 'חשבונית מס/קבלה מוכרת למס (הכוללת מע"מ ומספר הקצאה) מופקת אוטומטית ונשלחת למייל שלכם לאחר כל חיוב חודשי באמצעות Morning (חשבונית ירוקה).'
               : 'A recognized Israeli Tax Invoice / Receipt (including VAT and allocation number) is automatically generated and sent to your email after each monthly charge via Morning (Green Invoice).'}

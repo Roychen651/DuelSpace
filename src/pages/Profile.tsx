@@ -19,7 +19,7 @@ function Card({ children, title, icon, tip }: { children: React.ReactNode; title
         <div className="profile-icon-badge flex h-9 w-9 items-center justify-center rounded-xl">
           {icon}
         </div>
-        <h2 className="text-sm font-bold text-slate-600 dark:text-white/80 uppercase tracking-widest">{title}</h2>
+        <h2 className="text-sm font-bold text-subtle uppercase tracking-widest">{title}</h2>
         {tip}
       </div>
       {children}
@@ -38,7 +38,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/40">
+      <label className="block text-[11px] font-bold uppercase tracking-widest text-dim">
         {label}
       </label>
       <div className="relative">
@@ -48,7 +48,7 @@ function Field({
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="profile-input w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200 disabled:opacity-40"
+          className="profile-input w-full rounded-2xl px-4 py-3 text-sm outline-none transition-all duration-200 disabled:opacity-40"
           data-error={error ? 'true' : undefined}
           data-disabled={disabled ? 'true' : undefined}
         />
@@ -104,7 +104,7 @@ function PasswordStrength({ password }: { password: string }) {
         <div className="flex flex-1 gap-1">
           {[0, 1, 2, 3].map(i => (
             <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
-              style={{ background: i <= score - 1 ? color : 'rgba(255,255,255,0.08)' }} />
+              style={{ background: i <= score - 1 ? color : 'var(--surface-sunken)' }} />
           ))}
         </div>
         <span className="text-[10px] font-medium" style={{ color }}>{label_en}</span>
@@ -112,8 +112,8 @@ function PasswordStrength({ password }: { password: string }) {
       <div className="grid grid-cols-2 gap-1">
         {rules.map(r => (
           <div key={r.key} className="flex items-center gap-1">
-            {r.met ? <CheckCircle2 size={10} style={{ color: '#22c55e' }} /> : <XCircle size={10} style={{ color: 'rgba(255,255,255,0.2)' }} />}
-            <span className="text-[10px]" style={{ color: r.met ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)' }}>{r.label_en}</span>
+            {r.met ? <CheckCircle2 size={10} style={{ color: '#22c55e' }} /> : <XCircle size={10} style={{ color: 'var(--text-tertiary)' }} />}
+            <span className="text-[10px]" style={{ color: r.met ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{r.label_en}</span>
           </div>
         ))}
       </div>
@@ -163,12 +163,12 @@ function AvatarUpload({ user }: { user: { name: string; email: string; avatarUrl
         )}
       </div>
       <div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-0.5">{user.name || user.email}</h3>
-        <p className="text-xs mb-3 text-slate-400 dark:text-white/35">{user.email}</p>
+        <h3 className="text-base font-bold text-main mb-0.5">{user.name || user.email}</h3>
+        <p className="text-xs mb-3 text-dim">{user.email}</p>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-white/[0.05] dark:border-white/[0.1] dark:text-white/60 dark:hover:bg-white/[0.09] dark:hover:text-white"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition bg-card border border-[color:var(--border)] text-subtle hover:bg-[var(--bg-card-hover)] hover:text-main"
         >
           <Camera size={12} />
           Change Photo
@@ -453,7 +453,7 @@ export default function Profile() {
   if (!user) return null
 
   return (
-    <div className="min-h-dvh bg-slate-50 dark:bg-[#030305]" dir={isHe ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-background" dir={isHe ? 'rtl' : 'ltr'}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes ds-fade-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -490,7 +490,7 @@ export default function Profile() {
         {/* ── Business Identity ──────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.5, ease: 'easeOut' as const }}>
           <Card title={isHe ? 'זהות עסקית' : 'Business Identity'} icon={<Building2 size={16} />}>
-            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
+            <p className="text-xs text-dim -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'פרטים אלה יוזרקו אוטומטית לחוזים ולקבצי PDF שלך — מלא פעם אחת, לעולם לא תצטרך להקליד שוב.'
                 : 'These details are automatically injected into your contracts and PDFs — fill once, never type again.'}
@@ -510,14 +510,14 @@ export default function Profile() {
                   value={biz.tax_id}
                   onChange={v => setBiz(b => ({ ...b, tax_id: v }))}
                   placeholder={isHe ? '123456789' : '123456789'}
-                  suffix={<Hash size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                  suffix={<Hash size={13} style={{ color: 'var(--text-tertiary)' }} />}
                 />
                 <Field
                   label={isHe ? 'טלפון ליצירת קשר' : 'Contact Phone'}
                   value={biz.phone}
                   onChange={v => setBiz(b => ({ ...b, phone: v }))}
                   placeholder={isHe ? '050-000-0000' : '+972-50-000-0000'}
-                  suffix={<Phone size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                  suffix={<Phone size={13} style={{ color: 'var(--text-tertiary)' }} />}
                 />
                 <div className="sm:col-span-2">
                   <Field
@@ -525,7 +525,7 @@ export default function Profile() {
                     value={biz.address}
                     onChange={v => setBiz(b => ({ ...b, address: v }))}
                     placeholder={isHe ? 'רחוב, עיר, מיקוד' : 'Street, City, ZIP'}
-                    suffix={<MapPin size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                    suffix={<MapPin size={13} style={{ color: 'var(--text-tertiary)' }} />}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -534,7 +534,7 @@ export default function Profile() {
                     value={biz.signatory_name}
                     onChange={v => setBiz(b => ({ ...b, signatory_name: v }))}
                     placeholder={isHe ? 'שם מלא של החותם המורשה' : 'Full name of authorized signer'}
-                    suffix={<PenTool size={13} style={{ color: 'rgba(255,255,255,0.25)' }} />}
+                    suffix={<PenTool size={13} style={{ color: 'var(--text-tertiary)' }} />}
                   />
                 </div>
               </div>
@@ -552,7 +552,7 @@ export default function Profile() {
             icon={<Palette size={16} />}
             tip={<InfoTip content={isHe ? 'הצבע שיעטוף את חדר העסקאות שלכם וייצור חוויה ממותגת אישית.' : 'The color that themes your entire Deal Room — button, sliders, and glow effects.'} />}
           >
-            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
+            <p className="text-xs text-dim -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'הצבע יופיע בחדר הדיל של הלקוח — כפתור האישור, הסליידרים ואפקטי הגלו.'
                 : 'This color appears in your client\'s Deal Room — approve button, sliders, and glow effects.'}
@@ -574,7 +574,7 @@ export default function Profile() {
                       const v = e.target.value
                       if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBrandColor(v)
                     }}
-                    className="profile-input w-full rounded-2xl px-4 py-3 ps-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200"
+                    className="profile-input w-full rounded-2xl px-4 py-3 ps-11 text-sm outline-none transition-all duration-200"
                     placeholder="#6366f1"
                     maxLength={7}
                   />
@@ -607,17 +607,17 @@ export default function Profile() {
               {/* Preview */}
               <div
                 className="rounded-xl px-4 py-3 flex items-center gap-3"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }}
               >
                 <div
                   className="h-3 w-3 rounded-full"
                   style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1', boxShadow: `0 0 8px ${brandColor}80` }}
                 />
-                <span className="text-[11px] text-slate-400 dark:text-white/40">
+                <span className="text-[11px] text-dim">
                   {isHe ? 'תצוגה מקדימה של הצבע בחדר הדיל' : 'Preview of your brand color in Deal Room'}
                 </span>
                 <div
-                  className="ms-auto rounded-lg px-3 py-1 text-[11px] font-bold text-slate-900 dark:text-white"
+                  className="ms-auto rounded-lg px-3 py-1 text-[11px] font-bold text-main"
                   style={{ background: /^#[0-9a-fA-F]{6}$/.test(brandColor) ? `${brandColor}30` : 'rgba(99,102,241,0.2)', border: `1px solid ${/^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : '#6366f1'}40` }}
                 >
                   {isHe ? 'אשר ✓' : 'Approve ✓'}
@@ -633,7 +633,7 @@ export default function Profile() {
             title={isHe ? 'לוגו החברה' : 'Company Logo'}
             icon={<ImageIcon size={16} />}
           >
-            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-5 leading-relaxed">
+            <p className="text-xs text-dim -mt-2 mb-5 leading-relaxed">
               {isHe
                 ? 'הלוגו יופיע בחדר הדיל ובעמוד השער של קובץ ה-PDF.'
                 : 'Your logo appears in the Deal Room and on the PDF cover page.'}
@@ -641,11 +641,11 @@ export default function Profile() {
             <div className="flex items-center gap-5">
               {/* Preview box */}
               <div
-                className="flex h-20 w-36 flex-none items-center justify-center rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.08]"
+                className="flex h-20 w-36 flex-none items-center justify-center rounded-2xl overflow-hidden bg-card border border-[color:var(--border)]"
               >
                 {logoUrl
                   ? <img src={logoUrl} alt="logo" className="max-h-full max-w-full object-contain p-2" />
-                  : <ImageIcon size={22} className="text-slate-300 dark:text-white/15" />
+                  : <ImageIcon size={22} className="text-dim" />
                 }
               </div>
               {/* Controls */}
@@ -680,7 +680,7 @@ export default function Profile() {
                     {logoError}
                   </p>
                 )}
-                <p className="text-[10px] text-slate-400 dark:text-white/25">
+                <p className="text-[10px] text-dim">
                   {isHe ? 'PNG, SVG, או JPG — מומלץ רקע שקוף' : 'PNG, SVG, or JPG — transparent background recommended'}
                 </p>
                 <input
@@ -701,7 +701,7 @@ export default function Profile() {
             title={isHe ? 'תקנון העסק / תנאים והתניות' : 'Business Terms & Conditions'}
             icon={<FileText size={16} />}
           >
-            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-4 leading-relaxed">
+            <p className="text-xs text-dim -mt-2 mb-4 leading-relaxed">
               {isHe
                 ? 'הגדר פעם אחת — יוקפאו אוטומטית בכל הצעה חדשה. הלקוח יראה ויצטרך להסכים לפני החתימה.'
                 : 'Define once — automatically frozen into every new proposal. Clients must agree before signing.'}
@@ -734,9 +734,9 @@ export default function Profile() {
                 placeholder="••••••••"
                 suffix={
                   <button type="button" onClick={() => setShowCurrent(v => !v)}
-                    className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
-                    onMouseEnter={e => { e.currentTarget.style.color = 'white' }}
-                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                    className="transition" style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-main)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)' }}>
                     {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 }
@@ -788,12 +788,12 @@ export default function Profile() {
                   ? 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.05))'
                   : tier === 'pro'
                   ? 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.06))'
-                  : 'rgba(255,255,255,0.03)',
+                  : 'var(--card-bg)',
                 border: tier === 'unlimited'
                   ? '1px solid rgba(212,175,55,0.25)'
                   : tier === 'pro'
                   ? '1px solid rgba(99,102,241,0.25)'
-                  : '1px solid rgba(255,255,255,0.07)',
+                  : '1px solid var(--border)',
               }}
             >
               <div className="flex items-center gap-3">
@@ -804,26 +804,26 @@ export default function Profile() {
                       ? 'rgba(212,175,55,0.15)'
                       : tier === 'pro'
                       ? 'rgba(99,102,241,0.15)'
-                      : 'rgba(255,255,255,0.06)',
-                    color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                      : 'var(--surface-sunken)',
+                    color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'var(--text-tertiary)',
                     border: tier === 'unlimited'
                       ? '1px solid rgba(212,175,55,0.3)'
                       : tier === 'pro'
                       ? '1px solid rgba(99,102,241,0.3)'
-                      : '1px solid rgba(255,255,255,0.08)',
+                      : '1px solid var(--border)',
                   }}
                 >
                   {tier === 'unlimited' ? <InfinityIcon size={15} /> : tier === 'pro' ? <Zap size={15} /> : <Star size={15} />}
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-slate-900 dark:text-white/90">
+                  <p className="text-[13px] font-bold text-main">
                     {tier === 'unlimited'
                       ? (isHe ? 'תוכנית פרימיום' : 'Premium Plan')
                       : tier === 'pro'
                       ? (isHe ? 'תוכנית פרו' : 'Pro Plan')
                       : (isHe ? 'תוכנית חינם' : 'Free Plan')}
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-white/35 mt-0.5">
+                  <p className="text-[11px] text-dim mt-0.5">
                     {tier === 'unlimited'
                       ? (isHe ? '₪39 / חודש · כולל מע"מ' : '₪39 / month · VAT incl.')
                       : tier === 'pro'
@@ -839,7 +839,7 @@ export default function Profile() {
                     ? { background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }
                     : tier === 'pro'
                     ? { background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }
-                    : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }
+                    : { background: 'var(--surface-sunken)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }
                 }
               >
                 {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
@@ -849,7 +849,7 @@ export default function Profile() {
             {/* FREE — upgrade options */}
             {tier === 'free' && (
               <div className="space-y-3">
-                <p className="text-xs text-slate-400 dark:text-white/35 leading-relaxed -mt-2 mb-3">
+                <p className="text-xs text-dim leading-relaxed -mt-2 mb-3">
                   {isHe
                     ? 'שדרג לפרו כדי לבטל את מגבלת ההצעות, להפעיל Webhooks ולקבל תמיכה ישירה.'
                     : 'Upgrade to Pro to remove proposal limits, unlock Webhooks, and get direct support.'}
@@ -867,7 +867,7 @@ export default function Profile() {
                     >
                       <Zap size={16} style={{ color: '#818cf8', marginBottom: 6 }} />
                       <p className="text-[12px] font-bold" style={{ color: '#818cf8' }}>{isHe ? 'פרו' : 'Pro'}</p>
-                      <p className="text-[10px] text-white/35 mt-0.5">{isHe ? '₪19 / חודש · כולל מע"מ' : '₪19 / mo · VAT incl.'}</p>
+                      <p className="text-[10px] text-dim mt-0.5">{isHe ? '₪19 / חודש · כולל מע"מ' : '₪19 / mo · VAT incl.'}</p>
                     </motion.a>
                   )}
                   {(STRIPE_PREMIUM_LINK || hasStripeCustomer) && (
@@ -882,7 +882,7 @@ export default function Profile() {
                     >
                       <InfinityIcon size={16} style={{ color: '#d4af37', marginBottom: 6 }} />
                       <p className="text-[12px] font-bold" style={{ color: '#d4af37' }}>{isHe ? 'פרימיום' : 'Premium'}</p>
-                      <p className="text-[10px] text-white/35 mt-0.5">{isHe ? '₪39 / חודש · כולל מע"מ' : '₪39 / mo · VAT incl.'}</p>
+                      <p className="text-[10px] text-dim mt-0.5">{isHe ? '₪39 / חודש · כולל מע"מ' : '₪39 / mo · VAT incl.'}</p>
                     </motion.a>
                   )}
                 </div>
@@ -894,7 +894,7 @@ export default function Profile() {
               <div className="space-y-4">
                 {/* Upgrade to Premium — portal for existing customers */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim mb-2">
                     {isHe ? 'שדרוג זמין' : 'Available upgrade'}
                   </p>
                   {hasStripeCustomer ? (
@@ -938,7 +938,7 @@ export default function Profile() {
 
                 {/* Manage / Cancel — always dynamic portal */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim mb-2">
                     {isHe ? 'ניהול מנוי' : 'Subscription management'}
                   </p>
                   <motion.button
@@ -946,9 +946,9 @@ export default function Profile() {
                     onClick={handlePortalAction}
                     disabled={portalLoading}
                     className="flex items-center justify-between w-full rounded-2xl px-4 py-3 text-[13px] font-semibold disabled:opacity-70 disabled:cursor-wait"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.65)', transition: 'background 0.2s, border-color 0.2s' }}
-                    onMouseEnter={e => { if (!portalLoading) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)' } }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.09)' }}
+                    style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text-secondary)', transition: 'background 0.2s, border-color 0.2s' }}
+                    onMouseEnter={e => { if (!portalLoading) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-hover)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-glass)' } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--card-bg)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)' }}
                     whileTap={{ scale: 0.98, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
                   >
                     <span className="flex items-center gap-2">
@@ -960,7 +960,7 @@ export default function Profile() {
                 </div>
 
                 {/* Invoice note */}
-                <p className="text-[11px] text-white/25 leading-relaxed">
+                <p className="text-[11px] text-dim leading-relaxed">
                   {isHe
                     ? 'Stripe שולחת קבלה אוטומטית למייל שלך בכל חיוב חודשי. חשבוניות מס זמינות בפורטל.'
                     : 'Stripe automatically emails a receipt on every monthly charge. Tax invoices are available in the portal.'}
@@ -972,7 +972,7 @@ export default function Profile() {
             {tier === 'unlimited' && (
               <div className="space-y-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-dim mb-2">
                     {isHe ? 'ניהול מנוי' : 'Subscription management'}
                   </p>
                   <motion.button
@@ -994,7 +994,7 @@ export default function Profile() {
                 </div>
 
                 {/* Invoice note */}
-                <p className="text-[11px] text-white/25 leading-relaxed">
+                <p className="text-[11px] text-dim leading-relaxed">
                   {isHe
                     ? 'Stripe שולחת קבלה אוטומטית למייל שלך בכל חיוב חודשי. לשינוי תוכנית — השתמש בפורטל הניהול למעלה.'
                     : 'Stripe automatically emails a receipt on every monthly charge. To change or cancel your plan, use the management portal above.'}
@@ -1026,7 +1026,7 @@ export default function Profile() {
         {/* ── Communication Preferences ──────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.5, ease: 'easeOut' as const }}>
           <Card title={isHe ? 'העדפות תקשורת' : 'Communication Preferences'} icon={<BellRing size={16} />}>
-            <p className="text-xs text-slate-400 dark:text-white/35 -mt-2 mb-5 leading-relaxed">
+            <p className="text-xs text-dim -mt-2 mb-5 leading-relaxed">
               {isHe
                 ? 'נהל את סוגי האימיילים שאתה מקבל מ-DealSpace.'
                 : 'Control the types of emails you receive from DealSpace.'}
@@ -1034,12 +1034,12 @@ export default function Profile() {
             <div className="space-y-4">
               {/* Marketing toggle */}
               <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-white/80 mb-0.5">
+                  <p className="text-[13px] font-semibold text-main mb-0.5">
                     {isHe ? 'עדכונים שיווקיים והטבות' : 'Marketing & Offers'}
                   </p>
-                  <p className="text-[11px] text-white/35 leading-relaxed">
+                  <p className="text-[11px] text-subtle leading-relaxed">
                     {isHe
                       ? 'טיפים, תכונות חדשות, ומבצעים מיוחדים. ניתן לבטל בכל עת.'
                       : 'Tips, new features, and special offers. Unsubscribe anytime.'}
@@ -1053,7 +1053,7 @@ export default function Profile() {
                   disabled={prefsSaving}
                   className="flex-none relative w-11 h-6 rounded-full transition-all duration-300 disabled:opacity-50"
                   style={{
-                    background: marketingOptIn ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.1)',
+                    background: marketingOptIn ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'var(--surface-sunken)',
                     boxShadow: marketingOptIn ? '0 0 16px rgba(99,102,241,0.4)' : 'none',
                   }}
                 >
@@ -1066,12 +1066,12 @@ export default function Profile() {
 
               {/* Operational (locked) */}
               <div className="flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-white/50 mb-0.5">
+                  <p className="text-[13px] font-semibold text-dim mb-0.5">
                     {isHe ? 'עדכונים תפעוליים ומוצריים' : 'Product & Operational Updates'}
                   </p>
-                  <p className="text-[11px] text-white/25 leading-relaxed">
+                  <p className="text-[11px] text-dim leading-relaxed">
                     {isHe
                       ? 'אישורי חיוב, התראות אבטחה ועדכוני שירות חיוניים. חובה לפי תנאי השירות.'
                       : 'Billing confirmations, security alerts, and essential service updates. Required per Terms of Service.'}
@@ -1101,7 +1101,7 @@ export default function Profile() {
             tip={<InfoTip content={isHe ? 'שיעור המע״מ המוגדר כאן ישמש בכל ההצעות שבהן תפעיל את הטוגל. ניתן לשנות בכל עת.' : 'The VAT rate set here is used in all proposals where you enable the VAT toggle. Change anytime.'} />}
           >
             <form onSubmit={handleSaveVat} className="space-y-4">
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="text-xs leading-relaxed text-dim">
                 {isHe
                   ? 'שיעור המע״מ הנוכחי בישראל הוא 18%. עדכן כאן אם השיעור ישתנה.'
                   : 'Israeli VAT (מע״מ) is currently 18%. Update here if the rate changes.'}
@@ -1112,9 +1112,9 @@ export default function Profile() {
                     type="number" inputMode="decimal" min={0} max={100} step={0.1}
                     value={vatRateInput}
                     onChange={e => setVatRateInput(e.target.value)}
-                    className="profile-input w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-200"
+                    className="profile-input w-full rounded-2xl px-4 py-3 text-sm outline-none transition-all duration-200"
                   />
-                  <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-slate-400 dark:text-white/30">%</span>
+                  <span className="absolute inset-y-0 end-4 flex items-center text-sm font-bold text-dim">%</span>
                 </div>
                 <SaveButton loading={false} saved={vatSaved} label={isHe ? 'שמור מע"מ' : 'Save VAT'} />
               </div>
@@ -1142,7 +1142,7 @@ export default function Profile() {
                 <>
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-white/70 mb-1">
+                      <p className="text-[13px] font-semibold text-subtle mb-1">
                         {isHe ? 'מחיקת חשבון לצמיתות' : 'Delete Account Permanently'}
                       </p>
                       <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(248,113,113,0.55)' }}>
@@ -1157,13 +1157,13 @@ export default function Profile() {
                       onClick={() => { if (!deleteBlocked) { setDeleteModalOpen(true); setDeleteConfirmText(''); setDeleteError(null) } }}
                       className="flex-none flex items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-bold"
                       style={{
-                        background: deleteBlocked ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.1)',
-                        border: `1px solid ${deleteBlocked ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.3)'}`,
-                        color: deleteBlocked ? 'rgba(255,255,255,0.2)' : '#f87171',
+                        background: deleteBlocked ? 'var(--card-bg)' : 'rgba(239,68,68,0.1)',
+                        border: `1px solid ${deleteBlocked ? 'var(--border)' : 'rgba(239,68,68,0.3)'}`,
+                        color: deleteBlocked ? 'var(--text-tertiary)' : '#f87171',
                         cursor: deleteBlocked ? 'not-allowed' : undefined,
                       }}
-                      onMouseEnter={e => { if (!deleteBlocked) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)' }}
-                      onMouseLeave={e => { if (!deleteBlocked) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)' }}
+                      onMouseEnter={e => { if (!deleteBlocked) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)'; else (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-hover)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = deleteBlocked ? 'var(--card-bg)' : 'rgba(239,68,68,0.1)' }}
                       whileTap={deleteBlocked ? {} : { scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
                     >
                       <Trash2 size={13} />
@@ -1258,7 +1258,7 @@ export default function Profile() {
                       onClick={() => setDeleteModalOpen(false)}
                       disabled={deleting}
                       className="flex-1 rounded-2xl px-4 py-2.5 text-[13px] font-semibold text-white/50 disabled:opacity-40 transition"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
                     >
                       {isHe ? 'ביטול' : 'Cancel'}
                     </button>

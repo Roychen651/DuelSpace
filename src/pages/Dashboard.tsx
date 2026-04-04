@@ -74,7 +74,7 @@ function KPICard({
             style={{ background: color, boxShadow: `0 0 8px ${color}`, opacity: 0.55, animation: 'ds-pulse 2.5s ease-in-out infinite' }} />
         </div>
 
-        <p className="text-[2rem] font-black text-slate-900 dark:text-white tabular-nums tracking-tight leading-none mb-1.5">
+        <p className="text-[2rem] font-black text-main tabular-nums tracking-tight leading-none mb-1.5">
           <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
         </p>
 
@@ -82,7 +82,7 @@ function KPICard({
           <Tooltip.Root open={tipOpen} onOpenChange={setTipOpen}>
             <Tooltip.Trigger asChild>
               <p
-                className="flex items-center gap-1 text-xs text-slate-400 dark:text-white/40 font-medium w-fit select-none cursor-pointer"
+                className="flex items-center gap-1 text-xs text-subtle font-medium w-fit select-none cursor-pointer"
                 onClick={() => setTipOpen(o => !o)}
               >
                 {label}
@@ -92,12 +92,10 @@ function KPICard({
               </p>
             </Tooltip.Trigger>
             <Tooltip.Portal>
-              <Tooltip.Content sideOffset={8} className="z-[200] max-w-[210px] rounded-xl px-3.5 py-2.5 text-[11.5px] leading-relaxed
-                text-slate-600 bg-white border border-slate-200 shadow-lg
-                dark:text-white/70 dark:bg-[rgba(3,3,5,0.97)] dark:border-white/[0.09] dark:shadow-[0_12px_40px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]"
+              <Tooltip.Content sideOffset={8} className="z-[200] max-w-[210px] rounded-xl px-3.5 py-2.5 text-[11.5px] leading-relaxed text-subtle bg-card border border-[color:var(--border)] shadow-[var(--dropdown-shadow)]"
                 style={{ backdropFilter: 'blur(24px)' }}>
                 {tooltip}
-                <Tooltip.Arrow className="fill-white dark:fill-[rgba(3,3,5,0.97)]" />
+                <Tooltip.Arrow className="fill-[var(--card-bg)]" />
               </Tooltip.Content>
             </Tooltip.Portal>
           </Tooltip.Root>
@@ -143,10 +141,10 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
       </div>
 
       <div style={{ animation: 'ds-fade-up 0.5s ease-out 0.15s both' }}>
-        <h2 className="text-2xl font-black mb-2 tracking-tight" style={{ background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.5) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+        <h2 className="text-2xl font-black mb-2 tracking-tight text-main">
           {locale === 'he' ? 'הכל מוכן — סגור את הדיל הראשון' : 'Ready to close your first deal?'}
         </h2>
-        <p className="text-sm text-white/35 max-w-sm mx-auto leading-relaxed">
+        <p className="text-sm text-subtle max-w-sm mx-auto leading-relaxed">
           {locale === 'he'
             ? 'צור הצעת מחיר אינטראקטיבית שתבדיל אותך מהמתחרים. לקוחות מאשרים בקליק אחד — בלי PDF ישן.'
             : 'Create an interactive proposal that stands out. Clients approve in one click — no static PDFs.'}
@@ -175,7 +173,7 @@ function EmptyState({ onCreate, locale }: { onCreate: () => void; locale: string
 function DashboardAurora() {
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 bg-slate-50 dark:bg-[#040608]" />
+      <div className="absolute inset-0 bg-background" />
       <div className="absolute -top-60 -left-60 h-[700px] w-[700px] rounded-full opacity-50 dark:opacity-100"
         style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)', filter: 'blur(60px)', animation: 'ds-float 20s ease-in-out infinite', willChange: 'transform' }} />
       <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full opacity-50 dark:opacity-100"
@@ -215,10 +213,10 @@ function DunningBanner({ isHe }: { isHe: boolean }) {
           <AlertTriangle size={16} style={{ color: '#f87171' }} />
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-black text-slate-900 dark:text-white leading-tight mb-0.5">
+          <p className="text-[13px] font-black text-main leading-tight mb-0.5">
             {isHe ? 'בעיה בחיוב — יצירת הצעות חסומה' : 'Billing issue — proposal creation locked'}
           </p>
-          <p className="text-[12px] leading-relaxed text-slate-500 dark:text-white/50">
+          <p className="text-[12px] leading-relaxed text-subtle">
             {isHe
               ? 'לא הצלחנו לחייב את כרטיס האשראי שלך. אנא עדכן פרטי תשלום כדי להמשיך ליצור הצעות.'
               : "We couldn't process your last payment. Please update your billing details to continue creating proposals."}
@@ -432,7 +430,7 @@ export default function Dashboard() {
     color: string; activeBg: string; countBg: string
   }> = [
     { key: 'all',     label_en: 'All',            label_he: 'הכל',           color: '#818cf8', activeBg: 'rgba(99,102,241,0.14)',  countBg: 'rgba(99,102,241,0.22)' },
-    { key: 'drafts',  label_en: 'Drafts',          label_he: 'טיוטות',        color: 'rgba(255,255,255,0.55)', activeBg: 'rgba(255,255,255,0.07)', countBg: 'rgba(255,255,255,0.14)' },
+    { key: 'drafts',  label_en: 'Drafts',          label_he: 'טיוטות',        color: '#94a3b8', activeBg: 'rgba(148,163,184,0.12)', countBg: 'rgba(148,163,184,0.2)' },
     { key: 'pending', label_en: 'Pending',          label_he: 'ממתין',         color: '#fbbf24', activeBg: 'rgba(251,191,36,0.12)',  countBg: 'rgba(251,191,36,0.22)' },
     { key: 'won',     label_en: 'Won',             label_he: 'זכו',           color: '#4ade80', activeBg: 'rgba(74,222,128,0.12)',  countBg: 'rgba(74,222,128,0.22)' },
     { key: 'lost',    label_en: 'Lost / Archived', label_he: 'הופסד / ארכיון', color: '#f87171', activeBg: 'rgba(248,113,113,0.12)', countBg: 'rgba(248,113,113,0.22)' },
@@ -534,7 +532,7 @@ export default function Dashboard() {
         {/* ── Page heading ──────────────────────────────────────────────── */}
         <div className="mb-8" style={{ animation: 'ds-fade-up 0.4s ease-out 0.05s both' }}>
           <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-main">
               {isHe
                 ? `שלום${firstName ? `, ${firstName}` : ''}`
                 : `Hello${firstName ? `, ${firstName}` : ''}`}
@@ -569,7 +567,7 @@ export default function Dashboard() {
               )
             })()}
           </div>
-          <p className="text-sm text-slate-400 dark:text-white/35">
+          <p className="text-sm text-dim">
             {isHe ? 'כל הצעות המחיר שלך במקום אחד.' : 'All your proposals in one place.'}
           </p>
         </div>
@@ -607,9 +605,7 @@ export default function Dashboard() {
           {/* ── Pipeline Tab Bar ──────────────────────────────────────────── */}
           <div
             data-tour="pipeline-tabs"
-            className="flex items-center rounded-2xl p-1 ds-tab-scroll overflow-x-auto
-              bg-white border border-slate-200
-              dark:bg-white/[0.04] dark:border-white/[0.07]"
+            className="flex items-center rounded-2xl p-1 ds-tab-scroll overflow-x-auto bg-card border border-[color:var(--border)]"
           >
             {TABS.map(tab => {
               const active = pipelineTab === tab.key
@@ -622,7 +618,7 @@ export default function Dashboard() {
                     // Kanban is fine in all tabs — no need to fall back
                   }}
                   className="relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 whitespace-nowrap transition-colors duration-150 flex-none"
-                  style={{ color: active ? tab.color : 'rgba(255,255,255,0.3)' }}
+                  style={{ color: active ? tab.color : 'var(--text-tertiary)' }}
                 >
                   {/* Sliding pill behind active tab */}
                   {active && (
@@ -642,8 +638,8 @@ export default function Dashboard() {
                     <span
                       className="relative z-10 inline-flex items-center justify-center rounded-full px-1.5 min-w-[18px] h-[18px] text-[9px] font-black transition-all duration-150"
                       style={{
-                        background: active ? tab.countBg : 'rgba(255,255,255,0.07)',
-                        color: active ? tab.color : 'rgba(255,255,255,0.3)',
+                        background: active ? tab.countBg : 'var(--surface-sunken)',
+                        color: active ? tab.color : 'var(--text-tertiary)',
                       }}
                     >
                       {count}
@@ -661,10 +657,10 @@ export default function Dashboard() {
             const isMax  = activeCount >= effectiveLimit
             const isWarn = activeCount >= effectiveLimit - 1 && !isMax
             const barColor = isMax ? 'linear-gradient(90deg, #f87171, #ef4444)' : isWarn ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : 'linear-gradient(90deg, #6366f1, #a855f7)'
-            const textColor = isMax ? '#f87171' : isWarn ? '#fbbf24' : 'rgba(255,255,255,0.4)'
+            const textColor = isMax ? '#f87171' : isWarn ? '#fbbf24' : 'var(--text-tertiary)'
             return (
               <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
-                style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${isMax ? 'rgba(239,68,68,0.2)' : isWarn ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)'}` }}>
+                style={{ background: 'var(--card-bg)', border: `1px solid ${isMax ? 'rgba(239,68,68,0.2)' : isWarn ? 'rgba(251,191,36,0.15)' : 'var(--border-subtle)'}` }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[11px] font-semibold" style={{ color: textColor }}>
@@ -676,7 +672,7 @@ export default function Dashboard() {
                       {isHe ? '↑ שדרג' : '↑ Upgrade'}
                     </button>
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-sunken)' }}>
                     <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: 'easeOut' as const }} style={{ background: barColor }} />
                   </div>
                 </div>
@@ -687,7 +683,7 @@ export default function Dashboard() {
           {/* ── Search ────────────────────────────────────────────────── */}
           <div className="relative group">
             <div className="pointer-events-none absolute inset-y-0 start-3.5 flex items-center z-10">
-              <Search size={13} className="transition-colors duration-200 group-focus-within:text-indigo-400/60" style={{ color: 'rgba(255,255,255,0.28)' }} />
+              <Search size={13} className="transition-colors duration-200 text-dim group-focus-within:text-indigo-400/60" />
             </div>
             <input
               type="text"
@@ -695,10 +691,8 @@ export default function Dashboard() {
               onChange={e => setSearch(e.target.value)}
               placeholder={isHe ? 'חפש לפי לקוח, פרויקט, או אימייל…' : 'Search by client, project, or email…'}
               className="w-full h-11 rounded-2xl ps-9 pe-10 text-[13px] font-medium outline-none transition-all duration-200
-                bg-white text-slate-900 placeholder-slate-300 border border-slate-200
-                dark:bg-[#0a0a0a] dark:text-white dark:placeholder-white/25 dark:border-white/[0.07]
-                focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10
-                dark:focus:border-indigo-500/45 dark:focus:ring-indigo-500/10"
+                bg-[var(--input-bg)] text-main placeholder-dim border border-[color:var(--input-border)]
+                focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10"
             />
             <AnimatePresence>
               {search && (
@@ -708,8 +702,7 @@ export default function Dashboard() {
                   exit={{ opacity: 0, scale: 0.7 }}
                   transition={{ duration: 0.12 }}
                   onClick={() => setSearch('')}
-                  className="absolute inset-y-0 end-3 flex items-center justify-center w-6 h-full"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  className="absolute inset-y-0 end-3 flex items-center justify-center w-6 h-full text-dim"
                   whileHover={{ opacity: 0.8 }}
                 >
                   <X size={13} />
@@ -775,9 +768,9 @@ export default function Dashboard() {
                 onClick={() => setSortOpen(o => !o)}
                 className="flex items-center gap-2 h-9 rounded-xl px-3 text-[12px] font-semibold outline-none flex-none"
                 style={{
-                  background: sortOpen ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${sortOpen ? 'rgba(99,102,241,0.38)' : 'rgba(255,255,255,0.09)'}`,
-                  color: sortOpen ? '#a5b4fc' : 'rgba(255,255,255,0.55)',
+                  background: sortOpen ? 'rgba(99,102,241,0.12)' : 'var(--card-bg)',
+                  border: `1px solid ${sortOpen ? 'rgba(99,102,241,0.38)' : 'var(--border-glass)'}`,
+                  color: sortOpen ? '#a5b4fc' : 'var(--text-secondary)',
                   boxShadow: sortOpen ? '0 0 18px rgba(99,102,241,0.14)' : 'none',
                   transition: 'background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s',
                 }}
@@ -809,9 +802,9 @@ export default function Dashboard() {
                     transition={{ type: 'spring' as const, stiffness: 480, damping: 30 }}
                     className="absolute top-[calc(100%+6px)] start-0 z-[200] min-w-[168px] rounded-2xl overflow-hidden"
                     style={{
-                      background: 'linear-gradient(160deg, rgba(16,16,26,0.98) 0%, rgba(8,8,16,0.98) 100%)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: '0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                      background: 'var(--dropdown-bg)',
+                      border: '1px solid var(--dropdown-border)',
+                      boxShadow: 'var(--dropdown-shadow)',
                       backdropFilter: 'blur(32px)',
                     }}
                   >
@@ -829,7 +822,7 @@ export default function Dashboard() {
                             className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[12px] font-semibold text-start outline-none"
                             style={{
                               background: isActive ? 'rgba(99,102,241,0.16)' : 'transparent',
-                              color: isActive ? '#a5b4fc' : 'rgba(255,255,255,0.52)',
+                              color: isActive ? '#a5b4fc' : 'var(--text-secondary)',
                               transition: 'background 0.1s, color 0.1s',
                             }}
                             whileHover={{ opacity: 0.9 }}
@@ -860,9 +853,7 @@ export default function Dashboard() {
 
             {/* View toggle */}
             <div
-              className="flex items-center rounded-xl p-0.5 flex-none
-                bg-white border border-slate-200
-                dark:bg-white/[0.04] dark:border-white/[0.07]"
+              className="flex items-center rounded-xl p-0.5 flex-none bg-card border border-[color:var(--border)]"
             >
               {([
                 { mode: 'grid'   as ViewMode, icon: <LayoutGrid size={13} />, label_en: 'Grid',   label_he: 'רשת' },
@@ -874,7 +865,7 @@ export default function Dashboard() {
                   className="flex items-center gap-1.5 rounded-[9px] px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-150 whitespace-nowrap"
                   style={{
                     background: viewMode === mode ? 'rgba(99,102,241,0.18)' : 'transparent',
-                    color:      viewMode === mode ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                    color:      viewMode === mode ? '#818cf8' : 'var(--text-tertiary)',
                     boxShadow:  viewMode === mode ? '0 0 12px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
                   }}
                   title={isHe ? label_he : label_en}
@@ -889,9 +880,7 @@ export default function Dashboard() {
             <motion.button
               onClick={handleCsvExport}
               disabled={filteredProposals.length === 0}
-              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all duration-150 outline-none
-                bg-white border border-slate-200 text-slate-400
-                dark:bg-white/[0.04] dark:border-white/[0.07] dark:text-white/35"
+              className="flex items-center gap-1.5 h-9 rounded-xl px-3 text-[11px] font-semibold flex-none transition-all duration-150 outline-none bg-card border border-[color:var(--border)] text-dim"
               style={{
                 ...(csvFlash ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.4)', color: '#4ade80' } : {}),
                 opacity: filteredProposals.length === 0 ? 0.28 : 1,
@@ -905,7 +894,7 @@ export default function Dashboard() {
             </motion.button>
 
             {/* Count */}
-            <span className="ms-auto text-[10px] font-semibold text-slate-300 dark:text-white/22 whitespace-nowrap tabular-nums">
+            <span className="ms-auto text-[10px] font-semibold text-dim whitespace-nowrap tabular-nums">
               {filteredProposals.length !== tabPool.length
                 ? `${filteredProposals.length} / ${tabPool.length}`
                 : `${tabPool.length} ${isHe ? 'הצעות' : 'proposals'}`}
@@ -927,14 +916,13 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
           >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
-              bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]">
-              <FileText size={20} className="text-slate-300 dark:text-white/20" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-card border border-[color:var(--border)]">
+              <FileText size={20} className="text-dim" />
             </div>
-            <p className="text-sm font-semibold text-slate-400 dark:text-white/40">
+            <p className="text-sm font-semibold text-subtle">
               {isHe ? 'לא נמצאו הצעות בקטגוריה זו' : 'No proposals in this category'}
             </p>
-            <p className="text-xs text-slate-300 dark:text-white/20 mt-1">
+            <p className="text-xs text-dim mt-1">
               {search.trim()
                 ? (isHe ? 'נסה לשנות את מונחי החיפוש' : 'Try adjusting your search terms')
                 : (isHe ? 'נסה לעבור לטאב אחר' : 'Try switching to another tab')}
@@ -943,19 +931,18 @@ export default function Dashboard() {
         ) : viewMode === 'list' ? (
           <div data-tour="proposals-list">
             {/* Column header */}
-            <div className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl
-              bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/[0.04]"
+            <div className="hidden md:grid items-center px-4 py-2 mb-1 rounded-xl bg-surface-sunken border border-[color:var(--border-subtle)]"
               style={{ gridTemplateColumns: pipelineTab === 'lost' ? '28px 8px 1fr 96px 112px 90px 56px' : '8px 1fr 96px 112px 90px 56px', gap: '0 16px' }}>
               {pipelineTab === 'lost' && <div />}
               <div />
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20">{isHe ? 'פרויקט / לקוח' : 'Project / Client'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-center">{isHe ? 'סטטוס' : 'Status'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-end">{isHe ? 'סכום' : 'Amount'}</p>
-              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300 dark:text-white/20 text-end">{isHe ? 'תאריך' : 'Date'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-dim">{isHe ? 'פרויקט / לקוח' : 'Project / Client'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-dim text-center">{isHe ? 'סטטוס' : 'Status'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-dim text-end">{isHe ? 'סכום' : 'Amount'}</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.15em] text-dim text-end">{isHe ? 'תאריך' : 'Date'}</p>
               <div />
             </div>
 
-            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.07]">
+            <div className="rounded-2xl overflow-hidden border border-[color:var(--border)]">
               <AnimatePresence>
                 {filteredProposals.map((p, i) => {
                   const total = proposalTotal(p)
@@ -973,8 +960,8 @@ export default function Dashboard() {
                       exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
                       className="group relative cursor-pointer"
                       onClick={() => handleEdit(p.id)}
-                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.032)' }}
-                      style={{ borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', animation: `ds-fade-up 0.25s ease-out ${0.04 + i * 0.03}s both` }}
+                      whileHover={{ backgroundColor: 'var(--bg-card-hover)' }}
+                      style={{ borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)', animation: `ds-fade-up 0.25s ease-out ${0.04 + i * 0.03}s both` }}
                     >
                       <div className="absolute inset-y-0 start-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" style={{ background: meta.color }} />
 
@@ -986,8 +973,8 @@ export default function Dashboard() {
                             onClick={e => { e.stopPropagation(); toggleSelect(p.id) }}
                             className="flex h-5 w-5 flex-none items-center justify-center rounded-md transition-all duration-150"
                             style={{
-                              background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.2)' : 'rgba(255,255,255,0.05)',
-                              border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.5)' : 'rgba(255,255,255,0.14)'}`,
+                              background: selectedIds.has(p.id) ? 'rgba(248,113,113,0.2)' : 'var(--card-bg)',
+                              border: `1px solid ${selectedIds.has(p.id) ? 'rgba(248,113,113,0.5)' : 'var(--border)'}`,
                             }}
                           >
                             {selectedIds.has(p.id) && <Check size={11} style={{ color: '#f87171' }} strokeWidth={3} />}
@@ -995,10 +982,10 @@ export default function Dashboard() {
                         )}
                         <div className="h-2 w-2 rounded-full flex-none" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
                         <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-slate-800 dark:text-white/90 truncate leading-snug">
+                          <p className="text-[13px] font-semibold text-main truncate leading-snug">
                             {p.project_title || (isHe ? 'הצעה חדשה' : 'New Proposal')}
                           </p>
-                          <p className="text-[11px] text-slate-400 dark:text-white/35 truncate mt-0.5">{p.client_name || '—'}</p>
+                          <p className="text-[11px] text-dim truncate mt-0.5">{p.client_name || '—'}</p>
                         </div>
                         <div className="flex justify-center">
                           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
@@ -1010,7 +997,7 @@ export default function Dashboard() {
                         <p className="text-[13px] font-bold tabular-nums text-end" style={{ color: meta.color, textShadow: `0 0 16px ${meta.glow}` }}>
                           {formatCurrency(total, p.currency)}
                         </p>
-                        <p className="text-[11px] text-slate-400 dark:text-white/30 text-end">{date}</p>
+                        <p className="text-[11px] text-dim text-end">{date}</p>
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                           <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/8 hover:text-white/75" onClick={() => handleEdit(p.id)} title={isHe ? 'ערוך' : 'Edit'}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1037,7 +1024,7 @@ export default function Dashboard() {
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#f59e0b' }}>
                               {isHe ? 'הלקוח ביקש' : 'Client request'}
                             </p>
-                            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            <p className="text-xs leading-relaxed text-subtle" style={{ whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {p.revision_notes}
                             </p>
                           </div>
@@ -1048,10 +1035,10 @@ export default function Dashboard() {
                       <div className="flex md:hidden items-center gap-3 px-4 py-3.5">
                         <div className="h-2 w-2 rounded-full flex-none" style={{ background: meta.color, boxShadow: `0 0 6px ${meta.glow}` }} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-white/90 truncate">
+                          <p className="text-[13px] font-semibold text-main truncate">
                             {p.project_title || (isHe ? 'הצעה חדשה' : 'New Proposal')}
                           </p>
-                          <p className="text-[11px] text-white/35 truncate mt-0.5">{p.client_name || '—'}</p>
+                          <p className="text-[11px] text-dim truncate mt-0.5">{p.client_name || '—'}</p>
                         </div>
                         <div className="flex flex-col items-end gap-1 flex-none">
                           <p className="text-[13px] font-bold tabular-nums" style={{ color: meta.color }}>{formatCurrency(total, p.currency)}</p>
@@ -1070,7 +1057,7 @@ export default function Dashboard() {
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#f59e0b' }}>
                               {isHe ? 'הלקוח ביקש' : 'Client request'}
                             </p>
-                            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)', whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            <p className="text-xs leading-relaxed text-subtle" style={{ whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {p.revision_notes}
                             </p>
                           </div>

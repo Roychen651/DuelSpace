@@ -7,7 +7,7 @@ import { GlobalFooter } from '../components/ui/GlobalFooter'
 
 // ─── Legal Prose Styles ────────────────────────────────────────────────────────
 
-const CARD_CLS = 'bg-white dark:bg-transparent border border-slate-200 shadow-sm rounded-[1.25rem] dark:bg-gradient-to-br dark:from-white/[0.038] dark:to-white/[0.012] dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+const CARD_CLS = 'bg-card border border-[color:var(--border)] shadow-card rounded-[1.25rem]'
 
 // ─── Clause Data ──────────────────────────────────────────────────────────────
 
@@ -221,7 +221,7 @@ export default function TermsOfService() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col bg-slate-50 text-slate-900 dark:bg-[#05050A] dark:text-[#f0f0f8]"
+      className="relative min-h-dvh flex flex-col bg-background text-main"
       dir={isHe ? 'rtl' : 'ltr'}
     >
       <style>{`
@@ -247,13 +247,13 @@ export default function TermsOfService() {
       <div className="relative z-10 flex items-center justify-between px-6 py-5 max-w-3xl mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-white/40 transition hover:text-slate-700 dark:hover:text-white/80"
+          className="flex items-center gap-1.5 text-sm font-medium text-subtle transition hover:text-main"
         >
           <ArrowRight size={14} className={isHe ? '' : 'rotate-180'} />
           {isHe ? 'חזרה' : 'Back'}
         </button>
 
-        <div className="flex items-center gap-1 rounded-xl p-1 border border-slate-200 bg-white/80 dark:border-white/[0.07] dark:bg-white/[0.03]">
+        <div className="flex items-center gap-1 rounded-xl p-1 border border-[color:var(--border)] bg-card">
           {([
             { path: '/terms',    label_he: 'תנאי שירות', label_en: 'Terms',    active: true  },
             { path: '/privacy',  label_he: 'פרטיות',     label_en: 'Privacy',  active: false },
@@ -262,7 +262,7 @@ export default function TermsOfService() {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path, { replace: true })}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab.active ? 'bg-indigo-500/[0.18] text-indigo-500 dark:text-violet-300' : 'text-slate-400 dark:text-white/30'}`}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${tab.active ? 'bg-indigo-500/[0.18] text-indigo-500 dark:text-violet-300' : 'text-dim'}`}
             >
               {isHe ? tab.label_he : tab.label_en}
             </button>
@@ -282,17 +282,17 @@ export default function TermsOfService() {
             <FileText size={20} style={{ color: '#818cf8' }} />
           </div>
           <h1
-            className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3"
+            className="text-3xl sm:text-4xl font-black text-main mb-3"
             style={{ letterSpacing: '-0.02em' }}
           >
             {isHe ? 'תנאי שירות' : 'Terms of Service'}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-white/40 mb-1">
+          <p className="text-sm text-subtle mb-1">
             {isHe
               ? 'בבקשה קרא בעיון לפני השימוש בפלטפורמה'
               : 'Please read carefully before using the platform'}
           </p>
-          <p className="text-xs text-slate-400 dark:text-white/22">
+          <p className="text-xs text-dim">
             {isHe ? 'תוקף מיום 1 בינואר 2026 | גרסה 3.0' : 'Effective January 1, 2026 | Version 3.0'}
           </p>
         </div>
@@ -330,7 +330,7 @@ export default function TermsOfService() {
                 {(isHe ? clause.body_he : clause.body_en).map((para, j) => (
                   <p
                     key={j}
-                    className="text-[13.5px] leading-relaxed text-slate-600 dark:text-white/55"
+                    className="text-[13.5px] leading-relaxed text-subtle"
                     style={{ fontWeight: j === 0 && clause.num === '5' ? 600 : 400 }}
                   >
                     {para}
@@ -348,15 +348,15 @@ export default function TermsOfService() {
             style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}
           >
             <Shield size={13} className="text-indigo-400 flex-none" />
-            <span className="text-xs font-medium text-slate-600 dark:text-white/45">
+            <span className="text-xs font-medium text-subtle">
               {isHe
                 ? 'שאלות משפטיות? פנה אלינו בכתובת legal@dealspace.app'
                 : 'Legal questions? Contact us at legal@dealspace.app'}
             </span>
           </div>
-          <div className="flex items-center gap-2 rounded-2xl px-4 py-3 bg-white border border-slate-200 dark:bg-white/[0.04] dark:border-white/[0.07]">
-            <Lock size={13} className="text-slate-400 dark:text-white/30 flex-none" />
-            <span className="text-xs font-medium text-slate-500 dark:text-white/35">
+          <div className="flex items-center gap-2 rounded-2xl px-4 py-3 bg-card border border-[color:var(--border)]">
+            <Lock size={13} className="text-dim flex-none" />
+            <span className="text-xs font-medium text-subtle">
               {isHe ? 'כפוף לדיני מדינת ישראל | סמכות שיפוט: תל אביב-יפו' : 'Governed by Israeli Law | Jurisdiction: Tel Aviv-Jaffa'}
             </span>
           </div>
