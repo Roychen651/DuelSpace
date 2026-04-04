@@ -751,7 +751,7 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => setSelectedIds(new Set())}
                   className="ms-auto text-[10px] font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   {isHe ? 'בטל בחירה' : 'Clear'}
                 </button>
@@ -1262,9 +1262,9 @@ export default function Dashboard() {
             <button
               onClick={() => useProposalStore.getState().clearError()}
               className="flex-none flex h-6 w-6 items-center justify-center rounded-lg transition-colors"
-              style={{ color: 'rgba(255,255,255,0.25)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)' }}
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)' }}
             >
               <X size={12} />
             </button>

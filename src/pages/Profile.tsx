@@ -750,9 +750,9 @@ export default function Profile() {
                   placeholder={isHe ? 'מינימום 8 תווים' : 'Min. 8 characters'}
                   suffix={
                     <button type="button" onClick={() => setShowNew(v => !v)}
-                      className="transition" style={{ color: 'rgba(255,255,255,0.3)' }}
-                      onMouseEnter={e => { e.currentTarget.style.color = 'white' }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)' }}>
+                      className="transition" style={{ color: 'var(--text-tertiary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)' }}>
                       {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   }

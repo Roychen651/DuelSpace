@@ -43,8 +43,8 @@ export default function Billing() {
   const isPro     = tier === 'pro'
   const isPremium = tier === 'unlimited'
 
-  const tierColor  = isPremium ? '#d4af37' : isPro ? '#818cf8' : 'rgba(255,255,255,0.3)'
-  const tierBorder = isPremium ? 'rgba(212,175,55,0.22)' : isPro ? 'rgba(99,102,241,0.22)' : 'rgba(255,255,255,0.07)'
+  const tierColor  = isPremium ? '#d4af37' : isPro ? '#818cf8' : 'var(--text-tertiary)'
+  const tierBorder = isPremium ? 'rgba(212,175,55,0.22)' : isPro ? 'rgba(99,102,241,0.22)' : 'var(--border)'
 
   const planNameHe = isPremium ? 'פרימיום' : isPro ? 'פרו' : 'חינם'
   const planNameEn = isPremium ? 'Premium' : isPro ? 'Pro' : 'Free'
