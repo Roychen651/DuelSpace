@@ -45,19 +45,13 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
       {!isControlled && (
         <motion.button
           onClick={() => setInternalOpen(true)}
-          className="fixed z-40 hidden sm:flex h-10 w-10 items-center justify-center rounded-full"
-          style={{
-            bottom: 24, left: 20,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-          }}
+          className="fixed z-40 hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 shadow-md dark:shadow-none"
+          style={{ bottom: 24, left: 20, backdropFilter: 'blur(20px)' }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.92 }}
           aria-label={isHe ? 'מרכז עזרה' : 'Help Center'}
         >
-          <HelpCircle size={16} className="text-white/45" />
+          <HelpCircle size={16} className="text-slate-500 dark:text-white/45" />
         </motion.button>
       )}
 
@@ -93,11 +87,8 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
             >
               {/* ── Header ────────────────────────────────────────────────── */}
               <div
-                className="flex-none px-5 py-4"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 100%)',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                }}
+                className="flex-none px-5 py-4 border-b border-slate-100 dark:border-white/[0.06]"
+                style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 100%)' }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -133,14 +124,14 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                 <button
                   type="button"
                   onClick={handleRestartTour}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 transition-all hover:bg-white/5"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 transition-all hover:bg-indigo-50 dark:hover:bg-white/5"
                   style={{
                     background: 'rgba(99,102,241,0.06)',
                     border: '1px solid rgba(99,102,241,0.18)',
                   }}
                 >
-                  <Map size={13} className="text-indigo-400 flex-none" />
-                  <span className="text-[12px] font-bold text-indigo-300/80">
+                  <Map size={13} className="text-indigo-500 dark:text-indigo-400 flex-none" />
+                  <span className="text-[12px] font-bold text-indigo-600 dark:text-indigo-300/80">
                     {isHe ? 'הפעל סיור מודרך מחדש' : 'Restart Guided Tour'}
                   </span>
                   <Zap size={10} className="text-indigo-400/50 ms-auto flex-none" />
@@ -148,10 +139,7 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
               </div>
 
               {/* ── Category pills ──────────────────────────────────────── */}
-              <div
-                className="flex-none flex flex-wrap gap-1.5 px-4 py-3"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-              >
+              <div className="flex-none flex flex-wrap gap-1.5 px-4 py-3 border-b border-slate-100 dark:border-white/[0.05]">
                 {CATEGORY_PILLS.map(cat => {
                   const isActive = activeCategory === cat.key
                   return (
@@ -159,13 +147,17 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                       key={cat.key}
                       type="button"
                       onClick={() => { setActiveCategory(cat.key); setExpandedIdx(null) }}
-                      className="flex-none flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all whitespace-nowrap"
-                      style={{
-                        background: isActive ? `${cat.color}18` : 'rgba(255,255,255,0.04)',
-                        color: isActive ? cat.color : 'rgba(255,255,255,0.3)',
-                        border: `1px solid ${isActive ? cat.color + '35' : 'rgba(255,255,255,0.07)'}`,
-                        boxShadow: isActive ? `0 0 8px ${cat.color}20` : 'none',
-                      }}
+                      className={`flex-none flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all whitespace-nowrap ${
+                        isActive
+                          ? ''
+                          : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-white/30 border border-slate-200 dark:border-white/[0.07]'
+                      }`}
+                      style={isActive ? {
+                        background: `${cat.color}18`,
+                        color: cat.color,
+                        border: `1px solid ${cat.color}35`,
+                        boxShadow: `0 0 8px ${cat.color}20`,
+                      } : {}}
                     >
                       {isHe ? ('label_he' in cat ? cat.label_he : 'הכל') : ('label_en' in cat ? cat.label_en : 'All')}
                     </button>
@@ -192,11 +184,13 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
                   return (
                     <div
                       key={idx}
-                      className="rounded-xl overflow-hidden transition-all"
-                      style={{
-                        background: isExpanded ? `${accentColor}09` : 'rgba(255,255,255,0.025)',
-                        border: `1px solid ${isExpanded ? accentColor + '28' : 'rgba(255,255,255,0.06)'}`,
-                      }}
+                      className={`rounded-xl overflow-hidden transition-all ${
+                        isExpanded ? '' : 'bg-white dark:bg-white/[0.025] border border-slate-100 dark:border-white/[0.06]'
+                      }`}
+                      style={isExpanded ? {
+                        background: `${accentColor}09`,
+                        border: `1px solid ${accentColor}28`,
+                      } : {}}
                     >
                       <button
                         type="button"
@@ -247,10 +241,7 @@ export function HelpCenterDrawer({ open: externalOpen, onClose: externalOnClose 
               </div>
 
               {/* ── Footer ──────────────────────────────────────────────── */}
-              <div
-                className="flex-none px-5 py-3 flex items-center justify-between"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-              >
+              <div className="flex-none px-5 py-3 flex items-center justify-between border-t border-slate-100 dark:border-white/[0.05]">
                 <p className="text-[9px] text-slate-400 dark:text-white/[0.18]">
                   {isHe ? 'DealSpace — הצעות מחיר דיגיטליות לישראל' : 'DealSpace — Digital Proposals for Israel'}
                 </p>

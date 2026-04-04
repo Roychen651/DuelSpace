@@ -116,16 +116,15 @@ export function GuidedTour({ locale, enabled = true }: GuidedTourProps) {
             {/* Tooltip card */}
             <motion.div
               key="gt-tooltip"
-              className="fixed z-[9998] rounded-2xl"
+              className="fixed z-[9998] rounded-2xl bg-white dark:bg-[#0f0f1a] shadow-2xl dark:shadow-none"
               style={{
                 top:    tipTop,
                 left:   tipLeft,
                 width:  TIP_W,
-                background: 'linear-gradient(135deg, rgba(18,18,32,0.99) 0%, rgba(12,12,24,0.99) 100%)',
                 border: '1px solid rgba(99,102,241,0.35)',
                 backdropFilter: 'blur(40px)',
                 WebkitBackdropFilter: 'blur(40px)',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(99,102,241,0.12), 0 0 40px rgba(99,102,241,0.18)',
+                boxShadow: '0 0 0 1px rgba(99,102,241,0.12), 0 0 40px rgba(99,102,241,0.18)',
               }}
               dir={isHe ? 'rtl' : 'ltr'}
               initial={{ opacity: 0, y: -8, scale: 0.94 }}
@@ -147,7 +146,7 @@ export function GuidedTour({ locale, enabled = true }: GuidedTourProps) {
                   style={{
                     width: 10,
                     height: 10,
-                    background: 'rgba(18,18,32,0.99)',
+                    background: 'var(--bg-card)',
                     border: '1px solid rgba(99,102,241,0.35)',
                     transform: 'rotate(45deg)',
                     margin: '4px auto 0',
@@ -165,20 +164,20 @@ export function GuidedTour({ locale, enabled = true }: GuidedTourProps) {
                     >
                       <Zap size={13} className="text-white" />
                     </div>
-                    <p className="text-[13px] font-bold text-white leading-snug">
+                    <p className="text-[13px] font-bold text-slate-800 dark:text-white leading-snug">
                       {isHe ? 'ברוכים הבאים ל-DealSpace!' : 'Welcome to DealSpace!'}
                     </p>
                   </div>
                   <button
                     onClick={dismiss}
-                    className="flex h-5 w-5 flex-none items-center justify-center rounded-md text-white/30 transition-colors hover:text-white/70"
+                    className="flex h-5 w-5 flex-none items-center justify-center rounded-md text-slate-400 dark:text-white/30 transition-colors hover:text-slate-600 dark:hover:text-white/70"
                   >
                     <X size={12} />
                   </button>
                 </div>
 
                 {/* Body */}
-                <p className="text-[12px] leading-relaxed text-white/58 mb-4">
+                <p className="text-[12px] leading-relaxed text-slate-600 dark:text-white/[0.58] mb-4">
                   {isHe
                     ? 'העסקה הראשונה שלך מתחילה כאן. לחץ כדי לבנות את ההצעה הראשונה שלך תוך שתי דקות.'
                     : 'Your first deal starts here. Click to build your first proposal in 2 minutes.'}
