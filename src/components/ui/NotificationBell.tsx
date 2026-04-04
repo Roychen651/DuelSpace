@@ -119,7 +119,8 @@ export function NotificationBell() {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 dark:text-white/35 transition-colors hover:text-slate-700 dark:hover:text-white/75 border border-slate-200 dark:border-white/7 bg-slate-50 dark:bg-white/3"
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 dark:text-white/35 transition-colors hover:text-slate-700 dark:hover:text-white/75"
+          style={{ border: '1px solid var(--border-glass)', background: 'var(--bg-card)' }}
           aria-label={isHe ? 'התראות' : 'Notifications'}
         >
           <Bell size={14} />
