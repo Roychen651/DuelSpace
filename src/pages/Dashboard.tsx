@@ -439,9 +439,12 @@ export default function Dashboard() {
   ]
 
   // ── Actions ───────────────────────────────────────────────────────────────
+  const bonusQuota = (user?.user_metadata?.bonus_quota as number | undefined) ?? 0
+  const effectiveLimit = FREE_PROPOSAL_LIMIT + bonusQuota
+
   const handleCreate = () => {
     if (billingStatus === 'past_due') return
-    if (tier === 'free' && activeProposals.length >= FREE_PROPOSAL_LIMIT) {
+    if (tier === 'free' && activeProposals.length >= effectiveLimit) {
       setUpgradeModalOpen(true)
       return
     }
@@ -542,8 +545,8 @@ export default function Dashboard() {
                 : tier === 'pro'
                   ? { symbol: '⚡', labelHe: 'פרו', labelEn: 'Pro', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.28)', glow: 'rgba(99,102,241,0.18)' }
                   : { symbol: '◎', labelHe: 'חינם', labelEn: 'Free', color: '#9ca3af', bg: 'rgba(156,163,175,0.08)', border: 'rgba(156,163,175,0.2)', glow: 'rgba(156,163,175,0.06)' }
-              const atLimit  = tier === 'free' && activeProposals.length >= FREE_PROPOSAL_LIMIT
-              const nearLimit = tier === 'free' && activeProposals.length === FREE_PROPOSAL_LIMIT - 1
+              const atLimit  = tier === 'free' && activeProposals.length >= effectiveLimit
+              const nearLimit = tier === 'free' && activeProposals.length === effectiveLimit - 1
               return (
                 <motion.button
                   onClick={() => setUpgradeModalOpen(true)}
@@ -654,9 +657,9 @@ export default function Dashboard() {
           {/* ── Quota bar — free tier, active tabs only ─────────────────── */}
           {tier === 'free' && pipelineTab !== 'lost' && (() => {
             const activeCount = activeProposals.length
-            const pct = Math.min(100, (activeCount / FREE_PROPOSAL_LIMIT) * 100)
-            const isMax  = activeCount >= FREE_PROPOSAL_LIMIT
-            const isWarn = activeCount >= FREE_PROPOSAL_LIMIT - 1 && !isMax
+            const pct = Math.min(100, (activeCount / effectiveLimit) * 100)
+            const isMax  = activeCount >= effectiveLimit
+            const isWarn = activeCount >= effectiveLimit - 1 && !isMax
             const barColor = isMax ? 'linear-gradient(90deg, #f87171, #ef4444)' : isWarn ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : 'linear-gradient(90deg, #6366f1, #a855f7)'
             const textColor = isMax ? '#f87171' : isWarn ? '#fbbf24' : 'rgba(255,255,255,0.4)'
             return (
@@ -666,8 +669,8 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[11px] font-semibold" style={{ color: textColor }}>
                       {isHe
-                        ? `ניצלת ${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות חינם`
-                        : `Used ${activeCount} of ${FREE_PROPOSAL_LIMIT} free proposals`}
+                        ? `ניצלת ${activeCount} מתוך ${effectiveLimit} הצעות חינם`
+                        : `Used ${activeCount} of ${effectiveLimit} free proposals`}
                     </span>
                     <button onClick={() => setUpgradeModalOpen(true)} className="text-[10px] font-black tracking-wide transition-opacity hover:opacity-70 flex-none" style={{ color: '#818cf8' }}>
                       {isHe ? '↑ שדרג' : '↑ Upgrade'}

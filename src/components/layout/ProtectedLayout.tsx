@@ -195,7 +195,8 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             onClick={() => {
               if (billingStatus === 'past_due') return
               const activeCount = proposals.filter(p => !p.is_archived).length
-              if (tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT) {
+              const bonusQuota = (user?.user_metadata?.bonus_quota as number | undefined) ?? 0
+              if (tier === 'free' && activeCount >= (FREE_PROPOSAL_LIMIT + bonusQuota)) {
                 setUpgradeModalOpen(true)
                 return
               }

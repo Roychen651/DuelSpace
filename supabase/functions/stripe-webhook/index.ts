@@ -247,19 +247,18 @@ async function resolveUserId(
   if (directId) return directId
 
   // Paginated scan for the matching stripe_customer_id in user_metadata.
-  // Acceptable at MVP scale; at > ~10k users, add a dedicated DB column + index.
-  let page = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  // Iterates through all pages until the user is found or the list is exhausted.
+  let pageNum = 1
   while (true) {
+    const page = await supabaseAdmin.auth.admin.listUsers({ page: pageNum, perPage: 1000 })
     const match = page.data?.users?.find(
       u => (u.user_metadata?.stripe_customer_id as string | undefined) === stripeCustomerId,
     )
     if (match) return match.id
 
-    // Supabase admin.listUsers doesn't expose a has_more / next_cursor yet —
-    // stop when we receive fewer than a full page
+    // Stop when we receive fewer users than requested — no more pages remain
     if (!page.data?.users || page.data.users.length < 1000) break
-    // No pagination API available — can only fetch the first 1000 for now
-    break
+    pageNum++
   }
 
   console.warn(`[stripe-webhook] Could not find user for Stripe customer: ${stripeCustomerId}`)
