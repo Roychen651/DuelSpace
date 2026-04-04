@@ -52,9 +52,11 @@ export default function Billing() {
 
   // Track which action button is loading (null = idle)
   const [loadingAction, setLoadingAction] = React.useState<string | null>(null)
+  const [actionError,   setActionError]   = React.useState<string | null>(null)
 
   const handlePortalAction = React.useCallback(async (action: string) => {
     if (loadingAction) return
+    setActionError(null)
     setLoadingAction(action)
     try {
       const url = await createPortalSession()
@@ -62,12 +64,12 @@ export default function Billing() {
       // Don't reset — page is navigating away
     } catch (err) {
       console.error('[stripe-portal]', err)
-      if (import.meta.env.DEV) {
-        alert('Portal session failed. Is the stripe-portal Edge Function deployed?\n\nRun: supabase functions deploy stripe-portal --project-ref aefyytktbpynkbxhzhyt')
-      }
+      setActionError(isHe
+        ? 'שגיאה בתקשורת עם מערכת החיוב. נסה שוב מאוחר יותר.'
+        : 'Billing system error. Please try again.')
       setLoadingAction(null)
     }
-  }, [loadingAction])
+  }, [loadingAction, isHe])
 
   const animBase = {
     initial: { opacity: 0, y: 24 },
@@ -662,6 +664,29 @@ export default function Billing() {
             </div>
           </motion.div>
         )}
+
+        {/* ── Portal action error ──────────────────────────────────────────────── */}
+        <AnimatePresence>
+          {actionError && (
+            <motion.div
+              key="action-error"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-3 rounded-2xl px-5 py-4 mb-5"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.22)',
+                boxShadow: '0 0 24px rgba(239,68,68,0.06)',
+              }}
+              dir={isHe ? 'rtl' : 'ltr'}
+            >
+              <XCircle size={15} className="flex-none text-red-400" />
+              <p className="text-[12.5px] font-medium" style={{ color: '#fca5a5' }}>{actionError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── FAQ ────────────────────────────────────────────────────────────────── */}
         {isPaid && (

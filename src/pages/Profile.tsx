@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Mail, Lock, Camera, Check, Eye, EyeOff, CheckCircle2, XCircle, Percent, Building2, Hash, MapPin, Phone, PenTool, Palette, ImageIcon, Loader2, FileText, CreditCard, ExternalLink, Zap, Star, Infinity as InfinityIcon, BellRing, AlertTriangle, Trash2 } from 'lucide-react'
-import { useAuthStore, useTier } from '../stores/useAuthStore'
+import { useAuthStore, useTier, useBillingStatus, useCancelAtPeriodEnd } from '../stores/useAuthStore'
 import { STRIPE_PRO_LINK, STRIPE_PREMIUM_LINK, buildCheckoutUrl, createPortalSession } from '../lib/stripe'
 import { supabase } from '../lib/supabase'
 import { evaluatePassword } from '../lib/passwordValidation'
@@ -211,23 +211,29 @@ export default function Profile() {
   const { locale } = useI18n()
   const isHe = locale === 'he'
   const tier = useTier()
+  const billingStatus = useBillingStatus()
+  const cancelAtEnd   = useCancelAtPeriodEnd()
 
   // Portal session — existing Stripe customers always use dynamic session
   const hasStripeCustomer = Boolean(user?.user_metadata?.stripe_customer_id)
   const [portalLoading, setPortalLoading] = useState(false)
+  const [portalError,   setPortalError]   = useState<string | null>(null)
 
   const handlePortalAction = useCallback(async () => {
     if (portalLoading) return
+    setPortalError(null)
     setPortalLoading(true)
     try {
       const url = await createPortalSession()
       window.location.href = url
     } catch (err) {
       console.error('[stripe-portal]', err)
-      if (import.meta.env.DEV) alert('Portal session failed. Is the stripe-portal Edge Function deployed?')
+      setPortalError(isHe
+        ? 'שגיאה בתקשורת עם מערכת החיוב. נסה שוב מאוחר יותר.'
+        : 'Billing system error. Please try again.')
       setPortalLoading(false)
     }
-  }, [portalLoading])
+  }, [portalLoading, isHe])
 
   const name = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email = user?.email ?? ''
@@ -995,6 +1001,25 @@ export default function Profile() {
                 </p>
               </div>
             )}
+
+            {/* Portal error */}
+            <AnimatePresence>
+              {portalError && (
+                <motion.div
+                  key="portal-error"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.22 }}
+                  className="mt-4 flex items-center gap-2.5 rounded-xl px-4 py-3 text-[12px]"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', color: '#fca5a5' }}
+                  dir={isHe ? 'rtl' : 'ltr'}
+                >
+                  <XCircle size={13} className="flex-none" style={{ color: '#f87171' }} />
+                  {portalError}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
         </motion.div>
 
@@ -1111,30 +1136,51 @@ export default function Profile() {
               </h2>
             </div>
 
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-white/70 mb-1">
-                  {isHe ? 'מחיקת חשבון לצמיתות' : 'Delete Account Permanently'}
-                </p>
-                <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(248,113,113,0.55)' }}>
-                  {isHe
-                    ? 'פעולה זו בלתי הפיכה. כל הנתונים שלך יימחקו לצמיתות.'
-                    : 'This action is irreversible. All your data will be permanently erased.'}
-                </p>
-              </div>
-              <motion.button
-                type="button"
-                onClick={() => { setDeleteModalOpen(true); setDeleteConfirmText(''); setDeleteError(null) }}
-                className="flex-none flex items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-bold"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)' }}
-                whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
-              >
-                <Trash2 size={13} />
-                {isHe ? 'מחק חשבון' : 'Delete Account'}
-              </motion.button>
-            </div>
+            {(() => {
+              const deleteBlocked = billingStatus === 'active' && !cancelAtEnd
+              return (
+                <>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-white/70 mb-1">
+                        {isHe ? 'מחיקת חשבון לצמיתות' : 'Delete Account Permanently'}
+                      </p>
+                      <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(248,113,113,0.55)' }}>
+                        {isHe
+                          ? 'פעולה זו בלתי הפיכה. כל הנתונים שלך יימחקו לצמיתות.'
+                          : 'This action is irreversible. All your data will be permanently erased.'}
+                      </p>
+                    </div>
+                    <motion.button
+                      type="button"
+                      disabled={deleteBlocked}
+                      onClick={() => { if (!deleteBlocked) { setDeleteModalOpen(true); setDeleteConfirmText(''); setDeleteError(null) } }}
+                      className="flex-none flex items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-bold"
+                      style={{
+                        background: deleteBlocked ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.1)',
+                        border: `1px solid ${deleteBlocked ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.3)'}`,
+                        color: deleteBlocked ? 'rgba(255,255,255,0.2)' : '#f87171',
+                        cursor: deleteBlocked ? 'not-allowed' : undefined,
+                      }}
+                      onMouseEnter={e => { if (!deleteBlocked) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)' }}
+                      onMouseLeave={e => { if (!deleteBlocked) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)' }}
+                      whileTap={deleteBlocked ? {} : { scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 20 } }}
+                    >
+                      <Trash2 size={13} />
+                      {isHe ? 'מחק חשבון' : 'Delete Account'}
+                    </motion.button>
+                  </div>
+                  {deleteBlocked && (
+                    <p className="text-[11px] leading-relaxed mt-3 flex items-start gap-2" style={{ color: 'rgba(248,113,113,0.65)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                      <AlertTriangle size={12} className="flex-none mt-px" style={{ color: '#f87171' }} />
+                      {isHe
+                        ? 'יש לך מנוי פעיל. חובה לבטל את המנוי בעמוד החיוב לפני מחיקת החשבון.'
+                        : 'You have an active subscription. You must cancel it in the Billing portal before deleting your account.'}
+                    </p>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </motion.div>
 
