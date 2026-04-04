@@ -1523,7 +1523,9 @@ function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe
                     className="relative rounded-[21px] p-5 sm:p-6 h-full flex flex-col"
                     style={{
                       background: isPro
-                        ? 'linear-gradient(150deg, rgba(30,12,55,0.98) 0%, rgba(14,6,30,0.99) 100%)'
+                        ? (isDark
+                          ? 'linear-gradient(150deg, rgba(30,12,55,0.98) 0%, rgba(14,6,30,0.99) 100%)'
+                          : 'linear-gradient(150deg, #3730a3 0%, #5b21b6 100%)')
                         : isDark
                           ? 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 100%)'
                           : i === 0
@@ -2092,8 +2094,8 @@ function HeroSection({ c, isHe, onCta, onDemo, isDark }: {
             </div>
 
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7" style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.28)', animation: 'lp-fade-up 0.5s ease-out 0.1s both, lp-badge-pulse 3s ease-in-out 2s infinite' }}>
-              <span className="text-[12px] font-bold text-indigo-300">{c.badge}</span>
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7" style={{ background: isDark ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.08)', border: isDark ? '1px solid rgba(99,102,241,0.28)' : '1px solid rgba(99,102,241,0.3)', animation: 'lp-fade-up 0.5s ease-out 0.1s both, lp-badge-pulse 3s ease-in-out 2s infinite' }}>
+              <span className="text-[12px] font-bold" style={{ color: isDark ? '#a5b4fc' : '#4338ca' }}>{c.badge}</span>
             </div>
 
             {/* H1 */}
