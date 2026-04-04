@@ -712,7 +712,7 @@ function HowItWorksSection({ c, isHe, isDark }: { c: typeof copy['he']; isHe: bo
           </p>
           <h2 className="text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight leading-tight">
             <span style={{ color: isDark ? 'white' : '#0f172a' }}>{c.howH2part1} </span>
-            <span style={{ background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 55%, #f0abfc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={isDark ? { background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 55%, #f0abfc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } : { color: '#6366f1' }}>
               {c.howH2Highlight}
             </span>
             <span style={{ color: isDark ? 'white' : '#0f172a' }}> {c.howH2part2}</span>
@@ -1224,7 +1224,6 @@ function BentoGridSection({ c, isHe, isDark }: { c: typeof copy['he']; isHe: boo
                     backgroundSize: '200% 100%',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
                     animation: 'lp-shimmer 4s linear infinite',
                   } : { color: BENTO_COLORS[i], fontWeight: 800 }}>
                     {card.tag}
@@ -1301,7 +1300,6 @@ function AnimatedStat({ s, i, isHe, isDark }: { s: typeof PROOF_STATS[0]; i: num
           background: darkGradients[i],
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
         } : {
           color: lightColors[i],
         }}
@@ -1730,32 +1728,26 @@ function FinalCTASection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isH
 
           <h2
             className="text-4xl sm:text-5xl font-black tracking-tight mb-2"
-            style={{
-              background: isDark
-                ? 'linear-gradient(135deg, #ffffff 30%, #a5b4fc 65%, #c084fc 100%)'
-                : 'linear-gradient(135deg, #0f172a 30%, #4338ca 65%, #7c3aed 100%)',
+            style={isDark ? {
+              background: 'linear-gradient(135deg, #ffffff 30%, #a5b4fc 65%, #c084fc 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
+            } : { color: '#0f172a' }}
           >
             {c.ctaH2a}
           </h2>
           <h2
             className="text-4xl sm:text-5xl font-black tracking-tight mb-3"
-            style={{
-              background: isDark
-                ? 'linear-gradient(135deg, #c084fc 0%, #a5b4fc 50%, #ffffff 100%)'
-                : 'linear-gradient(135deg, #7c3aed 0%, #4338ca 50%, #0f172a 100%)',
+            style={isDark ? {
+              background: 'linear-gradient(135deg, #c084fc 0%, #a5b4fc 50%, #ffffff 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
+            } : { color: '#4338ca' }}
           >
             {c.ctaH2b}
           </h2>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-8">
-            <span style={{ background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 55%, #f0abfc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={isDark ? { background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 55%, #f0abfc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } : { color: '#6366f1' }}>
               {c.ctaH2Highlight}
             </span>
           </h2>
@@ -1918,14 +1910,11 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
               {logoMark(26, 8)}
               <span
                 className="text-[13px] font-bold tracking-tight"
-                style={{
-                  background: isDark
-                    ? 'linear-gradient(135deg, #ffffff, #c4b5fd)'
-                    : 'linear-gradient(135deg, #0f172a, #6366f1)',
+                style={isDark ? {
+                  background: 'linear-gradient(135deg, #ffffff, #c4b5fd)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
+                } : { color: '#0f172a' }}
               >
                 DealSpace
               </span>
@@ -1988,14 +1977,11 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
               {logoMark(32, 10)}
               <span
                 className="text-[15px] font-bold tracking-tight"
-                style={{
-                  background: isDark
-                    ? 'linear-gradient(135deg, #ffffff 30%, #c4b5fd 80%)'
-                    : 'linear-gradient(135deg, #0f172a 0%, #6366f1 100%)',
+                style={isDark ? {
+                  background: 'linear-gradient(135deg, #ffffff 30%, #c4b5fd 80%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
+                } : { color: '#0f172a' }}
               >
                 DealSpace
               </span>
@@ -2089,13 +2075,12 @@ function HeroSection({ c, isHe, onCta, onDemo, isDark }: {
               <div className="text-start">
                 <div
                   className="text-[26px] font-black tracking-[-0.02em] leading-none"
-                  style={{
-                    background: isDark
-                      ? 'linear-gradient(135deg, #ffffff 20%, #c4b5fd 55%, #e0d9ff 85%)'
-                      : 'linear-gradient(135deg, #0f172a 0%, #6366f1 60%, #8b5cf6 100%)',
+                  style={isDark ? {
+                    background: 'linear-gradient(135deg, #ffffff 20%, #c4b5fd 55%, #e0d9ff 85%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                  } : {
+                    color: '#0f172a',
                   }}
                 >
                   DealSpace
@@ -2116,26 +2101,28 @@ function HeroSection({ c, isHe, onCta, onDemo, isDark }: {
               className="text-4xl sm:text-5xl xl:text-6xl font-black leading-[1.08] tracking-tight mb-5"
               style={{ animation: 'lp-fade-up 0.65s ease-out 0.18s both' }}
             >
-              <span style={{
-                background: isDark
-                  ? 'linear-gradient(135deg, #ffffff 25%, #c4b5fd 55%, #f0f0f8 80%)'
-                  : 'linear-gradient(135deg, #0f172a 0%, #4338ca 65%, #6366f1 100%)',
+              <span style={isDark ? {
+                background: 'linear-gradient(135deg, #ffffff 25%, #c4b5fd 55%, #f0f0f8 80%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>
+              } : { color: '#0f172a' }}>
                 {c.h1Part1}
               </span>
               <br />
               <span style={{ color: isDark ? 'rgba(255,255,255,0.88)' : '#1e293b' }}>{c.h1Pre2}</span>
               <span
-                style={{
+                style={isDark ? {
                   background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f0abfc 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
                   textDecoration: 'underline',
                   textDecorationColor: 'rgba(129,140,248,0.35)',
+                  textUnderlineOffset: '6px',
+                  textDecorationThickness: '2px',
+                } : {
+                  color: '#6366f1',
+                  textDecoration: 'underline',
+                  textDecorationColor: 'rgba(99,102,241,0.4)',
                   textUnderlineOffset: '6px',
                   textDecorationThickness: '2px',
                 }}
