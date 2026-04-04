@@ -1173,6 +1173,26 @@ function ProposalDocument(opts: PdfOptions) {
 export async function generateProposalPdf(opts: PdfOptions): Promise<void> {
   const blob = await pdf(<ProposalDocument {...opts} />).toBlob()
   const url  = URL.createObjectURL(blob)
+
+  // iOS Safari blocks programmatic <a download> — open in new tab instead
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+  if (isIOS) {
+    const opened = window.open(url, '_blank')
+    if (!opened) {
+      // Popup blocked — fall back to anchor without download attribute
+      const a = document.createElement('a')
+      a.href = url
+      a.target = '_blank'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30_000)
+    return
+  }
+
   const a    = document.createElement('a')
   a.href     = url
   a.download = `DealSpace_${(opts.proposal.project_title||'Proposal').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`

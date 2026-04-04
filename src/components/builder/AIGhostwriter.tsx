@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Loader2, ChevronDown, ChevronUp, Wand2 } from 'lucide-react'
+import { Sparkles, Loader2, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import type { ProposalInsert, AddOn } from '../../types/proposal'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -240,31 +240,20 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
             style={{
               background: 'linear-gradient(135deg, #6366f1, #a855f7)',
               boxShadow: open ? '0 0 16px rgba(99,102,241,0.6)' : '0 0 8px rgba(99,102,241,0.3)',
-              animation: open ? 'ghostwriter-pulse 2s ease-in-out infinite' : 'none',
             }}
           >
-            <Wand2 size={13} className="text-white" />
+            <FileText size={13} className="text-white" />
           </div>
           <div className="text-start">
             <p className="text-sm font-bold text-white/80">
-              {isHe ? 'כתיבה אוטומטית עם AI' : 'AI Proposal Generator'}
+              {isHe ? 'תבניות חכמות להצעה' : 'Quick-Start Templates'}
             </p>
             <p className="text-[10px] text-white/35">
-              {isHe ? 'תאר את הפרויקט ו-AI ימלא את ההצעה' : 'Describe your project and AI fills the proposal'}
+              {isHe ? 'בחר סוג פרויקט — מלא הצעה מוכנה תוך שניות' : 'Pick a project type — fill a ready-made proposal in seconds'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span
-            className="rounded-full px-2 py-0.5 text-[9px] font-bold"
-            style={{
-              background: 'rgba(99,102,241,0.15)',
-              color: '#818cf8',
-              border: '1px solid rgba(99,102,241,0.25)',
-            }}
-          >
-            BETA
-          </span>
           {open
             ? <ChevronUp size={14} className="text-white/30" />
             : <ChevronDown size={14} className="text-white/30" />}
@@ -272,16 +261,6 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
       </button>
 
       {/* Injected keyframes */}
-      <style>{`
-        @keyframes ghostwriter-pulse {
-          0%, 100% { box-shadow: 0 0 8px rgba(99,102,241,0.4), 0 0 16px rgba(168,85,247,0.2); }
-          50%       { box-shadow: 0 0 20px rgba(99,102,241,0.8), 0 0 36px rgba(168,85,247,0.4); }
-        }
-        @keyframes ghostwriter-blink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.3; }
-        }
-      `}</style>
 
       {/* Expanded panel */}
       <AnimatePresence initial={false}>
@@ -305,8 +284,8 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
                   }}
                   placeholder={
                     isHe
-                      ? 'למשל: "אני צריך הצעה לאתר אי-קומרס לחנות בגדים" או "צילום מוצרים לעסק קטן"'
-                      : 'e.g. "I need a proposal for a fashion e-commerce website" or "product photography for a small business"'
+                      ? 'למשל: "אתר אי-קומרס לחנות בגדים" או "צילום מוצרים לעסק קטן"'
+                      : 'e.g. "fashion e-commerce website" or "product photography for small business"'
                   }
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
@@ -374,8 +353,8 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
                   whileHover={prompt.trim() ? { scale: 1.01 } : {}}
                   whileTap={prompt.trim() ? { scale: 0.97 } : {}}
                 >
-                  <Wand2 size={14} />
-                  {isHe ? 'צור הצעה עם AI' : 'Generate with AI'}
+                  <FileText size={14} />
+                  {isHe ? 'מלא מתבנית' : 'Fill from Template'}
                   <span className="text-[10px] opacity-60 ms-1">
                     {isHe ? '(⌘↵)' : '(⌘↵)'}
                   </span>

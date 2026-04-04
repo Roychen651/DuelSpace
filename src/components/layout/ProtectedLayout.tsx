@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, LogOut, Zap, Globe, User, Settings, Bookmark, HelpCircle, ChevronLeft, ChevronRight, Webhook, Lock, CreditCard } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore, useBillingStatus, useTier } from '../../stores/useAuthStore'
+import { useAuthStore, useBillingStatus, useTier, FREE_PROPOSAL_LIMIT } from '../../stores/useAuthStore'
 import { useProposalStore } from '../../stores/useProposalStore'
+import { UpgradeModal } from '../dashboard/UpgradeModal'
 import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
 import { supabase } from '../../lib/supabase'
@@ -22,6 +23,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   const [viewingToast, setViewingToast] = useState<{ title: string; client: string } | null>(null)
 
   const billingStatus = useBillingStatus()
@@ -192,6 +194,11 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             data-tour="new-proposal"
             onClick={() => {
               if (billingStatus === 'past_due') return
+              const activeCount = proposals.filter(p => !p.is_archived).length
+              if (tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT) {
+                setUpgradeModalOpen(true)
+                return
+              }
               navigate('/proposals/new')
             }}
             className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12px] font-bold"
@@ -365,6 +372,14 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
 
       {/* First-run guided tour — only fires once, self-dismisses to localStorage */}
       <GuidedTour locale={locale} />
+
+      {/* Upgrade modal — triggered when free user hits quota from navbar */}
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        activeCount={proposals.filter(p => !p.is_archived).length}
+        currentTier={tier}
+      />
 
       {/* Page content */}
       {children}
