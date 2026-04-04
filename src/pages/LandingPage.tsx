@@ -120,6 +120,7 @@ const copy = {
         price: '₪0',
         period: '/חודש',
         sub: 'לשלב ההתחלה',
+        cta: 'התחילו בחינם',
         features: [
           { text: 'עד 5 הצעות בחודש', ok: true },
           { text: 'Deal Room + חתימה דיגיטלית', ok: true },
@@ -133,6 +134,7 @@ const copy = {
         price: '₪19',
         period: '/חודש',
         sub: 'לפרילנסרים רציניים',
+        cta: 'בחרו פרו',
         features: [
           { text: 'עד 100 הצעות בחודש', ok: true },
           { text: 'הכל כולל חינם', ok: true },
@@ -145,6 +147,7 @@ const copy = {
         price: '₪39',
         period: '/חודש',
         sub: 'לסוכנויות ועצמאיים מתקדמים',
+        cta: 'בחרו פרימיום',
         features: [
           { text: 'הצעות ללא הגבלה', ok: true },
           { text: 'הכל כולל פרו', ok: true },
@@ -256,6 +259,7 @@ const copy = {
         price: '₪0',
         period: '/mo',
         sub: 'Just getting started',
+        cta: 'Start for free',
         features: [
           { text: 'Up to 5 proposals / month', ok: true },
           { text: 'Deal Room + e-signature', ok: true },
@@ -269,6 +273,7 @@ const copy = {
         price: '₪19',
         period: '/mo',
         sub: 'For serious freelancers',
+        cta: 'Start with Pro',
         features: [
           { text: 'Up to 100 proposals / month', ok: true },
           { text: 'Everything in Free', ok: true },
@@ -281,6 +286,7 @@ const copy = {
         price: '₪39',
         period: '/mo',
         sub: 'For agencies & power users',
+        cta: 'Start with Premium',
         features: [
           { text: 'Unlimited proposals', ok: true },
           { text: 'Everything in Pro', ok: true },
@@ -1621,7 +1627,7 @@ function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe
                         }}
                         whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
                       >
-                        {c.pricingCta} →
+                        {tier.cta} →
                       </motion.button>
                     ) : isFree ? (
                       <motion.button
@@ -1647,7 +1653,7 @@ function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe
                         }}
                         whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
                       >
-                        {c.pricingFreeCta}
+                        {tier.cta}
                       </motion.button>
                     ) : (
                       <motion.button
@@ -1673,7 +1679,7 @@ function PricingSection({ c, isHe, onCta, isDark }: { c: typeof copy['he']; isHe
                         }}
                         whileTap={{ scale: 0.97, transition: { type: 'spring' as const, stiffness: 600, damping: 22 } }}
                       >
-                        {c.pricingCta} →
+                        {tier.cta} →
                       </motion.button>
                     )}
                   </div>
