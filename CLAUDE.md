@@ -2479,16 +2479,18 @@ The `pricesIncludeVat` prop was removed from `CheckoutClimax`. VAT display is no
 
 ## 33. Conversion & Urgency Engine (Sprint 44.5)
 
-### Dark mode — permanently locked
+### Dark mode — default, follows system preference
 
-`ThemeProvider.tsx` uses `forcedTheme="dark"` on `NextThemesProvider`. This overrides all system preferences and any user toggle — `.dark` is always present on `<html>`. The `ThemeToggle` component file exists but is not mounted anywhere. Do not re-introduce a theme switcher.
+`ThemeProvider.tsx` uses `defaultTheme="dark" enableSystem` on `NextThemesProvider`. Dark mode is the default, but users on a light-mode system preference will see the light mode. `.dark` is present on `<html>` when dark mode is active.
 
 ```tsx
 // src/components/layout/ThemeProvider.tsx
-<NextThemesProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+<NextThemesProvider attribute="class" defaultTheme="dark" enableSystem>
 ```
 
-`ProtectedLayout.tsx` no longer imports or renders `<ThemeToggle>`.
+`ProtectedLayout.tsx` no longer imports or renders `<ThemeToggle>`. The `ThemeToggle` component file exists but is not mounted — the UI has no manual toggle.
+
+**Light mode exists.** When adding dark-mode Tailwind classes (`dark:bg-*`, `dark:border-*`, `dark:text-*`), always use bracket notation for non-standard opacity values — see the "What NOT To Do" rule on Tailwind opacity shorthand.
 
 ### Expiry Lock — DealRoom
 
@@ -3125,7 +3127,8 @@ Two new compliance elements added to the Billing page:
 - **Do not add a secondary VAT toggle** — Sprint 44 explicitly removed the two-toggle approach after user feedback. There is only one toggle: `include_vat`. When on, prices are gross. When off, no VAT exists. Do not re-introduce `prices_include_vat` as a separate UI control.
 - **Do not allow document type changes after sending** — once `isFinanciallyLocked && !needsRevision`, the document mode segmented control (proposal ↔ legal document) and contract template picker must be disabled. Changing document structure after the client received it creates legal ambiguity.
 - **Do not use `applyVat()` from `types/proposal.ts` for display purposes** — this function adds VAT on top (`amount * (1 + rate)`), which contradicts the Israeli gross-price model. For VAT extraction, use `vatOnGross()` and `netFromGross()` from `financialMath.ts`.
-- **Do not re-enable light mode or add a ThemeToggle** — the app is permanently locked to dark mode via `forcedTheme="dark"` in `ThemeProvider.tsx`. The `ThemeToggle` component exists but is intentionally not mounted. Do not re-add it to `ProtectedLayout` or any other layout.
+- **Do not add a ThemeToggle to ProtectedLayout** — the app has no manual theme switcher. Dark is the default; system light mode is supported. Do not mount `ThemeToggle` in `ProtectedLayout` or any other layout.
+- **Do not use non-standard Tailwind opacity shorthand in `dark:` classes** — Tailwind v3 JIT only generates CSS for opacity values in the default scale (multiples of 5: 0, 5, 10, …, 95, 100). Non-standard values like `/4`, `/6`, `/7`, `/8`, `/12`, `/14` produce **no CSS** — the class is silently ignored, and the light-mode background wins. Use bracket notation: `dark:bg-white/[0.04]`, `dark:border-white/[0.07]`, `dark:bg-white/[0.06]`, `dark:bg-white/[0.08]`, `dark:bg-indigo-500/[0.14]`, etc. Standard scale values (`/5`, `/10`, `/25`, `/50`) are fine without brackets. Affected files: AccessibilityWidget (fixed Sprint 65), and potential regressions in NotificationBell, Dashboard, ProposalCard, RichTextEditor, PremiumInputs.
 - **Do not re-declare `isExpired` inside the DealRoom IIFE** — `isExpired` is computed once at render level in `DealRoom.tsx`. The IIFE forms a child scope so there is no conflict, but re-declaring it creates two sources of truth. Use the outer-scope const throughout.
 - **Do not show the CountdownBanner when `isExpired`** — the countdown serves urgency for active proposals only. When a proposal is already expired, `CountdownBanner` must be suppressed and the red expiry banner shown instead. Render condition: `proposal.expires_at && !accepted && !isExpired`.
 - **Do not render the Follow-Up WhatsApp item for non-sent proposals** — the item only appears for `status === 'sent'` or `status === 'viewed'`. For `draft`, `accepted`, `rejected`, or `needs_revision` it must be absent.
