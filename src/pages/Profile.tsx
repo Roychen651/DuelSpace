@@ -38,7 +38,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[11px] font-bold uppercase tracking-widest text-dim">
+      <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-600 dark:text-white/40">
         {label}
       </label>
       <div className="relative">

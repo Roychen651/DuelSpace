@@ -184,6 +184,9 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             <HelpCircle size={14} />
           </button>
 
+          {/* Theme toggle */}
+          <ThemeToggle />
+
           {/* Notification Bell */}
           <NotificationBell />
 

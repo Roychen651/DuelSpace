@@ -109,7 +109,7 @@ function SectionLabel({ he, en }: { he: string; en: string }) {
 // ─── Color blind selector ─────────────────────────────────────────────────────
 
 const CB_MODES: { mode: ColorBlindMode; labelHe: string; labelEn: string; color: string }[] = [
-  { mode: 'none',         labelHe: 'רגיל',          labelEn: 'Normal',      color: 'rgba(255,255,255,0.25)' },
+  { mode: 'none',         labelHe: 'רגיל',          labelEn: 'Normal',      color: '#94a3b8' },
   { mode: 'protanopia',   labelHe: 'פרוטנופיה',     labelEn: 'Protan',      color: '#f87171' },
   { mode: 'deuteranopia', labelHe: 'דאוטרנופיה',    labelEn: 'Deutan',      color: '#4ade80' },
   { mode: 'tritanopia',   labelHe: 'טריטנופיה',     labelEn: 'Tritan',      color: '#60a5fa' },
@@ -136,11 +136,14 @@ function ColorBlindRow() {
               key={mode}
               type="button"
               onClick={() => setColorBlindMode(mode)}
-              className="rounded-lg py-1.5 text-[9px] font-bold transition-all"
+              className={`rounded-lg py-1.5 text-[9px] font-bold transition-all ${
+                active
+                  ? 'text-indigo-600 dark:text-violet-300'
+                  : 'text-slate-600 dark:text-white/45'
+              }`}
               style={{
-                background: active ? 'rgba(99,102,241,0.22)' : 'rgba(255,255,255,0.05)',
-                border: active ? '1px solid rgba(99,102,241,0.45)' : `1px solid ${color}44`,
-                color: active ? '#c4b5fd' : 'rgba(255,255,255,0.45)',
+                background: active ? 'rgba(99,102,241,0.15)' : 'transparent',
+                border: active ? '1px solid rgba(99,102,241,0.45)' : `1px solid ${color}66`,
               }}
             >
               <span

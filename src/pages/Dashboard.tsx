@@ -40,9 +40,9 @@ function KPICard({
   const [tipOpen, setTipOpen] = useState(false)
   return (
     <div
-      className="group relative overflow-hidden rounded-2xl p-5 cursor-default"
+      className="group relative overflow-hidden rounded-2xl p-5 cursor-default bg-white dark:bg-transparent shadow-sm dark:shadow-none"
       style={{
-        background: `linear-gradient(145deg, ${color}09 0%, rgba(3,3,5,0.55) 100%)`,
+        backgroundImage: `linear-gradient(145deg, ${color}09 0%, transparent 100%)`,
         border: `1px solid ${color}22`,
         backdropFilter: 'blur(24px)',
         animation: `ds-fade-up 0.5s ease-out ${delay}s both`,

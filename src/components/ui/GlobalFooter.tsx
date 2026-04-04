@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Zap, Globe, Shield, Lock, CheckCircle2 } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
-import { ThemeToggle } from './ThemeToggle'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -265,8 +264,6 @@ export function GlobalFooter() {
                 <Globe size={11} />
                 {c.langToggle}
               </button>
-              {/* Theme toggle — visible to logged-out users on public pages */}
-              <ThemeToggle />
             </div>
 
             {/* Product */}

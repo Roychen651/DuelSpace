@@ -106,15 +106,15 @@ function StatusTimeline({ proposal, locale }: { proposal: Proposal; locale: stri
               {isHe ? ev.labelHe : ev.labelEn}
             </span>
             {ev.time && ev.done && (
-              <span className="text-[7px] text-slate-300 dark:text-white/25 leading-none">
+              <span className="text-[7px] text-muted leading-none">
                 {timeAgo(ev.time, locale)}
               </span>
             )}
           </div>
           {i < events.length - 1 && (
             <div
-              className="h-px flex-1 mx-0.5"
-              style={{ background: events[i + 1].done ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)' }}
+              className={`h-px flex-1 mx-0.5 ${events[i + 1].done ? '' : 'bg-slate-200 dark:bg-white/8'}`}
+              style={events[i + 1].done ? { background: 'rgba(99,102,241,0.4)' } : {}}
             />
           )}
         </div>
@@ -152,7 +152,7 @@ function DropItem({
     >
       <span
         className="flex h-8 w-8 flex-none items-center justify-center rounded-xl"
-        style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.07)' }}
+        style={{ background: variant === 'danger' ? 'rgba(239,68,68,0.1)' : 'rgba(99,102,241,0.08)' }}
       >
         {icon}
       </span>
@@ -354,10 +354,10 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button
-                  className="flex h-9 w-9 items-center justify-center rounded-xl outline-none transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.35)', touchAction: 'manipulation' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl outline-none transition-colors text-slate-400 hover:text-slate-800 dark:text-white/30 dark:hover:text-white"
+                  style={{ touchAction: 'manipulation' }}
                   onClick={e => e.stopPropagation()}
-                  onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)' }}
+                  onPointerEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.05)' }}
                   onPointerLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                   aria-label={locale === 'he' ? 'פעולות' : 'Options'}
                 >
@@ -521,8 +521,8 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                 .sort(([, a], [, b]) => b - a)
               const total = sections.reduce((s, [, t]) => s + t, 0)
               return (
-                <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/25 mb-2 flex items-center gap-1">
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/6">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted mb-2 flex items-center gap-1">
                     <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                     </svg>
@@ -534,7 +534,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                       const label = (LABELS[name]?.[locale as 'he' | 'en']) ?? name
                       return (
                         <div key={name} className="flex items-center gap-2">
-                          <span className="text-[10px] text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
+                          <span className="text-[10px] text-slate-500 dark:text-white/35 font-medium flex-none" style={{ width: 52, direction: 'ltr' }}>
                             {label}
                           </span>
                           <div className="flex-1 h-1 rounded-full bg-slate-100 dark:bg-white/7">
@@ -547,7 +547,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
                               }}
                             />
                           </div>
-                          <span className="text-[10px] text-white/30 font-medium flex-none text-end" style={{ width: 28 }}>
+                          <span className="text-[10px] text-slate-500 dark:text-white/30 font-medium flex-none text-end" style={{ width: 28 }}>
                             {pct}%
                           </span>
                         </div>
