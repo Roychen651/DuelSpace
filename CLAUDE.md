@@ -133,9 +133,9 @@ src/
 │   ├── layout/
 │   │   └── AdminRoute.tsx        # Three-layer auth guard: idle spinner → unauthenticated → wrong email → /dashboard
 │   ├── builder/
-│   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, AI Ghostwriter
+│   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, Quick-Start Templates
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
-│   │   ├── AIGhostwriter.tsx     # AI description generator (contextual, bilingual)
+│   │   ├── AIGhostwriter.tsx     # Quick-Start Templates — keyword-matched proposal templates (NOT AI/ML); bilingual He/En
 │   │   ├── ReusableServices.tsx  # Pick from saved services library to add to proposal
 │   │   ├── RichTextEditor.tsx    # TipTap-based rich text editor (proposal description + Profile business terms)
 │   └── ReusableServices.tsx  # Services injection modal — multi-select + bulk inject into proposal
@@ -203,14 +203,15 @@ supabase/
 │   ├── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
 │   ├── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
 │   ├── 30_prices_include_vat.sql      # prices_include_vat boolean column (Sprint 44)
-│   └── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
+│   ├── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
+│   └── 32_security_hardening.sql      # get_deal_room_proposal full column list + webhook_url strip; accept_proposal client_name guard (Sprint 57)
 └── functions/
     ├── admin-impersonate/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
     ├── send-proposal/
     │   └── index.ts                   # Sends branded HTML email via Resend; stamps email_sent_at + delivery_email; --no-verify-jwt
     ├── stripe-portal/
-    │   └── index.ts                   # Creates one-time Stripe Customer Portal session URL; called by Billing.tsx + Profile.tsx; requires stripe_customer_id in user_metadata
+    │   └── index.ts                   # Creates one-time Stripe Customer Portal session URL; called by Billing.tsx + Profile.tsx; requires stripe_customer_id in user_metadata; DEPLOYED Sprint 58
     └── stripe-webhook/
         └── index.ts                   # Stripe webhook handler — updates plan_tier + billing_status + subscription_period_end + subscription_cancel_at_period_end in user_metadata
 ```
@@ -430,10 +431,12 @@ mark_proposal_viewed(p_token TEXT)
   → increments view_count, sets last_viewed_at, advances status to 'viewed'
   → granted to: anon
 
-accept_proposal(p_token TEXT, p_ip TEXT DEFAULT NULL, p_ua TEXT DEFAULT NULL)
+accept_proposal(p_token TEXT, p_ip TEXT DEFAULT NULL, p_ua TEXT DEFAULT NULL, p_sig TEXT DEFAULT NULL, p_add_ons TEXT DEFAULT NULL)
   → sets status = 'accepted' (only from sent/viewed/needs_revision)
+  → blocks anonymous signing: UPDATE only fires when client_name IS NOT NULL AND TRIM(client_name) <> '' (migration 32)
   → saves signer_ip + signer_user_agent atomically — both nullable, old callers unaffected
-  → returns BOOLEAN (true = row updated, false = already accepted or token not found)
+  → p_sig saves signature_data_url (COALESCE — won't overwrite existing); p_add_ons updates add_ons jsonb
+  → returns BOOLEAN (true = row updated, false = blocked or token not found)
   → granted to: anon, authenticated
 
 -- Migration 03
@@ -441,9 +444,10 @@ update_proposal_time_spent(p_token TEXT, p_seconds INTEGER)
   → accumulates time_spent_seconds
   → granted to: anon
 
--- Migration 04 / 05 (05 adds SET search_path fix + authenticated grant)
+-- Migration 04 / 05 / 32 (32 adds full column list + strips webhook_url from creator_info)
 get_deal_room_proposal(p_token TEXT, p_code TEXT DEFAULT NULL) RETURNS json
-  → if no access_code: returns proposal JSON (excluding access_code column)
+  → if no access_code: returns proposal JSON (ALL columns except access_code + signature_data_url)
+  → strips webhook_url from creator_info JSONB before returning — prevents API key leakage to visitors
   → if code required and not provided: returns '{"_requires_code": true}'
   → if code wrong: returns NULL (silent — don't reveal proposal existence)
   → granted to: anon, authenticated
@@ -953,7 +957,7 @@ Split-screen at `100dvh`, no page scroll.
 ### EditorPanel sections (collapsible — Bento card style)
 Each section is a rounded-3xl card with `background: rgba(255,255,255,0.02)` and `border: rgba(255,255,255,0.05)`. The section trigger (`p-5`) shows a conditional gradient `rgba(99,102,241,0.14) → 0.03 → transparent` + `borderBottom` when open. Body uses `p-6 space-y-6`.
 
-1. **Project** — title, cover image URL, description, AI Ghostwriter button
+1. **Project** — title, cover image URL, description, Quick-Start Templates button (AIGhostwriter component)
 2. **Client** — name + email in 2-column grid (`grid grid-cols-1 sm:grid-cols-2 gap-4`), collapsed by default
 3. **Pricing** — base price + currency in 2-column grid, VAT toggle (`include_vat`), date picker (`expires_at`)
 4. **Add-ons** — drag-to-reorder (`Reorder.Group`), price inputs, clientAdjustable pill (green glow when open)
@@ -1305,7 +1309,27 @@ export interface PdfOptions {
 ```ts
 export async function generateProposalPdf(opts: PdfOptions): Promise<void>
 // downloads file: DealSpace_{title}_{YYYY-MM-DD}.pdf
+// iOS Safari: uses window.open(url, '_blank') instead of <a download> — blob download is blocked on iOS
 ```
+
+### iOS Safari PDF download (Sprint 58)
+
+iOS Safari blocks programmatic `<a download>` for blob URLs. `generateProposalPdf` detects iOS and falls back to `window.open`:
+
+```ts
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+if (isIOS) {
+  const opened = window.open(url, '_blank')
+  if (!opened) { /* popup blocked — fall back to <a target="_blank"> */ }
+  setTimeout(() => URL.revokeObjectURL(url), 30_000)
+  return
+}
+// Non-iOS: standard <a download> flow
+```
+
+The 30-second revoke delay gives the new tab time to load the PDF before the blob URL is released.
 
 ---
 
@@ -2768,6 +2792,7 @@ supabase functions deploy stripe-portal --project-ref aefyytktbpynkbxhzhyt
 Centralized upgrade modal used from:
 - `src/pages/Integrations.tsx` (paywall CTA button)
 - `src/pages/Dashboard.tsx` (quota limit CTA)
+- `src/components/layout/ProtectedLayout.tsx` (navbar "New Proposal" quota lock — Sprint 58)
 
 Props: `{ open, onClose, activeCount, currentTier }`
 
@@ -2968,7 +2993,7 @@ Key clause additions:
 - **Clause 5 — E-signature validity:** References Israeli Electronic Signature Law 5761-2001. Describes the full forensic audit chain (IP address, user agent, UTC timestamp, PNG signature image) stored in the immutable certificate.
 - **Clause 7 — Payments:** Stripe PCI-DSS Level 1 compliance, zero card storage on DealSpace servers.
 - **Clause 8 — Consumer Protection:** Israeli Consumer Protection Law 5741-1981, 14-day cancellation right for subscription services.
-- **Clause 9 — AI Disclaimer:** AI Ghostwriter generates suggestions only; creator bears full responsibility for proposal content; DealSpace provides no legal or financial advice.
+- **Clause 9 — Templates Disclaimer:** Quick-Start Templates generate suggestions only; creator bears full responsibility for proposal content; DealSpace provides no legal or financial advice.
 
 ### PrivacyPolicy.tsx (v3.0) — `/privacy`
 
@@ -3149,3 +3174,8 @@ Two new compliance elements added to the Billing page:
 - **Do not use `useScroll` + `useTransform` for the VS divider in `ProblemSolutionSection`** — the scroll-linked approach gets stuck because Lenis smooth scroll diverges from the real browser scroll position, and simultaneous `whileInView` layout shifts from the side cards confuse the `useScroll` target. The VS divider must use `whileInView` with staggered delays (`once: true`). Do not revert it to scroll-linked.
 - **Do not set `UpgradeModal` Pro as not-popular or Premium as most-popular** — since Sprint 50.6, Pro (`₪19`) is the "Most Popular" plan with the spinning conic-gradient border treatment. Premium (`₪39`) uses gold accent (`#d4af37`). Swapping the popular flag was intentional product positioning.
 - **Do not add email fallbacks to UpgradeModal CTA buttons** — the Forced Event Handler Pattern requires every button to always render. If a Stripe env var is missing, the handler calls `alert()` in dev only and silently returns in prod. Never replace buttons with `<div>` fallbacks or `mailto:` links.
+- **Do not bypass the quota check in ProtectedLayout's "New Proposal" button** — since Sprint 58, the navbar button checks `tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT` and opens `UpgradeModal` instead of navigating. The Dashboard's `handleCreate` has the same guard. Both must stay in sync — a bypass in either surface allows free users to create unlimited proposals.
+- **Do not call `AIGhostwriter` an "AI" feature** — `AIGhostwriter.tsx` is a keyword-matched template system (`findTemplate(prompt)` against a static `TEMPLATES` array). It has no ML/LLM backend. The component is branded "Quick-Start Templates" / "תבניות חכמות להצעה" since Sprint 58. Never re-introduce the "AI", "Ghostwriter", or "BETA" labels — they are false advertising.
+- **Do not use `<a download>` for PDF generation on iOS** — iOS Safari blocks programmatic blob URL downloads via anchors. `generateProposalPdf` in `pdfEngine.tsx` detects iOS via `navigator.userAgent` + `navigator.maxTouchPoints` and uses `window.open(url, '_blank')` instead. Never remove this iOS branch; removing it silently breaks PDF download for all iPhone/iPad users.
+- **Do not skip `client_name` validation before calling `accept_proposal`** — migration 32 added a server-side guard: the UPDATE is a no-op when `client_name IS NULL OR TRIM(client_name) = ''`, returning `false`. The DealRoom flow must always call `save_client_details()` (which populates `client_name`) before `accept_proposal()`. If `accept_proposal` returns `false`, treat it as a hard error — the client details form was skipped.
+- **Do not return `webhook_url` from `get_deal_room_proposal`** — migration 32 strips it with the JSONB `-` operator (`creator_info - 'webhook_url'`). The webhook URL is a creator-private Zapier/Make/n8n API key. Exposing it to anonymous Deal Room visitors would allow anyone to trigger the creator's automations. Never add it back to the SELECT list.
