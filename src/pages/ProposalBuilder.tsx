@@ -338,7 +338,7 @@ export default function ProposalBuilder() {
     return (
       <div
         style={{
-          background: '#030305',
+          background: 'var(--background)',
           minHeight: '100dvh',
           display: 'flex',
           alignItems: 'center',
@@ -362,7 +362,7 @@ export default function ProposalBuilder() {
 
   return (
     <div
-      className="flex flex-col bg-slate-50 dark:bg-[#030305]"
+      className="flex flex-col bg-background"
       style={{ height: '100dvh', overflow: 'hidden' }}
       dir={locale === 'he' ? 'rtl' : 'ltr'}
     >
@@ -380,8 +380,7 @@ export default function ProposalBuilder() {
       {/* ── Top bar ────────────────────────────────────────────────────────── */}
       <header
         className="flex-none flex items-center justify-between px-4 py-3 z-20
-          bg-white/92 border-b border-slate-200/60
-          dark:bg-[rgba(3,3,5,0.9)] dark:border-white/[0.05]"
+          bg-background/95 border-b border-[color:var(--border)]"
         style={{
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -391,7 +390,7 @@ export default function ProposalBuilder() {
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex-none flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-white/80"
+            className="flex-none flex h-8 w-8 items-center justify-center rounded-lg text-dim transition hover:bg-[var(--bg-card-hover)] hover:text-main"
             aria-label={locale === 'he' ? 'חזרה' : 'Back'}
           >
             <ArrowLeft size={16} />
@@ -406,7 +405,7 @@ export default function ProposalBuilder() {
             >
               <Zap size={13} className="text-white" />
             </div>
-            <span className="text-sm font-semibold text-slate-700 dark:text-white/80 truncate max-w-[90px] sm:max-w-[200px]">
+            <span className="text-sm font-semibold text-main truncate max-w-[90px] sm:max-w-[200px]">
               {draft.project_title || (locale === 'he' ? 'הצעה חדשה' : 'New Proposal')}
             </span>
           </div>
@@ -422,7 +421,7 @@ export default function ProposalBuilder() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               transition={{ duration: 0.18 }}
-              style={{ color: saveStatus === 'saved' ? '#22c55e' : 'rgba(255,255,255,0.35)' }}
+              style={{ color: saveStatus === 'saved' ? '#22c55e' : 'var(--text-tertiary)' }}
             >
               {saveStatus === 'saving'
                 ? (locale === 'he' ? 'שומר…' : 'Saving…')
@@ -466,9 +465,9 @@ export default function ProposalBuilder() {
                 border: '1px solid rgba(34,197,94,0.25)',
                 color: '#4ade80',
               } : {
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: 'rgba(255,255,255,0.5)',
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-tertiary)',
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
@@ -560,7 +559,7 @@ export default function ProposalBuilder() {
         {/* Left — Editor Panel (full on mobile, 35% on desktop) */}
         <div
           className="w-full lg:w-[35%] flex-none overflow-y-auto"
-          style={{ borderInlineEnd: '1px solid rgba(255,255,255,0.04)' }}
+          style={{ borderInlineEnd: '1px solid var(--border-subtle)' }}
         >
           <EditorPanel
             draft={draft}

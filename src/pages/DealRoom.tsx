@@ -88,7 +88,7 @@ function CountdownBanner({ expiresAt, locale }: { expiresAt: string; locale: str
       >
         {pad(val)}
       </span>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 mt-0.5">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-dim mt-0.5">
         {l}
       </span>
     </div>
@@ -108,7 +108,7 @@ function CountdownBanner({ expiresAt, locale }: { expiresAt: string; locale: str
     >
       <div className="flex items-center gap-2">
         <Clock size={14} className="text-indigo-400 flex-none" />
-        <span className="text-xs font-semibold text-slate-500 dark:text-white/50">
+        <span className="text-xs font-semibold text-subtle">
           {isHe ? 'ההצעה תפקע בעוד' : 'Offer expires in'}
         </span>
       </div>
@@ -289,7 +289,7 @@ function SocialProofBlock({
       transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' as const }}
       className="mb-8"
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-dim mb-3">
         {isHe ? '⭐ לקוחות ממליצים' : '⭐ Client Testimonials'}
       </p>
 
@@ -323,7 +323,7 @@ function SocialProofBlock({
             </div>
 
             {/* Quote text */}
-            <p className="relative text-[13px] leading-relaxed text-slate-500 dark:text-white/60 mt-4 mb-4">
+            <p className="relative text-[13px] leading-relaxed text-subtle mt-4 mb-4">
               {t.quote}
             </p>
 
@@ -336,7 +336,7 @@ function SocialProofBlock({
                 {t.author.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-bold text-slate-700 dark:text-white/70 leading-tight">{t.author}</p>
+                <p className="text-[12px] font-bold text-main leading-tight">{t.author}</p>
                 {t.role && (
                   <p className="text-[10px] text-slate-400 dark:text-white/32 mt-0.5">{t.role}</p>
                 )}
@@ -988,7 +988,7 @@ export default function DealRoom() {
   if (fetchStatus === 'loading') {
     return (
       <div
-        className="bg-slate-50 dark:bg-[#05050A]"
+        className="bg-background"
         style={{
           minHeight: '100dvh',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1011,7 +1011,7 @@ export default function DealRoom() {
   if (fetchStatus === 'notfound' || (!proposal && fetchStatus !== 'requires_code')) {
     return (
       <div
-        className="bg-slate-50 dark:bg-[#05050A]"
+        className="bg-background"
         style={{
           minHeight: '100dvh',
           display: 'flex', flexDirection: 'column',
@@ -1025,7 +1025,7 @@ export default function DealRoom() {
         >
           <AlertCircle size={28} className="text-red-400" />
         </div>
-        <p className="text-slate-500 dark:text-white/60 text-sm font-medium text-center">
+        <p className="text-subtle text-sm font-medium text-center">
           This deal room doesn't exist or the link has expired.
         </p>
       </div>
@@ -1037,7 +1037,7 @@ export default function DealRoom() {
     const isHe = locale === 'he'
     return (
       <div
-        className="bg-slate-50 dark:bg-[#05050A]"
+        className="bg-background"
         style={{
           minHeight: '100dvh',
           display: 'flex', flexDirection: 'column',
@@ -1093,7 +1093,7 @@ export default function DealRoom() {
                 value={accessCode}
                 onChange={e => { setAccessCode(e.target.value); setCodeError(false) }}
                 onKeyDown={e => { if (e.key === 'Enter') handleCodeSubmit() }}
-                className="w-full rounded-2xl border bg-slate-50 dark:bg-white/[0.05] px-4 py-3 text-center text-xl font-black tracking-[0.3em] text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-white/20 outline-none transition-all"
+                className="w-full rounded-2xl border bg-[var(--input-bg)] border-[color:var(--border)] px-4 py-3 text-center text-xl font-black tracking-[0.3em] text-main placeholder-dim outline-none transition-all"
                 style={{
                   border: codeError
                     ? '1px solid rgba(248,113,113,0.5)'
@@ -1151,7 +1151,7 @@ export default function DealRoom() {
 
   return (
     <div
-      className="relative min-h-dvh flex flex-col bg-slate-50 dark:bg-[#05050A]"
+      className="relative min-h-dvh flex flex-col bg-background"
       dir={dir}
     >
       <style>{pageKeyframes}</style>
@@ -1188,7 +1188,7 @@ export default function DealRoom() {
       <div className="fixed top-4 end-4 z-40">
         <button
           onClick={toggleLocale}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-white/50 backdrop-blur-xl transition hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-white/80"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-subtle backdrop-blur-xl transition hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-white/80"
         >
           <Globe size={11} />
           {locale === 'he' ? 'EN' : 'עב'}
@@ -1223,7 +1223,7 @@ export default function DealRoom() {
             >
               <Zap size={15} className="text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-slate-500 dark:text-white/60">DealSpace</span>
+            <span className="text-sm font-bold tracking-tight text-subtle">DealSpace</span>
           </motion.div>
 
           {/* Expiry lock banner — replaces countdown when past due */}
@@ -1285,7 +1285,7 @@ export default function DealRoom() {
                 </div>
               )}
               {proposal.creator_info.company_name && !proposal.creator_info.logo_url && (
-                <p className="text-sm font-bold text-slate-500 dark:text-white/60 tracking-tight">
+                <p className="text-sm font-bold text-subtle tracking-tight">
                   {proposal.creator_info.company_name}
                 </p>
               )}
@@ -1319,7 +1319,7 @@ export default function DealRoom() {
           {proposal.description && (
             <motion.div
               variants={slideUp}
-              className="dr-prose text-[15px] text-slate-500 dark:text-white/50 leading-relaxed"
+              className="dr-prose text-[15px] text-subtle leading-relaxed"
               dangerouslySetInnerHTML={{ __html: parseSmartVariables(proposal.description, proposal, locale) }}
             />
           )}

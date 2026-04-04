@@ -46,13 +46,13 @@ export function PremiumSliderCard({
         style={{
           background: enabled
             ? 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.06) 100%)'
-            : 'rgba(255,255,255,0.02)',
+            : 'var(--card-bg)',
           border: enabled
             ? '1px solid rgba(99,102,241,0.28)'
-            : '1px solid rgba(255,255,255,0.06)',
+            : '1px solid var(--border)',
           boxShadow: enabled
             ? '0 8px 32px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+            : 'none',
         }}
       >
         {/* Top glow accent when enabled */}
@@ -108,12 +108,12 @@ export function PremiumSliderCard({
             <div className="min-w-0">
               <p
                 className="text-[15px] font-semibold leading-snug transition-colors duration-200"
-                style={{ color: enabled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)' }}
+                style={{ color: enabled ? 'var(--text-main)' : 'var(--text-tertiary)' }}
               >
                 {addOn.label || (locale === 'he' ? 'תוספת' : 'Add-on')}
               </p>
               {addOn.description && (
-                <p className="text-xs text-white/30 mt-0.5 leading-relaxed">
+                <p className="text-xs text-dim mt-0.5 leading-relaxed">
                   {addOn.description}
                 </p>
               )}
@@ -152,7 +152,7 @@ export function PremiumSliderCard({
               </span>
             )}
             {quantity > 1 && enabled && (
-              <p className="text-[10px] text-white/30 mt-0.5 tabular-nums">
+              <p className="text-[10px] text-dim mt-0.5 tabular-nums">
                 {quantity}× {formatCurrency(unitDiscounted, currency)}
               </p>
             )}

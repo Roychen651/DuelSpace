@@ -217,7 +217,7 @@ export function CheckoutClimax({
                 {trueSavings > 0 && originalTotal > 0 && (
                   <p
                     className="text-sm font-bold tabular-nums line-through mb-0.5 leading-none"
-                    style={{ color: 'rgba(255,255,255,0.22)' }}
+                    style={{ color: 'var(--text-tertiary)' }}
                     aria-label={isHe ? 'מחיר מקורי' : 'Original price'}
                   >
                     {formatCurrency(originalTotal, currency)}
@@ -262,7 +262,7 @@ export function CheckoutClimax({
                 {resolvedAddOns && (
                   <div
                     className="px-3.5 pt-3 pb-2.5 space-y-2"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
                   >
                     {/* Base package */}
                     <div className="flex justify-between items-center">
@@ -293,14 +293,14 @@ export function CheckoutClimax({
                           {a.discount_pct > 0 && (
                             <span
                               className="text-[10px] line-through tabular-nums"
-                              style={{ color: 'rgba(255,255,255,0.18)' }}
+                              style={{ color: 'var(--text-tertiary)' }}
                             >
                               {formatCurrency(a.price * a.qty, currency)}
                             </span>
                           )}
                           <span
                             className="text-[11px] font-semibold tabular-nums"
-                            style={{ color: a.discount_pct > 0 ? '#4ade80' : 'rgba(255,255,255,0.5)' }}
+                            style={{ color: a.discount_pct > 0 ? '#4ade80' : 'var(--text-secondary)' }}
                           >
                             {formatCurrency(a.discountedPrice * a.qty, currency)}
                           </span>
@@ -314,7 +314,7 @@ export function CheckoutClimax({
                 {(financials.itemSavings > 0 || financials.globalSavings > 0) && (
                   <div
                     className="px-3.5 py-2.5 space-y-1.5"
-                    style={{ borderBottom: includeVat ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+                    style={{ borderBottom: includeVat ? '1px solid var(--border-subtle)' : 'none' }}
                   >
                     {/* After-item-discounts subtotal — only shown when items had individual discounts */}
                     {financials.itemSavings > 0 && (
@@ -322,7 +322,7 @@ export function CheckoutClimax({
                         <span className="text-[11px] text-slate-400 dark:text-white/32">
                           {isHe ? 'סה״כ לאחר הנחות פרטניות' : 'Subtotal (after item discounts)'}
                         </span>
-                        <span className="text-[11px] text-white/32 tabular-nums">
+                        <span className="text-[11px] text-dim tabular-nums">
                           {formatCurrency(financials.discountedSubtotal, currency)}
                         </span>
                       </div>
@@ -350,7 +350,7 @@ export function CheckoutClimax({
                       <span className="text-[11px] text-slate-400 dark:text-white/35">
                         {isHe ? `מתוכם מע״מ (${Math.round(vatRate * 100)}%)` : `Of which VAT (${Math.round(vatRate * 100)}%)`}
                       </span>
-                      <span className="text-[11px] text-white/35 tabular-nums">
+                      <span className="text-[11px] text-dim tabular-nums">
                         {formatCurrency(financials.vatAmount, currency)}
                       </span>
                     </div>
@@ -358,7 +358,7 @@ export function CheckoutClimax({
                       <span className="text-[11px] text-slate-400 dark:text-white/35">
                         {isHe ? 'לפני מע״מ' : 'Before VAT'}
                       </span>
-                      <span className="text-[11px] text-white/35 tabular-nums">
+                      <span className="text-[11px] text-dim tabular-nums">
                         {formatCurrency(financials.beforeVat, currency)}
                       </span>
                     </div>
@@ -437,12 +437,12 @@ export function CheckoutClimax({
                   </div>
                   {/* Body */}
                   <div className="px-4 py-3">
-                    <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                    <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }} dir={isHe ? 'rtl' : 'ltr'}>
                       {isHe
                         ? 'בקשת השינוי נשלחה לבעל העסק. נעדכן אותך ברגע שההצעה תתוקן ותישלח מחדש.'
                         : 'Your change request was sent to the creator. We\'ll notify you as soon as the proposal is updated and resent.'}
                     </p>
-                    <p className="mt-2 text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                    <p className="mt-2 text-[10px]" style={{ color: 'var(--text-tertiary)' }} dir={isHe ? 'rtl' : 'ltr'}>
                       {isHe
                         ? '⚠️ לא ניתן לחתום על ההצעה בעוד הבקשה ממתינה לטיפול.'
                         : '⚠️ Signing is locked while your change request is pending.'}
@@ -464,8 +464,8 @@ export function CheckoutClimax({
                         transition={{ duration: 0.2 }}
                         className="w-full mb-3 rounded-xl px-4 py-4 flex flex-col items-center gap-2 cursor-pointer transition-all"
                         style={{
-                          background: 'rgba(255,255,255,0.025)',
-                          border: '1px dashed rgba(255,255,255,0.1)',
+                          background: 'var(--surface-sunken)',
+                          border: '1px dashed var(--border)',
                         }}
                         onMouseEnter={e => {
                           const el = e.currentTarget
@@ -474,17 +474,17 @@ export function CheckoutClimax({
                         }}
                         onMouseLeave={e => {
                           const el = e.currentTarget
-                          el.style.borderColor = 'rgba(255,255,255,0.1)'
-                          el.style.background = 'rgba(255,255,255,0.025)'
+                          el.style.borderColor = 'var(--border)'
+                          el.style.background = 'var(--surface-sunken)'
                         }}
                       >
-                        <div className="flex items-center gap-2 text-white/30">
+                        <div className="flex items-center gap-2 text-dim">
                           <Lock size={14} />
                           <span className="text-xs font-semibold">
                             {isHe ? 'חתימה אלקטרונית' : 'Electronic Signature'}
                           </span>
                         </div>
-                        <p className="text-[10px] text-white/22 text-center leading-relaxed">
+                        <p className="text-[10px] text-muted text-center leading-relaxed">
                           {isHe
                             ? 'מלא את פרטי הזהות למעלה כדי לפתוח את החתימה'
                             : 'Fill in your identity details above to unlock signing'}
@@ -518,7 +518,7 @@ export function CheckoutClimax({
                           }}
                         >
                           <span className="text-base leading-none mt-px select-none flex-none">🚀</span>
-                          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }} dir={isHe ? 'rtl' : 'ltr'}>
+                          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }} dir={isHe ? 'rtl' : 'ltr'}>
                             {isHe
                               ? 'רגע לפני שיוצאים לדרך — החתימה שלך כאן מאשרת את פרטי הפרויקט והתמחור.'
                               : 'Almost there — your signature confirms the project details and pricing above.'}
@@ -543,8 +543,8 @@ export function CheckoutClimax({
                         transition={{ duration: 0.2 }}
                         className="flex items-start gap-3 cursor-pointer mb-3 rounded-xl px-3 py-2.5"
                         style={{
-                          background: legalConsent ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.025)',
-                          border: legalConsent ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                          background: legalConsent ? 'rgba(34,197,94,0.06)' : 'var(--surface-sunken)',
+                          border: legalConsent ? '1px solid rgba(34,197,94,0.2)' : '1px solid var(--border)',
                           transition: 'background 0.2s, border-color 0.2s',
                         }}
                       >
@@ -558,8 +558,8 @@ export function CheckoutClimax({
                           <div
                             className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
                             style={{
-                              background: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.05)',
-                              borderColor: legalConsent ? '#22c55e' : 'rgba(255,255,255,0.15)',
+                              background: legalConsent ? '#22c55e' : 'var(--surface-sunken)',
+                              borderColor: legalConsent ? '#22c55e' : 'var(--border)',
                               boxShadow: legalConsent ? '0 0 8px rgba(34,197,94,0.4)' : 'none',
                             }}
                           >
@@ -570,7 +570,7 @@ export function CheckoutClimax({
                             )}
                           </div>
                         </div>
-                        <p className="text-[11px] leading-relaxed" style={{ color: legalConsent ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
+                        <p className="text-[11px] leading-relaxed" style={{ color: legalConsent ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
                           {isHe ? (
                             <>
                               אני מאשר/ת בחתימתי כי קראתי והבנתי את פרטי ההצעה, ואני מסכים/ה{' '}
@@ -615,8 +615,8 @@ export function CheckoutClimax({
                         transition={{ duration: 0.2 }}
                         className="flex items-start gap-3 cursor-pointer mb-3 rounded-xl px-3 py-2.5"
                         style={{
-                          background: businessTermsConsent ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.025)',
-                          border: businessTermsConsent ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                          background: businessTermsConsent ? 'rgba(99,102,241,0.06)' : 'var(--surface-sunken)',
+                          border: businessTermsConsent ? '1px solid rgba(99,102,241,0.2)' : '1px solid var(--border)',
                           transition: 'background 0.2s, border-color 0.2s',
                         }}
                       >
@@ -631,8 +631,8 @@ export function CheckoutClimax({
                           <div
                             className="flex h-4 w-4 items-center justify-center rounded-md border transition-all"
                             style={{
-                              background: businessTermsConsent ? '#6366f1' : 'rgba(255,255,255,0.05)',
-                              borderColor: businessTermsConsent ? '#6366f1' : 'rgba(255,255,255,0.15)',
+                              background: businessTermsConsent ? '#6366f1' : 'var(--surface-sunken)',
+                              borderColor: businessTermsConsent ? '#6366f1' : 'var(--border)',
                               boxShadow: businessTermsConsent ? '0 0 8px rgba(99,102,241,0.4)' : 'none',
                             }}
                           >
@@ -643,7 +643,7 @@ export function CheckoutClimax({
                             )}
                           </div>
                         </div>
-                        <p className="text-[11px] leading-relaxed" style={{ color: businessTermsConsent ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }}>
+                        <p className="text-[11px] leading-relaxed" style={{ color: businessTermsConsent ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
                           {isHe
                             ? 'קראתי והסכמתי לתנאים והתניות של העסק המפורטים לעיל.'
                             : 'I have read and agree to the business terms and conditions listed above.'}
@@ -680,8 +680,8 @@ export function CheckoutClimax({
                         style={{
                           background: canSign
                             ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)'
-                            : 'rgba(255,255,255,0.06)',
-                          border: canSign ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                            : 'var(--surface-sunken)',
+                          border: canSign ? 'none' : '1px solid var(--border)',
                           animation: canSign && !accepting ? 'checkout-glow-pulse 2.5s ease-in-out infinite' : 'none',
                           opacity: !canSign ? 0.45 : 1,
                           transition: 'opacity 0.2s, background 0.3s',
@@ -715,7 +715,7 @@ export function CheckoutClimax({
                   {/* Fine print */}
                   {canSign && !accepted && (
                     <motion.p
-                      className="mt-2.5 text-center text-[10px] leading-relaxed text-white/20"
+                      className="mt-2.5 text-center text-[10px] leading-relaxed text-muted"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.15 }}
@@ -735,9 +735,9 @@ export function CheckoutClimax({
                             type="button"
                             className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[11px] font-semibold transition-all"
                             style={{
-                              color: 'rgba(255,255,255,0.35)',
-                              border: '1px solid rgba(255,255,255,0.08)',
-                              background: 'rgba(255,255,255,0.025)',
+                              color: 'var(--text-tertiary)',
+                              border: '1px solid var(--border)',
+                              background: 'var(--surface-sunken)',
                             }}
                             onMouseEnter={e => {
                               const el = e.currentTarget
@@ -747,9 +747,9 @@ export function CheckoutClimax({
                             }}
                             onMouseLeave={e => {
                               const el = e.currentTarget
-                              el.style.color = 'rgba(255,255,255,0.35)'
-                              el.style.borderColor = 'rgba(255,255,255,0.08)'
-                              el.style.background = 'rgba(255,255,255,0.025)'
+                              el.style.color = 'var(--text-tertiary)'
+                              el.style.borderColor = 'var(--border)'
+                              el.style.background = 'var(--surface-sunken)'
                             }}
                           >
                             <MessageSquarePlus size={12} />

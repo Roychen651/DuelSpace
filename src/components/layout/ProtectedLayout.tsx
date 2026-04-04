@@ -255,9 +255,10 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             {menuOpen && (
               <div className="absolute end-0 top-full pt-2 z-50">
                 <div
-                  className="flex flex-col rounded-2xl overflow-hidden bg-card shadow-dropdown"
+                  className="flex flex-col rounded-2xl overflow-hidden shadow-2xl"
                   style={{
                     width: 200,
+                    background: 'var(--dropdown-bg)',
                     border: '1px solid var(--border)',
                     backdropFilter: 'blur(40px)',
                     WebkitBackdropFilter: 'blur(40px)',
@@ -275,7 +276,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                             ? { background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }
                             : tier === 'pro'
                             ? { background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }
-                            : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }
+                            : { background: 'var(--surface-sunken)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }
                         }
                       >
                         {tier === 'unlimited' ? 'PREMIUM' : tier === 'pro' ? 'PRO' : 'FREE'}
@@ -299,7 +300,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
                     <button
                       onClick={() => { setMenuOpen(false); navigate('/billing') }}
                       className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-[12px] font-medium transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white/90 text-start"
-                      style={{ color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'rgba(255,255,255,0.55)' }}
+                      style={{ color: tier === 'unlimited' ? '#d4af37' : tier === 'pro' ? '#818cf8' : 'var(--text-tertiary)' }}
                     >
                       <CreditCard size={13} className="flex-none" />
                       {isHe ? 'חיוב ומנוי' : 'Billing & Subscription'}

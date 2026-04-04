@@ -145,7 +145,7 @@ function AddOnPreviewCard({
           <div
             className="mt-0.5 flex-none flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200"
             style={{
-              background: enabled ? '#6366f1' : 'rgba(255,255,255,0.06)',
+              background: enabled ? '#6366f1' : 'var(--surface-sunken)',
               boxShadow: enabled ? '0 0 10px rgba(99,102,241,0.5)' : 'none',
             }}
           >
