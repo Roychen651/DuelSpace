@@ -7,7 +7,7 @@ import {
   ArrowRight, Zap, Check, X, Star, Globe,
   Eye, FileSignature, ChevronRight,
   Clock, Shield, MessageCircle, Lock,
-  Percent, FileCheck, Sun, Moon,
+  Percent, FileCheck, Sun, Moon, LogIn,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { ReactLenis } from 'lenis/react'
@@ -59,7 +59,7 @@ const copy = {
     // Problem vs Solution
     problemLabel: 'הדרך הישנה',
     solutionLabel: 'הדרך של DealSpace',
-    vsHeadline: 'PDF vs. חדר עסקאות.',
+    vsHeadline: 'PDF vs חדר עסקאות',
     vsSub: 'כמה קבצי PDF ירדו לסל המחזור של הלקוח השבוע? הגיע הזמן להפסיק לשלוח קבצים.',
     problemItems: [
       'PDF שנפתח פעם אחת — ונשכח לנצח',
@@ -198,7 +198,7 @@ const copy = {
 
     problemLabel: 'The Old Way',
     solutionLabel: 'The DealSpace Way',
-    vsHeadline: 'PDF vs. Deal Room.',
+    vsHeadline: 'PDF vs Deal Room',
     vsSub: 'How many PDFs ended up in their trash this week? Time to stop sending files.',
     problemItems: [
       'PDF opened once — then forgotten forever',
@@ -808,7 +808,7 @@ function ProblemSolutionSection({ c, isHe, isDark }: { c: typeof copy['he']; isH
               className="rounded-xl px-3 py-1 text-[65%] font-black"
               style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.22) 0%, rgba(168,85,247,0.15) 100%)', border: '1px solid rgba(99,102,241,0.32)', color: '#a5b4fc', fontFamily: 'var(--font-accent)', letterSpacing: '0.08em', boxShadow: '0 0 18px rgba(99,102,241,0.2)' }}
             >
-              vs.
+              vs
             </span>
             <span style={{ color: isDark ? 'white' : '#0f172a' }}>{isHe ? 'חדר עסקאות' : 'Deal Room'}</span>
           </h2>
@@ -1943,14 +1943,28 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
               >
                 {isDark ? <Sun size={11} /> : <Moon size={11} />}
               </button>
+              {/* Login icon — pill state mobile */}
+              <button
+                onClick={onLogin}
+                className="flex items-center justify-center rounded-full transition-colors"
+                style={{
+                  width: 28, height: 28,
+                  background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+                  border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.1)',
+                  color: isDark ? 'rgba(255,255,255,0.5)' : '#64748b',
+                }}
+              >
+                <LogIn size={12} />
+              </button>
               <motion.button
                 onClick={onCta}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold text-white"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold text-white"
                 style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 14px rgba(99,102,241,0.45)' }}
               >
-                {c.navCta}
+                <span className="hidden sm:inline">{c.navCta}</span>
+                <span className="sm:hidden">{isHe ? 'בחינם' : 'Free'}</span>
               </motion.button>
             </div>
           </motion.nav>
@@ -2009,10 +2023,12 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                 {isHe ? 'EN' : 'עב'}
               </button>
 
+              {/* Login — icon only on mobile, text on sm+ */}
               <button
                 onClick={onLogin}
-                className="hidden sm:flex items-center px-4 py-2 rounded-xl text-[13px] font-semibold transition-all"
+                className="flex items-center gap-1.5 rounded-xl transition-all"
                 style={{
+                  padding: '7px 10px',
                   border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.1)',
                   color: isDark ? 'rgba(255,255,255,0.6)' : '#475569',
                   background: 'transparent',
@@ -2028,18 +2044,21 @@ function Navbar({ c, isHe, onLogin, onCta, onToggleLang, isDark, onToggleTheme }
                   el.style.background = 'transparent'
                 }}
               >
-                {c.navLogin}
+                <LogIn size={15} />
+                <span className="hidden sm:inline text-[13px] font-semibold">{c.navLogin}</span>
               </button>
 
               <motion.button
                 onClick={onCta}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white"
+                className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[12px] sm:text-[13px] font-bold text-white"
                 style={{ background: 'linear-gradient(135deg, #6366f1, #7c3aed, #a855f7)', boxShadow: '0 0 22px rgba(99,102,241,0.45), 0 2px 10px rgba(0,0,0,0.3)' }}
               >
-                {c.navCta}
-                <ChevronRight size={13} />
+                <span className="hidden sm:inline">{c.navCta}</span>
+                <span className="sm:hidden">{isHe ? 'בחינם' : 'Free'}</span>
+                <ChevronRight size={12} className="sm:hidden" />
+                <ChevronRight size={13} className="hidden sm:inline" />
               </motion.button>
             </div>
           </motion.nav>
