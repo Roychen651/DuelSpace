@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–50.5 (Self-Serve Lifecycle Engine + Billing State Machine).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–66 (LandingPage Light/Dark Mode + Mobile Navbar).
 
 ---
 
@@ -615,9 +615,9 @@ Each page/component injects custom keyframes via a `<style>` tag inside JSX. Nam
 
 ---
 
-## 12. LandingPage Architecture (Sprints 16–50.6)
+## 12. LandingPage Architecture (Sprints 16–66)
 
-`LandingPage.tsx` is a self-contained ~1800-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
+`LandingPage.tsx` is a self-contained ~2000-line file with all copy, section components, and interaction logic. Wrapped in `<ReactLenis root>` for smooth scrolling.
 
 ### Section structure
 ```
@@ -938,6 +938,183 @@ DOM order is Free (index 0) → Pro (index 1) → Premium (index 2). This is alr
 **Pricing currency is always ₪ regardless of UI locale:**
 
 DealSpace operates exclusively in the Israeli market. The English UI is for bilingual users who still pay in ILS. Prices in `copy.en.tiers` use `₪` (not `$`).
+
+**Pro card background — theme-aware (Sprint 66):**
+
+The Pro card background is **not** hardcoded to the near-black dark value. In light mode it uses a vivid indigo-purple so it still reads as "featured" against the light page:
+
+```tsx
+background: isPro
+  ? (isDark
+    ? 'linear-gradient(150deg, rgba(30,12,55,0.98) 0%, rgba(14,6,30,0.99) 100%)'
+    : 'linear-gradient(150deg, #3730a3 0%, #5b21b6 100%)')
+  : isDark ? ... : ...
+```
+
+### LandingPage Light/Dark Mode (Sprint 66)
+
+LandingPage has its own **self-contained** theme system independent of the app-wide `ThemeProvider`. It does not use `next-themes`, `useTheme()`, or the `dark:` Tailwind class for its own rendering. Every colour decision is driven by a local `isDark` boolean.
+
+#### `isDark` state + `ThemeToggle`
+
+```tsx
+// Inside LandingPage component
+const [isDark, setIsDark] = useState(true)  // default dark
+
+// Sync Tailwind's html.dark class so GlobalFooter (which uses dark: classes) follows suit
+useEffect(() => {
+  const html = document.documentElement
+  if (isDark) { html.classList.add('dark') } else { html.classList.remove('dark') }
+  return () => { html.classList.add('dark') }  // restore on unmount
+}, [isDark])
+```
+
+`ThemeToggle` is a module-level component that receives `isDark`, `onToggle`, and `c` (copy). It **must** have `dir="ltr"` on its wrapper button — without it the RTL page context flips the thumb to the wrong side because `left: Xpx` is a physical property:
+
+```tsx
+function ThemeToggle({ isDark, onToggle, c }: { isDark: boolean; onToggle: () => void; c: ... }) {
+  return (
+    <button
+      onClick={onToggle}
+      dir="ltr"   // ← REQUIRED — prevents RTL page from physically flipping thumb
+      className="relative flex items-center rounded-full select-none"
+      style={{ width: 116, height: 34, ... }}
+    >
+      {/* sliding thumb uses left: isDark ? 'calc(50%)' : '3px' */}
+    </button>
+  )
+}
+```
+
+#### Passing `isDark` through the component tree
+
+Every section component receives `isDark` as a prop. No React context is used — prop drilling is fine because there are only ~8 section components and the tree is flat:
+
+```tsx
+<HeroSection       c={c} isHe={isHe} onCta={goSignup} onDemo={goDemo} isDark={isDark} />
+<MarqueeBand       items={c.marqueeItems} isRTL={isHe} isDark={isDark} />
+<HowItWorksSection c={c} isHe={isHe} isDark={isDark} />
+// … all sections receive isDark
+```
+
+#### Gradient text — `WebkitBackgroundClip` only, never the standard `backgroundClip`
+
+This is the single most critical rule for LandingPage gradient text. The standard `backgroundClip: 'text'` property **conflicts** with `WebkitBackgroundClip: 'text'` in WebKit-based browsers. When both are present, the standard property "wins" in an undefined way — the gradient fills the element's bounding box as a visible rectangle while the text becomes invisible (transparent). This breaks both light mode AND dark mode simultaneously.
+
+**Rule:** For every gradient-clipped text element use **only** the WebKit prefix. Never add the standard `backgroundClip` property.
+
+```tsx
+// ❌ BREAKS BOTH MODES — standard property conflicts with WebKit in Chrome/Safari
+style={{
+  background: 'linear-gradient(...)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',   // ← DELETE THIS — causes visible gradient rectangle
+}}
+
+// ✅ Correct — WebKit-only, dark mode
+style={{
+  background: 'linear-gradient(135deg, #ffffff 25%, #c4b5fd 55%, #f0f0f8 80%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  // NO backgroundClip here
+}}
+```
+
+#### Light mode gradient text strategy — solid colours, never gradient-clip
+
+In light mode, avoid `WebkitBackgroundClip: 'text'` entirely. Use a solid `color:` instead. Gradient-clip on light backgrounds is unreliable across browsers and produces inconsistent contrast. All LandingPage gradient-text elements use the conditional pattern:
+
+```tsx
+// Hero H1 first span
+style={isDark ? {
+  background: 'linear-gradient(135deg, #ffffff 25%, #c4b5fd 55%, #f0f0f8 80%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+} : { color: '#0f172a' }}
+
+// Highlight/accent spans (indigo-purple gradient in dark → solid indigo in light)
+style={isDark ? {
+  background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f0abfc 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+} : { color: '#6366f1' }}
+```
+
+Affected elements and their light-mode solid colours:
+
+| Element | Light mode `color` |
+|---|---|
+| Hero H1 `c.h1Part1` | `#0f172a` |
+| Hero H1 `c.h1Highlight` (underlined) | `#6366f1` |
+| Hero brand lockup "DealSpace" div | `#0f172a` |
+| Navbar pill "DealSpace" span | `#0f172a` |
+| Navbar full "DealSpace" span | `#0f172a` |
+| HowItWorks `c.howH2Highlight` | `#6366f1` |
+| Bento card tag (shimmer in dark) | `BENTO_COLORS[i]` (already the accent, no clip needed) |
+| FinalCTA `c.ctaH2a` | `#0f172a` |
+| FinalCTA `c.ctaH2b` | `#4338ca` |
+| FinalCTA `c.ctaH2Highlight` | `#6366f1` |
+
+#### Light mode badge/label visibility
+
+Badge text that uses `text-indigo-300` (Tailwind class = `#a5b4fc`) is nearly invisible on a white background. Make it conditional:
+
+```tsx
+// ❌ invisible on white
+<span className="text-[12px] font-bold text-indigo-300">{c.badge}</span>
+
+// ✅ readable in both modes
+<span className="text-[12px] font-bold" style={{ color: isDark ? '#a5b4fc' : '#4338ca' }}>
+  {c.badge}
+</span>
+```
+
+#### Navbar — mobile layout (Sprint 66)
+
+The full-state Navbar has three mobile-specific behaviours:
+
+**1. Login button always visible** — previously `hidden sm:flex`, now always rendered as an icon+text layout. Uses `LogIn` from lucide-react. Icon-only on mobile, icon + text label on `sm+`:
+
+```tsx
+<button onClick={onLogin} className="flex items-center gap-1.5 rounded-xl transition-all" ...>
+  <LogIn size={15} />
+  <span className="hidden sm:inline text-[13px] font-semibold">{c.navLogin}</span>
+</button>
+```
+
+**2. CTA button — responsive size** — smaller padding and font on mobile, full size on `sm+`:
+
+```tsx
+className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[12px] sm:text-[13px] font-bold text-white"
+```
+
+**3. CTA label — action verb on mobile** — `'התחילו'` / `'Start'` on mobile (not `'בחינם'`/`'Free'` which sounds like a tier label, not an action). Full label on `sm+`:
+
+```tsx
+<span className="hidden sm:inline">{c.navCta}</span>   {/* "התחילו בחינם" / "Get started free" */}
+<span className="sm:hidden">{isHe ? 'התחילו' : 'Start'}</span>
+```
+
+The pill-state navbar also has a `LogIn` icon button (28×28px circle, same style as the theme toggle icon).
+
+### LandingPage copy — per-tier CTA field (Sprint 66)
+
+Each tier object in `copy.he.tiers` and `copy.en.tiers` has a `cta` string field. The render code uses `tier.cta` directly — no shared `pricingCta` key for paid plans. This matters because landing page visitors are **not yet registered**: "Upgrade" is retention language; each CTA must be acquisition-oriented.
+
+```ts
+// copy.he.tiers
+{ name: 'חינם',    cta: 'התחילו בחינם' }
+{ name: 'פרו',     cta: 'בחרו פרו'      }
+{ name: 'פרימיום', cta: 'בחרו פרימיום'  }
+
+// copy.en.tiers
+{ name: 'Free',    cta: 'Start for free'     }
+{ name: 'Pro',     cta: 'Start with Pro'     }
+{ name: 'Premium', cta: 'Start with Premium' }
+```
+
+The `pricingCta` and `pricingFreeCta` top-level copy keys are **no longer used for button rendering**. The buttons read `tier.cta`.
 
 ---
 
@@ -2660,15 +2837,17 @@ Key policy items verified against live codebase:
 
 ---
 
-## 35. LandingPage Copy — Pricing Tiers (Sprint 47)
+## 35. LandingPage Copy — Pricing Tiers (Sprints 47 + 66)
 
 ### Hebrew pricing tiers (`copy.he.tiers`)
 
-| i | name | price | period | sub | Popular? |
-|---|---|---|---|---|---|
-| 0 | `'חינם'` | `'₪0'` | `'/חודש'` | `'לשלב ההתחלה'` | — |
-| 1 | `'פרו'` | `'₪19'` | `'/חודש'` | `'לפרילנסרים רציניים'` | ✓ |
-| 2 | `'פרימיום'` | `'₪39'` | `'/חודש'` | `'לסוכנויות ועצמאיים מתקדמים'` | — |
+| i | name | price | period | sub | cta | Popular? |
+|---|---|---|---|---|---|---|
+| 0 | `'חינם'` | `'₪0'` | `'/חודש'` | `'לשלב ההתחלה'` | `'התחילו בחינם'` | — |
+| 1 | `'פרו'` | `'₪19'` | `'/חודש'` | `'לפרילנסרים רציניים'` | `'בחרו פרו'` | ✓ |
+| 2 | `'פרימיום'` | `'₪39'` | `'/חודש'` | `'לסוכנויות ועצמאיים מתקדמים'` | `'בחרו פרימיום'` | — |
+
+Each tier object carries its own `cta` field. The `pricingCta` / `pricingFreeCta` top-level keys are **no longer used for button rendering** — buttons read `tier.cta` directly. This ensures landing page CTAs use acquisition language, not retention language ("שדרגו עכשיו" was wrong — visitors haven't signed up yet).
 
 Features are **honest** — the real differentiator is proposals/month:
 
@@ -2703,16 +2882,24 @@ features: [
 
 Prices are always ₪ — same values as Hebrew:
 
-```ts
-// Free: price: '₪0'
-// Pro:  price: '₪19'  ← most popular
-// Premium: price: '₪39'
-```
+| i | name | price | cta |
+|---|---|---|---|
+| 0 | `'Free'` | `'₪0'` | `'Start for free'` |
+| 1 | `'Pro'` | `'₪19'` | `'Start with Pro'` |
+| 2 | `'Premium'` | `'₪39'` | `'Start with Premium'` |
 
 Features mirror the Hebrew but use the honest proposal-count framing:
 - Free: `Up to 5 proposals/month`, `Deal Room + Digital Signature`, `PDF Export`, `Open-rate Analytics`, `Webhooks ✗`
 - Pro: `Up to 100 proposals/month`, `Everything in Free`, `Webhooks + Automations`, `Direct Support`
 - Premium: `Unlimited proposals`, `Everything in Pro`, `Priority Support`, `Roadmap Influence`
+
+### VS divider copy
+
+The badge inside `ProblemSolutionSection` reads `vs` (no trailing period). The copy keys:
+```ts
+vsHeadline: 'PDF vs חדר עסקאות'    // he — no period after vs, no trailing period
+vsHeadline: 'PDF vs Deal Room'       // en — same
+```
 
 ### Marquee items (copy.he.marqueeItems)
 
@@ -3182,3 +3369,14 @@ Two new compliance elements added to the Billing page:
 - **Do not use `<a download>` for PDF generation on iOS** — iOS Safari blocks programmatic blob URL downloads via anchors. `generateProposalPdf` in `pdfEngine.tsx` detects iOS via `navigator.userAgent` + `navigator.maxTouchPoints` and uses `window.open(url, '_blank')` instead. Never remove this iOS branch; removing it silently breaks PDF download for all iPhone/iPad users.
 - **Do not skip `client_name` validation before calling `accept_proposal`** — migration 32 added a server-side guard: the UPDATE is a no-op when `client_name IS NULL OR TRIM(client_name) = ''`, returning `false`. The DealRoom flow must always call `save_client_details()` (which populates `client_name`) before `accept_proposal()`. If `accept_proposal` returns `false`, treat it as a hard error — the client details form was skipped.
 - **Do not return `webhook_url` from `get_deal_room_proposal`** — migration 32 strips it with the JSONB `-` operator (`creator_info - 'webhook_url'`). The webhook URL is a creator-private Zapier/Make/n8n API key. Exposing it to anonymous Deal Room visitors would allow anyone to trigger the creator's automations. Never add it back to the SELECT list.
+- **Do not add the standard `backgroundClip: 'text'` property alongside `WebkitBackgroundClip: 'text'`** — this is the single most destructive LandingPage bug. In WebKit-based browsers (Chrome, Safari), when both properties are present the standard one wins in an undefined way: the gradient fills the element's bounding box as a visible coloured rectangle while the text becomes invisible (transparent via `WebkitTextFillColor`). This breaks both light AND dark mode simultaneously. The fix is to delete every occurrence of `backgroundClip: 'text'` from LandingPage. Dark mode gradient text uses only `WebkitBackgroundClip: 'text'` + `WebkitTextFillColor: 'transparent'`. Light mode uses a solid `color:` value — never gradient-clip.
+- **Do not use `backgroundClip: 'text'` for light mode gradient text in LandingPage** — even without the WebKit conflict, `background-clip: text` on light backgrounds produces inconsistent contrast across browsers. The correct light-mode strategy is a solid `color:` value on every element that uses gradient-clip in dark mode. See the colour mapping table in §12 (LandingPage Light/Dark Mode).
+- **Do not add a ThemeToggle to ProtectedLayout or any app page** — the app-wide theme is handled by `ThemeProvider` (next-themes, `dark:` Tailwind classes, system preference). The only manual theme toggle in the entire codebase is `ThemeToggle` inside `LandingPage.tsx`, which is a self-contained marketing page with its own `isDark` local state. These are two completely separate systems. Do not mount `ThemeToggle` anywhere outside `LandingPage.tsx`.
+- **Do not use `isDark` state or `LandingPage`-style inline theme conditionals inside app pages** — app pages (Dashboard, ProposalBuilder, Profile, etc.) use Tailwind `dark:` classes driven by `ThemeProvider`. Mixing the two systems (inline `isDark ? styleA : styleB` + `dark:` classes on the same component) causes visual conflicts where half the component responds to one system and half to the other.
+- **Do not use the `ThemeToggle` component from `LandingPage.tsx` outside that file** — it is a module-level function defined inside `LandingPage.tsx` with a hard dependency on `isDark` being a local React state boolean. It is not exported and not reusable.
+- **Do not forget `dir="ltr"` on the `ThemeToggle` wrapper button** — the LandingPage root has `dir="rtl"` for Hebrew. CSS `left: Xpx` is a physical property. Without `dir="ltr"` on the toggle button, the sliding thumb renders on the wrong side for the active option because the RTL context physically mirrors left/right. This bug is invisible in English (LTR) and only manifests in Hebrew.
+- **Do not sync `document.documentElement.classList` for the LandingPage theme toggle inside a component** — the sync must happen in a `useEffect` inside `LandingPage` itself with the cleanup `() => { html.classList.add('dark') }` on unmount. This ensures `GlobalFooter` (which uses `dark:` Tailwind classes) follows the `isDark` state, and that the dark class is restored when the user navigates away from the landing page.
+- **Do not use `'שדרגו עכשיו'` / `'Upgrade Now'` as a CTA on the LandingPage pricing cards** — "Upgrade" is retention language for existing users who already have a lower plan. Landing page visitors are unregistered. Every pricing card CTA must be acquisition-oriented: `'בחרו פרו'` / `'Start with Pro'`, `'בחרו פרימיום'` / `'Start with Premium'`, `'התחילו בחינם'` / `'Start for free'`. The `tier.cta` field on each tier object carries the correct per-tier label — never fall back to a shared `pricingCta` key for paid plans.
+- **Do not label the mobile navbar CTA button with a tier name or price descriptor** — `'בחינם'` alone means "for free" (descriptive), not "start for free" (imperative). On mobile where space is limited, the short CTA must still be an **action verb**: `'התחילו'` (he) / `'Start'` (en). The full label `'התחילו בחינם'` / `'Get started free'` is shown on `sm+` screens where space permits.
+- **Do not hide the login button on mobile in LandingPage Navbar** — the login button (`onLogin` → `/auth`) was previously `hidden sm:flex`. This breaks the user flow for returning registered users on mobile who have no path back to their dashboard. The button must always be visible. On mobile it renders as icon-only (`LogIn` size 15); on `sm+` it adds the text label. This applies to both the full-state and pill-state navbar variants.
+- **Do not write `'vs.'` (with a period) in the VS badge inside `ProblemSolutionSection`** — the period after "vs" adjacent to the period-containing badge box causes a double-period visual artifact and looks unpolished. The badge renders `vs` (no period). The `vsHeadline` copy keys in both `copy.he` and `copy.en` must also omit the trailing period: `'PDF vs חדר עסקאות'` / `'PDF vs Deal Room'`.
