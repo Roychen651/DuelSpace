@@ -1170,7 +1170,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setSelectedIds(new Set())}
-                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/35 bg-slate-100 dark:bg-white/6 border border-slate-200 dark:border-white/10"
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/[0.08] border border-slate-200 dark:border-white/[0.12]"
                   >
                     {isHe ? 'בטל' : 'Cancel'}
                   </button>
@@ -1191,7 +1191,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/35 bg-slate-100 dark:bg-white/6 border border-slate-200 dark:border-white/10"
+                    className="flex-none rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/[0.08] border border-slate-200 dark:border-white/[0.12]"
                   >
                     {isHe ? 'חזור' : 'Back'}
                   </button>
