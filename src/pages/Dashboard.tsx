@@ -312,7 +312,16 @@ export default function Dashboard() {
   }, [fetchProposals])
 
   useEffect(() => {
-    if (!loading && proposals.length === 0) injectDemoProposal()
+    if (loading) return
+    const hasDemoFlag = localStorage.getItem('dealspace:demo-injected') === 'true'
+    if (proposals.length === 0 && !hasDemoFlag) {
+      // Genuinely new user on this device — inject demo
+      injectDemoProposal()
+    } else if (proposals.length > 0 && !hasDemoFlag) {
+      // User already has proposals (e.g. new device login) — silently set flag
+      // so we never inject a demo on top of real work.
+      localStorage.setItem('dealspace:demo-injected', 'true')
+    }
   }, [loading, proposals.length, injectDemoProposal])
 
   // Wizard: show for users who haven't completed onboarding

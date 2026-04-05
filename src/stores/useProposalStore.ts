@@ -259,10 +259,15 @@ export const useProposalStore = create<ProposalState>()(
       // ── Inject demo proposal for new users ────────────────────────────────
       injectDemoProposal: async () => {
         const STORAGE_KEY = 'dealspace:demo-injected'
-        if (localStorage.getItem(STORAGE_KEY)) return
+        if (localStorage.getItem(STORAGE_KEY) === 'true') return
 
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) return
+
+        // Set flag BEFORE insert — prevents race conditions where two concurrent
+        // calls (e.g. StrictMode double-invoke or rapid re-renders) both pass the
+        // initial check and create two demo proposals.
+        localStorage.setItem(STORAGE_KEY, 'true')
 
         const demoData: ProposalInsert = {
           client_name: 'Dana Cohen',
@@ -309,7 +314,6 @@ export const useProposalStore = create<ProposalState>()(
         }
 
         await get().createProposal(demoData)
-        localStorage.setItem(STORAGE_KEY, '1')
       },
 
       // ── Supabase Realtime ─────────────────────────────────────────────────
