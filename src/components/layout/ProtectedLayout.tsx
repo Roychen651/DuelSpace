@@ -195,11 +195,15 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
             data-tour="new-proposal"
             onClick={() => {
               if (billingStatus === 'past_due') return
-              const activeCount = proposals.filter(p => !p.is_archived).length
-              const bonusQuota = (user?.user_metadata?.bonus_quota as number | undefined) ?? 0
-              if (tier === 'free' && activeCount >= (FREE_PROPOSAL_LIMIT + bonusQuota)) {
-                setUpgradeModalOpen(true)
-                return
+              if (tier === 'free') {
+                const now = new Date()
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+                const monthlyCount = proposals.filter(p => new Date(p.created_at) >= monthStart).length
+                const bonusQuota = (user?.user_metadata?.bonus_quota as number | undefined) ?? 0
+                if (monthlyCount >= (FREE_PROPOSAL_LIMIT + bonusQuota)) {
+                  setUpgradeModalOpen(true)
+                  return
+                }
               }
               navigate('/proposals/new')
             }}
@@ -385,7 +389,7 @@ export function ProtectedLayout({ children }: { children: ReactNode }) {
       <UpgradeModal
         open={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
-        activeCount={proposals.filter(p => !p.is_archived).length}
+        activeCount={(() => { const ms = new Date(new Date().getFullYear(), new Date().getMonth(), 1); return proposals.filter(p => new Date(p.created_at) >= ms).length })()}
         currentTier={tier}
       />
 

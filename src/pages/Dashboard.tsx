@@ -259,7 +259,7 @@ type SortBy = 'newest' | 'oldest' | 'value'
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { proposals, loading, error, fetchProposals, injectDemoProposal, deleteProposal } = useProposalStore()
+  const { proposals, loading, error, fetchProposals, deleteProposal } = useProposalStore()
   const { user } = useAuthStore()
   const { locale } = useI18n()
   const isHe = locale === 'he'
@@ -311,18 +311,6 @@ export default function Dashboard() {
     return () => { try { bc?.close() } catch (_) {} }
   }, [fetchProposals])
 
-  useEffect(() => {
-    if (loading) return
-    const hasDemoFlag = localStorage.getItem('dealspace:demo-injected') === 'true'
-    if (proposals.length === 0 && !hasDemoFlag) {
-      // Genuinely new user on this device — inject demo
-      injectDemoProposal()
-    } else if (proposals.length > 0 && !hasDemoFlag) {
-      // User already has proposals (e.g. new device login) — silently set flag
-      // so we never inject a demo on top of real work.
-      localStorage.setItem('dealspace:demo-injected', 'true')
-    }
-  }, [loading, proposals.length, injectDemoProposal])
 
   // Wizard: show for users who haven't completed onboarding
   const showWizard = !wizardClosed && Boolean(user) && user?.user_metadata?.has_completed_onboarding !== true
@@ -445,13 +433,22 @@ export default function Dashboard() {
     { key: 'lost',    label_en: 'Lost / Archived', label_he: 'הופסד / ארכיון', color: '#f87171', activeBg: 'rgba(248,113,113,0.12)', countBg: 'rgba(248,113,113,0.22)' },
   ]
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  // ── Monthly quota (free tier) ────────────────────────────────────────────
+  // Count proposals created in the current calendar month — active AND archived.
+  // Archiving or deleting a proposal must never restore quota; the credit is
+  // monthly and resets on the 1st regardless of what the user does with proposals.
   const bonusQuota = (user?.user_metadata?.bonus_quota as number | undefined) ?? 0
   const effectiveLimit = FREE_PROPOSAL_LIMIT + bonusQuota
+  const monthlyCount = (() => {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    return proposals.filter(p => new Date(p.created_at) >= monthStart).length
+  })()
 
+  // ── Actions ───────────────────────────────────────────────────────────────
   const handleCreate = () => {
     if (billingStatus === 'past_due') return
-    if (tier === 'free' && activeProposals.length >= effectiveLimit) {
+    if (tier === 'free' && monthlyCount >= effectiveLimit) {
       setUpgradeModalOpen(true)
       return
     }
@@ -661,10 +658,9 @@ export default function Dashboard() {
 
           {/* ── Quota bar — free tier, active tabs only ─────────────────── */}
           {tier === 'free' && pipelineTab !== 'lost' && (() => {
-            const activeCount = activeProposals.length
-            const pct = Math.min(100, (activeCount / effectiveLimit) * 100)
-            const isMax  = activeCount >= effectiveLimit
-            const isWarn = activeCount >= effectiveLimit - 1 && !isMax
+            const pct = Math.min(100, (monthlyCount / effectiveLimit) * 100)
+            const isMax  = monthlyCount >= effectiveLimit
+            const isWarn = monthlyCount >= effectiveLimit - 1 && !isMax
             const barColor = isMax ? 'linear-gradient(90deg, #f87171, #ef4444)' : isWarn ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : 'linear-gradient(90deg, #6366f1, #a855f7)'
             const textColor = isMax ? '#f87171' : isWarn ? '#fbbf24' : 'var(--text-tertiary)'
             return (
@@ -674,8 +670,8 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[11px] font-semibold" style={{ color: textColor }}>
                       {isHe
-                        ? `ניצלת ${activeCount} מתוך ${effectiveLimit} הצעות חינם`
-                        : `Used ${activeCount} of ${effectiveLimit} free proposals`}
+                        ? `ניצלת ${monthlyCount} מתוך ${effectiveLimit} הצעות החודש`
+                        : `Used ${monthlyCount} of ${effectiveLimit} proposals this month`}
                     </span>
                     <button onClick={() => setUpgradeModalOpen(true)} className="text-[10px] font-black tracking-wide transition-opacity hover:opacity-70 flex-none" style={{ color: '#818cf8' }}>
                       {isHe ? '↑ שדרג' : '↑ Upgrade'}
@@ -1223,7 +1219,7 @@ export default function Dashboard() {
       <UpgradeModal
         open={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
-        activeCount={activeProposals.length}
+        activeCount={monthlyCount}
         currentTier={tier}
       />
 
