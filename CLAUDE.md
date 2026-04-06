@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–66 (LandingPage Light/Dark Mode + Mobile Navbar).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–67 (Light Mode Contrast — ProposalBuilder / PremiumInputs / ReusableServices + Monthly Quota System).
 
 ---
 
@@ -332,6 +332,9 @@ updateProposal(id, partial)      // Optimistic update → Supabase update → ro
 deleteProposal(id)               // Optimistic remove → Supabase delete → rollback on fail
 duplicateProposal(id)            // Clones proposal, resets status to 'draft'
 injectDemoProposal()             // Inserts a rich demo proposal (localStorage gate: dealspace:demo-injected)
+                                 // ⚠️ Sprint 67: This function exists but is NO LONGER CALLED from Dashboard.
+                                 // Demo injection was disabled to prevent quota drain. The localStorage key
+                                 // remains as a guard in case the function is ever re-enabled elsewhere.
 ```
 
 `ProposalInsert` = `Proposal` minus server-managed fields: `id, user_id, public_token, view_count, time_spent_seconds, created_at, updated_at`.
@@ -590,6 +593,37 @@ border: 1px solid rgba(99,102,241,0.6);
 ring: 4px rgba(99,102,241,0.12);
 ```
 Auth card / legacy components still use the older `rgba(255,255,255,0.05)` style.
+
+### CSS Variables — Theme-Aware Tokens (Sprint 67)
+
+`src/index.css` defines CSS variables for both light and dark modes. **All shared UI components (EditorPanel, ReusableServices, PremiumInputs, and any component that renders inside both themes) must use these variables instead of hardcoded `rgba(255,255,255,X)` values** — those are invisible on white in light mode.
+
+| Variable | Dark value | Light value | Use for |
+|---|---|---|---|
+| `--border` | `rgba(255,255,255,0.07)` | `#e2e8f0` | All borders on surfaces/inputs |
+| `--surface-sunken` | `rgba(255,255,255,0.03)` | `#f8fafc` | Card/row backgrounds, disabled buttons |
+| `--input-bg` | `#0a0a0a` | `#ffffff` | Input field backgrounds |
+| `--text-main` | `rgba(255,255,255,0.9)` | `#0f172a` | Primary text |
+| `--text-muted` | `rgba(255,255,255,0.35)` | `#64748b` | Secondary/placeholder text |
+
+```tsx
+// ✅ Theme-aware — works in both light and dark
+style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+
+// ❌ Dark-only — invisible in light mode (white on white)
+style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+```
+
+For Tailwind className usage, always use `dark:` modifier pairs:
+```tsx
+// ✅ Correct
+className="bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.07] text-slate-500 dark:text-white/35"
+
+// ❌ Dark-only — invisible in light mode
+className="text-white/35 bg-white/[0.03] border-white/[0.07]"
+```
+
+**LandingPage is exempt** — it manages its own `isDark` boolean state and uses inline conditionals (`isDark ? darkStyle : lightStyle`). The CSS variables apply to app pages and shared components only.
 
 ### Typography
 - **EN / numbers:** `Outfit` (Google Fonts, weights 300–900)
@@ -2985,6 +3019,8 @@ Centralized upgrade modal used from:
 
 Props: `{ open, onClose, activeCount, currentTier }`
 
+`activeCount` receives `monthlyCount` (proposals created this calendar month) — not a count of active/non-archived proposals. Pass `monthlyCount` from the IIFE in both Dashboard and ProtectedLayout.
+
 **Plan presentation (Sprint 50.6):**
 - **Pro** — `popular: true`, indigo spinning-border treatment, "Most Popular" badge
 - **Premium** — `popular: false`, gold accent (`#d4af37`), no spinning border
@@ -3364,7 +3400,10 @@ Two new compliance elements added to the Billing page:
 - **Do not use `useScroll` + `useTransform` for the VS divider in `ProblemSolutionSection`** — the scroll-linked approach gets stuck because Lenis smooth scroll diverges from the real browser scroll position, and simultaneous `whileInView` layout shifts from the side cards confuse the `useScroll` target. The VS divider must use `whileInView` with staggered delays (`once: true`). Do not revert it to scroll-linked.
 - **Do not set `UpgradeModal` Pro as not-popular or Premium as most-popular** — since Sprint 50.6, Pro (`₪19`) is the "Most Popular" plan with the spinning conic-gradient border treatment. Premium (`₪39`) uses gold accent (`#d4af37`). Swapping the popular flag was intentional product positioning.
 - **Do not add email fallbacks to UpgradeModal CTA buttons** — the Forced Event Handler Pattern requires every button to always render. If a Stripe env var is missing, the handler calls `alert()` in dev only and silently returns in prod. Never replace buttons with `<div>` fallbacks or `mailto:` links.
-- **Do not bypass the quota check in ProtectedLayout's "New Proposal" button** — since Sprint 58, the navbar button checks `tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT` and opens `UpgradeModal` instead of navigating. The Dashboard's `handleCreate` has the same guard. Both must stay in sync — a bypass in either surface allows free users to create unlimited proposals.
+- **Do not bypass the quota check in ProtectedLayout's "New Proposal" button** — since Sprint 67, both the navbar button and Dashboard's `handleCreate` check `monthlyCount >= effectiveLimit` where `monthlyCount` counts proposals with `created_at >= first day of the current calendar month`. This is a **monthly rolling quota** — archiving or deleting proposals does NOT restore quota because archived proposals remain in the DB with `is_archived: true` and deleted ones have already been counted. `effectiveLimit = FREE_PROPOSAL_LIMIT + bonusQuota`. Both surfaces must stay in sync.
+- **Do not use hardcoded `rgba(255,255,255,X)` values in shared components** — these are dark-mode-only values that are invisible (white on white) in light mode. App pages and shared components (EditorPanel, ReusableServices, PremiumInputs, etc.) must use CSS theme variables (`var(--border)`, `var(--surface-sunken)`, `var(--input-bg)`, `var(--text-main)`, `var(--text-muted)`) or Tailwind `dark:` modifier pairs. This is the root cause of the entire Sprint 67 light mode contrast regressions.
+- **Do not call `injectDemoProposal()` from Dashboard** — Sprint 67 disabled demo injection permanently. The function still exists in `useProposalStore` with its localStorage gate, but the `useEffect` that called it was removed from `Dashboard.tsx`. Demo proposals drained Free Tier monthly quota. Do not re-add the call.
+- **Do not compute proposal quota from active/non-archived count** — since Sprint 67, quota is a **monthly rolling counter**: `proposals.filter(p => new Date(p.created_at) >= firstOfMonth).length`. Archiving or deleting a proposal does not restore quota — the month's usage is fixed by creation date. The old "count non-archived" approach was wrong because it let users cycle proposals to evade limits.
 - **Do not call `AIGhostwriter` an "AI" feature** — `AIGhostwriter.tsx` is a keyword-matched template system (`findTemplate(prompt)` against a static `TEMPLATES` array). It has no ML/LLM backend. The component is branded "Quick-Start Templates" / "תבניות חכמות להצעה" since Sprint 58. Never re-introduce the "AI", "Ghostwriter", or "BETA" labels — they are false advertising.
 - **Do not use `<a download>` for PDF generation on iOS** — iOS Safari blocks programmatic blob URL downloads via anchors. `generateProposalPdf` in `pdfEngine.tsx` detects iOS via `navigator.userAgent` + `navigator.maxTouchPoints` and uses `window.open(url, '_blank')` instead. Never remove this iOS branch; removing it silently breaks PDF download for all iPhone/iPad users.
 - **Do not skip `client_name` validation before calling `accept_proposal`** — migration 32 added a server-side guard: the UPDATE is a no-op when `client_name IS NULL OR TRIM(client_name) = ''`, returning `false`. The DealRoom flow must always call `save_client_details()` (which populates `client_name`) before `accept_proposal()`. If `accept_proposal` returns `false`, treat it as a hard error — the client details form was skipped.
