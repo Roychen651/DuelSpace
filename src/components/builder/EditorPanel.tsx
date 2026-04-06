@@ -1279,7 +1279,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                     percentage: pct,
                   })),
                 })}
-                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all bg-indigo-50 dark:bg-indigo-500/8 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-300"
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all bg-indigo-50 dark:bg-indigo-500/[0.08] border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-300"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
               >
@@ -1420,7 +1420,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           <motion.button
             type="button"
             onClick={addMilestone}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all duration-200 bg-indigo-50 dark:bg-indigo-500/6 border border-indigo-200 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-400"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-all duration-200 bg-indigo-50 dark:bg-indigo-500/[0.08] border border-indigo-200 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-400"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.92, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } }}
           >

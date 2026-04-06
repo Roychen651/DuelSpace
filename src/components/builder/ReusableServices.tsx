@@ -115,7 +115,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
               animate="visible"
               exit="exit"
               dir={isHe ? 'rtl' : 'ltr'}
-              className="reuse-panel w-full max-w-lg flex flex-col rounded-3xl overflow-hidden"
+              className="reuse-panel w-full max-w-lg flex flex-col rounded-3xl overflow-hidden bg-white dark:bg-[#14141f]"
               style={{ maxHeight: '82vh' }}
             >
 
@@ -147,9 +147,9 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                     onClick={() => setShowVat(v => !v)}
                     className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition"
                     style={{
-                      background: showVat ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
-                      border: showVat ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.08)',
-                      color: showVat ? '#d4af37' : 'rgba(255,255,255,0.35)',
+                      background: showVat ? 'rgba(212,175,55,0.15)' : 'var(--surface-sunken)',
+                      border: showVat ? '1px solid rgba(212,175,55,0.35)' : '1px solid var(--border)',
+                      color: showVat ? '#d4af37' : 'var(--text-muted)',
                     }}
                   >
                     <Percent size={9} />
@@ -159,7 +159,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="flex h-7 w-7 items-center justify-center rounded-xl text-white/30 transition hover:bg-white/[0.08] hover:text-white/70"
+                    className="flex h-7 w-7 items-center justify-center rounded-xl text-slate-400 dark:text-white/30 transition hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-slate-700 dark:hover:text-white/70"
                   >
                     <X size={14} />
                   </button>
@@ -172,7 +172,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                   <div className="relative">
                     <Search
                       size={13}
-                      className="absolute top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+                      className="absolute top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30 pointer-events-none"
                       style={{ [isHe ? 'right' : 'left']: 12 }}
                     />
                     <input
@@ -181,7 +181,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                       placeholder={isHe ? 'חיפוש שירות…' : 'Search services…'}
                       className="w-full rounded-xl border bg-slate-50 dark:bg-white/[0.05] py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all"
                       style={{
-                        border: '1px solid rgba(255,255,255,0.09)',
+                        border: '1px solid var(--border)',
                         paddingInlineStart: 36,
                         paddingInlineEnd: 12,
                       }}
@@ -190,7 +190,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                         e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,175,55,0.1)'
                       }}
                       onBlur={e => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                        e.currentTarget.style.borderColor = ''
                         e.currentTarget.style.boxShadow = 'none'
                       }}
                     />
@@ -210,7 +210,7 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                       <div
                         key={i}
                         className="h-16 rounded-2xl animate-pulse"
-                        style={{ background: 'rgba(255,255,255,0.04)', animationDelay: `${i * 0.06}s` }}
+                        style={{ background: 'var(--surface-sunken)', animationDelay: `${i * 0.06}s` }}
                       />
                     ))}
                   </div>
@@ -249,10 +249,10 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                         style={{
                           background: isChecked
                             ? 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(245,158,11,0.06) 100%)'
-                            : 'rgba(255,255,255,0.03)',
+                            : 'var(--surface-sunken)',
                           border: isChecked
                             ? '1px solid rgba(212,175,55,0.35)'
-                            : '1px solid rgba(255,255,255,0.07)',
+                            : '1px solid var(--border)',
                           boxShadow: isChecked ? '0 0 16px rgba(212,175,55,0.08)' : 'none',
                         }}
                       >
@@ -262,8 +262,8 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                           style={{
                             background: isChecked
                               ? 'linear-gradient(135deg, #d4af37, #f59e0b)'
-                              : 'rgba(255,255,255,0.06)',
-                            border: isChecked ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                              : 'var(--surface-sunken)',
+                            border: isChecked ? 'none' : '1px solid var(--border)',
                             boxShadow: isChecked ? '0 0 8px rgba(212,175,55,0.45)' : 'none',
                           }}
                         >
@@ -281,13 +281,13 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                         {/* Price — base or VAT-inclusive */}
                         <div className="flex-none text-end">
                           <p
-                            className="text-sm font-black tabular-nums transition-colors"
-                            style={{ color: isChecked ? '#d4af37' : 'rgba(255,255,255,0.5)' }}
+                            className={`text-sm font-black tabular-nums transition-colors${isChecked ? '' : ' text-slate-500 dark:text-white/50'}`}
+                            style={{ color: isChecked ? '#d4af37' : undefined }}
                           >
                             {formatCurrency(service.price, currency)}
                           </p>
                           {showVat && (
-                            <p className="text-[9px] text-white/25 tabular-nums">
+                            <p className="text-[9px] text-slate-400 dark:text-white/25 tabular-nums">
                               {isHe ? `מתוכם מע"מ: ` : 'VAT incl.: '}{formatCurrency(Math.round(service.price - service.price / (1 + vatRate)), currency)}
                             </p>
                           )}
@@ -318,14 +318,14 @@ export function ReusableServices({ open, onClose, currency, locale, onInject }: 
                   type="button"
                   onClick={handleInject}
                   disabled={selected.size === 0}
-                  className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl h-11 text-sm font-bold transition-all disabled:opacity-40 whitespace-nowrap"
+                  className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl h-11 text-sm font-bold transition-all disabled:opacity-40 whitespace-nowrap${selected.size === 0 ? ' text-slate-400 dark:text-white/30' : ''}`}
                   style={{
                     background: selected.size > 0
                       ? 'linear-gradient(135deg, #d4af37 0%, #f59e0b 100%)'
-                      : 'rgba(255,255,255,0.06)',
-                    border: selected.size > 0 ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                      : 'var(--surface-sunken)',
+                    border: selected.size > 0 ? 'none' : '1px solid var(--border)',
                     boxShadow: selected.size > 0 ? '0 0 28px rgba(212,175,55,0.35)' : 'none',
-                    color: selected.size > 0 ? '#000' : 'rgba(255,255,255,0.3)',
+                    color: selected.size > 0 ? '#000' : undefined,
                   }}
                   whileHover={selected.size > 0 ? { scale: 1.02 } : undefined}
                   whileTap={selected.size > 0 ? { scale: 0.97, transition: { type: 'spring' as const, stiffness: 500, damping: 15 } } : undefined}

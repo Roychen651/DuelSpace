@@ -29,7 +29,7 @@ export function PremiumSlider({
     <div className="space-y-2">
       {label && (
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{label}</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-white/40">{label}</span>
           <span className="text-sm font-bold" style={{ color }}>
             {formatValue ? formatValue(value) : value.toLocaleString()}
           </span>
@@ -46,8 +46,7 @@ export function PremiumSlider({
         style={{ height: 20 }}
       >
         <SliderPrimitive.Track
-          className="relative h-1.5 w-full grow overflow-hidden rounded-full"
-          style={{ background: 'rgba(255,255,255,0.08)' }}
+          className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-200 dark:bg-white/[0.08]"
         >
           <SliderPrimitive.Range
             className="absolute h-full"
@@ -68,9 +67,9 @@ export function PremiumSlider({
       </SliderPrimitive.Root>
 
       {/* Min/max hints */}
-      <div className="flex justify-between text-[9px] text-white/20 tabular-nums">
+      <div className="flex justify-between text-[9px] text-slate-400 dark:text-white/20 tabular-nums">
         <span>{formatValue ? formatValue(min) : min.toLocaleString()}</span>
-        <span className="text-white/30">{pct}%</span>
+        <span className="text-slate-400 dark:text-white/30">{pct}%</span>
         <span>{formatValue ? formatValue(max) : max.toLocaleString()}</span>
       </div>
     </div>
@@ -135,7 +134,7 @@ export function PremiumDatePicker({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-white/45">
           <Calendar size={10} />
           {label}
         </label>
@@ -147,20 +146,20 @@ export function PremiumDatePicker({
             type="button"
             className="flex w-full items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition-all duration-300 outline-none"
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: open ? '1px solid rgba(99,102,241,0.55)' : '1px solid rgba(255,255,255,0.1)',
-              boxShadow: open ? '0 0 0 3px rgba(99,102,241,0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.04)',
-              color: displayValue ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.2)',
+              background: 'var(--input-bg)',
+              border: open ? '1px solid rgba(99,102,241,0.55)' : '1px solid var(--border)',
+              boxShadow: open ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none',
+              color: displayValue ? 'var(--text-main)' : 'var(--text-muted)',
             }}
           >
-            <Calendar size={14} className="flex-none text-white/30" />
+            <Calendar size={14} className="flex-none text-slate-400 dark:text-white/30" />
             <span className="flex-1 text-start">
               {displayValue || (placeholder ?? (isHe ? 'בחר תאריך' : 'Select date'))}
             </span>
             {selectedDate && (
               <span
                 onClick={handleClear}
-                className="flex-none text-white/25 hover:text-white/60 transition text-lg leading-none"
+                className="flex-none text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/60 transition text-lg leading-none"
                 aria-label="Clear date"
               >
                 ×
@@ -186,7 +185,7 @@ export function PremiumDatePicker({
               <button
                 type="button"
                 onClick={() => setViewMonth(m => subMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
               </button>
@@ -198,7 +197,7 @@ export function PremiumDatePicker({
               <button
                 type="button"
                 onClick={() => setViewMonth(m => addMonths(m, 1))}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 dark:text-white/40 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] hover:text-slate-700 dark:hover:text-white/80 active:scale-90"
               >
                 {isHe ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>
@@ -227,7 +226,7 @@ export function PremiumDatePicker({
                     type="button"
                     onClick={() => !isPast && handleSelect(day)}
                     disabled={isPast}
-                    className="relative flex h-8 w-full items-center justify-center rounded-lg text-xs font-medium text-slate-700 dark:text-white/70 transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-white/8"
+                    className="relative flex h-8 w-full items-center justify-center rounded-lg text-xs font-medium text-slate-700 dark:text-white/70 transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-white/[0.08]"
                     style={{
                       background: isSelected
                         ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
@@ -254,7 +253,7 @@ export function PremiumDatePicker({
             <button
               type="button"
               onClick={() => handleSelect(today)}
-              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold text-slate-500 dark:text-white/50 transition hover:text-slate-800 dark:hover:text-white/80 border border-slate-200 dark:border-white/7"
+              className="mt-3 w-full rounded-xl py-2 text-xs font-semibold text-slate-500 dark:text-white/50 transition hover:text-slate-800 dark:hover:text-white/80 border border-slate-200 dark:border-white/[0.07]"
             >
               {isHe ? 'היום' : 'Today'}
             </button>
