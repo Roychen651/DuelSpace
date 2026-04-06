@@ -245,18 +245,18 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
             <FileText size={13} className="text-white" />
           </div>
           <div className="text-start">
-            <p className="text-sm font-bold text-white/80">
+            <p className="text-sm font-bold text-slate-800 dark:text-white/80">
               {isHe ? 'תבניות חכמות להצעה' : 'Quick-Start Templates'}
             </p>
-            <p className="text-[10px] text-white/35">
+            <p className="text-[10px] text-slate-500 dark:text-white/35">
               {isHe ? 'בחר סוג פרויקט — מלא הצעה מוכנה תוך שניות' : 'Pick a project type — fill a ready-made proposal in seconds'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           {open
-            ? <ChevronUp size={14} className="text-white/30" />
-            : <ChevronDown size={14} className="text-white/30" />}
+            ? <ChevronUp size={14} className="text-slate-400 dark:text-white/30" />
+            : <ChevronDown size={14} className="text-slate-400 dark:text-white/30" />}
         </div>
       </button>
 
@@ -277,7 +277,7 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
               <div className="relative">
                 <textarea
                   rows={3}
-                  className="w-full rounded-2xl border bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none resize-none transition-all"
+                  className="w-full rounded-2xl border bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/25 outline-none resize-none transition-all"
                   style={{
                     border: '1px solid rgba(99,102,241,0.25)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -361,7 +361,7 @@ export function AIGhostwriter({ onGenerate, locale }: AIGhostwriterProps) {
                 </motion.button>
               )}
 
-              <p className="text-[9px] text-white/20 text-center">
+              <p className="text-[9px] text-slate-400 dark:text-white/20 text-center">
                 {isHe
                   ? 'הנתונים שנוצרו הם המלצות בלבד — בדוק ועדכן לפני שליחה ללקוח'
                   : 'Generated data is a starting point — review and update before sending to client'}

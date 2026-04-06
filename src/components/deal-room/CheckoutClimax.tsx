@@ -676,15 +676,14 @@ export function CheckoutClimax({
                         type="button"
                         onClick={onAccept}
                         disabled={!canSign || accepting}
-                        className="relative w-full overflow-hidden rounded-xl py-4 text-sm font-bold text-white disabled:cursor-not-allowed"
+                        className="relative w-full overflow-hidden rounded-xl py-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-white/40"
                         style={{
                           background: canSign
                             ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)'
                             : 'var(--surface-sunken)',
                           border: canSign ? 'none' : '1px solid var(--border)',
                           animation: canSign && !accepting ? 'checkout-glow-pulse 2.5s ease-in-out infinite' : 'none',
-                          opacity: !canSign ? 0.45 : 1,
-                          transition: 'opacity 0.2s, background 0.3s',
+                          transition: 'background 0.3s',
                         }}
                         whileHover={canSign ? { scale: 1.015 } : {}}
                         whileTap={canSign ? { scale: 0.975 } : {}}

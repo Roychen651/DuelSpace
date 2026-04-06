@@ -93,7 +93,7 @@ function Section({
             ? 'linear-gradient(90deg, rgba(99,102,241,0.14) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)'
             : 'transparent',
           borderBottom: open
-            ? '1px solid rgba(255,255,255,0.07)'
+            ? '1px solid var(--border)'
             : '1px solid transparent',
         }}
       >
@@ -334,8 +334,8 @@ function AddOnRow({
           <button
             type="button"
             onClick={() => onChange({ ...addOn, enabled: !addOn.enabled })}
-            className="transition-colors"
-            style={{ color: addOn.enabled ? '#6366f1' : 'rgba(255,255,255,0.2)' }}
+            className={`transition-colors ${addOn.enabled ? '' : 'text-slate-300 dark:text-white/20'}`}
+            style={{ color: addOn.enabled ? '#6366f1' : undefined }}
             aria-label={addOn.enabled ? 'Disable' : 'Enable'}
           >
             {addOn.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
@@ -670,7 +670,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
             <span className="text-sm font-semibold" style={{ color: draft.display_bsd ? '#fbbf24' : 'var(--text-secondary)' }}>
               בס&quot;ד
             </span>
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-slate-500 dark:text-white/40">
               {isHe ? 'הוסף בס"ד בראש המסמך' : 'Show B\'H at top of document'}
             </span>
           </div>
@@ -697,7 +697,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           >
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-xs font-semibold text-white/70">
+                <p className="text-xs font-semibold text-slate-600 dark:text-white/70">
                   {isHe ? 'הסתר סה"כ' : 'Hide Grand Total'}
                 </p>
                 <Tip content={isHe
@@ -992,7 +992,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           }}
         >
           <div className="flex items-center gap-2">
-            <Receipt size={13} className={showVat ? 'text-indigo-400' : 'text-white/30'} />
+            <Receipt size={13} className={showVat ? 'text-indigo-400' : 'text-slate-400 dark:text-white/30'} />
             <div>
               <div className="flex items-center gap-1.5">
                 <p className="text-xs font-semibold text-subtle">
@@ -1133,7 +1133,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
           className="flex items-center justify-between p-5 transition-all"
           style={{
             background: 'linear-gradient(90deg, rgba(99,102,241,0.14) 0%, rgba(99,102,241,0.03) 50%, transparent 100%)',
-            borderBottom: '1px solid rgba(255,255,255,0.07)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -1338,8 +1338,8 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                   <div
                     className="flex items-center gap-2 rounded-xl p-3.5"
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'var(--surface-sunken)',
+                      border: '1px solid var(--border)',
                     }}
                   >
                     {/* Color dot */}
@@ -1458,18 +1458,15 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                 key={tmpl.id}
                 type="button"
                 onClick={() => onChange({ success_template: tmpl.id })}
-                className="w-full text-start rounded-xl px-3.5 py-3 transition-all"
+                className={`w-full text-start rounded-xl px-3.5 py-3 transition-all ${selected ? '' : 'bg-[var(--surface-sunken)]'}`}
                 style={{
-                  background: selected ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: selected ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                  background: selected ? 'rgba(99,102,241,0.12)' : undefined,
+                  border: selected ? '1px solid rgba(99,102,241,0.35)' : '1px solid var(--border)',
                   boxShadow: selected ? '0 0 12px rgba(99,102,241,0.12)' : 'none',
                 }}
               >
                 <div className="flex items-center justify-between mb-0.5">
-                  <span
-                    className="text-xs font-bold"
-                    style={{ color: selected ? '#c4b5fd' : 'rgba(255,255,255,0.65)' }}
-                  >
+                  <span className={`text-xs font-bold ${selected ? 'text-indigo-400 dark:text-indigo-300' : 'text-slate-700 dark:text-white/65'}`}>
                     {isHe ? tmpl.label_he : tmpl.label_en}
                   </span>
                   {selected && (
@@ -1478,8 +1475,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                     </span>
                   )}
                 </div>
-                <p className="text-xs leading-relaxed line-clamp-2"
-                  style={{ color: selected ? 'rgba(196,181,253,0.6)' : 'rgba(255,255,255,0.35)' }}
+                <p className={`text-xs leading-relaxed line-clamp-2 ${selected ? 'text-indigo-400/60 dark:text-indigo-300/60' : 'text-slate-500 dark:text-white/35'}`}
                 >
                   {isHe ? tmpl.message_he : tmpl.message_en}
                 </p>
