@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–67 (Light Mode Contrast — ProposalBuilder / PremiumInputs / ReusableServices + Monthly Quota System).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–68 (Deal Room Light Mode Overhaul + Billing Dark Mode Fix).
 
 ---
 
@@ -596,7 +596,7 @@ Auth card / legacy components still use the older `rgba(255,255,255,0.05)` style
 
 ### CSS Variables — Theme-Aware Tokens (Sprint 67)
 
-`src/index.css` defines CSS variables for both light and dark modes. **All shared UI components (EditorPanel, ReusableServices, PremiumInputs, and any component that renders inside both themes) must use these variables instead of hardcoded `rgba(255,255,255,X)` values** — those are invisible on white in light mode.
+`src/index.css` defines CSS variables for both light and dark modes. **All shared UI components and Deal Room components must use these variables instead of hardcoded `rgba(255,255,255,X)` values** — those are invisible on white in light mode.
 
 | Variable | Dark value | Light value | Use for |
 |---|---|---|---|
@@ -605,6 +605,9 @@ Auth card / legacy components still use the older `rgba(255,255,255,0.05)` style
 | `--input-bg` | `#0a0a0a` | `#ffffff` | Input field backgrounds |
 | `--text-main` | `rgba(255,255,255,0.9)` | `#0f172a` | Primary text |
 | `--text-muted` | `rgba(255,255,255,0.35)` | `#64748b` | Secondary/placeholder text |
+| `--text-secondary` | `#a1a1aa` | `#475569` | Subtle body copy |
+| `--text-tertiary` | `rgba(255,255,255,0.35)` | `#94a3b8` | Disabled / dim text |
+| `--card-bg` | `rgba(255,255,255,0.02)` | `#ffffff` | Card/panel backgrounds |
 
 ```tsx
 // ✅ Theme-aware — works in both light and dark
@@ -1291,6 +1294,40 @@ DealRoom is public so it cannot read `user_metadata` directly. Brand color trave
 
 ### Access code gate
 `get_deal_room_proposal` returns `{ _requires_code: true }` when the proposal has a code but none was provided. DealRoom shows a PIN entry UI, then re-calls the RPC with the entered code. Wrong code returns `null` silently.
+
+### Deal Room Light Mode (Sprint 68)
+
+`DealRoom.tsx` is fully light-mode-aware. It is the **only** public-facing page and its clients may be viewing on any device/theme.
+
+**ThemeToggle placement:**
+```tsx
+// Floating top-right controls alongside the locale button
+import { ThemeToggle } from '../components/ui/ThemeToggle'
+
+<div className="fixed top-4 end-4 z-40 flex items-center gap-2">
+  <button onClick={toggleLocale} ...>{locale}</button>
+  <ThemeToggle />
+</div>
+```
+`ThemeToggle` uses `next-themes` `useTheme`. DealRoom is inside `ThemeProvider` in App.tsx, so this works without any wrapper changes.
+
+**Theming approach — `dark:` modifier pairs throughout:**
+Every element that previously had a hardcoded `rgba(255,255,255,X)` inline style now uses Tailwind `dark:` modifier pairs or CSS theme variables:
+- Card backgrounds: `bg-white dark:bg-transparent` or `bg-slate-50 dark:bg-white/[0.03]`
+- Borders: `border border-slate-200 dark:border-white/[0.07]`
+- Text: `text-slate-500 dark:text-white/40`, `text-slate-400 dark:text-white/30`, etc.
+- Toggle unchecked (PremiumSliderCard): `var(--surface-sunken)` bg + `var(--border)` border
+- Access code input border (non-error): `var(--border)`
+
+**Inline CSS classes in the `<style>` tag:**
+- `.dr-prose strong/h1/h2/h3` — dark-mode rgba colors; `:root:not(.dark)` overrides provide slate-colored equivalents
+- `.dr-title-gradient` — white gradient in dark; `:root:not(.dark)` override uses dark slate gradient
+- `--checkout-fade`, `checkout-glass` — already light-mode-aware from previous sprint
+
+**What is NOT changed:**
+- Dark mode aesthetics are identical to pre-Sprint-68. All `dark:` classes preserve the existing dark rendering exactly.
+- The success overlay (`accepted && freshSignedRef.current`) uses a near-black backdrop (`rgba(3,3,5,0.92)`) regardless of theme — this is intentional (celebration modal should feel immersive).
+- Subtle cosmetic inner shadows (`inset 0 1px 0 rgba(255,255,255,0.05)`) on decorative elements are left as-is — they vanish on light bg without harm.
 
 ---
 
@@ -3350,8 +3387,8 @@ Two new compliance elements added to the Billing page:
 - **Do not add a secondary VAT toggle** — Sprint 44 explicitly removed the two-toggle approach after user feedback. There is only one toggle: `include_vat`. When on, prices are gross. When off, no VAT exists. Do not re-introduce `prices_include_vat` as a separate UI control.
 - **Do not allow document type changes after sending** — once `isFinanciallyLocked && !needsRevision`, the document mode segmented control (proposal ↔ legal document) and contract template picker must be disabled. Changing document structure after the client received it creates legal ambiguity.
 - **Do not use `applyVat()` from `types/proposal.ts` for display purposes** — this function adds VAT on top (`amount * (1 + rate)`), which contradicts the Israeli gross-price model. For VAT extraction, use `vatOnGross()` and `netFromGross()` from `financialMath.ts`.
-- **Do not add a ThemeToggle to ProtectedLayout** — the app has no manual theme switcher. Dark is the default; system light mode is supported. Do not mount `ThemeToggle` in `ProtectedLayout` or any other layout.
-- **Do not use non-standard Tailwind opacity shorthand in `dark:` classes** — Tailwind v3 JIT only generates CSS for opacity values in the default scale (multiples of 5: 0, 5, 10, …, 95, 100). Non-standard values like `/4`, `/6`, `/7`, `/8`, `/12`, `/14` produce **no CSS** — the class is silently ignored, and the light-mode background wins. Use bracket notation: `dark:bg-white/[0.04]`, `dark:border-white/[0.07]`, `dark:bg-white/[0.06]`, `dark:bg-white/[0.08]`, `dark:bg-indigo-500/[0.14]`, etc. Standard scale values (`/5`, `/10`, `/25`, `/50`) are fine without brackets. Affected files: AccessibilityWidget (fixed Sprint 65), and potential regressions in NotificationBell, Dashboard, ProposalCard, RichTextEditor, PremiumInputs.
+- **Do not add a ThemeToggle to ProtectedLayout or any app page** — app pages use `next-themes` system preference via `ThemeProvider`. Dark is the default; users on light-mode systems see light mode automatically. The **only** manual `ThemeToggle` in the app is the one inside `DealRoom.tsx` (public-facing page where clients may not control their system theme). Do not mount `ThemeToggle` in `ProtectedLayout`, `Dashboard`, `ProposalBuilder`, or any other authenticated page.
+- **Do not use non-standard Tailwind opacity shorthand in `dark:` classes** — Tailwind v3 JIT only generates CSS for opacity values in the default scale (multiples of 5: 0, 5, 10, …, 95, 100). Non-standard values like `/4`, `/6`, `/7`, `/8`, `/12`, `/14` produce **no CSS** — the class is silently ignored, and the light-mode background wins. This applies to ALL color prefixes, not just `white`: `dark:bg-emerald-500/6`, `dark:bg-indigo-500/7`, `dark:border-emerald-500/12`, `dark:border-indigo-500/14` are all broken. Use bracket notation: `dark:bg-white/[0.04]`, `dark:border-white/[0.07]`, `dark:bg-emerald-500/[0.06]`, `dark:bg-indigo-500/[0.07]`, etc. Standard scale values (`/5`, `/10`, `/25`, `/50`) are fine without brackets. Fixed files: AccessibilityWidget (Sprint 65), Billing.tsx PCI + Morning cards (Sprint 68), PremiumInputs Today button (Sprint 67), EditorPanel milestone presets (Sprint 67).
 - **Do not re-declare `isExpired` inside the DealRoom IIFE** — `isExpired` is computed once at render level in `DealRoom.tsx`. The IIFE forms a child scope so there is no conflict, but re-declaring it creates two sources of truth. Use the outer-scope const throughout.
 - **Do not show the CountdownBanner when `isExpired`** — the countdown serves urgency for active proposals only. When a proposal is already expired, `CountdownBanner` must be suppressed and the red expiry banner shown instead. Render condition: `proposal.expires_at && !accepted && !isExpired`.
 - **Do not render the Follow-Up WhatsApp item for non-sent proposals** — the item only appears for `status === 'sent'` or `status === 'viewed'`. For `draft`, `accepted`, `rejected`, or `needs_revision` it must be absent.
@@ -3401,7 +3438,7 @@ Two new compliance elements added to the Billing page:
 - **Do not set `UpgradeModal` Pro as not-popular or Premium as most-popular** — since Sprint 50.6, Pro (`₪19`) is the "Most Popular" plan with the spinning conic-gradient border treatment. Premium (`₪39`) uses gold accent (`#d4af37`). Swapping the popular flag was intentional product positioning.
 - **Do not add email fallbacks to UpgradeModal CTA buttons** — the Forced Event Handler Pattern requires every button to always render. If a Stripe env var is missing, the handler calls `alert()` in dev only and silently returns in prod. Never replace buttons with `<div>` fallbacks or `mailto:` links.
 - **Do not bypass the quota check in ProtectedLayout's "New Proposal" button** — since Sprint 67, both the navbar button and Dashboard's `handleCreate` check `monthlyCount >= effectiveLimit` where `monthlyCount` counts proposals with `created_at >= first day of the current calendar month`. This is a **monthly rolling quota** — archiving or deleting proposals does NOT restore quota because archived proposals remain in the DB with `is_archived: true` and deleted ones have already been counted. `effectiveLimit = FREE_PROPOSAL_LIMIT + bonusQuota`. Both surfaces must stay in sync.
-- **Do not use hardcoded `rgba(255,255,255,X)` values in shared components** — these are dark-mode-only values that are invisible (white on white) in light mode. App pages and shared components (EditorPanel, ReusableServices, PremiumInputs, etc.) must use CSS theme variables (`var(--border)`, `var(--surface-sunken)`, `var(--input-bg)`, `var(--text-main)`, `var(--text-muted)`) or Tailwind `dark:` modifier pairs. This is the root cause of the entire Sprint 67 light mode contrast regressions.
+- **Do not use hardcoded `rgba(255,255,255,X)` values in shared components or DealRoom** — these are dark-mode-only values that are invisible (white on white) in light mode. App pages, shared components (EditorPanel, ReusableServices, PremiumInputs), and Deal Room components (PremiumSliderCard, CheckoutClimax, DealRoom.tsx) must use CSS theme variables (`var(--border)`, `var(--surface-sunken)`, `var(--input-bg)`, `var(--text-main)`, `var(--text-muted)`, `var(--text-tertiary)`, `var(--card-bg)`) or Tailwind `dark:` modifier pairs. This was the root cause of the Sprint 67 shared-component regressions and the Sprint 68 Deal Room regressions.
 - **Do not call `injectDemoProposal()` from Dashboard** — Sprint 67 disabled demo injection permanently. The function still exists in `useProposalStore` with its localStorage gate, but the `useEffect` that called it was removed from `Dashboard.tsx`. Demo proposals drained Free Tier monthly quota. Do not re-add the call.
 - **Do not compute proposal quota from active/non-archived count** — since Sprint 67, quota is a **monthly rolling counter**: `proposals.filter(p => new Date(p.created_at) >= firstOfMonth).length`. Archiving or deleting a proposal does not restore quota — the month's usage is fixed by creation date. The old "count non-archived" approach was wrong because it let users cycle proposals to evade limits.
 - **Do not call `AIGhostwriter` an "AI" feature** — `AIGhostwriter.tsx` is a keyword-matched template system (`findTemplate(prompt)` against a static `TEMPLATES` array). It has no ML/LLM backend. The component is branded "Quick-Start Templates" / "תבניות חכמות להצעה" since Sprint 58. Never re-introduce the "AI", "Ghostwriter", or "BETA" labels — they are false advertising.
