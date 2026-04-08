@@ -401,7 +401,7 @@ export default function AccessibilityStatement() {
         className="px-5 py-10 text-center"
         style={{
           background: 'linear-gradient(180deg, rgba(99,102,241,0.06) 0%, transparent 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <div
@@ -426,8 +426,7 @@ export default function AccessibilityStatement() {
 
         {/* Footer note */}
         <div
-          className="rounded-2xl px-5 py-4 text-center mt-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+          className="rounded-2xl px-5 py-4 text-center mt-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]"
         >
           <p className="text-[11px] text-dim">
             {isHe

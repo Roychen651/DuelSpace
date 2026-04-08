@@ -26,16 +26,11 @@ export class ErrorBoundary extends Component<Props, State> {
     const error = this.state.error
 
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{ background: '#030305' }}
-      >
+      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-[#030305]">
         <div
-          className="w-full max-w-md rounded-3xl p-8 space-y-6 text-center"
+          className="w-full max-w-md rounded-3xl p-8 space-y-6 text-center bg-white dark:bg-transparent border border-slate-200 dark:border-white/[0.08] shadow-xl"
           style={{
-            background: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            backgroundImage: 'linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%)',
           }}
         >
           {/* Icon */}
@@ -54,10 +49,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {/* Heading */}
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
               Something went wrong
             </h1>
-            <p className="text-sm text-white/40 leading-relaxed">
+            <p className="text-sm text-slate-500 dark:text-white/40 leading-relaxed">
               משהו השתבש
             </p>
           </div>
@@ -78,15 +73,12 @@ export class ErrorBoundary extends Component<Props, State> {
           {/* Dev debug details */}
           {error && (
             <details className="text-start">
-              <summary className="cursor-pointer text-xs text-white/25 hover:text-white/50 transition-colors select-none">
+              <summary className="cursor-pointer text-xs text-slate-400 dark:text-white/25 hover:text-slate-600 dark:hover:text-white/50 transition-colors select-none">
                 Error details
               </summary>
               <pre
-                className="mt-3 rounded-xl p-3 text-[11px] leading-relaxed overflow-auto max-h-40"
+                className="mt-3 rounded-xl p-3 text-[11px] leading-relaxed overflow-auto max-h-40 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/[0.06] text-red-600 dark:text-red-400/80"
                 style={{
-                  background: 'rgba(0,0,0,0.4)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  color: 'rgba(248,113,113,0.8)',
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(99,102,241,0.3) transparent',
                 }}

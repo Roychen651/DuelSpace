@@ -986,25 +986,61 @@ export default function DealRoom() {
     localStorage.setItem('dealspace:locale', next)
   }
 
-  // ── Render: loading ────────────────────────────────────────────────────────
+  // ── Render: loading skeleton ─────────────────────────────────────────────
   if (fetchStatus === 'loading') {
     return (
-      <div
-        className="bg-background"
-        style={{
-          minHeight: '100dvh',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
+      <div className="bg-background" style={{ minHeight: '100dvh' }}>
         <style>{pageKeyframes}</style>
-        <div
-          style={{
-            width: 36, height: 36, borderRadius: '50%',
-            border: '2px solid rgba(99,102,241,0.2)',
-            borderTopColor: '#818cf8',
-            animation: 'dr-spin 0.9s linear infinite',
-          }}
-        />
+        <div className="max-w-3xl w-full mx-auto px-5 pt-20 pb-12 animate-pulse">
+          {/* Logo placeholder */}
+          <div className="flex justify-center mb-6">
+            <div className="h-12 w-12 rounded-2xl bg-slate-200 dark:bg-white/[0.08]" />
+          </div>
+          {/* Title bar */}
+          <div className="h-7 w-3/5 mx-auto rounded-lg bg-slate-200 dark:bg-white/[0.08] mb-3" />
+          {/* Subtitle bar */}
+          <div className="h-4 w-2/5 mx-auto rounded-md bg-slate-100 dark:bg-white/[0.05] mb-10" />
+
+          {/* Card skeleton */}
+          <div className="rounded-3xl p-8 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07]">
+            {/* Section label */}
+            <div className="h-3 w-24 rounded bg-slate-100 dark:bg-white/[0.06] mb-5" />
+            {/* Content lines */}
+            <div className="space-y-3">
+              <div className="h-4 w-full rounded bg-slate-100 dark:bg-white/[0.05]" />
+              <div className="h-4 w-5/6 rounded bg-slate-100 dark:bg-white/[0.05]" />
+              <div className="h-4 w-4/6 rounded bg-slate-100 dark:bg-white/[0.04]" />
+            </div>
+            {/* Divider */}
+            <div className="h-px w-full bg-slate-100 dark:bg-white/[0.06] my-6" />
+            {/* Price row */}
+            <div className="flex items-center justify-between">
+              <div className="h-4 w-28 rounded bg-slate-100 dark:bg-white/[0.05]" />
+              <div className="h-6 w-20 rounded-lg bg-slate-200 dark:bg-white/[0.08]" />
+            </div>
+          </div>
+
+          {/* Second card skeleton */}
+          <div className="rounded-3xl p-8 mt-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.07]">
+            <div className="h-3 w-20 rounded bg-slate-100 dark:bg-white/[0.06] mb-5" />
+            <div className="space-y-3">
+              <div className="h-4 w-full rounded bg-slate-100 dark:bg-white/[0.05]" />
+              <div className="h-4 w-3/4 rounded bg-slate-100 dark:bg-white/[0.04]" />
+            </div>
+          </div>
+
+          {/* Spinner indicator */}
+          <div className="flex justify-center mt-8">
+            <div
+              style={{
+                width: 28, height: 28, borderRadius: '50%',
+                border: '2px solid rgba(99,102,241,0.2)',
+                borderTopColor: '#818cf8',
+                animation: 'dr-spin 0.9s linear infinite',
+              }}
+            />
+          </div>
+        </div>
       </div>
     )
   }
