@@ -8,6 +8,7 @@ import { usePresenceStore } from '../../stores/usePresenceStore'
 import { useI18n } from '../../lib/i18n'
 import type { Proposal } from '../../types/proposal'
 import { formatCurrency, STATUS_META } from '../../types/proposal'
+import { toast } from '../../hooks/useToast'
 import { calculateFinancials, ISRAELI_VAT_RATE } from '../../lib/financialMath'
 import { generateProposalPdf } from '../../lib/pdfEngine'
 
@@ -198,6 +199,7 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(shareUrl)
+    toast({ title: locale === 'he' ? 'הקישור הועתק' : 'Link copied', type: 'success' })
   }
 
   const handleFollowUp = () => {
@@ -217,10 +219,12 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
       return
     }
     await duplicateProposal(proposal.id)
+    toast({ title: locale === 'he' ? 'ההצעה שוכפלה' : 'Proposal duplicated', type: 'success' })
   }
 
   const handleUnarchive = async () => {
     await unarchiveProposal(proposal.id)
+    toast({ title: locale === 'he' ? 'הוצא מהארכיון' : 'Unarchived', type: 'success' })
   }
 
   // In active view: moves to archive. In archive view: permanently deletes.
@@ -233,7 +237,10 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
     if (!result.ok) {
       setDeleting(false)
       setArchiveError(result.message)
+      toast({ title: locale === 'he' ? 'שגיאה' : 'Error', description: result.message, type: 'error' })
       setTimeout(() => setArchiveError(null), 6000)
+    } else {
+      toast({ title: isArchived ? (locale === 'he' ? 'נמחק לצמיתות' : 'Permanently deleted') : (locale === 'he' ? 'הועבר לארכיון' : 'Archived'), type: 'success' })
     }
   }
 

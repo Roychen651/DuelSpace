@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { X, Copy, Check, Mail, Send, ExternalLink, ArrowRight, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { toast } from '../../hooks/useToast'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export function SendModal({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareUrl)
     setCopied(true)
+    toast({ title: isHe ? 'הקישור הועתק' : 'Link copied', type: 'success' })
     setTimeout(() => setCopied(false), 2500)
   }
 
@@ -110,8 +112,10 @@ export function SendModal({
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setSendStatus('sent')
+      toast({ title: isHe ? 'המייל נשלח בהצלחה' : 'Email sent successfully', type: 'success' })
     } catch {
       setSendStatus('error')
+      toast({ title: isHe ? 'שליחה נכשלה' : 'Failed to send', type: 'error' })
       setTimeout(() => setSendStatus('idle'), 3000)
     }
   }

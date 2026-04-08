@@ -9,6 +9,7 @@ import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { InfoTip } from '../components/ui/InfoTip'
 import { RichTextEditor } from '../components/builder/RichTextEditor'
+import { toast } from '../hooks/useToast'
 
 // ─── Section card ─────────────────────────────────────────────────────────────
 
@@ -269,7 +270,7 @@ export default function Profile() {
     setBizSaving(true)
     const { error } = await supabase.auth.updateUser({ data: biz })
     setBizSaving(false)
-    if (!error) { setBizSaved(true); setTimeout(() => setBizSaved(false), 2500) }
+    if (!error) { setBizSaved(true); toast({ title: isHe ? 'הפרופיל עודכן' : 'Profile updated', type: 'success' }); setTimeout(() => setBizSaved(false), 2500) }
   }
 
   // ── Brand color ───────────────────────────────────────────────────────────
@@ -281,7 +282,7 @@ export default function Profile() {
   const handleSaveColor = async (e: React.FormEvent) => {
     e.preventDefault()
     const { error } = await supabase.auth.updateUser({ data: { brand_color: brandColor } })
-    if (!error) { setColorSaved(true); setTimeout(() => setColorSaved(false), 2500) }
+    if (!error) { setColorSaved(true); toast({ title: isHe ? 'צבע המותג עודכן' : 'Brand color updated', type: 'success' }); setTimeout(() => setColorSaved(false), 2500) }
   }
 
   // ── Company logo ──────────────────────────────────────────────────────────
@@ -385,7 +386,7 @@ export default function Profile() {
     setPrefsSaving(true)
     const { error } = await supabase.auth.updateUser({ data: { marketing_opt_in: newVal } })
     setPrefsSaving(false)
-    if (!error) { setPrefsSaved(true); setTimeout(() => setPrefsSaved(false), 2500) }
+    if (!error) { setPrefsSaved(true); toast({ title: isHe ? 'ההעדפות עודכנו' : 'Preferences updated', type: 'success' }); setTimeout(() => setPrefsSaved(false), 2500) }
   }
 
   // ── Danger zone / account deletion ───────────────────────────────────────
@@ -404,7 +405,9 @@ export default function Profile() {
     try {
       await deleteAccount()
     } catch {
-      setDeleteError(isHe ? 'שגיאה במחיקת החשבון. נסה שוב.' : 'Failed to delete account. Please try again.')
+      const msg = isHe ? 'שגיאה במחיקת החשבון. נסה שוב.' : 'Failed to delete account. Please try again.'
+      setDeleteError(msg)
+      toast({ title: isHe ? 'שגיאה' : 'Error', description: msg, type: 'error' })
       setDeleting(false)
     }
   }

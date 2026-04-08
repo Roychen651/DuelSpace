@@ -5,6 +5,7 @@ import { useI18n } from '../lib/i18n'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
 import { DEFAULT_VAT_RATE, formatCurrency } from '../types/proposal'
 import { useServicesStore, type Service, type ServiceInsert } from '../stores/useServicesStore'
+import { toast } from '../hooks/useToast'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -362,6 +363,7 @@ export default function ServicesLibrary() {
       setShowForm(false)
     }
     setSaving(false)
+    toast({ title: isHe ? 'השירות נשמר' : 'Service saved', type: 'success' })
   }
 
   const cardIn: Variants = {
@@ -553,7 +555,7 @@ export default function ServicesLibrary() {
                     vatRate={vatRate}
                     locale={locale}
                     onEdit={() => { setEditingId(service.id); setShowForm(false) }}
-                    onDelete={() => deleteService(service.id)}
+                    onDelete={() => { deleteService(service.id); toast({ title: isHe ? 'השירות נמחק' : 'Service deleted', type: 'success' }) }}
                   />
                 )
               )}
