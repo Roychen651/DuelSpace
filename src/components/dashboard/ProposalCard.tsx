@@ -209,8 +209,10 @@ export function ProposalCard({ proposal, onEdit, onDownload, onUpgradeRequired }
   }
 
   const handleDuplicate = async () => {
-    const activeCount = proposals.filter(p => !p.is_archived).length
-    if (tier === 'free' && activeCount >= FREE_PROPOSAL_LIMIT) {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthlyCount = proposals.filter(p => new Date(p.created_at) >= monthStart).length
+    if (tier === 'free' && monthlyCount >= FREE_PROPOSAL_LIMIT) {
       onUpgradeRequired?.()
       return
     }

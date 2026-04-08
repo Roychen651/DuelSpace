@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import DOMPurify from 'dompurify'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { Check, Zap, Eye, Clock, ExternalLink, Lock, FileText, Milestone } from 'lucide-react'
 import { DEFAULT_VAT_RATE, formatCurrency, STATUS_META } from '../../types/proposal'
@@ -394,7 +395,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
                     <img
                       src={proposal.creator_info!.logo_url}
                       className="max-h-9 max-w-[140px] object-contain"
-                      alt="Company logo"
+                      alt={proposal.creator_info?.company_name || 'Company logo'}
                     />
                   </div>
                 </div>
@@ -421,7 +422,7 @@ export function LivePreview({ proposal, locale, compact = false }: LivePreviewPr
               {proposal.description && (
                 <div
                   className="lp-prose text-sm text-slate-500 dark:text-white/45 leading-relaxed mb-5"
-                  dangerouslySetInnerHTML={{ __html: proposal.description }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposal.description) }}
                 />
               )}
 

@@ -549,8 +549,8 @@ export default function Dashboard() {
                 : tier === 'pro'
                   ? { symbol: '⚡', labelHe: 'פרו', labelEn: 'Pro', color: '#818cf8', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.28)', glow: 'rgba(99,102,241,0.18)' }
                   : { symbol: '◎', labelHe: 'חינם', labelEn: 'Free', color: '#9ca3af', bg: 'rgba(156,163,175,0.08)', border: 'rgba(156,163,175,0.2)', glow: 'rgba(156,163,175,0.06)' }
-              const atLimit  = tier === 'free' && activeProposals.length >= effectiveLimit
-              const nearLimit = tier === 'free' && activeProposals.length === effectiveLimit - 1
+              const atLimit  = tier === 'free' && monthlyCount >= effectiveLimit
+              const nearLimit = tier === 'free' && monthlyCount === effectiveLimit - 1
               return (
                 <motion.button
                   onClick={() => setUpgradeModalOpen(true)}

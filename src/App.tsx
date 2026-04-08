@@ -8,6 +8,7 @@ import { ProtectedLayout } from './components/layout/ProtectedLayout'
 import { ThemeProvider } from './components/layout/ThemeProvider'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { Toaster } from './components/ui/Toaster'
 import { AnalyticsProvider } from './components/layout/AnalyticsProvider'
 import { ScrollToTop } from './components/layout/ScrollToTop'
 
@@ -114,6 +115,9 @@ function AnimatedRoutes() {
 
       {/* Accessibility Widget — global, always visible on all pages */}
       <AccessibilityWidget />
+
+      {/* Global toast notifications */}
+      <Toaster />
     </>
   )
 }

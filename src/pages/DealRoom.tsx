@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RefObject } from 'react'
 import { useParams } from 'react-router-dom'
+import DOMPurify from 'dompurify'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence, useScroll, useSpring, useMotionValue, type Variants } from 'framer-motion'
 import { Zap, Clock, Globe, AlertCircle, Check, FileDown, ChevronDown, ChevronUp, Shield, Lock, Loader2, XCircle, ThumbsDown } from 'lucide-react'
@@ -1322,7 +1323,7 @@ export default function DealRoom() {
             <motion.div
               variants={slideUp}
               className="dr-prose text-[15px] text-subtle leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: parseSmartVariables(proposal.description, proposal, locale) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseSmartVariables(proposal.description, proposal, locale)) }}
             />
           )}
         </motion.div>
@@ -1741,7 +1742,7 @@ export default function DealRoom() {
             <div
               className="px-5 pb-5 text-[13px] leading-relaxed text-slate-600 dark:text-white/55 prose-sm dark:prose-invert max-w-none"
               style={{ direction: locale === 'he' ? 'rtl' : 'ltr' }}
-              dangerouslySetInnerHTML={{ __html: proposal.business_terms }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposal.business_terms) }}
             />
           </motion.div>
         )}

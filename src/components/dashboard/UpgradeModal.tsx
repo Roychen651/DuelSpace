@@ -46,13 +46,13 @@ const PLANS: PlanDef[] = [
     nameEn: 'Free', nameHe: 'חינם',
     price: 0, periodEn: 'forever', periodHe: 'לתמיד',
     featuresEn: [
-      `Up to ${FREE_PROPOSAL_LIMIT} active proposals`,
+      `Up to ${FREE_PROPOSAL_LIMIT} proposals / month`,
       'Deal Room + digital e-signature',
       'Professional PDF export',
       'View & engagement analytics',
     ],
     featuresHe: [
-      `עד ${FREE_PROPOSAL_LIMIT} הצעות פעילות`,
+      `עד ${FREE_PROPOSAL_LIMIT} הצעות בחודש`,
       'Deal Room + חתימה דיגיטלית',
       'ייצוא PDF מקצועי',
       'אנליטיקות צפייה ומעורבות',
@@ -66,13 +66,13 @@ const PLANS: PlanDef[] = [
     nameEn: 'Pro', nameHe: 'פרו',
     price: 19, periodEn: '/ month', periodHe: '/ חודש',
     featuresEn: [
-      'Up to 100 active proposals',
+      'Up to 100 proposals / month',
       'Everything in Free',
       'Webhooks + Automations',
       'Direct support',
     ],
     featuresHe: [
-      'עד 100 הצעות פעילות',
+      'עד 100 הצעות בחודש',
       'הכל כולל תוכנית חינם',
       'Webhooks + אוטומציות',
       'תמיכה ישירה בדוא"ל',
@@ -86,13 +86,13 @@ const PLANS: PlanDef[] = [
     nameEn: 'Premium', nameHe: 'פרימיום',
     price: 39, periodEn: '/ month', periodHe: '/ חודש',
     featuresEn: [
-      'Unlimited active proposals',
+      'Unlimited proposals',
       'Everything in Pro',
       'Priority support',
       'Input on the product roadmap',
     ],
     featuresHe: [
-      'הצעות פעילות ללא הגבלה',
+      'הצעות ללא הגבלה',
       'הכל כולל תוכנית פרו',
       'תמיכה בעדיפות גבוהה',
       'השפעה על מפת הדרכים',
@@ -230,8 +230,8 @@ export function UpgradeModal({ open, onClose, activeCount, currentTier }: Upgrad
                         {isManagedView
                           ? (isHe ? 'בחר את התוכנית המתאימה לקצב הצמיחה שלך.' : 'Choose the plan that fits your growth pace.')
                           : (isHe
-                            ? `הגעת ל-${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות פעילות בתוכנית החינמית. שדרג כדי להמשיך לסגור עסקאות ללא הגבלה.`
-                            : `You've used ${activeCount} of ${FREE_PROPOSAL_LIMIT} active proposals on the free plan. Upgrade to keep closing deals without limits.`)}
+                            ? `ניצלת ${activeCount} מתוך ${FREE_PROPOSAL_LIMIT} הצעות החודש בתוכנית החינמית. שדרג כדי להמשיך לסגור עסקאות ללא הגבלה.`
+                            : `You've used ${activeCount} of ${FREE_PROPOSAL_LIMIT} proposals this month on the free plan. Upgrade to keep closing deals without limits.`)}
                       </p>
                     </Dialog.Description>
                   </div>
