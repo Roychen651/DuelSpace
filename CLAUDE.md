@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–68 (Deal Room Light Mode Overhaul + Billing Dark Mode Fix).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–74 (Final UI Polish — Accessibility Light Mode, Theme-Aware ErrorBoundary, Deal Room Skeleton, Toast System, XSS Sanitization, Server-Side Quota).
 
 ---
 
@@ -32,8 +32,12 @@ Read this before touching any file. Everything here reflects the live codebase a
 | PDF | @react-pdf/renderer | ^4.3 |
 | Rich Text | TipTap | ^2.x |
 | Confetti | canvas-confetti | ^1.x |
+| Toast | @radix-ui/react-toast | ^1.x |
+| XSS Sanitization | dompurify | ^3.x |
 
 **Removed:** `react-signature-canvas` — replaced with a native canvas implementation using pointer events and `quadraticCurveTo` for smooth strokes.
+
+**Removed (Sprint 72):** `jspdf`, `html2canvas`, `class-variance-authority`, `clsx`, `tailwind-merge` — all had zero imports and were dead weight.
 
 **No** Redux, MUI, Chakra, styled-components, or class-based components.
 
@@ -156,7 +160,12 @@ src/
 │       ├── PremiumInputs.tsx      # Shared input primitives (Radix slider, date picker)
 │       ├── AccessibilityWidget.tsx # Draggable FAB + fixed panel, 14 a11y controls, IS 5568 / WCAG 2.2 AA
 │       ├── HelpCenterDrawer.tsx   # Side drawer with 44 bilingual FAQ items, 5 categories; controlled via props
-│       └── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
+│       ├── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
+│       ├── ErrorBoundary.tsx      # Theme-aware error boundary — light/dark, bilingual reload CTA
+│       └── Toaster.tsx            # Radix Toast Provider — glassmorphism cards, auto-dismiss, z-9999
+│
+├── hooks/
+│   └── useToast.ts            # Zustand toast store — add/dismiss, auto-dismiss 4s, toast() convenience fn
 │
 ├── stores/
 │   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password; useTier() + useBillingStatus() + useSubscriptionPeriodEnd() + useCancelAtPeriodEnd() selectors
@@ -204,7 +213,8 @@ supabase/
 │   ├── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
 │   ├── 30_prices_include_vat.sql      # prices_include_vat boolean column (Sprint 44)
 │   ├── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
-│   └── 32_security_hardening.sql      # get_deal_room_proposal full column list + webhook_url strip; accept_proposal client_name guard (Sprint 57)
+│   ├── 32_security_hardening.sql      # get_deal_room_proposal full column list + webhook_url strip; accept_proposal client_name guard (Sprint 57)
+│   └── 33_enforce_quota.sql           # BEFORE INSERT trigger on proposals — server-side monthly rolling quota enforcement (Sprint 70)
 └── functions/
     ├── admin-impersonate/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
@@ -3325,6 +3335,124 @@ Two new compliance elements added to the Billing page:
 
 ---
 
+## 40. Server-Side Quota Enforcement (Sprint 70)
+
+### Migration 33 — `enforce_quota` trigger
+
+`33_enforce_quota.sql` adds a `BEFORE INSERT` trigger on `proposals` that enforces the monthly rolling quota server-side:
+
+```sql
+-- Counts proposals created in the current calendar month by the user
+-- Compares against tier limit: free=5, pro=100, unlimited=unlimited
+-- Adds bonus_quota from user_metadata
+-- Raises exception if over limit
+```
+
+This is the authoritative quota gate — the client-side check in Dashboard/ProtectedLayout is a UX convenience only. Even if the client-side check is bypassed, the DB trigger blocks the insert.
+
+### DOMPurify XSS Sanitization (Sprint 70)
+
+`DealRoom.tsx` sanitizes all HTML content rendered via `dangerouslySetInnerHTML` using DOMPurify:
+
+```tsx
+import DOMPurify from 'dompurify'
+
+// Every dangerouslySetInnerHTML call:
+dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposal.description ?? '') }}
+dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposal.business_terms) }}
+```
+
+`dompurify` is a direct dependency. All user-generated HTML (descriptions, business terms) passes through `DOMPurify.sanitize()` before rendering in the public Deal Room.
+
+---
+
+## 41. Global Toast Notification System (Sprints 72–73)
+
+### Architecture
+
+Two-layer system: Zustand store + Radix Toast UI.
+
+**`src/hooks/useToast.ts`** — Zustand store for toast state:
+```ts
+export type ToastType = 'success' | 'error' | 'default'
+export interface Toast { id: string; title: string; description?: string; type: ToastType }
+
+export const useToastStore = create<ToastStore>(...)
+export const toast = (t: Omit<Toast, 'id'>) => useToastStore.getState().add(t)
+```
+
+- Auto-dismiss after 4000ms
+- `toast()` convenience function works outside React components (no hook needed)
+
+**`src/components/ui/Toaster.tsx`** — Radix Toast Provider + Viewport:
+- Glassmorphism card styling with CSS theme variables
+- Icons per type: CheckCircle2 (success), XCircle (error), Info (default)
+- Slide-in/out CSS keyframes (`toast-slide-in`, `toast-slide-out`, `toast-swipe-out`)
+- Fixed bottom-right viewport at `z-[9999]`
+- Mounted in `App.tsx` after `<AccessibilityWidget />`
+
+### Wired workflows (Sprint 73)
+
+| File | Actions with toasts |
+|---|---|
+| `ProposalCard.tsx` | Copy link, duplicate, unarchive, delete (success/error) |
+| `SendModal.tsx` | Copy link, email sent, email error |
+| `Profile.tsx` | Save business info, save brand color, save preferences, delete account error |
+| `ServicesLibrary.tsx` | Save service, delete service |
+
+**Important:** `ProposalCard.tsx` uses `locale === 'he'` for toast messages (not `isHe` — that variable is scoped to child components like `StatusBadge`).
+
+---
+
+## 42. Dead Code Removal (Sprint 72)
+
+### Removed npm packages
+`jspdf`, `html2canvas`, `react-signature-canvas`, `@types/react-signature-canvas`, `class-variance-authority`, `clsx`, `tailwind-merge` — all had zero imports in `src/`.
+
+### Removed files
+- `src/lib/contractTemplates.ts` — already dead since Sprint 44.9
+- `src/lib/pdfGenerator.ts` — replaced by `pdfEngine.tsx` long ago
+
+### Vite 8 / Rolldown pako resolution fix
+
+`@react-pdf/pdfkit` deep-imports `pako/lib/zlib/zstream.js`, but `pako` is nested under `node_modules/browserify-zlib/node_modules/pako` (not hoisted). Rolldown cannot resolve the bare specifier.
+
+**Fix in `vite.config.ts`:**
+```ts
+resolve: {
+  alias: {
+    pako: path.resolve(__dirname, 'node_modules/browserify-zlib/node_modules/pako'),
+  },
+},
+```
+
+Do not remove this alias — it is required for `npm run build` to succeed with Vite 8 / Rolldown.
+
+---
+
+## 43. Final UI Polish (Sprint 74)
+
+### AccessibilityStatement light mode fix (P4)
+- Hero `borderBottom`: changed from `rgba(255,255,255,0.05)` to `var(--border)`
+- Footer card: changed from inline `rgba` styles to `bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.05]`
+
+### Theme-aware ErrorBoundary (P5)
+`src/components/ui/ErrorBoundary.tsx` — full light/dark rewrite:
+- Outer: `bg-slate-50 dark:bg-[#030305]` (was hardcoded `#030305`)
+- Card: `bg-white dark:bg-transparent` with `shadow-xl`
+- Text: `text-slate-900 dark:text-white` / `text-slate-500 dark:text-white/40`
+- Error pre: `bg-slate-100 dark:bg-black/40` with `text-red-600 dark:text-red-400/80`
+
+### Deal Room loading skeleton (P6)
+`DealRoom.tsx` — replaced the bare spinner during `fetchStatus === 'loading'` with a content-shaped skeleton:
+- Logo circle + title/subtitle bars (centered, proportional widths)
+- Two card skeletons mimicking the real Deal Room layout
+- All bars use `bg-slate-200 dark:bg-white/[0.08]` for theme awareness
+- Small spinner at bottom as progress indicator
+- Full `animate-pulse` on the wrapper
+
+---
+
 ## 26. What NOT To Do
 
 - **Do not add StrictMode** — Framer Motion v12 double-invokes effects, causing animation glitches.
@@ -3456,3 +3584,8 @@ Two new compliance elements added to the Billing page:
 - **Do not label the mobile navbar CTA button with a tier name or price descriptor** — `'בחינם'` alone means "for free" (descriptive), not "start for free" (imperative). On mobile where space is limited, the short CTA must still be an **action verb**: `'התחילו'` (he) / `'Start'` (en). The full label `'התחילו בחינם'` / `'Get started free'` is shown on `sm+` screens where space permits.
 - **Do not hide the login button on mobile in LandingPage Navbar** — the login button (`onLogin` → `/auth`) was previously `hidden sm:flex`. This breaks the user flow for returning registered users on mobile who have no path back to their dashboard. The button must always be visible. On mobile it renders as icon-only (`LogIn` size 15); on `sm+` it adds the text label. This applies to both the full-state and pill-state navbar variants.
 - **Do not write `'vs.'` (with a period) in the VS badge inside `ProblemSolutionSection`** — the period after "vs" adjacent to the period-containing badge box causes a double-period visual artifact and looks unpolished. The badge renders `vs` (no period). The `vsHeadline` copy keys in both `copy.he` and `copy.en` must also omit the trailing period: `'PDF vs חדר עסקאות'` / `'PDF vs Deal Room'`.
+- **Do not render user-generated HTML without DOMPurify** — all `dangerouslySetInnerHTML` in DealRoom (description, business terms) must pass through `DOMPurify.sanitize()`. This prevents stored XSS from malicious proposal content. `dompurify` is a direct dependency — do not remove it.
+- **Do not remove the `pako` resolve alias from `vite.config.ts`** — Vite 8 / Rolldown cannot resolve `pako/lib/zlib/zstream.js` because `pako` is nested under `browserify-zlib/node_modules/pako` (not hoisted). The alias is required for `npm run build` to succeed. Removing it breaks CI immediately.
+- **Do not use `isHe` in `ProposalCard.tsx` toast messages** — `isHe` is defined only inside child components (`StatusBadge`, `StatusTimeline`), not in the main `ProposalCard` function scope. Use `locale === 'he'` instead. This caused a `tsc -b` failure (TS2304) during Sprint 73.
+- **Do not remove the dead-code packages re-added by accident** — `jspdf`, `html2canvas`, `react-signature-canvas`, `@types/react-signature-canvas`, `class-variance-authority`, `clsx`, `tailwind-merge` were all confirmed to have zero imports and were removed in Sprint 72. Do not re-add them.
+- **Do not bypass the server-side quota trigger** — migration 33 (`enforce_quota`) is a `BEFORE INSERT` trigger that enforces monthly rolling limits at the database level. The client-side quota check is a UX convenience only. Even if the UI check is removed or bypassed, the DB trigger blocks over-limit inserts with an exception.
