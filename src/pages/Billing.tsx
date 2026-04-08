@@ -748,7 +748,7 @@ export default function Billing() {
 
         {/* ── Security note ──────────────────────────────────────────────────────── */}
         <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.28, ease: 'easeOut' as const }}
-          className="flex items-center gap-3.5 rounded-2xl px-5 py-4 mb-3 bg-emerald-50 dark:bg-emerald-500/6 border border-emerald-200 dark:border-emerald-500/12"
+          className="flex items-center gap-3.5 rounded-2xl px-5 py-4 mb-3 bg-emerald-50 dark:bg-emerald-500/[0.06] border border-emerald-200 dark:border-emerald-500/[0.12]"
         >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl"
             style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)' }}>
@@ -763,7 +763,7 @@ export default function Billing() {
 
         {/* ── Israeli invoicing compliance note ─────────────────────────────────── */}
         <motion.div {...animBase} transition={{ duration: 0.45, delay: 0.32, ease: 'easeOut' as const }}
-          className="flex items-start gap-3.5 rounded-2xl px-5 py-4 bg-indigo-50 dark:bg-indigo-500/7 border border-indigo-200 dark:border-indigo-500/14"
+          className="flex items-start gap-3.5 rounded-2xl px-5 py-4 bg-indigo-50 dark:bg-indigo-500/[0.07] border border-indigo-200 dark:border-indigo-500/[0.14]"
         >
           <div className="flex h-7 w-7 flex-none items-center justify-center rounded-xl mt-0.5"
             style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
