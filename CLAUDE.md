@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–74 (Final UI Polish — Accessibility Light Mode, Theme-Aware ErrorBoundary, Deal Room Skeleton, Toast System, XSS Sanitization, Server-Side Quota).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–75 (God-Mode System Audit — full 360° codebase audit identifying security, architecture, and product gaps).
 
 ---
 
@@ -129,13 +129,17 @@ src/
 │   ├── TermsOfService.tsx   # /terms — 12-clause bilingual ToS (Israeli corporate standard)
 │   ├── PrivacyPolicy.tsx    # /privacy — 12-clause bilingual Privacy Policy (GDPR + Israeli)
 │   ├── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568 declaration
+│   ├── ImpersonateCallback.tsx  # /impersonate — admin magic-link landing; verifyOtp → /dashboard
 │   └── admin/
 │       ├── AdminDashboard.tsx   # /admin — founder-only panel; KPI cards, user registry table, filter/sort
 │       └── UserOpsDrawer.tsx    # Slide-over drawer for a single user; Radix Tabs (Profile/Billing/Security/Danger)
 │
 ├── components/
 │   ├── layout/
-│   │   └── AdminRoute.tsx        # Three-layer auth guard: idle spinner → unauthenticated → wrong email → /dashboard
+│   │   ├── AdminRoute.tsx        # Three-layer auth guard: idle spinner → unauthenticated → wrong email → /dashboard
+│   │   ├── ProtectedLayout.tsx   # Navbar shell for authenticated pages; tier badge, quota check, dunning lock, HelpCenter trigger
+│   │   ├── ThemeProvider.tsx     # next-themes wrapper: defaultTheme="dark", enableSystem, attribute="class"
+│   │   └── AnalyticsProvider.tsx # Route-change listener for gtag/fbq/posthog — shell only, no script tags wired yet
 │   ├── builder/
 │   │   ├── EditorPanel.tsx       # Left pane: all proposal fields, VAT toggle, milestones, Quick-Start Templates
 │   │   ├── LivePreview.tsx       # Right pane: real-time preview, spring-animated total, VAT-aware
@@ -162,7 +166,8 @@ src/
 │       ├── HelpCenterDrawer.tsx   # Side drawer with 44 bilingual FAQ items, 5 categories; controlled via props
 │       ├── GlobalFooter.tsx       # Self-contained footer (useI18n + useNavigate), dual DOM tree (mobile/desktop)
 │       ├── ErrorBoundary.tsx      # Theme-aware error boundary — light/dark, bilingual reload CTA
-│       └── Toaster.tsx            # Radix Toast Provider — glassmorphism cards, auto-dismiss, z-9999
+│       ├── Toaster.tsx            # Radix Toast Provider — glassmorphism cards, auto-dismiss, z-9999
+│       └── ThemeToggle.tsx        # Light/dark toggle — used in DealRoom (public) and LandingPage (self-contained)
 │
 ├── hooks/
 │   └── useToast.ts            # Zustand toast store — add/dismiss, auto-dismiss 4s, toast() convenience fn
@@ -171,6 +176,7 @@ src/
 │   ├── useAuthStore.ts        # Zustand: auth state, signIn/Up/Out, updateProfile/Password; useTier() + useBillingStatus() + useSubscriptionPeriodEnd() + useCancelAtPeriodEnd() selectors
 │   ├── useProposalStore.ts    # Zustand: proposals CRUD with optimistic updates + demo injection
 │   ├── useServicesStore.ts    # Zustand: services catalog CRUD (Supabase-backed, optimistic)
+│   ├── usePresenceStore.ts    # Zustand: in-memory presence — tracks active viewers by public_token via Supabase Realtime channel
 │   └── useAccessibilityStore.ts # 14 a11y states, CSS DOM mutations, localStorage persistence (ds:a11y:*)
 │
 ├── lib/
@@ -180,6 +186,7 @@ src/
 │   ├── successTemplates.ts    # Post-signature success screen template definitions
 │   ├── financialMath.ts       # VAT, rounding, milestone math helpers
 │   ├── automations.ts         # triggerPostSignatureAutomations — POSTs deal payload to creator's webhook_url
+│   ├── contractEngine.ts      # Smart variable replacement engine — {Client_Name}, {Grand_Total}, etc. in descriptions/contracts
 │   ├── knowledgeBase.ts       # Help Center FAQ items — bilingual KBItem[] with categories
 │   └── passwordValidation.ts  # Strength rules (score 1-4, color, label_en/he, rules[])
 │
@@ -210,6 +217,10 @@ supabase/
 │   ├── 22_admin_v2.sql                # admin_save_note(), admin_get_user_proposals(), get_admin_users_data with phone + admin_notes
 │   ├── 23_forensic_audit.sql          # signer_ip + signer_user_agent columns; accept_proposal updated with p_ip/p_ua params
 │   ├── 24_native_delivery.sql         # delivery_email, email_sent_at, email_opened_at columns + mark_email_opened() RPC
+│   ├── 25_signature_storage.sql       # signature_data_url column on proposals
+│   ├── 26_onboarding.sql              # Onboarding-related schema additions
+│   ├── 27_save_signature_rpc.sql      # RPC for saving signature data
+│   ├── 28_signed_quantities.sql       # Signed add-on quantities storage
 │   ├── 29_lean_market.sql             # display_bsd, hide_grand_total, is_document_only boolean columns (Sprint 43)
 │   ├── 30_prices_include_vat.sql      # prices_include_vat boolean column (Sprint 44)
 │   ├── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
@@ -248,6 +259,7 @@ supabase/
 /security                  → Legal               (always public — security policy)
 /accessibility             → AccessibilityStatement (always public — WCAG 2.2 AA)
 /admin                     → AdminDashboard        (AdminRoute — founder email only: roychen651@gmail.com)
+/impersonate               → ImpersonateCallback   (admin magic-link landing — verifyOtp, redirects to /dashboard)
 *                          → redirect to /
 ```
 
@@ -3589,3 +3601,75 @@ Do not remove this alias — it is required for `npm run build` to succeed with 
 - **Do not use `isHe` in `ProposalCard.tsx` toast messages** — `isHe` is defined only inside child components (`StatusBadge`, `StatusTimeline`), not in the main `ProposalCard` function scope. Use `locale === 'he'` instead. This caused a `tsc -b` failure (TS2304) during Sprint 73.
 - **Do not remove the dead-code packages re-added by accident** — `jspdf`, `html2canvas`, `react-signature-canvas`, `@types/react-signature-canvas`, `class-variance-authority`, `clsx`, `tailwind-merge` were all confirmed to have zero imports and were removed in Sprint 72. Do not re-add them.
 - **Do not bypass the server-side quota trigger** — migration 33 (`enforce_quota`) is a `BEFORE INSERT` trigger that enforces monthly rolling limits at the database level. The client-side quota check is a UX convenience only. Even if the UI check is removed or bypassed, the DB trigger blocks over-limit inserts with an exception.
+
+---
+
+## 44. Smart Contract Variables Engine (`src/lib/contractEngine.ts`)
+
+`parseSmartVariables(text, proposal, locale)` replaces `{Variable_Name}` tags in proposal descriptions/contracts with live proposal values. Safe regex-based parser — unrecognised tags are preserved verbatim (no data loss).
+
+### Supported variables
+
+| Tag | Resolves to |
+|---|---|
+| `{Client_Name}` | `proposal.client_name` |
+| `{Project_Title}` | `proposal.project_title` |
+| `{Grand_Total}` | `formatCurrency(proposalTotal(proposal), proposal.currency)` |
+| `{Date_Today}` | en-US formatted current date (avoids Hebrew Bidi marks) |
+| `{Company_Name}` | `proposal.creator_info.company_name` |
+| `{Signatory_Name}` | `proposal.creator_info.signatory_name` |
+| `{Client_Email}` | `proposal.client_email` |
+| `{Currency}` | `proposal.currency` |
+
+`SMART_VAR_TAGS` array exports a subset (5 tags) with `label_he` / `label_en` for use in EditorPanel's tag strip UI.
+
+---
+
+## 45. Presence Store (`src/stores/usePresenceStore.ts`)
+
+Zustand in-memory store tracking which proposals a client is actively viewing right now. Keyed by `public_token` so any component can read without subscribing to its own Supabase Realtime channel.
+
+```ts
+const { activeViewers, markActive, markInactive } = usePresenceStore()
+// activeViewers: Record<string, number> — public_token → last heartbeat timestamp (ms)
+```
+
+Populated by a single `user-activity:{userId}` Supabase Realtime channel subscription in `ProtectedLayout` — one WebSocket for all proposals, not one per card. `ProposalCard` reads `activeViewers[proposal.public_token]` to show a live "viewing now" indicator.
+
+---
+
+## 46. AnalyticsProvider (`src/components/layout/AnalyticsProvider.tsx`)
+
+Shell component that fires `page_view` events on route changes for Google Analytics (`window.gtag`), Meta Pixel (`window.fbq`), and PostHog (`window.posthog`). Currently **non-functional** — no analytics script tags are injected in `index.html`, so all three globals are `undefined` at runtime. The component exists as a ready-to-wire integration point.
+
+To activate, add the relevant `<script>` tags to `index.html` `<head>` and the provider will start firing events automatically.
+
+---
+
+## 47. Sprint 75 — God-Mode System Audit Findings
+
+Sprint 75 was a read-only 360° audit of the entire codebase. Key findings for future reference:
+
+### Known security issues (pre-launch blockers)
+
+1. **`public_token_select` RLS policy (CRITICAL)** — `supabase/migrations/01_proposals_schema.sql` line ~88: `CREATE POLICY "public_token_select" ON proposals FOR SELECT USING (public_token IS NOT NULL)`. Since every proposal gets a token at creation, this is effectively a blanket anonymous read grant on ALL proposals. The `get_deal_room_proposal` RPC bypasses RLS via `SECURITY DEFINER`, so the policy is unnecessary for Deal Room functionality. Fix: restrict to `USING (public_token = current_setting('request.jwt.claims', true)::json->>'public_token')` or drop entirely and rely on RPCs.
+
+2. **Pro tier quota unenforced server-side (HIGH)** — Migration 33 (`enforce_quota`) only checks `v_plan_tier = 'free'`. Pro users advertised at 100/month have no server-side enforcement. The DB trigger should add: `ELSIF v_plan_tier = 'pro' THEN v_limit := 100 + v_bonus; ... END IF`.
+
+3. **Timezone mismatch in quota calculation** — Client uses `new Date(getFullYear(), getMonth(), 1)` (local timezone, UTC+2 for Israel), server uses `date_trunc('month', now())` (UTC). Off-by-one near month boundaries.
+
+### Known dead code
+
+- **npm packages with zero imports:** `@radix-ui/react-label`, `@radix-ui/react-slot`, `@tiptap/extension-bubble-menu`
+- **`AnalyticsProvider`** — mounted in App.tsx but all analytics globals are undefined (no script tags)
+
+### Known race conditions
+
+- **DealRoom `handleAccept` double-click** — Uses `if (accepting) return` state guard, but React state updates are async. Two rapid clicks can both pass before `setAccepting(true)` propagates. Fix: use a `useRef` guard instead of state.
+
+### Undocumented files (now documented above)
+
+- `src/lib/contractEngine.ts` — smart variable replacement engine (§44)
+- `src/stores/usePresenceStore.ts` — live viewer presence tracking (§45)
+- `src/components/layout/AnalyticsProvider.tsx` — analytics shell (§46)
+- `src/pages/ImpersonateCallback.tsx` — admin magic-link landing page (§6 routing)

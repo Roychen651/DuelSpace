@@ -112,6 +112,20 @@ Creators write their legal terms once in a TipTap rich-text editor (Profile page
 
 </td>
 </tr>
+<tr>
+<td width="50%">
+
+### 🔄 Smart Contract Variables
+Template engine (`contractEngine.ts`) replaces `{Variable_Name}` tags in descriptions with live proposal values — `{Client_Name}`, `{Grand_Total}`, `{Date_Today}`, `{Company_Name}`, and more. Unrecognised tags are preserved verbatim (safe, no data loss).
+
+</td>
+<td width="50%">
+
+### 👁️ Live Presence Tracking
+Real-time viewer detection via Supabase Realtime channels. A single WebSocket per creator tracks all proposals. Dashboard cards show a live "viewing now" indicator when a client has the Deal Room open.
+
+</td>
+</tr>
 </table>
 
 ---
@@ -162,6 +176,7 @@ src/
 │   ├── TermsOfService.tsx         # /terms — 12-clause bilingual ToS
 │   ├── PrivacyPolicy.tsx          # /privacy — 12-clause bilingual policy
 │   ├── AccessibilityStatement.tsx # /accessibility — WCAG 2.2 AA + IS 5568
+│   ├── ImpersonateCallback.tsx   # /impersonate — admin magic-link OTP landing
 │   └── admin/
 │       ├── AdminDashboard.tsx     # /admin — founder-only user registry
 │       └── UserOpsDrawer.tsx      # Slide-over: Profile/Billing/Security/Danger tabs
@@ -186,8 +201,10 @@ src/
 │   │   ├── KanbanBoard.tsx        # Status-grouped kanban view
 │   │   └── BottomSheet.tsx        # Mobile action sheet
 │   ├── layout/
-│   │   ├── ProtectedLayout.tsx    # Navbar with ThemeToggle, HelpCenter, NotificationBell
-│   │   └── AdminRoute.tsx         # Three-layer auth guard for /admin
+│   │   ├── ProtectedLayout.tsx    # Navbar shell: tier badge, quota check, dunning lock, HelpCenter
+│   │   ├── AdminRoute.tsx         # Three-layer auth guard for /admin
+│   │   ├── ThemeProvider.tsx      # next-themes wrapper: dark default, system preference
+│   │   └── AnalyticsProvider.tsx  # Route-change listener (gtag/fbq/posthog) — shell, not yet wired
 │   ├── onboarding/
 │   │   └── GuidedTour.tsx         # First-run single-step spotlight (dual theme)
 │   └── ui/
@@ -202,6 +219,7 @@ src/
 │   │                              # useCancelAtPeriodEnd() selectors
 │   ├── useProposalStore.ts        # Optimistic CRUD, Realtime subscription, demo injection
 │   ├── useServicesStore.ts        # Services catalog CRUD (Supabase-backed, optimistic)
+│   ├── usePresenceStore.ts        # Live viewer tracking by public_token via Supabase Realtime
 │   └── useAccessibilityStore.ts   # 14 a11y states, DOM mutations, localStorage persistence
 │
 ├── lib/
@@ -209,6 +227,7 @@ src/
 │   ├── i18n.ts                    # He/En Zustand store, RTL/LTR switching
 │   ├── stripe.ts                  # buildCheckoutUrl() + createPortalSession() helpers
 │   ├── automations.ts             # triggerPostSignatureAutomations — webhook POST
+│   ├── contractEngine.ts          # Smart variable replacement: {Client_Name}, {Grand_Total}, etc.
 │   ├── tourEngine.ts              # driver.js dual-theme tour, 7 steps
 │   ├── knowledgeBase.ts           # 44 bilingual FAQ items, 5 categories
 │   ├── successTemplates.ts        # Post-signature screen variant definitions
@@ -223,7 +242,7 @@ src/
 └── App.tsx                        # React.lazy routes, Suspense, ProtectedRoute, AdminRoute
 
 supabase/
-├── migrations/                    # 32 migrations — full schema history
+├── migrations/                    # 33 migrations — full schema history
 └── functions/
     ├── admin-impersonate/         # Generate magic link for founder impersonation
     ├── send-proposal/             # Branded RTL email via Resend (--no-verify-jwt)
@@ -457,7 +476,7 @@ STRIPE_PRICE_PREMIUM=price_...
 # Link once
 supabase link --project-ref your-project-ref
 
-# Apply all 32 migrations
+# Apply all 33 migrations
 npm run migrate
 
 # If a migration was applied manually outside CLI:
@@ -504,7 +523,8 @@ Password Reset
 Admin Impersonation (founder only)
   /admin  →  admin-impersonate Edge Function
   → supabaseAdmin.auth.admin.generateLink({ type: 'magiclink' })
-  → window.open(magic_link, '_blank')
+  → window.open(magic_link, '_blank')  →  /impersonate?email=...&otp=...
+  → ImpersonateCallback.tsx verifyOtp  →  /dashboard
 ```
 
 Auth status lifecycle: `idle → loading → authenticated | unauthenticated`
@@ -604,6 +624,25 @@ git push origin main
 | Deploy `send-proposal` without `--no-verify-jwt` | Gateway rejects the JWT before function code runs |
 | Use `breakBefore: 'page'` in react-pdf styles | Use `<View break>` JSX prop instead |
 | Hardcode dark colors without `dark:` counterpart | Always pair with `dark:` Tailwind modifier |
+
+---
+
+## 🔍 System Audit (Sprint 75)
+
+A comprehensive 360° codebase audit was conducted covering UI/UX, architecture, security, product/billing, and analytics. Key findings:
+
+| Grade | Lens |
+|---|---|
+| **B+** | Design / UI / UX — Awwwards-level dark mode, solid light mode, minor mobile tweaks needed |
+| **B** | Architecture / Performance — Route-split lazy loading, optimistic Zustand stores, ~135KB vendor chunk |
+| **B−** | Security / Auth / Database — PKCE auth, DOMPurify XSS, forensic audit trail. RLS policy needs tightening |
+| **B** | Product / Features / Billing — Complete lifecycle from creation to signature to billing |
+| **D** | Analytics / Telemetry — AnalyticsProvider shell exists but zero scripts wired |
+
+**Pre-launch blockers identified:**
+1. `public_token_select` RLS policy is overly permissive (CRITICAL)
+2. Pro tier (100/month) quota not enforced server-side (HIGH)
+3. Zero analytics running — script tags missing from `index.html` (HIGH)
 
 ---
 
