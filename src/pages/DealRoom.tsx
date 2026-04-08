@@ -16,6 +16,7 @@ import { MilestoneTimeline } from '../components/deal-room/MilestoneTimeline'
 import type { ClientCapturedDetails } from '../components/deal-room/ClientDetailsForm'
 import { SUCCESS_TEMPLATES, DEFAULT_TEMPLATE_ID, interpolateSuccess } from '../lib/successTemplates'
 import { GlobalFooter } from '../components/ui/GlobalFooter'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { triggerPostSignatureAutomations } from '../lib/automations'
 import { parseSmartVariables } from '../lib/contractEngine'
 import { LegalTermsModal } from '../components/deal-room/LegalTermsModal'
@@ -1097,10 +1098,10 @@ export default function DealRoom() {
                 style={{
                   border: codeError
                     ? '1px solid rgba(248,113,113,0.5)'
-                    : '1px solid rgba(255,255,255,0.1)',
+                    : '1px solid var(--border)',
                   boxShadow: codeError
                     ? '0 0 0 3px rgba(248,113,113,0.12)'
-                    : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    : 'none',
                 }}
                 autoFocus
               />
@@ -1184,8 +1185,8 @@ export default function DealRoom() {
         />
       )}
 
-      {/* ── Floating locale toggle ───────────────────────────────────────── */}
-      <div className="fixed top-4 end-4 z-40">
+      {/* ── Floating controls: locale + theme ───────────────────────────── */}
+      <div className="fixed top-4 end-4 z-40 flex items-center gap-2">
         <button
           onClick={toggleLocale}
           className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-subtle backdrop-blur-xl transition hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-white/80"
@@ -1193,6 +1194,7 @@ export default function DealRoom() {
           <Globe size={11} />
           {locale === 'he' ? 'EN' : 'עב'}
         </button>
+        <ThemeToggle />
       </div>
 
       {/* ── Main content ────────────────────────────────────────────────── */}
@@ -1250,7 +1252,7 @@ export default function DealRoom() {
                       ? `⏳ תוקף ההצעה פג ב-${new Date(proposal.expires_at!).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}`
                       : `⏳ This proposal expired on ${new Date(proposal.expires_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
                   </p>
-                  <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                  <p className="text-[12px] leading-relaxed text-slate-500 dark:text-white/48">
                     {locale === 'he'
                       ? 'התמחור והתנאים אינם מובטחים עוד. אנא צור קשר עם השולח לחידוש ההצעה.'
                       : 'Pricing and terms are no longer guaranteed. Please contact the sender to renew.'}
@@ -1382,7 +1384,7 @@ export default function DealRoom() {
               opacity: baseSpotlight.active ? 1 : 0,
             }}
           />
-          <p className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+          <p className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3">
             {locale === 'he' ? 'חבילת בסיס' : 'Base Package'}
           </p>
           <div className="relative flex items-center justify-between">
@@ -1398,10 +1400,10 @@ export default function DealRoom() {
                 <Check size={15} style={{ color: brandColor }} strokeWidth={2.5} />
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-white/90">
+                <p className="text-[15px] font-semibold text-slate-900 dark:text-white/90">
                   {proposal.project_title}
                 </p>
-                <p className="text-xs text-white/35">
+                <p className="text-xs text-slate-400 dark:text-white/35">
                   {locale === 'he' ? 'כלול בהצעה' : 'Included in proposal'}
                 </p>
               </div>
@@ -1423,7 +1425,7 @@ export default function DealRoom() {
         {!proposal.is_document_only && proposal.add_ons.length > 0 && (
           <div ref={addonsSectionRef} className="mt-6 mb-4">
             <motion.p
-              className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3"
+              className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.35 }}
@@ -1515,22 +1517,7 @@ export default function DealRoom() {
               type="button"
               onClick={handleDownloadDraft}
               disabled={draftGenerating}
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
-              style={{
-                color: 'rgba(255,255,255,0.32)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.03)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)'
-                e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.32)'
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
-              }}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-semibold transition-all disabled:opacity-50 text-slate-500 dark:text-white/32 border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] hover:text-slate-700 dark:hover:text-white/60 hover:border-slate-300 dark:hover:border-white/[0.16] hover:bg-slate-50 dark:hover:bg-white/[0.06]"
             >
               <FileDown size={12} />
               {draftGenerating
@@ -1555,7 +1542,7 @@ export default function DealRoom() {
             ].map(({ icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-1">
                 <span className="text-lg">{icon}</span>
-                <span className="text-[10px] font-medium text-white/25">{label}</span>
+                <span className="text-[10px] font-medium text-slate-400 dark:text-white/25">{label}</span>
               </div>
             ))}
           </motion.div>
@@ -1568,10 +1555,8 @@ export default function DealRoom() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.8 }}
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-white/[0.07]"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
           >
@@ -1580,14 +1565,14 @@ export default function DealRoom() {
               className="flex w-full items-center justify-between px-5 py-4"
             >
               <div className="flex items-center gap-2">
-                <Shield size={13} className="text-white/30" />
-                <span className="text-xs font-semibold text-white/40">
+                <Shield size={13} className="text-slate-400 dark:text-white/30" />
+                <span className="text-xs font-semibold text-slate-500 dark:text-white/40">
                   {locale === 'he' ? 'תנאים והתניות' : 'Terms & Conditions'}
                 </span>
               </div>
               {legalExpanded
-                ? <ChevronUp size={13} className="text-white/30" />
-                : <ChevronDown size={13} className="text-white/30" />}
+                ? <ChevronUp size={13} className="text-slate-400 dark:text-white/30" />
+                : <ChevronDown size={13} className="text-slate-400 dark:text-white/30" />}
             </button>
 
             <AnimatePresence>
@@ -1600,7 +1585,7 @@ export default function DealRoom() {
                   style={{ overflow: 'hidden' }}
                 >
                   <div
-                    className="px-5 pb-5 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-white/35 space-y-3"
+                    className="px-5 pb-5 max-h-48 overflow-y-auto text-[11px] leading-relaxed text-slate-500 dark:text-white/35 space-y-3"
                     style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(99,102,241,0.3) transparent' }}
                   >
                     <p>
@@ -1623,7 +1608,7 @@ export default function DealRoom() {
                         ? 'החוק החל על הסכם זה הוא דין מדינת ישראל. כל סכסוך יובא לפני בית המשפט המוסמך במחוז תל אביב-יפו.'
                         : 'This agreement is governed by the laws of the State of Israel. Any dispute shall be resolved in the competent courts of Tel Aviv-Jaffa.'}
                     </p>
-                    <p className="text-white/20">
+                    <p className="text-slate-400 dark:text-white/20">
                       {locale === 'he'
                         ? 'לתנאי שירות המלאים ומדיניות הפרטיות, בקר ב-dealspace.app/terms'
                         : 'For full Terms of Service and Privacy Policy, visit dealspace.app/terms'}
@@ -1641,11 +1626,8 @@ export default function DealRoom() {
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.35, type: 'spring' as const, stiffness: 200, damping: 24 }}
-            className="mt-6 rounded-3xl overflow-hidden"
+            className="mt-6 rounded-3xl overflow-hidden bg-green-50 dark:bg-transparent border border-green-200 dark:border-emerald-500/[0.22] shadow-sm dark:shadow-none"
             style={{
-              background: 'linear-gradient(160deg, rgba(34,197,94,0.09) 0%, rgba(16,185,129,0.04) 60%, rgba(5,5,10,0.8) 100%)',
-              border: '1px solid rgba(34,197,94,0.22)',
-              boxShadow: '0 0 0 1px rgba(34,197,94,0.08), 0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(34,197,94,0.18)',
               backdropFilter: 'blur(40px)',
               WebkitBackdropFilter: 'blur(40px)',
               animation: 'dr-sealed-glow 4s ease-in-out infinite',
@@ -1653,8 +1635,7 @@ export default function DealRoom() {
           >
             {/* Header row */}
             <div
-              className="flex items-center gap-3.5 px-5 pt-5 pb-4"
-              style={{ borderBottom: '1px solid rgba(34,197,94,0.12)' }}
+              className="flex items-center gap-3.5 px-5 pt-5 pb-4 border-b border-green-200 dark:border-emerald-500/[0.12]"
             >
               <motion.div
                 initial={{ scale: 0, rotate: -20 }}
@@ -1673,7 +1654,7 @@ export default function DealRoom() {
                 <p className="text-sm font-black text-emerald-400 tracking-tight">
                   {locale === 'he' ? 'הסכם חתום ואושר' : 'Agreement Signed & Approved'}
                 </p>
-                <p className="text-[11px] text-white/40 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-white/40 mt-0.5">
                   {proposal.client_name
                     ? (locale === 'he'
                         ? `נחתם על ידי ${proposal.client_name}`
@@ -1686,7 +1667,7 @@ export default function DealRoom() {
 
             {/* Total — spring-animated counter */}
             <div className="px-5 py-5 flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">
                 {locale === 'he' ? 'סה"כ מאושר' : 'Total Approved'}
               </p>
               <p
@@ -1703,8 +1684,8 @@ export default function DealRoom() {
             </div>
 
             {/* Re-download PDF — always available for sealed deals */}
-            <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(34,197,94,0.08)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-3 pt-4">
+            <div className="px-5 pb-5 border-t border-green-100 dark:border-emerald-500/[0.08]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/25 mb-3 pt-4">
                 {locale === 'he' ? 'חוזה חתום' : 'Signed Contract'}
               </p>
               <motion.button
@@ -1735,7 +1716,7 @@ export default function DealRoom() {
               </motion.button>
 
               {/* DealSpace disclaimer */}
-              <p className="text-[10px] text-white/18 text-center leading-relaxed mt-4">
+              <p className="text-[10px] text-slate-400 dark:text-white/[0.18] text-center leading-relaxed mt-4">
                 {locale === 'he'
                   ? 'DealSpace מספקת תשתית טכנולוגית בלבד ואינה צד להסכם זה, לאיכות השירותים, או לכל מחלוקת בין הצדדים.'
                   : 'DealSpace provides technology infrastructure only and is not a party to this agreement, the quality of services rendered, or any dispute between the parties.'}
@@ -1750,19 +1731,15 @@ export default function DealRoom() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="mt-6 rounded-2xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
-            }}
+            className="mt-6 rounded-2xl overflow-hidden bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-white/[0.07]"
           >
             <div className="px-5 pt-4 pb-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30 mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-white/30 mb-3">
                 {locale === 'he' ? 'תנאי העסק' : 'Business Terms'}
               </p>
             </div>
             <div
-              className="px-5 pb-5 text-[13px] leading-relaxed text-white/55 prose-sm prose-invert max-w-none"
+              className="px-5 pb-5 text-[13px] leading-relaxed text-slate-600 dark:text-white/55 prose-sm dark:prose-invert max-w-none"
               style={{ direction: locale === 'he' ? 'rtl' : 'ltr' }}
               dangerouslySetInnerHTML={{ __html: proposal.business_terms }}
             />
@@ -1813,20 +1790,16 @@ export default function DealRoom() {
             <div className="sticky bottom-0 z-30 pb-4" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
               <div className="mx-auto max-w-2xl px-4">
                 <motion.div
-                  className="rounded-2xl px-5 py-5 text-center"
+                  className="rounded-2xl px-5 py-5 text-center bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08]"
                   initial={{ y: 60, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(40px)',
-                  }}
+                  style={{ backdropFilter: 'blur(40px)' }}
                 >
-                  <ThumbsDown size={24} className="text-white/30 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-white/50">
+                  <ThumbsDown size={24} className="text-slate-300 dark:text-white/30 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-400 dark:text-white/50">
                     {locale === 'he' ? 'ההצעה נדחתה' : 'Offer Declined'}
                   </p>
-                  <p className="text-xs text-white/30 mt-1">
+                  <p className="text-xs text-slate-400 dark:text-white/30 mt-1">
                     {locale === 'he'
                       ? 'ניתן ליצור קשר עם בעל העסק לדיון נוסף.'
                       : 'You can contact the creator to discuss further.'}
@@ -1890,8 +1863,7 @@ export default function DealRoom() {
                   type="button"
                   onClick={handleDecline}
                   disabled={declining}
-                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-medium transition-opacity disabled:opacity-50"
-                  style={{ color: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}
+                  className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-medium transition-opacity disabled:opacity-50 text-slate-300 dark:text-white/20 border border-slate-200 dark:border-white/[0.06] bg-transparent"
                   whileHover={{ color: 'rgba(248,113,113,0.7)', borderColor: 'rgba(248,113,113,0.25)' }}
                   whileTap={{ scale: 0.96 }}
                 >

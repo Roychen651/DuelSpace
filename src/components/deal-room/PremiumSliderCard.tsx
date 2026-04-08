@@ -78,8 +78,8 @@ export function PremiumSliderCard({
               style={{
                 background: enabled
                   ? 'linear-gradient(135deg, #6366f1, #a855f7)'
-                  : 'rgba(255,255,255,0.07)',
-                border: enabled ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                  : 'var(--surface-sunken)',
+                border: enabled ? 'none' : '1px solid var(--border)',
                 boxShadow: enabled ? '0 0 14px rgba(99,102,241,0.55)' : 'none',
                 cursor: sealed ? 'default' : 'pointer',
               }}
@@ -124,14 +124,13 @@ export function PremiumSliderCard({
           <div className="flex-none text-end">
             {/* Strikethrough original price */}
             {isDiscounted && enabled && (
-              <p className="text-[11px] tabular-nums leading-none text-end line-through"
-                style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <p className="text-[11px] tabular-nums leading-none text-end line-through text-slate-300 dark:text-white/25">
                 {formatCurrency(lineTotalOriginal, currency)}
               </p>
             )}
             <motion.p
-              className="text-lg font-black tabular-nums leading-none transition-colors duration-200"
-              style={{ color: enabled ? (isDiscounted ? '#4ade80' : '#c4b5fd') : 'rgba(255,255,255,0.18)' }}
+              className={`text-lg font-black tabular-nums leading-none transition-colors duration-200${!enabled ? ' text-slate-300 dark:text-white/[0.18]' : ''}`}
+              style={{ color: enabled ? (isDiscounted ? '#4ade80' : '#c4b5fd') : undefined }}
               animate={{ scale: [1, 1.06, 1] }}
               key={lineTotal}
               transition={{ duration: 0.25 }}
