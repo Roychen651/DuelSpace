@@ -10,6 +10,14 @@ export async function triggerPostSignatureAutomations(proposal: Proposal): Promi
   const webhookUrl = proposal.creator_info?.webhook_url
   if (!webhookUrl?.trim()) return
 
+  // Validate protocol — only allow HTTP(S) to prevent javascript: / file:// abuse
+  try {
+    const parsed = new URL(webhookUrl.trim())
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return
+  } catch {
+    return // invalid URL — silently skip
+  }
+
   const payload = {
     event: 'proposal.accepted',
     data: {

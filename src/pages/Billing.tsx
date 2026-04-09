@@ -501,8 +501,8 @@ export default function Billing() {
                     </p>
                     <p className="text-[11px] text-red-400/35 mt-0.5">
                       {isHe
-                        ? 'ייכנס לתוקף בסוף מחזור החיוב. ללא החזרים.'
-                        : 'Takes effect at end of billing cycle. No refunds.'}
+                        ? 'הביטול ייכנס לתוקף בסוף מחזור החיוב הנוכחי. לא יינתנו החזרים יחסיים (Proration) בגין תקופה שכבר חויבה.'
+                        : 'Cancellations take effect at the end of the current billing cycle. No prorated refunds are issued for already-billed periods.'}
                     </p>
                   </div>
                 </div>

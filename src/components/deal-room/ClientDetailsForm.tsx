@@ -26,7 +26,7 @@ interface ClientDetailsFormProps {
 // ─── Input ────────────────────────────────────────────────────────────────────
 
 function FormInput({
-  label, value, onChange, placeholder, icon, required, inputMode,
+  label, value, onChange, placeholder, icon, required, inputMode, maxLength,
 }: {
   label: string
   value: string
@@ -35,6 +35,7 @@ function FormInput({
   icon: React.ReactNode
   required?: boolean
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  maxLength?: number
 }) {
   return (
     <div className="space-y-1.5">
@@ -48,6 +49,7 @@ function FormInput({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
+        maxLength={maxLength}
         className="w-full rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/20 outline-none transition-all duration-300 bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/[0.12] dark:bg-white/[0.05] dark:border-white/[0.1] dark:focus:bg-white/[0.07] dark:focus:border-indigo-500/[0.65]"
       />
     </div>
@@ -235,6 +237,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
               placeholder={isHe ? 'שם משפטי מלא' : 'Full legal name'}
               icon={<User size={10} />}
               required
+              maxLength={200}
             />
 
             <FormInput
@@ -243,6 +246,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
               onChange={set('company_name')}
               placeholder={isHe ? 'שם החברה כפי שרשום' : 'Registered company name'}
               icon={<Building2 size={10} />}
+              maxLength={200}
             />
 
             <div className="grid grid-cols-2 gap-3">
@@ -255,6 +259,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
                   icon={<Hash size={10} />}
                   required
                   inputMode="numeric"
+                  maxLength={200}
                 />
                 {taxIdTouched && !taxIdValid && (
                   <p className="text-[10px] font-semibold" style={{ color: '#f87171' }}>
@@ -268,6 +273,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
                 onChange={set('signer_role')}
                 placeholder={isHe ? 'למשל: מנכ"ל' : 'e.g. CEO'}
                 icon={<Briefcase size={10} />}
+                maxLength={200}
               />
             </div>
 
@@ -277,6 +283,7 @@ export function ClientDetailsForm({ locale, prefillName = '', onComplete, sealed
               onChange={set('billing_address')}
               placeholder={isHe ? 'רחוב, עיר, מיקוד' : 'Street, City, ZIP'}
               icon={<MapPin size={10} />}
+              maxLength={200}
             />
 
             {/* Submit */}

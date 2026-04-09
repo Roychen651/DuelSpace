@@ -37,6 +37,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
+  <!-- ── Analytics ──────────────────────────────────────────────────────────
+       Replace the placeholder below with your real PostHog (or GA4) snippet.
+       Until a real key is provided, window.posthog is a no-op stub so
+       AnalyticsProvider.tsx fires without throwing.
+  ──────────────────────────────────────────────────────────────────────── -->
+  <script>
+    (function() {
+      // PostHog no-op stub — replace with real init once project key is ready:
+      // https://app.posthog.com/project/settings
+      //
+      // Example real init:
+      // !function(t,e){...}(window,document,"posthog","<YOUR_PROJECT_KEY>","https://app.posthog.com");
+      //
+      if (!window.posthog) {
+        window.posthog = { capture: function(){}, identify: function(){}, reset: function(){} };
+      }
+    })();
+  </script>
+
   <script>
     // Catch any pre-React JS errors and show them on screen
     window.onerror = function(msg, src, line, col, err) {

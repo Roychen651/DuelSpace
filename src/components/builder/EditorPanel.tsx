@@ -230,6 +230,7 @@ function AddOnRow({
               placeholder={isHe ? 'שם השירות' : 'Service name'}
               value={addOn.label}
               onChange={e => onChange({ ...addOn, label: e.target.value })}
+              maxLength={150}
             />
             <div className="flex gap-2 items-start">
               <div className="flex flex-col gap-0.5 flex-1 sm:flex-none">
@@ -739,6 +740,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                 placeholder={isHe ? 'שם מלא של הלקוח' : 'Client full name'}
                 value={draft.client_name}
                 onChange={e => onChange({ client_name: e.target.value })}
+                maxLength={200}
                 autoComplete="off"
               />
             </div>
@@ -754,6 +756,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
                 placeholder="client@example.com"
                 value={draft.client_email ?? ''}
                 onChange={e => onChange({ client_email: e.target.value })}
+                maxLength={200}
                 autoComplete="off"
               />
             </div>
@@ -809,6 +812,7 @@ export function EditorPanel({ draft, onChange, locale, isLocked = false, isFinan
               placeholder={isHe ? 'למשל: חבילת תוכן חודשית' : 'e.g. Monthly Content Package'}
               value={draft.project_title}
               onChange={e => onChange({ project_title: e.target.value })}
+              maxLength={200}
             />
           </div>
         </Field>
