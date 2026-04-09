@@ -1,7 +1,7 @@
 # DealSpace — CLAUDE.md
 
 Authoritative reference for Claude when working in this repository.
-Read this before touching any file. Everything here reflects the live codebase after Sprints 1–75 (God-Mode System Audit — full 360° codebase audit identifying security, architecture, and product gaps).
+Read this before touching any file. Everything here reflects the live codebase after Sprints 1–78 (Launch-Day Hardening — RLS data-leak sealed, per-tier quota enforced, legal compliance copy added, input validation added, analytics stub wired).
 
 ---
 
@@ -225,7 +225,8 @@ supabase/
 │   ├── 30_prices_include_vat.sql      # prices_include_vat boolean column (Sprint 44)
 │   ├── 31_global_terms.sql            # Drops video_url; adds business_terms TEXT NOT NULL DEFAULT '' (Sprint 44.9)
 │   ├── 32_security_hardening.sql      # get_deal_room_proposal full column list + webhook_url strip; accept_proposal client_name guard (Sprint 57)
-│   └── 33_enforce_quota.sql           # BEFORE INSERT trigger on proposals — server-side monthly rolling quota enforcement (Sprint 70)
+│   ├── 33_enforce_quota.sql           # BEFORE INSERT trigger on proposals — server-side monthly rolling quota enforcement (Sprint 70)
+│   └── 34_security_and_quota_patch.sql # Sprint 76: drops permissive public_token_select RLS (USING false); upgrades check_proposal_quota() to enforce Pro tier (100/mo) — deployed to live Supabase
 └── functions/
     ├── admin-impersonate/
     │   └── index.ts                   # Deno edge function — verifies caller JWT, generates magic link via Admin API
@@ -433,7 +434,7 @@ if (eventType === 'UPDATE') {
 
 ### RLS Policies (proposals)
 - `owner_select / owner_insert / owner_update / owner_delete` — `auth.uid() = user_id`
-- `public_token_select` — `public_token IS NOT NULL` (lets anyone read via token — required for Deal Room)
+- `public_token_select` — `USING (false)` (Sprint 76: sealed — public Deal Room access is handled exclusively by the `get_deal_room_proposal` SECURITY DEFINER RPC which bypasses RLS; no direct anonymous SELECT is needed or permitted)
 
 ### `services` table (Sprint 27 — migration 16)
 
@@ -3349,18 +3350,20 @@ Two new compliance elements added to the Billing page:
 
 ## 40. Server-Side Quota Enforcement (Sprint 70)
 
-### Migration 33 — `enforce_quota` trigger
+### Server-Side Quota Trigger — Migrations 33 + 34
 
-`33_enforce_quota.sql` adds a `BEFORE INSERT` trigger on `proposals` that enforces the monthly rolling quota server-side:
+`33_enforce_quota.sql` adds the `trg_check_proposal_quota` BEFORE INSERT trigger and the `check_proposal_quota()` function. `34_security_and_quota_patch.sql` (Sprint 76) replaces the function body with `CREATE OR REPLACE FUNCTION` to enforce all tiers:
 
 ```sql
--- Counts proposals created in the current calendar month by the user
--- Compares against tier limit: free=5, pro=100, unlimited=unlimited
--- Adds bonus_quota from user_metadata
--- Raises exception if over limit
+-- Tier limits (+ bonus_quota from user_metadata):
+--   free      →   5 + bonus
+--   pro       → 100 + bonus
+--   unlimited → early return (no cap)
+-- Counts proposals with created_at >= date_trunc('month', now())
+-- RAISES EXCEPTION 'P0001' when count >= limit
 ```
 
-This is the authoritative quota gate — the client-side check in Dashboard/ProtectedLayout is a UX convenience only. Even if the client-side check is bypassed, the DB trigger blocks the insert.
+The trigger is the authoritative quota gate — the client-side check in Dashboard/ProtectedLayout is a UX convenience only. Even if bypassed, the DB trigger blocks the insert. The `CREATE OR REPLACE` approach means the trigger from Migration 33 continues to reference the updated function without requiring a DROP/CREATE cycle.
 
 ### DOMPurify XSS Sanitization (Sprint 70)
 
@@ -3600,7 +3603,11 @@ Do not remove this alias — it is required for `npm run build` to succeed with 
 - **Do not remove the `pako` resolve alias from `vite.config.ts`** — Vite 8 / Rolldown cannot resolve `pako/lib/zlib/zstream.js` because `pako` is nested under `browserify-zlib/node_modules/pako` (not hoisted). The alias is required for `npm run build` to succeed. Removing it breaks CI immediately.
 - **Do not use `isHe` in `ProposalCard.tsx` toast messages** — `isHe` is defined only inside child components (`StatusBadge`, `StatusTimeline`), not in the main `ProposalCard` function scope. Use `locale === 'he'` instead. This caused a `tsc -b` failure (TS2304) during Sprint 73.
 - **Do not remove the dead-code packages re-added by accident** — `jspdf`, `html2canvas`, `react-signature-canvas`, `@types/react-signature-canvas`, `class-variance-authority`, `clsx`, `tailwind-merge` were all confirmed to have zero imports and were removed in Sprint 72. Do not re-add them.
-- **Do not bypass the server-side quota trigger** — migration 33 (`enforce_quota`) is a `BEFORE INSERT` trigger that enforces monthly rolling limits at the database level. The client-side quota check is a UX convenience only. Even if the UI check is removed or bypassed, the DB trigger blocks over-limit inserts with an exception.
+- **Do not bypass the server-side quota trigger** — migrations 33 + 34 together form the authoritative BEFORE INSERT quota gate. Migration 34 (`34_security_and_quota_patch.sql`) upgraded the function via `CREATE OR REPLACE` to enforce all tiers: free (5), pro (100), unlimited (no cap). The client-side check is a UX convenience only — the DB trigger always has final authority.
+- **Do not restore `USING (public_token IS NOT NULL)` to the `public_token_select` RLS policy** — that policy was the data-leak vector sealed in Sprint 76. The current policy is `USING (false)`. All public Deal Room access goes through the `get_deal_room_proposal` SECURITY DEFINER RPC. A blanket anonymous SELECT grant on all proposals is never acceptable regardless of the use case.
+- **Do not call `fetch(webhookUrl)` without validating the protocol first** — `src/lib/automations.ts` validates the URL via `new URL()` and checks `parsed.protocol === 'http:' || 'https:'` before making any network request. Removing this guard re-opens the `javascript:` / `file://` injection vector on the creator's own webhook field.
+- **Do not omit `maxLength` on new DB-bound text inputs** — all text fields that write to Supabase must have an explicit `maxLength` to prevent oversized payload attacks. Established limits: proposal title/client fields (200), add-on labels (150). Any new field added to `EditorPanel`, `ClientDetailsForm`, or similar forms must follow this pattern.
+- **Do not replace the PostHog no-op stub in `index.html` with nothing** — if the real PostHog snippet is not yet available, the stub must remain so `AnalyticsProvider` does not throw on `window.posthog.capture()`. The stub is `{ capture: fn, identify: fn, reset: fn }`. Removing it without adding the real snippet causes runtime errors on every route change.
 
 ---
 
@@ -3640,36 +3647,71 @@ Populated by a single `user-activity:{userId}` Supabase Realtime channel subscri
 
 ## 46. AnalyticsProvider (`src/components/layout/AnalyticsProvider.tsx`)
 
-Shell component that fires `page_view` events on route changes for Google Analytics (`window.gtag`), Meta Pixel (`window.fbq`), and PostHog (`window.posthog`). Currently **non-functional** — no analytics script tags are injected in `index.html`, so all three globals are `undefined` at runtime. The component exists as a ready-to-wire integration point.
+Shell component that fires `page_view` events on route changes for Google Analytics (`window.gtag`), Meta Pixel (`window.fbq`), and PostHog (`window.posthog`).
 
-To activate, add the relevant `<script>` tags to `index.html` `<head>` and the provider will start firing events automatically.
+**Sprint 78 status:** A PostHog no-op stub is now injected in `index.html` before the main bundle loads, so `window.posthog` is always defined and `AnalyticsProvider` no longer throws. `gtag` and `fbq` are still undefined — replace the stub with the real PostHog (or GA4) snippet when the project key is ready:
+
+```html
+<!-- index.html <head> — replace the stub block with your real snippet -->
+<!-- PostHog: https://app.posthog.com/project/settings -->
+<!-- GA4:     https://tagmanager.google.com/ or gtag direct snippet -->
+```
+
+The stub shape is `{ capture, identify, reset }` — enough for `AnalyticsProvider` to call `.capture()` without errors. Zero real events are sent until the real key is wired.
 
 ---
 
-## 47. Sprint 75 — God-Mode System Audit Findings
+## 47. Sprints 75–78 — God-Mode Audit & Launch Hardening
 
-Sprint 75 was a read-only 360° audit of the entire codebase. Key findings for future reference:
+### Sprint 75 — God-Mode System Audit (Read-Only)
 
-### Known security issues (pre-launch blockers)
+Full 360° audit completed. Identified 3 pre-launch blockers, dead code, and race conditions. All blockers subsequently fixed in Sprints 76–78.
 
-1. **`public_token_select` RLS policy (CRITICAL)** — `supabase/migrations/01_proposals_schema.sql` line ~88: `CREATE POLICY "public_token_select" ON proposals FOR SELECT USING (public_token IS NOT NULL)`. Since every proposal gets a token at creation, this is effectively a blanket anonymous read grant on ALL proposals. The `get_deal_room_proposal` RPC bypasses RLS via `SECURITY DEFINER`, so the policy is unnecessary for Deal Room functionality. Fix: restrict to `USING (public_token = current_setting('request.jwt.claims', true)::json->>'public_token')` or drop entirely and rely on RPCs.
+### Sprint 76 — Critical Security & Quota Hotfix
 
-2. **Pro tier quota unenforced server-side (HIGH)** — Migration 33 (`enforce_quota`) only checks `v_plan_tier = 'free'`. Pro users advertised at 100/month have no server-side enforcement. The DB trigger should add: `ELSIF v_plan_tier = 'pro' THEN v_limit := 100 + v_bonus; ... END IF`.
+**Migration 34 deployed to live Supabase** (`supabase/migrations/34_security_and_quota_patch.sql`):
 
-3. **Timezone mismatch in quota calculation** — Client uses `new Date(getFullYear(), getMonth(), 1)` (local timezone, UTC+2 for Israel), server uses `date_trunc('month', now())` (UTC). Off-by-one near month boundaries.
+| Fix | What changed |
+|---|---|
+| **F1 — RLS data leak sealed** | `public_token_select` policy replaced: `USING (public_token IS NOT NULL)` → `USING (false)`. Anonymous direct SELECT on the proposals table is now fully blocked. Public Deal Room access works exclusively through the `get_deal_room_proposal` SECURITY DEFINER RPC. |
+| **F2 — Pro tier quota enforced** | `check_proposal_quota()` upgraded via `CREATE OR REPLACE FUNCTION`. Now enforces: `free` = 5+bonus, `pro` = 100+bonus, `unlimited` = early return (no cap). Existing trigger continues to reference the updated function. |
 
-### Known dead code
+### Sprint 77 — Pre-Launch Audit (Read-Only)
 
-- **npm packages with zero imports:** `@radix-ui/react-label`, `@radix-ui/react-slot`, `@tiptap/extension-bubble-menu`
-- **`AnalyticsProvider`** — mounted in App.tsx but all analytics globals are undefined (no script tags)
+Second 360° audit across 6 lenses (Design/UX, Legal/Compliance, Security, Performance, Analytics). Verdict: **Conditional Pass — 5 showstoppers identified (F1–F5)**.
 
-### Known race conditions
+Remaining open issues after Sprint 76:
+- F1: Billing UI missing explicit no-proration refund text
+- F2: ToS refund clause needed hardening
+- F3: Webhook URL not protocol-validated before `fetch()`
+- F4: No `maxLength` on DB-bound text inputs
+- F5: Analytics completely dark — no script tags in `index.html`
 
-- **DealRoom `handleAccept` double-click** — Uses `if (accepting) return` state guard, but React state updates are async. Two rapid clicks can both pass before `setAccepting(true)` propagates. Fix: use a `useRef` guard instead of state.
+### Sprint 78 — Launch-Day Hotfixes (F1–F5)
 
-### Undocumented files (now documented above)
+All 5 blockers resolved. Commit `dd69d07` — full pass granted.
+
+| Fix | File(s) | Change |
+|---|---|---|
+| **F1 — Billing refund copy** | `src/pages/Billing.tsx` | Cancel button sub-text replaced with full bilingual no-proration statement: "הביטול ייכנס לתוקף בסוף מחזור החיוב הנוכחי. לא יינתנו החזרים יחסיים (Proration) בגין תקופה שכבר חויבה." / "Cancellations take effect at the end of the current billing cycle. No prorated refunds are issued for already-billed periods." |
+| **F2 — ToS refund clause** | `src/pages/TermsOfService.tsx` | Clause 8 extended with explicit sub-clause (c): monthly renewals are final and non-refundable once the new billing period commences — in both Hebrew and English. |
+| **F3 — Webhook URL validation** | `src/lib/automations.ts` | `new URL()` parse + `http:`/`https:` protocol guard added before `fetch()`. Invalid URLs and non-HTTP protocols silently no-op — never throw. |
+| **F4 — Input payload limits** | `src/components/builder/EditorPanel.tsx`, `src/components/deal-room/ClientDetailsForm.tsx` | `maxLength` added to all DB-bound text inputs: `project_title` (200), `client_name` (200), `client_email` (200), add-on label (150), all `ClientDetailsForm` fields (200 each). `FormInput` component received a `maxLength?: number` prop. |
+| **F5 — Analytics stub** | `index.html` | PostHog no-op stub injected in `<head>` before main bundle: `window.posthog = { capture, identify, reset }`. Prevents `AnalyticsProvider` from throwing on undefined globals. Replace with real PostHog/GA4 snippet when project key is ready. |
+
+### Remaining known issues (post-launch roadmap)
+
+| Issue | Severity | Fix |
+|---|---|---|
+| Timezone mismatch in quota — client uses local TZ, server uses UTC | Low | Off-by-one at month boundary only; acceptable for MVP |
+| `handleAccept` double-click uses state guard (async) instead of ref guard | Low | Replace `if (accepting)` state check with `useRef` boolean |
+| Dead npm packages: `@radix-ui/react-label`, `@radix-ui/react-slot`, `@tiptap/extension-bubble-menu` | Low | Remove in next dependency audit sprint |
+| No external error monitoring (Sentry / LogRocket) | Medium | Wire post-launch |
+| Admin email hardcoded in `AdminRoute.tsx` + `admin-impersonate` function | Low | Move to env var when multi-admin needed |
+
+### Undocumented files (documented in §44–§46)
 
 - `src/lib/contractEngine.ts` — smart variable replacement engine (§44)
 - `src/stores/usePresenceStore.ts` — live viewer presence tracking (§45)
-- `src/components/layout/AnalyticsProvider.tsx` — analytics shell (§46)
+- `src/components/layout/AnalyticsProvider.tsx` — analytics shell with PostHog stub (§46)
 - `src/pages/ImpersonateCallback.tsx` — admin magic-link landing page (§6 routing)
